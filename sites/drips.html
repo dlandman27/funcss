@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Ripples</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1e90ff;
+            cursor: pointer;
+        }
+
+        .ripple {
+            position: absolute;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: rippleEffect 2s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes rippleEffect {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.8;
+                transform: translate(-50%, -50%);
+            }
+            100% {
+                width: 500px;
+                height: 500px;
+                opacity: 0;
+                transform: translate(-50%, -50%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        document.addEventListener('click', function(e) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = e.clientX + 'px';
+            ripple.style.top = e.clientY + 'px';
+            document.body.appendChild(ripple);
+
+            // Create multiple ripples with different sizes and timings
+            for (let i = 1; i < 4; i++) {
+                const delayedRipple = ripple.cloneNode();
+                delayedRipple.style.animationDelay = `${i * 0.2}s`;
+                document.body.appendChild(delayedRipple);
+            }
+
+            // Clean up ripples after animation
+            setTimeout(() => {
+                ripple.remove();
+                document.querySelectorAll('.ripple').forEach(r => {
+                    if (r.style.animationDelay && parseFloat(r.style.animationDelay) + 2 < Date.now() / 1000) {
+                        r.remove();
+                    }
+                });
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

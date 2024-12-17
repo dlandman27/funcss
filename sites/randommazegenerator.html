@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Random Maze Generator</title>
+    <style>
+        canvas {
+            border: 2px solid black;
+            margin: 20px;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Maze Game</h1>
+    <canvas id="mazeCanvas"></canvas>
+    <button onclick="generateNewMaze()">New Maze</button>
+    <p>Use arrow keys to move the red circle to the green end point</p>
+
+    <script>
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const cellSize = 30;
+        const rows = 15;
+        const cols = 15;
+        
+        canvas.width = cols * cellSize;
+        canvas.height = rows * cellSize;
+        
+        let playerX = cellSize / 2;
+        let playerY = cellSize / 2;
+        let maze = [];
+
+        function initMaze() {
+            for (let i = 0; i < rows; i++) {
+                maze[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    maze[i][j] = {
+                        visited: false,
+                        walls: [true, true, true, true] // top, right, bottom, left
+                    };
+                }
+            }
+        }
+
+        function generateMaze(row, col) {
+            maze[row][col].visited = true;
+            
+            const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            const shuffled = directions.sort(() => Math.random() - 0.5);
+            
+            for (let [dx, dy] of shuffled) {
+                const newRow = row + dy;
+                const newCol = col + dx;
+                
+                if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols && !maze[newRow][newCol].visited) {
+                    if (dy === -1) { // going up
+                        maze[row][col].walls[0] = false;
+                        maze[newRow][newCol].walls[2] = false;
+                    } else if (dx === 1) { // going right
+                        maze[row][col].walls[1] = false;
+                        maze[newRow][newCol].walls[3] = false;
+                    } else if (dy === 1) { // going down
+                        maze[row][col].walls[2] = false;
+                        maze[newRow][newCol].walls[0] = false;
+                    } else if (dx === -1) { // going left
+                        maze[row][col].walls[3] = false;
+                        maze[newRow][newCol].walls[1] = false;
+                    }
+                    generateMaze(newRow, newCol);
+                }
+            }
+        }
+
+        function drawMaze() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw maze walls
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const cell = maze[i][j];
+                    const x = j * cellSize;
+                    const y = i * cellSize;
+                    
+                    ctx.strokeStyle = 'black';
+                    ctx.beginPath();
+                    
+                    if (cell.walls[0]) { // top
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + cellSize, y);
+                    }
+                    if (cell.walls[1]) { // right
+                        ctx.moveTo(x + cellSize, y);
+                        ctx.lineTo(x + cellSize, y + cellSize);
+                    }
+                    if (cell.walls[2]) { // bottom
+                        ctx.moveTo(x, y + cellSize);
+                        ctx.lineTo(x + cellSize, y + cellSize);
+                    }
+                    if (cell.walls[3]) { // left
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x, y + cellSize);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            // Draw end point
+            ctx.fillStyle = 'green';
+            ctx.beginPath();
+            ctx.arc(canvas.width - cellSize/2, canvas.height - cellSize/2, cellSize/3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw player
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(playerX, playerY, cellSize/3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function checkWin() {
+            const endX = canvas.width - cellSize/2;
+            const endY = canvas.height - cellSize/2;
+            const distance = Math.sqrt(Math.pow(playerX - endX, 2) + Math.pow(playerY - endY, 2));
+            
+            if (distance < cellSize/3) {
+                alert('Congratulations! You won!');
+                generateNewMaze();
+            }
+        }
+
+        function canMove(x, y) {
+            const currentCell = maze[Math.floor(playerY/cellSize)][Math.floor(playerX/cellSize)];
+            const targetCellX = Math.floor(x/cellSize);
+            const targetCellY = Math.floor(y/cellSize);
+            
+            if (targetCellX < 0 || targetCellX >= cols || targetCellY < 0 || targetCellY >= rows) {
+                return false;
+            }
+
+            if (x > playerX && currentCell.walls[1]) return false; // moving right
+            if (x < playerX && currentCell.walls[3]) return false; // moving left
+            if (y > playerY && currentCell.walls[2]) return false; // moving down
+            if (y < playerY && currentCell.walls[0]) return false; // moving up
+
+            return true;
+        }
+
+        function generateNewMaze() {
+            initMaze();
+            generateMaze(0, 0);
+            playerX = cellSize / 2;
+            playerY = cellSize / 2;
+            drawMaze();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            let newX = playerX;
+            let newY = playerY;
+            const speed = cellSize;
+
+            if (e.key === 'ArrowRight') newX += speed;
+            if (e.key === 'ArrowLeft') newX -= speed;
+            if (e.key === 'ArrowDown') newY += speed;
+            if (e.key === 'ArrowUp') newY -= speed;
+
+            if (canMove(newX, newY)) {
+                playerX = newX;
+                playerY = newY;
+                drawMaze();
+                checkWin();
+            }
+        });
+
+        // Initialize the first maze
+        generateNewMaze();
+    </script>
+</body>
+</html>

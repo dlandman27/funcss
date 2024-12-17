@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <title>Document</title>
+
+    <style>
+        body{
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        #color{
+            /* Remove the filter: invert(1); line */
+        }
+    </style>
+</head>
+<body>
+    <script>
+        $(document).ready(function(){
+            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+            // Convert the hex color to its inverse
+            const inverseColor = '#' + (0xFFFFFF ^ parseInt(randomColor.substring(1), 16)).toString(16).padStart(6, '0');
+            
+            $('body').css('backgroundColor', randomColor);
+            $('#color').text(randomColor);
+            $('#color').css('color', inverseColor); // Set the inverse color for text
+            
+            const safeFonts = ['Arial', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Georgia', 'Garamond', 'Courier New', 'Brush Script MT'];
+            const randomFont = safeFonts[Math.floor(Math.random() * safeFonts.length)];
+            $('#color').css('font-family', randomFont);
+        });
+    </script>
+
+    <div>
+        <h1 id="color"></h1>
+        <button onclick="navigator.clipboard.writeText($('#color').text())">Copy Color</button>
+    </div>
+    <style>
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Shape Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            border: 1px solid #333;
+            margin: 20px;
+            background: white;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .name-container {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        label {
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+        input {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="generateShape()" aria-label="Generate new random shape">Generate New Shape</button>
+        <button onclick="saveShape()" aria-label="Save current shape">Save Shape</button>
+    </div>
+
+    <canvas id="shapeCanvas" width="500" height="500" aria-label="Random shape display area"></canvas>
+
+    <div class="name-container">
+        <label for="shapeName">Name the shape:</label>
+        <input 
+            type="text" 
+            id="shapeName" 
+            name="shapeName"
+            placeholder="Give your shape a name"
+            value=""
+            aria-label="Enter name for your shape">
+    </div>
+
+    <script>
+        const canvas = document.getElementById('shapeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function generateShape() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const points = Math.floor(Math.random() * 8) + 3;
+            ctx.fillStyle = `hsl(${Math.random() * 360}, 70%, 50%)`;
+            
+            ctx.beginPath();
+            for (let i = 0; i < points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                const radius = 100 + Math.random() * 100;
+                const x = canvas.width/2 + Math.cos(angle) * radius;
+                const y = canvas.height/2 + Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function saveShape() {
+            const nameInput = document.getElementById('shapeName');
+            const fileName = nameInput.value.trim() || 'unnamed-shape';
+            
+            // Save current canvas state
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // Add name to canvas temporarily
+            addNameToCanvas();
+            
+            // Download file
+            const link = document.createElement('a');
+            link.download = fileName.endsWith('.png') ? fileName : `${fileName}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            
+            // Restore canvas
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function addNameToCanvas() {
+            const shapeName = document.getElementById('shapeName').value.trim();
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(shapeName, canvas.width/2, canvas.height - 20);
+        }
+
+        // Generate initial shape
+        generateShape();
+    </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unsatisfying</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Comic Sans MS, cursive;
+            background: repeating-linear-gradient(45deg, #ff0000, #ff0000 10px, #00ff00 10px, #00ff00 20px);
+        }
+
+        .loading {
+            width: 98%;
+            height: 30px;
+            border: 2px solid black;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-bar {
+            width: 99%;
+            height: 100%;
+            background-color: #0000ff;
+            animation: load 3s infinite;
+        }
+
+        @keyframes load {
+            0% { width: 0%; }
+            90% { width: 99%; }
+            100% { width: 99%; }
+        }
+
+        button {
+            padding: 15px 30px;
+            font-family: Comic Sans MS, cursive;
+            font-size: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        button:hover {
+            transform: translate(5px, -5px);
+        }
+
+        button:active {
+            transform: translate(-5px, 5px);
+        }
+
+        .popup {
+            position: fixed;
+            padding: 20px;
+            background: white;
+            border: 3px dotted black;
+            cursor: move;
+            user-select: none;
+            z-index: 1000;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            background: red;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #misaligned-text {
+            font-size: 24px;
+            margin: 20px;
+            transform: rotate(2deg);
+        }
+    </style>
+</head>
+<body>
+    <div id="misaligned-text">Almost centered text</div>
+    
+    <div class="loading">
+        <div class="loading-bar"></div>
+    </div>
+
+    <button onclick="createPopup()">Click Me!</button>
+
+    <script>
+        function createPopup() {
+            const popup = document.createElement('div');
+            popup.className = 'popup';
+            popup.innerHTML = `
+                <div class="close-btn" onclick="this.parentElement.remove()">x</div>
+                <p>Close me! (if you can catch me)</p>
+            `;
+            
+            document.body.appendChild(popup);
+            
+            let pos = { x: 0, y: 0 };
+            
+            // Random movement
+            setInterval(() => {
+                popup.style.left = Math.random() * (window.innerWidth - 200) + 'px';
+                popup.style.top = Math.random() * (window.innerHeight - 200) + 'px';
+            }, 800);
+
+            // Dragging functionality that's slightly off
+            popup.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                pos.x = e.clientX;
+                pos.y = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                popup.style.left = (e.clientX - pos.x + 10) + "px";
+                popup.style.top = (e.clientY - pos.y - 5) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+    </script>
+</body>
+</html>

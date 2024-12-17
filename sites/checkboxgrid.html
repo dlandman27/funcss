@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkboxes</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(32, 20px);
+            gap: 0px;
+            margin: 20px;
+        }
+
+        .checkbox-wrapper {
+            width: 20px;
+            height: 20px;
+        }
+
+        .controls {
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="saveState()">Save</button>
+        <button onclick="loadState()">Load</button>
+        <button onclick="clearGrid()">Clear</button>
+    </div>
+    <div id="grid" class="grid-container"></div>
+
+    <script>
+        // Create a 30x30 grid of checkboxes
+        const gridSize = 32;
+        const grid = document.getElementById('grid');
+
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'checkbox-wrapper';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `checkbox-${i}`;
+            checkbox.style.width = '20px';
+            checkbox.style.height = '20px';
+            
+            wrapper.appendChild(checkbox);
+            grid.appendChild(wrapper);
+        }
+
+        // Save the state to localStorage
+        function saveState() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const state = Array.from(checkboxes).map(checkbox => checkbox.checked);
+            localStorage.setItem('checkboxGridState', JSON.stringify(state));
+            alert('State saved!');
+        }
+
+        // Load the state from localStorage
+        function loadState() {
+            const savedState = localStorage.getItem('checkboxGridState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach((checkbox, index) => {
+                    checkbox.checked = state[index];
+                });
+            }
+        }
+
+        // Clear all checkboxes
+        function clearGrid() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        // Load saved state when page loads
+        window.onload = loadState;
+    </script>
+</body>
+</html>
