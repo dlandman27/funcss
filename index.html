@@ -136,11 +136,11 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(text, 'text/html');
                 const links = Array.from(doc.querySelectorAll('a'))
-                    .map(a => a.href)
+                    .map(a => a.getAttribute('href'))
                     .filter(href => href.endsWith('.html'));
                 
                 const randomSite = links[Math.floor(Math.random() * links.length)];
-                window.open(randomSite, '_blank');
+                window.open(window.location.origin + randomSite, '_blank');
             } finally {
                 document.querySelector('.loading').style.display = 'none';
             }
@@ -149,7 +149,6 @@
         const emojis = ['🌈', '💫', '🎪', '🎠', '🎢', '🎡', '🦄', '🌟', '✨', '🎉'];
         const follower = document.createElement('div');
         follower.className = 'follower';
-        follower.textContent = '🎯';
         document.body.appendChild(follower);
 
         document.addEventListener('mousemove', (e) => {
