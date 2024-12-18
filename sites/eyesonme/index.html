@@ -12,6 +12,7 @@
             justify-content: center;
             align-items: center;
             font-size: 15vw;
+            overflow: hidden;
         }
         #emoji {
             position: absolute;
@@ -76,6 +77,26 @@
         .wave {
             animation: wave 0.5s ease-in-out;
         }
+        @keyframes shoot {
+            0% { 
+                transform: translate(-50%, -50%) scale(1); 
+                left: 50%;
+                top: 50%;
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1);
+                left: calc(100% * var(--x-dir));
+                top: calc(100% * var(--y-dir));
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1);
+                left: 50%;
+                top: 50%;
+            }
+        }
+        .shooting {
+            animation: shoot 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +120,7 @@
         let isRacing = false;           // Tracks if emoji is in racing mode
         let isMouseDown = false;        // Tracks if mouse button is held down
         let isFirstVisit = true;
+        let isShooting = false;
 
         /**
          * Creates a whoosh effect particle at the specified coordinates
@@ -167,7 +189,7 @@
         // Mouse hover handlers
         document.querySelector('#emoji').addEventListener('mouseover', (e) => {
             e.preventDefault();
-            if (!isRacing && !isMouseDown) {
+            if (!isRacing && !isMouseDown && !isShooting) {
                 isHovering = true;
                 changeEmoji('😉', 500);
             }
@@ -182,7 +204,7 @@
         
         // Mouse movement tracking and speed detection
         document.addEventListener('mousemove', (e) => {
-            if (isMouseDown) return; // Skip all actions if mouse is held down
+            if (isMouseDown || isShooting) return; // Skip all actions if shooting
             
             const currentTime = Date.now();
             const timeDiff = currentTime - lastMouseTime;
@@ -192,11 +214,18 @@
             const distY = mouseY - lastMouseY;
             const speed = Math.sqrt(distX * distX + distY * distY) / timeDiff;
             
-            if (speed > 10) { // Fast movement detection
+            if (speed > 15) { // Increased from 10 to 15 for less frequent triggering
                 if (!fastMoveTimeout) {
                     raceStartTime = Date.now();
                     isRacing = true;
+
                     changeEmoji('🏎️', 1000);
+                    
+                    // Add a cooldown period
+                    fastMoveTimeout = setTimeout(() => {
+                        fastMoveTimeout = null;
+                        isRacing = false;
+                    }, 2000); // 2 second cooldown
                 }
             } else {
                 if (fastMoveTimeout) {
@@ -232,7 +261,11 @@
         });
 
         // Mouse click handlers
-        document.addEventListener('click', () => changeEmoji('🤩', 800));
+        document.addEventListener('click', () => {
+            if (!isShooting) {
+                changeEmoji('🤩', 800);
+            }
+        });
         document.addEventListener('mousedown', (e) => {
             if (e.button !== 0) { // Non-left clicks
                 changeEmoji('😮', 1000);
@@ -283,6 +316,9 @@
         let konamiIndex = 0;
 
         // Keyboard event handling
+        let spacebarTimer;
+        let isCharging = false;
+
         document.addEventListener('keydown', (e) => {
             // Konami code check
             if (e.key === konamiCode[konamiIndex]) {
@@ -312,7 +348,7 @@
                         clearInterval(spinInterval);
                         emoji.style.transform = 'translate(-50%, -50%)';
                         changeEmoji('😎', 1000);
-                    }, 3000);
+                    }, 2000);
                 }
             } else {
                 konamiIndex = 0;
@@ -337,6 +373,40 @@
                 case 65: changeEmoji('⬅️', 500); break;    // A
                 case 83: changeEmoji('⬇️', 500); break;    // S
                 case 68: changeEmoji('➡️', 500); break;    // D
+            }
+
+            if (e.keyCode === 32 && !isCharging && !isShooting) { // Space bar
+                isCharging = true;
+                changeEmoji('🚀', 3000);
+                
+                spacebarTimer = setTimeout(() => {
+                    isShooting = true;
+                    const xDir = Math.random();
+                    const yDir = Math.random();
+                    
+                    emoji.style.setProperty('--x-dir', xDir);
+                    emoji.style.setProperty('--y-dir', yDir);
+                    emoji.classList.add('shooting');
+                    
+                    createWhoosh(parseInt(emoji.style.left), parseInt(emoji.style.top), 
+                        Math.atan2(yDir - 0.5, xDir - 0.5) * 180 / Math.PI);
+                    
+                    setTimeout(() => {
+                        emoji.classList.remove('shooting');
+                        isCharging = false;
+                        isShooting = false;
+                    }, 2000);
+                }, 1500);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.keyCode === 32) { // Space bar
+                clearTimeout(spacebarTimer);
+                if (!emoji.classList.contains('shooting')) {
+                    changeEmoji('👀', 500);
+                    isCharging = false;
+                }
             }
         });
 
