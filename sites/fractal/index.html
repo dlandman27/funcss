@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tailwind CSS Fractal</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .container {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            transition: background-color 0.3s ease;
+        }
+
+        .split {
+            float: left;
+            position: relative;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            transition: all 0.3s, background-color 0.5s ease-in-out;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .split:hover {
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            z-index: 1000;
+            min-width: 200px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark-mode {
+            color: #ffffff;
+            background: linear-gradient(to bottom right, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8));
+        }
+
+        .dark-mode .controls {
+            background-color: rgba(30, 41, 59, 0.7);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-mode .controls h1 {
+            color: #f1f5f9;
+        }
+
+        .dark-mode .controls h1 a {
+            color: #38bdf8;
+        }
+
+        .dark-mode select {
+            background-color: rgba(30, 41, 59, 0.9);
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+
+        .dark-mode select:hover {
+            border-color: #64748b;
+            background-color: rgba(51, 65, 85, 0.9);
+        }
+
+        .dark-mode select:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        .dark-mode .split {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-mode .split:hover {
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        .controls h1 {
+            margin: 0 0 15px 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: -0.025em;
+        }
+
+        .controls h1 a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .controls h1 a {
+            color: #0ea5e9;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #f8fafc;
+            color: #1e293b;
+            cursor: pointer;
+            font-family: system-ui, -apple-system, sans-serif;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 1em;
+            transition: all 0.2s ease;
+        }
+
+        select:hover {
+            border-color: #cbd5e1;
+            background-color: #f1f5f9;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .controls button {
+            margin-top: 10px;
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .controls button.light-mode {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .controls button.dark-mode {
+            background-color: rgba(30, 41, 59, 0.9);
+            color: #f8fafc;
+            border: 1px solid #475569;
+        }
+
+        .controls button.light-mode:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .controls button.dark-mode:hover {
+            background-color: rgba(51, 65, 85, 0.9);
+            border-color: #64748b;
+        }
+
+        #reverseColors{
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0;">
+    <div class="controls">
+        <h1>
+            <a href="https://tailwindcss.com/docs/customizing-colors">
+                <span>
+                    <div>
+                        <svg width="24" height="24" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M27 0C19.8 0 15.3 3.6 13.5 10.8C16.2 7.2 19.35 5.85 22.95 6.75C25.004 7.263 26.472 8.754 28.097 10.403C30.744 13.09 33.808 16.2 40.5 16.2C47.7 16.2 52.2 12.6 54 5.4C51.3 9 48.15 10.35 44.55 9.45C42.496 8.937 41.028 7.446 39.403 5.797C36.756 3.11 33.692 0 27 0ZM13.5 16.2C6.3 16.2 1.8 19.8 0 27C2.7 23.4 5.85 22.05 9.45 22.95C11.504 23.463 12.972 24.954 14.597 26.603C17.244 29.29 20.308 32.4 27 32.4C34.2 32.4 38.7 28.8 40.5 21.6C37.8 25.2 34.65 26.55 31.05 25.65C28.996 25.137 27.528 23.646 25.903 21.997C23.256 19.31 20.192 16.2 13.5 16.2Z" fill="#38BDF8"/>
+                        </svg>
+                    </div>
+                </span>
+            </a> 
+        </h1>
+        <select id="colorScheme">
+            <option value="slate">Slate</option>
+            <option value="gray">Gray</option>
+            <option value="zinc">Zinc</option>
+            <option value="neutral">Neutral</option>
+            <option value="stone">Stone</option>
+            <option value="red">Red</option>
+            <option value="orange">Orange</option>
+            <option value="amber">Amber</option>
+            <option value="yellow">Yellow</option>
+            <option value="lime">Lime</option>
+            <option value="green">Green</option>
+            <option value="emerald">Emerald</option>
+            <option value="teal">Teal</option>
+            <option value="cyan">Cyan</option>
+            <option value="sky">Sky</option>
+            <option value="blue">Blue</option>
+            <option value="indigo">Indigo</option>
+            <option value="violet">Violet</option>
+            <option value="purple">Purple</option>
+            <option value="fuchsia">Fuchsia</option>
+            <option value="pink">Pink</option>
+            <option value="rose">Rose</option>
+        </select>
+        <button id="reverseColors">
+            <span id="directionText">🌙</span>
+        </button>
+    </div>
+    <div class="container split" id="root"></div>
+
+    <script>
+        const colorSchemes = {
+            slate: ['#f8fafc', '#f1f5f9', '#e2e8f0', '#cbd5e1', '#94a3b8', '#64748b', '#475569', '#334155', '#1e293b', '#0f172a', '#020617'],
+            gray: ['#f9fafb', '#f3f4f6', '#e5e7eb', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151', '#1f2937', '#111827', '#030712'],
+            zinc: ['#fafafa', '#f4f4f5', '#e4e4e7', '#d4d4d8', '#a1a1aa', '#71717a', '#52525b', '#3f3f46', '#27272a', '#18181b', '#09090b'],
+            neutral: ['#fafafa', '#f5f5f5', '#e5e5e5', '#d4d4d4', '#a3a3a3', '#737373', '#525252', '#404040', '#262626', '#171717', '#0a0a0a'],
+            stone: ['#fafaf9', '#f5f5f4', '#e7e5e4', '#d6d3d1', '#a8a29e', '#78716c', '#57534e', '#44403c', '#292524', '#1c1917', '#0c0a09'],
+            red: ['#fef2f2', '#fee2e2', '#fecaca', '#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d', '#450a0a'],
+            orange: ['#fff7ed', '#ffedd5', '#fed7aa', '#fdba74', '#fb923c', '#f97316', '#ea580c', '#c2410c', '#9a3412', '#7c2d12', '#431407'],
+            amber: ['#fffbeb', '#fef3c7', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f', '#451a03'],
+            yellow: ['#fefce8', '#fef9c3', '#fef08a', '#fde047', '#facc15', '#eab308', '#ca8a04', '#a16207', '#854d0e', '#713f12', '#422006'],
+            lime: ['#f7fee7', '#ecfccb', '#d9f99d', '#bef264', '#a3e635', '#84cc16', '#65a30d', '#4d7c0f', '#3f6212', '#365314', '#1a2e05'],
+            green: ['#f0fdf4', '#dcfce7', '#bbf7d0', '#86efac', '#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534', '#14532d', '#052e16'],
+            emerald: ['#ecfdf5', '#d1fae5', '#a7f3d0', '#6ee7b7', '#34d399', '#10b981', '#059669', '#047857', '#065f46', '#064e3b', '#022c22'],
+            teal: ['#f0fdfa', '#ccfbf1', '#99f6e4', '#5eead4', '#2dd4bf', '#14b8a6', '#0d9488', '#0f766e', '#115e59', '#134e4a', '#042f2e'],
+            cyan: ['#ecfeff', '#cffafe', '#a5f3fc', '#67e8f9', '#22d3ee', '#06b6d4', '#0891b2', '#0e7490', '#155e75', '#164e63', '#083344'],
+            sky: ['#f0f9ff', '#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#0284c7', '#0369a1', '#075985', '#0c4a6e', '#082f49'],
+            blue: ['#eff6ff', '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a', '#172554'],
+            indigo: ['#eef2ff', '#e0e7ff', '#c7d2fe', '#a5b4fc', '#818cf8', '#6366f1', '#4f46e5', '#4338ca', '#3730a3', '#312e81', '#1e1b4b'],
+            violet: ['#f5f3ff', '#ede9fe', '#ddd6fe', '#c4b5fd', '#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95', '#2e1065'],
+            purple: ['#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc', '#a855f7', '#9333ea', '#7e22ce', '#6b21a8', '#581c87', '#3b0764'],
+            fuchsia: ['#fdf4ff', '#fae8ff', '#f5d0fe', '#f0abfc', '#e879f9', '#d946ef', '#c026d3', '#a21caf', '#86198f', '#701a75', '#4a044e'],
+            pink: ['#fdf2f8', '#fce7f3', '#fbcfe8', '#f9a8d4', '#f472b6', '#ec4899', '#db2777', '#be185d', '#9d174d', '#831843', '#500724'],
+            rose: ['#fff1f2', '#ffe4e6', '#fecdd3', '#fda4af', '#fb7185', '#f43f5e', '#e11d48', '#be123c', '#9f1239', '#881337', '#4c0519']
+        };
+
+        let currentScheme = 'slate';
+        let isReversed = false;
+
+        function getColor(depth) {
+            const colors = colorSchemes[currentScheme];
+            const index = isReversed ? 
+                (colors.length - 1) - Math.min(depth, colors.length - 1) :
+                Math.min(depth, colors.length - 1);
+            return colors[index];
+        }
+
+        function split(element) {
+            const currentDepth = parseInt(element.dataset.depth) || 0;
+            if (currentDepth >= 9) return; // Limit recursion depth
+
+            element.removeEventListener('click', handleClick);
+
+            const vertical = currentDepth % 2 === 0;
+            const div1 = document.createElement('div');
+            const div2 = document.createElement('div');
+
+            div1.className = 'split';
+            div2.className = 'split';
+
+            div1.dataset.depth = currentDepth + 1;
+            div2.dataset.depth = currentDepth + 1;
+
+            div1.style.backgroundColor = 'transparent';
+            div2.style.backgroundColor = 'transparent';
+
+            if (vertical) {
+                div1.style.width = div2.style.width = '50%';
+                div1.style.height = div2.style.height = '100%';
+            } else {
+                div1.style.width = div2.style.width = '100%';
+                div1.style.height = div2.style.height = '50%';
+            }
+
+            element.innerHTML = '';
+            element.appendChild(div1);
+            element.appendChild(div2);
+
+            setTimeout(() => {
+                const nextColor = getColor(currentDepth + 1);
+                div1.style.backgroundColor = nextColor;
+                div2.style.backgroundColor = nextColor;
+            }, 50);
+
+            div1.addEventListener('click', handleClick);
+            div2.addEventListener('click', handleClick);
+        }
+
+        function handleClick(e) {
+            e.stopPropagation();
+            split(this);
+        }
+
+        function initializeFractal() {
+            const root = document.getElementById('root');
+            root.dataset.depth = '0';
+            root.style.backgroundColor = getColor(0);
+            root.addEventListener('click', handleClick);
+        }
+
+        // Handle color scheme changes
+        document.getElementById('colorScheme').addEventListener('change', (e) => {
+            currentScheme = e.target.value;
+            // Reset and reinitialize
+            const root = document.getElementById('root');
+            root.innerHTML = '';
+            initializeFractal();
+        });
+
+        // Add reverse colors button handler
+        document.getElementById('reverseColors').addEventListener('click', () => {
+            isReversed = !isReversed;
+            const button = document.getElementById('reverseColors');
+            const directionText = document.getElementById('directionText');
+            
+            if (isReversed) {
+                directionText.textContent = '☀️';
+                button.className = 'dark-mode';
+                document.querySelector('.controls').className = 'controls dark-mode';
+            } else {
+                directionText.textContent = '🌙';
+                button.className = 'light-mode';
+                document.querySelector('.controls').className = 'controls light-mode';
+            }
+            
+            // Reset and reinitialize
+            const root = document.getElementById('root');
+            root.innerHTML = '';
+            initializeFractal();
+        });
+
+        // Add initial button class
+        document.getElementById('reverseColors').className = 'light-mode';
+
+        // Initialize
+        document.querySelector('.controls').className = 'controls light-mode';
+        initializeFractal();
+    </script>
+</body>
+</html>
