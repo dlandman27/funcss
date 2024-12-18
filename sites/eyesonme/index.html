@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eyes On Me</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 15vw;
+        }
+        #emoji {
+            position: absolute;
+            transform: translate(-50%, -50%); /* Center the emoji relative to its position */
+            transition: transform 0.3s ease, left 0.3s ease, top 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none; /* Safari support */
+            -moz-user-select: none; /* Firefox support */
+            -ms-user-select: none; /* IE/Edge support */
+        }
+        .whoosh {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: fadeOut 0.5s forwards;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        #emoji.slow-move {
+            transition: all 2s ease;
+        }
+        @keyframes spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+        .spinning-slow {
+            animation: spin 3s linear infinite; 
+        }
+        .spinning-fast {
+            animation: spin 0.5s linear infinite;
+        }
+        .spinning-reverse {
+            animation: spin 0.5s linear infinite reverse;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+        }
+        .bounce {
+            animation: bounce 0.5s ease;
+        }
+        .shake{
+            animation: shake 1s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            20% { transform: translate(-50%, -50%) rotate(-20deg); }
+            40% { transform: translate(-50%, -50%) rotate(20deg); }
+            60% { transform: translate(-50%, -50%) rotate(-20deg); }
+            80% { transform: translate(-50%, -50%) rotate(20deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="emoji">👀</div>
+
+    <script>
+        // DOM element references and state variables
+        const emoji = document.getElementById('emoji');
+        let isAnimating = false;        // Tracks if emoji is currently in an animation
+        let currentTimeout;             // Stores timeout for current animation
+        let isHovering = false;         // Tracks if mouse is hovering over emoji
+        let lastMouseX = 0;             // Last known mouse X position
+        let lastMouseY = 0;             // Last known mouse Y position
+        let lastMouseTime = Date.now(); // Timestamp of last mouse movement
+        let isMoving = false;           // Tracks if emoji is moving to a position
+        let moveTimeout;                // Timeout for movement animations
+        let centerX = window.innerWidth / 2;   // Center X position of window
+        let centerY = window.innerHeight / 2;  // Center Y position of window
+        let fastMoveTimeout;            // Timeout for fast movement animations
+        let raceStartTime;              // Start time for racing animation
+        let isRacing = false;           // Tracks if emoji is in racing mode
+        let isMouseDown = false;        // Tracks if mouse button is held down
+
+        /**
+         * Creates a whoosh effect particle at the specified coordinates
+         * @param {number} x - X coordinate for whoosh effect
+         * @param {number} y - Y coordinate for whoosh effect 
+         * @param {number} angle - Rotation angle in degrees for whoosh effect
+         */
+        function createWhoosh(x, y, angle) {
+            const whoosh = document.createElement('div');
+            whoosh.textContent = '💨';
+            whoosh.className = 'whoosh';
+            whoosh.style.left = `${x}px`;
+            whoosh.style.top = `${y}px`;
+            whoosh.style.transform = `rotate(${angle}deg)`;
+            document.body.appendChild(whoosh);
+            setTimeout(() => whoosh.remove(), 500);
+        }
+
+        /**
+         * Changes the emoji display with optional duration and next emoji
+         * @param {string} newEmoji - The emoji to display
+         * @param {number} duration - How long to show the emoji in milliseconds
+         * @param {string} nextEmoji - Optional emoji to show after duration
+         */
+        function changeEmoji(newEmoji, duration = 10, nextEmoji) {
+            if (isAnimating) {
+                clearTimeout(currentTimeout);
+            }
+            
+            isAnimating = true;
+            emoji.textContent = newEmoji;
+            
+            currentTimeout = setTimeout(() => {
+                isAnimating = false;
+                if (nextEmoji) {
+                    emoji.textContent = nextEmoji;
+                } else if (isHovering) {
+                    emoji.textContent = '😉';
+                }
+            }, duration);
+        }
+
+        /**
+         * Resets the emoji position to the center of the window
+         */
+        function resetPosition() {
+            emoji.style.left = `${centerX}px`;
+            emoji.style.top = `${centerY}px`;
+            emoji.classList.remove('slow-move');
+        }
+
+        /**
+         * Makes the emoji slowly move towards the mouse position
+         * @param {Event} e - Mouse event containing client coordinates
+         */
+        function slowlyApproachMouse(e) {
+            if (!isMoving) {
+                emoji.classList.add('slow-move');
+                emoji.style.left = `${e.clientX}px`;
+                emoji.style.top = `${e.clientY}px`;
+            }
+        }
+
+        // Event Listeners
+
+        // Mouse hover handlers
+        document.querySelector('#emoji').addEventListener('mouseover', (e) => {
+            e.preventDefault();
+            if (!isRacing && !isMouseDown) {
+                isHovering = true;
+                changeEmoji('😉', 500);
+            }
+        });
+
+        document.querySelector('#emoji').addEventListener('mouseout', () => {
+            if (!isRacing && !isMouseDown) {
+                isHovering = false;
+                changeEmoji('👋', 500);
+            }
+        });
+        
+        // Mouse movement tracking and speed detection
+        document.addEventListener('mousemove', (e) => {
+            if (isMouseDown) return; // Skip all actions if mouse is held down
+            
+            const currentTime = Date.now();
+            const timeDiff = currentTime - lastMouseTime;
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            const distX = mouseX - lastMouseX;
+            const distY = mouseY - lastMouseY;
+            const speed = Math.sqrt(distX * distX + distY * distY) / timeDiff;
+            
+            if (speed > 10) { // Fast movement detection
+                if (!fastMoveTimeout) {
+                    raceStartTime = Date.now();
+                    isRacing = true;
+                    changeEmoji('🏎️', 1000);
+                }
+            } else {
+                if (fastMoveTimeout) {
+                    clearTimeout(fastMoveTimeout);
+                    fastMoveTimeout = null;
+                }
+                isRacing = false;
+            }
+
+            // Update emoji direction based on mouse position relative to window center
+            if (!isAnimating && !isHovering) {
+                const windowCenter = window.innerWidth / 2;
+                const windowMiddle = window.innerHeight / 2;
+                
+                if (Math.abs(mouseY - windowMiddle) > Math.abs(mouseX - windowCenter)) {
+                    if (mouseY < windowMiddle) {
+                        changeEmoji('👆', 1);
+                    } else {
+                        changeEmoji('👇', 1);
+                    }
+                } else {
+                    if (mouseX > windowCenter) {
+                        changeEmoji('👉', 1);
+                    } else {
+                        changeEmoji('👈', 1);
+                    }
+                }
+            }
+
+            lastMouseX = mouseX;
+            lastMouseY = mouseY;
+            lastMouseTime = currentTime;
+        });
+
+        // Mouse click handlers
+        document.addEventListener('click', () => changeEmoji('🤩', 800));
+        document.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) { // Non-left clicks
+                changeEmoji('😮', 1000);
+            } else if (e.button === 1){
+                // Middle click
+                changeEmoji('🫣', 1000);
+            }
+        });
+
+        // Mouse leave handler with progressive sadness
+        document.addEventListener('mouseleave', () => {
+            const sadEmojis = ['😢', '😭', '😰', '😫', '😩', '🥺'];
+            let sadLevel = 0;
+            changeEmoji(sadEmojis[0], 0);
+            
+            const sadderInterval = setInterval(() => {
+                if (!document.hidden && sadLevel < sadEmojis.length - 1) {
+                    sadLevel++;
+                    changeEmoji(sadEmojis[sadLevel], 0);
+                }
+            }, 12000);
+
+            document.addEventListener('mouseenter', () => {
+                clearInterval(sadderInterval);
+            }, { once: true });
+        });
+
+        // Context menu and mouse enter handlers
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            changeEmoji('🤫', 800);
+        });
+        document.addEventListener('mouseenter', () => changeEmoji('🤗', 1000));
+
+        // Konami code implementation
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let konamiIndex = 0;
+
+        // Keyboard event handling
+        document.addEventListener('keydown', (e) => {
+            // Konami code check
+            if (e.key === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    konamiIndex = 0;
+                    
+                    // Konami code celebration animation
+                    const crazyEmojis = ['🌈', '✨', '💫', '⚡️', '🎉', '🎊', '🌟', '💥'];
+                    let crazyIndex = 0;
+                    const crazyInterval = setInterval(() => {
+                        changeEmoji(crazyEmojis[crazyIndex], 100);
+                        crazyIndex = (crazyIndex + 1) % crazyEmojis.length;
+                    }, 100);
+
+                    // Spinning animation
+                    emoji.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+                    let rotation = 0;
+                    const spinInterval = setInterval(() => {
+                        rotation += 45;
+                        emoji.style.transform = `translate(-50%, -50%) rotate(${rotation}deg) scale(2)`;
+                    }, 50);
+
+                    // Reset after celebration
+                    setTimeout(() => {
+                        clearInterval(crazyInterval);
+                        clearInterval(spinInterval);
+                        emoji.style.transform = 'translate(-50%, -50%)';
+                        changeEmoji('😎', 1000);
+                    }, 3000);
+                }
+            } else {
+                konamiIndex = 0;
+            }
+
+            // Regular keyboard controls
+            switch(e.keyCode) {
+                case 27: changeEmoji('😴', 1); break;      // Escape
+                case 13: changeEmoji('💫', 1); break;      // Enter
+                case 8:  changeEmoji('🗑️', 1); break;      // Backspace
+                case 32: changeEmoji('🚀', 1); break;      // Space
+                case 9:  changeEmoji('⏩', 1000); break;   // Tab
+                case 38: changeEmoji('⬆️', 500); break;    // ArrowUp
+                case 40: changeEmoji('⬇️', 500); break;    // ArrowDown
+                case 37: changeEmoji('⬅️', 500); break;    // ArrowLeft
+                case 39: changeEmoji('➡️', 500); break;    // ArrowRight
+                case 35: changeEmoji('⏭️', 500); break;    // End
+                case 36: changeEmoji('⏮️', 500); break;    // Home
+                case 34: changeEmoji('⏬', 500); break;    // PageDown
+                case 33: changeEmoji('⏫', 500); break;    // PageUp
+                case 87: changeEmoji('⬆️', 500); break;    // W
+                case 65: changeEmoji('⬅️', 500); break;    // A
+                case 83: changeEmoji('⬇️', 500); break;    // S
+                case 68: changeEmoji('➡️', 500); break;    // D
+            }
+        });
+
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            changeEmoji('😵‍💫');
+            centerX = window.innerWidth / 2;
+            centerY = window.innerHeight / 2;
+            resetPosition();
+            
+            // Add bounce animation
+            emoji.classList.add('shake');
+
+            // Stop spinning after 3 seconds
+            setTimeout(() => {
+                emoji.classList.remove('shake');
+            }, 1000);
+        });
+        
+        // Rapid click handler
+        let clickCount = 0;
+        let clickTimer;
+        document.addEventListener('click', () => {
+            clickCount++;
+            clearTimeout(clickTimer);
+            
+            if (clickCount >= 2) {
+                changeEmoji('🌟', 3000);
+                clickCount = 0;
+            }
+            
+            clickTimer = setTimeout(() => {
+                clickCount = 0;
+            }, 500);
+        });
+
+        // Tab visibility tracking with progressive anger
+        let tabAwayTime;
+        let angerLevel = 0;
+        const angerEmojis = ['😠', '😡', '🤬', '💢', '👿', '😈'];
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                tabAwayTime = Date.now();
+                document.title = '🙄';
+                
+                const angerInterval = setInterval(() => {
+                    if (!document.hidden) {
+                        clearInterval(angerInterval);
+                        return;
+                    }
+                    
+                    angerLevel = Math.min(angerLevel + 1, angerEmojis.length - 1);
+                    document.title = angerEmojis[angerLevel];
+                }, 5000);
+                
+            } else {
+                angerLevel = 0;
+                const timeAway = Math.floor((Date.now() - tabAwayTime) / 1000);
+                if (timeAway > 30) {
+                    document.title = '😤';
+                    setTimeout(() => document.title = '🙂', 3000);
+                } else {
+                    document.title = '👀';
+                }
+            }
+        });
+
+        // Mouse stop detection
+        document.addEventListener('mousestop', (e) => {
+            if (!isMoving) {
+                moveTimeout = setTimeout(() => {
+                    slowlyApproachMouse(e);
+                }, 1000);
+            }
+        });
+
+        // Custom mousestop event creation
+        let mouseStopTimer;
+        document.addEventListener('mousemove', (e) => {
+            clearTimeout(mouseStopTimer);
+            mouseStopTimer = setTimeout(() => {
+                const event = new CustomEvent('mousestop', {
+                    detail: { clientX: e.clientX, clientY: e.clientY },
+                    bubbles: true
+                });
+                document.dispatchEvent(event);
+            }, 100);
+        });
+
+        // Scroll wheel handler
+        document.addEventListener('wheel', (e) => {
+            if (e.deltaY > 0) {
+                changeEmoji('😵‍💫', 800);
+                emoji.classList.add('spinning-fast');
+                setTimeout(() => emoji.classList.remove('spinning-fast'), 1000);
+                emoji.classList.add('bounce');
+                setTimeout(() => emoji.classList.remove('bounce'), 500);
+            } else {
+                changeEmoji('🤪', 800);
+                emoji.classList.add('spinning-reverse');
+                setTimeout(() => emoji.classList.remove('spinning-reverse'), 1000);
+                emoji.classList.add('bounce');
+                setTimeout(() => emoji.classList.remove('bounce'), 500);
+            }
+        });
+
+        // Double-click handler
+        document.addEventListener('dblclick', () => {
+            changeEmoji('🤯', 3000);
+        });
+
+        // Copy/Paste handlers
+        document.addEventListener('copy', () => {
+            changeEmoji('📋', 800, '😉');
+        });
+
+        document.addEventListener('paste', () => {
+            changeEmoji('📨', 800, '🤔');
+        });
+
+        // Text selection handler
+        document.addEventListener('selectstart', () => {
+            changeEmoji('🔍', 800, '🧐');
+        });
+
+        // Online/Offline status handlers
+        window.addEventListener('online', () => {
+            changeEmoji('🟢', 1000, '😊');
+        });
+
+        window.addEventListener('offline', () => {
+            changeEmoji('🔴', 1000, '😢');
+        });
+
+        // Battery status monitoring
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                battery.addEventListener('levelchange', () => {
+                    if (battery.level <= 0.2) {
+                        changeEmoji('🪫', 1000, '😰');
+                    } else if (battery.level >= 0.8) {
+                        changeEmoji('🔋', 1000, '😌');
+                    }
+                });
+
+                battery.addEventListener('charging', () => {
+                    changeEmoji('⚡', 1000, '😊');
+                });
+            });
+        }
+
+        // Device orientation handler for mobile devices
+        window.addEventListener('deviceorientation', (event) => {
+            if (event.beta > 60) {
+                changeEmoji('🙃', 500); // Phone is facing up
+            } else if (event.beta < -60) {
+                changeEmoji('😱', 500); // Phone is facing down
+            }
+        }, true);
+
+        // Screen visibility handler
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                changeEmoji('😴', 1000);
+            } else {
+                changeEmoji('⏰', 1000, '😃');
+            }
+        });
+
+        // Initialize emoji position
+        resetPosition();
+
+        // Add these mouse event listeners
+        document.addEventListener('mousedown', () => {
+            isMouseDown = true;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+    </script>
+</body>
+</html>

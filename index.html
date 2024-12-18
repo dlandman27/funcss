@@ -23,6 +23,26 @@
             margin-bottom: 2rem;
             text-align: center;
         }
+        
+        h2 {
+            color: #3498db;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            animation: floatText 3s ease-in-out infinite;
+        }
+
+        @keyframes floatText {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
 
         button {
             background-color: #3498db;
@@ -116,6 +136,7 @@
 <body>
     <div class="container">
         <i class="fas fa-compass icon-spin"></i>
+        <h2>Random Site from the Web</h2>
         <h1>Go to a random site!</h1>
         <button onclick="getSites()">
             <i class="fas fa-random"></i>
@@ -137,17 +158,50 @@
             '/nameashape/',
             '/randomphotos/',
             '/randommazegenerator/',
-            '/recipemaker/',
-            '/randomcolor/'
+            '/randomcolor/',
+            'eyesonme'
         ];
+
+        // Add weights for each folder
+        let weights = {};
+        folders.forEach(folder => {
+            // Initialize from localStorage or set to 1 if not found
+            weights[folder] = parseFloat(localStorage.getItem(`weight_${folder}`)) || 1;
+        });
+
         function getSites() {
             document.querySelector('.loading').style.display = 'block';
             try {
-                const randomFolder = folders[Math.floor(Math.random() * folders.length)];
-                window.open(window.location.origin + '/sites' + randomFolder, '_blank');
+                // Calculate total weight
+                const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+                let random = Math.random() * totalWeight;
+                
+                // Select folder based on weights
+                let selectedFolder;
+                for (const folder of folders) {
+                    random -= weights[folder];
+                    if (random <= 0) {
+                        selectedFolder = folder;
+                        break;
+                    }
+                }
+                
+                // Reduce weight of selected folder
+                weights[selectedFolder] *= 0.5; // Reduce by half each time
+                localStorage.setItem(`weight_${selectedFolder}`, weights[selectedFolder].toString());
+                
+                window.open(window.location.origin + '/sites' + selectedFolder, '_blank');
             } finally {
                 document.querySelector('.loading').style.display = 'none';
             }
+        }
+
+        // Add a reset function (optional - you can add a button for this if needed)
+        function resetWeights() {
+            folders.forEach(folder => {
+                weights[folder] = 1;
+                localStorage.setItem(`weight_${folder}`, '1');
+            });
         }
 
         const emojis = ['🌈', '💫', '🎪', '🎠', '🎢', '🎡', '🦄', '🌟', '✨', '🎉'];
