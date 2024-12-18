@@ -68,6 +68,14 @@
             60% { transform: translate(-50%, -50%) rotate(-20deg); }
             80% { transform: translate(-50%, -50%) rotate(20deg); }
         }
+        @keyframes wave {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            25% { transform: translate(-50%, -50%) rotate(-20deg); }
+            75% { transform: translate(-50%, -50%) rotate(20deg); }
+        }
+        .wave {
+            animation: wave 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -90,6 +98,7 @@
         let raceStartTime;              // Start time for racing animation
         let isRacing = false;           // Tracks if emoji is in racing mode
         let isMouseDown = false;        // Tracks if mouse button is held down
+        let isFirstVisit = true;
 
         /**
          * Creates a whoosh effect particle at the specified coordinates
@@ -256,7 +265,18 @@
             e.preventDefault();
             changeEmoji('🤫', 800);
         });
-        document.addEventListener('mouseenter', () => changeEmoji('🤗', 1000));
+        document.addEventListener('mouseenter', () => {
+            if (isFirstVisit) {
+                isFirstVisit = false;
+                changeEmoji('👋', 400);
+                emoji.classList.add('wave');
+                setTimeout(() => {
+                    changeEmoji('🤗', 1000);
+                }, 400);
+            } else {
+                changeEmoji('🤗', 1000); 
+            }
+        });
 
         // Konami code implementation
         const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
