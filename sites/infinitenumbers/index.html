@@ -36,9 +36,55 @@
                 transform: translateY(0);
             }
         }
+
+        .rarity-text{
+            font-size: 22px;
+            display: block;
+        }
+
+        .special-number-common {
+            color: #2ecc71;
+        }
+        
+        .special-number-rare {
+            color: #3498db;
+        }
+
+        .special-number-epic {
+            color: #9b59b6;
+        }
+        
+        .special-number-legendary {
+            color: #f1c40f;
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+        }
     </style>
 </head>
 <body>
+    <h1 style="text-align: center; color: #333; margin: 20px 0; font-size: 56px;">Scroll Down, If You Dare...</h1>
+    <p style="text-align: center; color: #666; font-size: 18px;">Check the rarity guide below to discover special numbers!</p>
+
+    <div style="text-align: center; margin: 20px auto; max-width: 600px; background: rgba(255,255,255,0.9); padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2 style="color: #333; margin-bottom: 15px;">Rarity Guide</h2>
+        <ul style="list-style: none; padding: 0;">
+            <li style="margin: 10px 0;">
+                <span style="color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);">✨ LEGENDARY</span>
+                <br>Chance: 0.001% (1 in 10,000)
+            </li>
+            <li style="margin: 10px 0;">
+                <span style="color: #9b59b6;">💫 EPIC</span>
+                <br>Chance: 0.01% (1 in 500)
+            </li>
+            <li style="margin: 10px 0;">
+                <span style="color: #3498db;">🌟 RARE</span>
+                <br>Chance: 0.1% (1 in 250)
+            </li>
+            <li style="margin: 10px 0;">
+                <span style="color: #2ecc71;">⭐ COMMON</span>
+                <br>Chance: 1% (1 in 100)
+            </li>
+        </ul>
+    </div>
     <div id="numbers-container"></div>
 
     <script>
@@ -53,7 +99,36 @@
             for (let i = 0; i < 20; i++) {
                 const numberElement = document.createElement('div');
                 numberElement.className = 'number';
-                numberElement.textContent = currentNumber++;
+                const numberSpan = document.createElement('span');
+                numberSpan.textContent = currentNumber++;
+                numberElement.appendChild(numberSpan);
+                
+                const random = Math.random();
+                const rarityText = document.createElement('span');
+                rarityText.className = 'rarity-text';
+                
+                if (random < 1/10000) {
+                    numberSpan.classList.add('special-number-legendary');
+                    rarityText.textContent = '✨ LEGENDARY (0.001%)';
+                    rarityText.style.color = '#f1c40f';
+                } else if (random < 1/500) {
+                    numberSpan.classList.add('special-number-epic');
+                    rarityText.textContent = '💫 EPIC (0.01%)';
+                    rarityText.style.color = '#9b59b6';
+                } else if (random < 1/250) {
+                    numberSpan.classList.add('special-number-rare');
+                    rarityText.textContent = '🌟 RARE (0.1%)';
+                    rarityText.style.color = '#3498db';
+                } else if (random < 1/100) {
+                    numberSpan.classList.add('special-number-common');
+                    rarityText.textContent = '⭐ COMMON (1%)';
+                    rarityText.style.color = '#2ecc71';
+                }
+                
+                if (rarityText.textContent) {
+                    numberElement.appendChild(rarityText);
+                }
+                
                 container.appendChild(numberElement);
             }
 
