@@ -23,6 +23,17 @@
         .checkbox-wrapper {
             width: 20px;
             height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 16px !important;
+            height: 16px !important;
+            cursor: pointer;
+            margin: 0;
         }
 
         .controls {
@@ -56,8 +67,13 @@
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = `checkbox-${i}`;
-            checkbox.style.width = '20px';
-            checkbox.style.height = '20px';
+            
+            // Add click handler to wrapper
+            wrapper.addEventListener('click', (e) => {
+                if (e.target !== checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                }
+            });
             
             wrapper.appendChild(checkbox);
             grid.appendChild(wrapper);
@@ -89,6 +105,7 @@
             checkboxes.forEach(checkbox => {
                 checkbox.checked = false;
             });
+            localStorage.removeItem('checkboxGridState');
         }
 
         // Load saved state when page loads

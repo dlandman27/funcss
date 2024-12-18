@@ -13,6 +13,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
         canvas {
             border: 1px solid #333;
@@ -57,12 +58,40 @@
         button:hover {
             background-color: #45a049;
         }
+        @keyframes flash {
+            0% { background-color: rgba(255, 255, 255, 0); }
+            50% { background-color: rgba(255, 255, 255, 0.8); }
+            100% { background-color: rgba(255, 255, 255, 0); }
+        }
+
+        .flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .flash-animation {
+            animation: flash 0.5s ease-out;
+        }
     </style>
 </head>
 <body>
+    <h1 style="font-family: Arial, sans-serif; color: #333; margin-bottom: 1rem;">
+        Name A Shape!
+    </h1>
+    <p style="font-family: Arial, sans-serif; color: #666; margin-bottom: 2rem; text-align: center; max-width: 600px;">
+        Generate random shapes, give them names, and save them as images. Perfect for when you need inspiration or just want to have fun with geometry!
+    </p>
+
     <div class="controls">
-        <button onclick="generateShape()" aria-label="Generate new random shape">Generate New Shape</button>
-        <button onclick="saveShape()" aria-label="Save current shape">Save Shape</button>
+        <button onclick="generateShape()" aria-label="Generate new random shape">
+            <span>🔄</span>
+            Generate New Shape
+        </button>
     </div>
 
     <canvas id="shapeCanvas" width="500" height="500" aria-label="Random shape display area"></canvas>
@@ -76,7 +105,13 @@
             placeholder="Give your shape a name"
             value=""
             aria-label="Enter name for your shape">
-    </div>
+        </div>
+        <button style="margin-top: 2rem" onclick="saveShape()" aria-label="Download shape image">
+            <span>📸</span>
+            Get a pic of your shape!
+        </button>
+
+    <div id="flashEffect" class="flash"></div>
 
     <script>
         const canvas = document.getElementById('shapeCanvas');
@@ -107,13 +142,22 @@
 
         function saveShape() {
             const nameInput = document.getElementById('shapeName');
-            const fileName = nameInput.value.trim() || 'unnamed-shape';
+            const fileName = nameInput.value.trim() || 'i-didnt-wanna-name-my-shape';
             
             // Save current canvas state
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
             // Add name to canvas temporarily
             addNameToCanvas();
+            
+            // Trigger flash effect
+            const flash = document.getElementById('flashEffect');
+            flash.classList.add('flash-animation');
+            
+            // Remove animation class after it completes
+            setTimeout(() => {
+                flash.classList.remove('flash-animation');
+            }, 500);
             
             // Download file
             const link = document.createElement('a');
