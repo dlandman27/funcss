@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DVD Bounce</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #dvd {
+            position: absolute;
+            width: 100px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #dvd img {
+            width: 100%;
+            height: 100%;
+            filter: brightness(0) invert(1);
+        }
+
+        .insane {
+            animation: insanity 0.5s linear infinite;
+        }
+
+        @keyframes insanity {
+            0% { filter: brightness(0) saturate(100%) invert(53%) sepia(49%) saturate(4038%) hue-rotate(0deg) brightness(132%) contrast(96%); }
+            20% { filter: brightness(0) saturate(100%) invert(53%) sepia(49%) saturate(4038%) hue-rotate(72deg) brightness(132%) contrast(96%); }
+            40% { filter: brightness(0) saturate(100%) invert(53%) sepia(49%) saturate(4038%) hue-rotate(144deg) brightness(132%) contrast(96%); }
+            60% { filter: brightness(0) saturate(100%) invert(53%) sepia(49%) saturate(4038%) hue-rotate(216deg) brightness(132%) contrast(96%); }
+            80% { filter: brightness(0) saturate(100%) invert(53%) sepia(49%) saturate(4038%) hue-rotate(288deg) brightness(132%) contrast(96%); }
+            100% { filter: brightness(0) saturate(100%) invert(53%) sepia(49%) saturate(4038%) hue-rotate(360deg) brightness(132%) contrast(96%); }
+        }
+    </style>
+</head>
+<body>
+    <div id="dvd">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/9/9b/DVD_logo.svg" alt="DVD Logo">
+    </div>
+
+    <script>
+        const dvd = document.getElementById('dvd');
+        const width = 100;
+        const height = 50;
+        let x = 20;
+        let y = 20;
+        let dx = 3;
+        let dy = 3;
+        let colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+        let currentColor = 0;
+
+        function animate() {
+            x += dx;
+            y += dy;
+
+            // Check for collisions
+            let hitCorner = false;
+            if (x <= 0 && y <= 0 || // Top-left corner
+                x <= 0 && y >= window.innerHeight - height || // Bottom-left corner
+                x >= window.innerWidth - width && y <= 0 || // Top-right corner
+                x >= window.innerWidth - width && y >= window.innerHeight - height) { // Bottom-right corner
+                hitCorner = true;
+                dvd.classList.add('insane');
+                setTimeout(() => dvd.classList.remove('insane'), 10000); // Remove effect after 10 seconds
+            }
+
+            if (x <= 0 || x >= window.innerWidth - width) {
+                dx = -dx;
+                dvd.querySelector('img').style.filter = `brightness(0) invert(1) hue-rotate(${currentColor * 60}deg)`;
+                currentColor = (currentColor + 1) % colors.length;
+            }
+            if (y <= 0 || y >= window.innerHeight - height) {
+                dy = -dy;
+                dvd.querySelector('img').style.filter = `brightness(0) invert(1) hue-rotate(${currentColor * 60}deg)`;
+                currentColor = (currentColor + 1) % colors.length;
+            }
+
+            dvd.style.left = `${x}px`;
+            dvd.style.top = `${y}px`;
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            // Keep DVD logo within bounds after resize
+            if (x > window.innerWidth - width) {
+                x = window.innerWidth - width;
+                dx = -Math.abs(dx); // Ensure it moves left
+            }
+            if (x < 0) {
+                x = 0;
+                dx = Math.abs(dx); // Ensure it moves right
+            }
+            if (y > window.innerHeight - height) {
+                y = window.innerHeight - height;
+                dy = -Math.abs(dy); // Ensure it moves up
+            }
+            if (y < 0) {
+                y = 0;
+                dy = Math.abs(dy); // Ensure it moves down
+            }
+        });
+
+        // Start animation with a small delay to ensure DOM is ready
+        setTimeout(() => {
+            dvd.querySelector('img').style.filter = 'brightness(0) invert(1)';
+            animate();
+        }, 100);
+    </script>
+</body>
+</html>
