@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comic Moves</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #fff;
+            cursor: pointer;
+            background-color: #ff4400;
+            background-image: radial-gradient(circle at center, 
+                rgba(255, 100, 0, 0.8) 0%,
+                rgba(200, 0, 0, 0.9) 100%),
+                repeating-radial-gradient(circle at center,
+                rgba(0, 0, 0, 0.2) 0,
+                rgba(0, 0, 0, 0.2) 3px,
+                transparent 3px,
+                transparent 6px);
+            background-size: 100% 100%, 20px 20px;
+            background-position: center;
+        }
+
+        .move {
+            position: absolute;
+            font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+            font-size: 72px;
+            font-weight: bold;
+            color: #ff0000;
+            -webkit-text-stroke: 1px white;
+            text-shadow: 
+                -3px -3px 0 #000,
+                3px -3px 0 #000,
+                -3px 3px 0 #000,
+                3px 3px 0 #000;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0;
+            padding: 40px 60px;
+            background: var(--bubble-color, #ffeb3b);
+            animation: moveText 1s ease-out forwards;
+        }
+
+        @keyframes moveText {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.2);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+            80% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const moves = [
+            "POW!", "BAM!", "WHAM!", "KAPOW!", 
+            "BOOM!", "ZAP!", "BIFF!", "CRASH!",
+            "WALLOP!", "THWACK!", "SOCK!", "SLAM!",
+            "SMASH!", "CRUNCH!", "WHACK!", "BONK!",
+            "BANG!", "CLANG!", "ZING!", "ZOWIE!",
+            "BOING!", "SPLAT!", "WHAMMO!", "ZONK!",
+            "KA-POW!", "THUMP!", "CRACK!", "SWOOSH!",
+            "BLAM!", "ZING!", "WHUMP!", "SLASH!",
+            "SLICE!", "CRACKLE!", "SNAP!", "POP!"
+        ];
+
+        function createDots(x, y) {
+            const numDots = 12;
+            const radius = 30;
+
+            for (let i = 0; i < numDots; i++) {
+                const angle = (i / numDots) * Math.PI * 2;
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                
+                const dotX = x + Math.cos(angle) * radius;
+                const dotY = y + Math.sin(angle) * radius;
+                
+                dot.style.left = dotX + 'px';
+                dot.style.top = dotY + 'px';
+                
+                document.body.appendChild(dot);
+                
+                // Fade in
+                setTimeout(() => dot.style.opacity = '1', 10);
+                
+                // Remove after animation
+                setTimeout(() => document.body.removeChild(dot), 1000);
+            }
+        }
+
+        function createMove(x, y) {
+            const move = document.createElement('div');
+            move.className = 'move';
+            move.textContent = moves[Math.floor(Math.random() * moves.length)];
+            move.style.left = x + 'px';
+            move.style.top = y + 'px';
+            
+            // Generate more dramatic starburst polygon
+            const points = 40;  // More points for more spikes
+            const innerRadius = 40;  // Smaller inner radius
+            const outerRadius = 50;  // Larger outer radius for longer spikes
+            let polygon = '';
+            
+            for (let i = 0; i < points * 2; i++) {
+                const angle = (i * Math.PI) / points;
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const randomVariation = 0.7 + Math.random() * 0.6; // More variation (30% to 130%)
+                const currentRadius = radius * randomVariation;
+                
+                const x = 50 + Math.cos(angle) * currentRadius;
+                const y = 50 + Math.sin(angle) * currentRadius;
+                polygon += `${x}% ${y}%, `;
+            }
+            
+            move.style.clipPath = `polygon(${polygon.slice(0, -2)})`;
+            
+            const colors = ['#ffeb3b', '#2196f3', '#4caf50', '#ff5252', '#ff9800', 'white', '#9c27b0', '#e91e63', '#00bcd4', '#795548', '#607d8b', '#f06292', '#ba68c8', '#7986cb', '#4dd0e1', '#81c784', '#fff176', '#ffb74d'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            move.style.setProperty('--bubble-color', randomColor);
+            
+            document.body.appendChild(move);
+            setTimeout(() => document.body.removeChild(move), 1000);
+        }
+
+        document.addEventListener('click', (e) => {
+            createDots(e.clientX, e.clientY);
+            createMove(e.clientX, e.clientY);
+        });
+    </script>
+</body>
+</html>
