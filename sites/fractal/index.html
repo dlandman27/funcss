@@ -185,6 +185,32 @@
             font-weight: 500;
             letter-spacing: 0.01em;
         }
+
+        .click-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 1.75rem;
+            color: #1e293b;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            z-index: 111111;
+        }
+
+        .dark-mode .click-overlay {
+            color: #f1f5f9;
+        }
     </style>
 </head>
 <body style="margin: 0; padding: 0;">
@@ -228,6 +254,7 @@
             <span id="directionText">🌙</span>
         </button>
     </div>
+    <div id="clickOverlay" class="click-overlay">Click anywhere to split</div>
     <div class="container split" id="root"></div>
 
     <script>
@@ -310,6 +337,12 @@
 
         function handleClick(e) {
             e.stopPropagation();
+            // Remove the overlay text on first click
+            const overlay = document.getElementById('clickOverlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 300);
+            }
             split(this);
         }
 
