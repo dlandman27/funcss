@@ -24,7 +24,7 @@
 
         .move {
             position: absolute;
-            font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+            font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Comic Neue', sans-serif;
             font-size: 72px;
             font-weight: bold;
             color: #ff0000;
@@ -60,20 +60,51 @@
                 transform: translate(-50%, -50%) scale(1);
             }
         }
+
+        #clickMe {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Comic Sans MS', cursive;
+            font-size: 48px;
+            font-weight: bolder;
+            color: #ff0000;
+            -webkit-text-stroke: 1px white;
+            text-shadow: 
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
     </style>
 </head>
 <body>
+    <div id="clickMe">CLICK THE SCREEN!</div>
     <script>
         const moves = [
             "POW!", "BAM!", "WHAM!", "KAPOW!", 
             "BOOM!", "ZAP!", "BIFF!", "CRASH!",
             "WALLOP!", "THWACK!", "SOCK!", "SLAM!",
             "SMASH!", "CRUNCH!", "WHACK!", "BONK!",
-            "BANG!", "CLANG!", "ZING!", "ZOWIE!",
+            "BANG!", "CLANG!", "ZOWIE!",
             "BOING!", "SPLAT!", "WHAMMO!", "ZONK!",
             "KA-POW!", "THUMP!", "CRACK!", "SWOOSH!",
             "BLAM!", "ZING!", "WHUMP!", "SLASH!",
-            "SLICE!", "CRACKLE!", "SNAP!", "POP!"
+            "SLICE!", "CRACKLE!", "SNAP!", "POP!",
+            "KA-BOOM!", "KA-BLAM!", "KA-CRASH!", "KABOOM!",
+            "KABLOOIE!", "KA-ZING!", "KRUNCH!", "OOOF!",
+            "OW!", "OUCH!", "POW-POW!", "RIP!",
+            "SHRED!", "SMACK!", "SQUISH!", "THUD!",
+            "VROOM!", "WHOMP!", "WOOP!", "YOW!",
+            "ZANG!", "ZOOM!", "ZOOP!", "ZWAP!"
         ];
 
         function createDots(x, y) {
@@ -136,6 +167,10 @@
         }
 
         document.addEventListener('click', (e) => {
+            const clickMe = document.getElementById('clickMe');
+            if (clickMe) {
+                clickMe.remove();
+            }
             createDots(e.clientX, e.clientY);
             createMove(e.clientX, e.clientY);
         });

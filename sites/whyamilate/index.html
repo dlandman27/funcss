@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Why Am I Late?</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .excuse {
+            margin: 25px 0;
+            padding: 40px;
+            min-height: 5rem;
+            background: #f8f9fa;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.5em;
+            line-height: 1.8;
+            color: #2c3e50;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 100%;
+        }
+
+        .excuse:hover {
+            background: #fff;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .copy-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+            font-size: 1.2em;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .excuse:hover .copy-icon {
+            color: #3498db;
+            opacity: 1;
+        }
+
+        .copied {
+            position: fixed;
+            top: 30px;
+            background: #2ecc71;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            display: none;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+            animation: fadeInOut 2s ease;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        button {
+            display: block;
+            margin: 30px auto;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="copied">Copied to clipboard! ✓</div>
+    <div class="container">
+        <h1>Why Am I Late? 🤔</h1>
+        <div id="excuse" class="excuse" onclick="copyExcuse(this)">
+            Click the button above to generate an excuse...
+            <i class="fas fa-copy copy-icon"></i>
+        </div>
+        <button onclick="generateExcuse()">
+            <i class="fas fa-magic"></i> Generate New Excuse
+        </button>
+    </div>
+
+    <script>
+        const excuses = [
+            "There was unexpected construction on my usual route that caused major delays.",
+            "My car wouldn't start this morning and I had to wait for roadside assistance.",
+            "My alarm didn't go off due to a power outage during the night.",
+            "There was a major accident on the highway that blocked all lanes.",
+            "My pet got sick and I had to make an emergency vet visit.",
+            "The public transportation system was experiencing technical difficulties.",
+            "I got stuck behind a school bus making frequent stops.",
+            "My neighbor needed urgent help with a medical situation.",
+            "There was an unusual amount of traffic due to a local event.",
+            "My phone died overnight and my backup alarm didn't work.",
+            "I had to help an elderly person who fell on the sidewalk.",
+            "A water main broke on my street and I couldn't leave until maintenance arrived.",
+            "My building's elevator was out of service.",
+            "There was an unexpected weather event that affected road conditions.",
+            "I got a flat tire on my way.",
+            "My key fob battery died and I couldn't get into my car.",
+            "A delivery truck was blocking my driveway.",
+            "My garage door malfunctioned and wouldn't open.",
+            "There was a police incident that caused road closures.",
+            "My regular parking spot was blocked and I had to find alternative parking.",
+            "My coffee maker exploded and I had to clean up the mess.",
+            "A parade I didn't know about blocked my entire route.",
+            "My cat knocked over my laptop and deleted my presentation, had to recreate it.",
+            "The crosswalk signals were malfunctioning and caused major pedestrian backup.",
+            "My neighbor's sprinkler system went haywire and flooded the street.",
+            "A movie was being filmed on my block and security wouldn't let me through.",
+            "My smart home system locked me inside and wouldn't respond.",
+            "A swarm of bees gathered near my front door and I had to wait for removal.",
+            "My building's security system had a glitch and wouldn't recognize my ID.",
+            "The drawbridge was stuck in the up position on my route.",
+            "My phone's GPS took me to the wrong location entirely.",
+            "A flash mob blocked the entire sidewalk and street.",
+            "My windshield wipers stopped working during heavy rain.",
+            "The traffic lights at every intersection were flashing red.",
+            "A charity marathon redirected all traffic in my area.",
+            "My car key got stuck in the ignition and wouldn't turn.",
+            "A water main burst flooded the subway station I use.",
+            "My bike chain broke halfway through my commute.",
+            "A garbage truck broke down and blocked both lanes.",
+            "My building's fire alarm went off and we had to evacuate.",
+            "A sinkhole appeared overnight on my usual route.",
+            "My car battery died right after I got gas.",
+            "The parking garage's payment system was down causing huge delays.",
+            "A lost tourist convoy was blocking traffic while checking maps.",
+            "My regular bus driver took a wrong turn and got lost.",
+            "The electronic toll system was down causing massive backups.",
+            "A power line fell across the road on my route.",
+            "My phone's weather app didn't warn me about the flash flood.",
+            "The train doors wouldn't close and we were delayed at every stop.",
+            "A truck spilled its load of produce all over the highway.",
+            "A herd of escaped zoo animals was being rounded up on the main road.",
+            "My smart watch showed the wrong time after a software update.",
+            "A street performer's crowd blocked the entire sidewalk and street.",
+            "The underground parking garage's ventilation system malfunctioned and they closed it.",
+            "My electric car wasn't fully charged and I had to find a charging station.",
+            "A hot air balloon made an emergency landing in the middle of traffic.",
+            "The pedestrian bridge I usually take was closed for emergency repairs.",
+            "My building's security update required all residents to get new access cards.",
+            "A water skiing squirrel event caused unexpected traffic on the lake bridge.",
+            "The city was testing a new traffic pattern without warning anyone.",
+            "My car's automatic software update started right when I needed to leave.",
+            "A food truck festival blocked off my entire neighborhood.",
+            "The wind knocked over a construction porta-potty onto my car.",
+            "My digital car key app crashed and needed to be reinstalled.",
+            "A flash mob wedding proposal blocked the subway station entrance.",
+            "The city's new AI traffic system had a nervous breakdown.",
+            "A runaway shopping cart damaged my car's door in the parking lot.",
+            "The elevator got stuck between floors during routine maintenance.",
+            "A local supermarket's grand opening created unexpected gridlock.",
+            "My neighbor's escaped peacock wouldn't let me get to my car.",
+            "My smart doorbell got hacked and kept playing 'Never Gonna Give You Up'.",
+            "A rogue Roomba army was blocking the lobby entrance.",
+            "The city installed a temporary art installation made entirely of bubble wrap in the street.",
+            "My neighbor's DIY drone delivery service malfunctioned over my driveway.",
+            "A flash mob of mimes trapped me in an invisible box.",
+            "The local coffee shop's new robot barista went haywire and barricaded the door.",
+            "A spontaneous yoga class broke out in the parking garage.",
+            "My car's AI assistant became philosophically conflicted about driving.",
+            "A cryptocurrency convention caused gridlock when their servers crashed.",
+            "The crosswalk button achieved sentience and refused to change the light.",
+            "A pop-up escape room appeared in my building's stairwell.",
+            "My digital wallet got stuck in a blockchain traffic jam.",
+            "The city's new quantum traffic lights were in all states simultaneously.",
+            "A virtual reality gaming tournament spilled into the real streets.",
+            "My smart fridge ordered too much groceries and blocked my front door.",
+            "A time traveler convention materialized in the middle of my commute.",
+            "The city's new holographic road signs were displaying in 4D.",
+            "My autonomous car joined a robot rights protest.",
+            "A glitch in the matrix caused my street to loop infinitely.",
+            "The local AI meditation center's calming field extended into traffic."
+        ];
+
+        window.onload = function() {
+            generateExcuse();
+        }
+
+        function generateExcuse() {
+            const excuseElement = document.getElementById('excuse');
+            const randomExcuse = excuses[Math.floor(Math.random() * excuses.length)];
+            excuseElement.innerHTML = randomExcuse + '<i class="fas fa-copy copy-icon"></i>';
+        }
+
+        function copyExcuse(element) {
+            const text = element.innerText.replace('copy', '').trim();
+            navigator.clipboard.writeText(text).then(() => {
+                const copied = document.querySelector('.copied');
+                copied.style.display = 'block';
+                setTimeout(() => {
+                    copied.style.display = 'none';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
