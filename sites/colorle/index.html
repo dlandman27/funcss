@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Colorle - Color Guessing Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #1a1a1a;
+            margin: 0;
+            padding: 20px;
+            color: #ffffff;
+        }
+
+        .target-color {
+            width: 200px;
+            height: 200px;
+            border-radius: 10px;
+            margin: 20px;
+            box-shadow: 0 4px 16px rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .guess-form {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            gap: 10px;
+            margin: 20px;
+        }
+
+        input {
+            padding: 12px;
+            border: 2px solid #333;
+            border-radius: 6px;
+            width: 80px;
+            text-align: center;
+            background: #2a2a2a;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+            background: #333;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.2);
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        button:hover::after {
+            left: 100%;
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #4CAF50;
+        }
+
+        button:focus:not(:focus-visible) {
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        button:focus-visible {
+            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #4CAF50;
+        }
+
+        .color-value {
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-family: monospace;
+            min-width: 70px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .instructions {
+            max-width: 600px;
+            text-align: center;
+            margin: 20px;
+            line-height: 1.6;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .guess {
+            display: grid;
+            grid-template-columns: auto repeat(3, 1fr);
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .guess-number {
+            color: #999;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 0 10px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .color-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .color-label {
+            color: #999;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* Red input styling */
+        #redGuess {
+            border-color: #333;
+        }
+        #redGuess:hover {
+            border-color: rgba(255, 80, 80, 0.5);
+        }
+        #redGuess:focus {
+            border-color: #ff5050;
+            box-shadow: 0 0 0 2px rgba(255, 80, 80, 0.3);
+            background: #333;
+        }
+
+        /* Green input styling */
+        #greenGuess {
+            border-color: #333;
+        }
+        #greenGuess:hover {
+            border-color: rgba(80, 255, 80, 0.5);
+        }
+        #greenGuess:focus {
+            border-color: #50ff50;
+            box-shadow: 0 0 0 2px rgba(80, 255, 80, 0.3);
+            background: #333;
+        }
+
+        /* Blue input styling */
+        #blueGuess {
+            border-color: #333;
+        }
+        #blueGuess:hover {
+            border-color: rgba(80, 80, 255, 0.5);
+        }
+        #blueGuess:focus {
+            border-color: #5050ff;
+            box-shadow: 0 0 0 2px rgba(80, 80, 255, 0.3);
+            background: #333;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: var(--color);
+            clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%);
+            animation: confetti 2s ease-out forwards;
+            z-index: 1000;
+        }
+
+        .winner {
+            animation: celebrate 0.5s ease-in-out;
+        }
+
+        .rainbow-text {
+            background: linear-gradient(
+                to right,
+                #ff0000,
+                #ff8000,
+                #ffff00,
+                #00ff00,
+                #00ffff,
+                #0000ff,
+                #8000ff,
+                #ff0080
+            );
+            background-size: 200% auto;
+            color: transparent;
+            background-clip: text;
+            -webkit-background-clip: text;
+            animation: rainbow 2s linear infinite;
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            text-shadow: none;
+        }
+
+        .modal-overlay {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .modal {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+            z-index: 1001;
+            animation: modalPop 0.5s ease-out forwards;
+            max-width: 90%;
+            width: 400px;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Colorle</h1>
+    <div class="instructions">
+        Try to guess the RGB values of the color shown below. Enter values between 0-255 for each channel.
+        The background of each guess will be greener the closer you are to the target value.
+    </div>
+    <div id="targetColor" class="target-color"></div>
+    
+    <div class="guess-form">
+        <input type="number" id="redGuess" min="0" max="255" placeholder="Red" onkeydown="handleInput(event, 'redGuess', 'greenGuess')">
+        <input type="number" id="greenGuess" min="0" max="255" placeholder="Green" onkeydown="handleInput(event, 'greenGuess', 'blueGuess')">
+        <input type="number" id="blueGuess" min="0" max="255" placeholder="Blue" onkeydown="handleInput(event, 'blueGuess', null)">
+        <button onclick="makeGuess()">Guess</button>
+    </div>
+
+    <div id="guesses" class="guesses"></div>
+
+    <script>
+        let targetRed, targetGreen, targetBlue;
+        let guessCount = 0;
+
+        function generateRandomColor() {
+            // Get today's date and create a seed
+            const today = new Date();
+            const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+            
+            // Simple seeded random number generator
+            const seededRandom = function() {
+                let t = seed + 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+
+            // Generate the same value for all RGB channels using the seeded random function
+            targetRed = Math.floor(seededRandom() * 256);
+            targetGreen = Math.floor(seededRandom() * 128);
+            targetBlue = Math.floor(seededRandom() * 192);
+            
+            document.getElementById('targetColor').style.backgroundColor = 
+                `rgb(${targetRed},${targetGreen},${targetBlue})`;
+        }
+
+        function calculateAccuracy(guess, target) {
+            const diff = Math.abs(guess - target);
+            return diff / 255;
+        }
+
+        function handleInput(event, currentId, nextId) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent form submission
+                const currentInput = document.getElementById(currentId);
+                const currentValue = parseInt(currentInput.value);
+                
+                // Validate current input
+                if (isNaN(currentValue) || currentValue < 0 || currentValue > 255) {
+                    alert('Please enter a valid number between 0 and 255');
+                    currentInput.focus();
+                    currentInput.select();
+                    return;
+                }
+
+                // Move to next input or submit
+                if (nextId) {
+                    const nextInput = document.getElementById(nextId);
+                    nextInput.focus();
+                    nextInput.select();
+                } else {
+                    makeGuess();
+                    // Reset focus to first input after guess
+                    document.getElementById('redGuess').focus();
+                    document.getElementById('redGuess').select();
+                }
+            }
+        }
+
+        function makeGuess() {
+            const redGuess = parseInt(document.getElementById('redGuess').value);
+            const greenGuess = parseInt(document.getElementById('greenGuess').value);
+            const blueGuess = parseInt(document.getElementById('blueGuess').value);
+
+            if (isNaN(redGuess) || isNaN(greenGuess) || isNaN(blueGuess) ||
+                redGuess < 0 || redGuess > 255 ||
+                greenGuess < 0 || greenGuess > 255 ||
+                blueGuess < 0 || blueGuess > 255) {
+                alert('Please enter valid RGB values (0-255)');
+                return;
+            }
+
+            guessCount++;
+            const guessDiv = document.createElement('div');
+            guessDiv.className = 'guess';
+
+            const numberDiv = document.createElement('div');
+            numberDiv.className = 'guess-number';
+            numberDiv.textContent = `#${guessCount}`;
+            guessDiv.appendChild(numberDiv);
+
+            const values = [
+                {label: 'R', value: redGuess, target: targetRed},
+                {label: 'G', value: greenGuess, target: targetGreen},
+                {label: 'B', value: blueGuess, target: targetBlue}
+            ];
+
+            values.forEach(({label, value, target}) => {
+                const difference = calculateAccuracy(value, target);
+                const columnDiv = document.createElement('div');
+                columnDiv.className = 'color-column';
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'color-label';
+                labelDiv.textContent = label;
+
+                const valueDiv = document.createElement('div');
+                valueDiv.className = 'color-value';
+                
+                const hue = 120 * (1 - difference);
+                valueDiv.style.backgroundColor = `hsl(${hue}, 80%, 40%)`;
+                
+                const arrow = value < target ? '↑' : value > target ? '↓' : '✓';
+                valueDiv.textContent = `${value} ${arrow}`;
+                
+                columnDiv.appendChild(labelDiv);
+                columnDiv.appendChild(valueDiv);
+                guessDiv.appendChild(columnDiv);
+            });
+
+            document.getElementById('guesses').prepend(guessDiv);
+
+            document.getElementById('redGuess').value = '';
+            document.getElementById('greenGuess').value = '';
+            document.getElementById('blueGuess').value = '';
+
+            if (redGuess === targetRed && greenGuess === targetGreen && blueGuess === targetBlue) {
+                // Save that user has played today
+                localStorage.setItem('lastPlayDate', new Date().toDateString());
+                localStorage.setItem('playedToday', 'true');
+                
+                // Small delay to show the last guess before the modal
+                setTimeout(() => {
+                    showWinModal(guessCount);
+                }, 300);
+                return;
+            }
+
+            // After clearing inputs, focus and select the red input
+            const redInput = document.getElementById('redGuess');
+            redInput.focus();
+            redInput.select();
+        }
+
+        function createConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.setProperty('--color', colors[Math.floor(Math.random() * colors.length)]);
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.top = -10 + 'px';
+                    document.body.appendChild(confetti);
+                    
+                    // Remove confetti after animation
+                    setTimeout(() => confetti.remove(), 2000);
+                }, i * 20);
+            }
+        }
+
+        function showWinModal(guessCount) {
+            const modalHtml = `
+                <div class="modal-overlay" id="winModal">
+                    <div class="modal">
+                        <h2>Congratulations!</h2>
+                        <p>You found today's color in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}!</p>
+                        <p>Come back tomorrow for a new color!</p>
+                        <button onclick="closeModal()">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            createConfetti();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('winModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                setTimeout(() => modal.remove(), 300);
+            }
+        }
+
+        // Initialize game
+        generateRandomColor();
+    </script>
+</body>
+</html>
