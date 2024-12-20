@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0a0a2a;
+            color: white;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        h1 {
+            font-size: 150px;
+            margin: 0;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 4px 4px 0px rgba(255,255,255,0.1);
+            animation: float 6s ease-in-out infinite, glitch 5s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: none; opacity: 1; }
+            7% { transform: skew(-0.5deg, -0.9deg); opacity: 0.75; }
+            10% { transform: none; opacity: 1; }
+            27% { transform: none; opacity: 1; }
+            30% { transform: skew(0.8deg, -0.1deg); opacity: 0.75; }
+            35% { transform: none; opacity: 1; }
+            52% { transform: none; opacity: 1; }
+            55% { transform: skew(-1deg, 0.2deg); opacity: 0.75; }
+            50% { transform: none; opacity: 1; }
+            100% { transform: none; opacity: 1; }
+        }
+
+        p {
+            font-size: 24px;
+            color: #a0a0ff;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(160,160,255,0.5);
+        }
+
+        .astronaut {
+            font-size: 120px;
+            animation: float-astronaut 20s linear infinite;
+            display: inline-block;
+            margin: 20px;
+            position: relative;
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
+        }
+
+        @keyframes float-astronaut {
+            0% { transform: rotate(0deg) translateX(-50px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(-50px) rotate(-360deg); }
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) linear infinite;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .home-btn {
+            padding: 15px 30px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .home-btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #4ecdc4, #ff6b6b);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s;
+        }
+
+        .home-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .home-btn:hover:before {
+            opacity: 1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="container">
+        <h1>404</h1>
+        <div class="astronaut">👨‍🚀</div>
+        <p>Houston, we have a problem...<br>This page seems to be lost in space!</p>
+        <a href="/" class="home-btn">Return to Earth 🌍</a>
+    </div>
+
+    <script>
+        // Create dynamic stars
+        const starsContainer = document.getElementById('stars');
+        for(let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.setProperty('--duration', `${2 + Math.random() * 3}s`);
+            starsContainer.appendChild(star);
+        }
+
+        // Enhanced 3D mouse movement effect
+        document.addEventListener('mousemove', (e) => {
+            const astronaut = document.querySelector('.astronaut');
+            const container = document.querySelector('.container');
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+            
+            astronaut.style.transform = `rotate(${xAxis}deg) translateY(${yAxis}px) translateX(${-xAxis}px)`;
+            container.style.transform = `rotateY(${xAxis/2}deg) rotateX(${-yAxis/2}deg)`;
+        });
+    </script>
+</body>
+</html>
