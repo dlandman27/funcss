@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- @index.html -->
+    <!-- @description Track how many times you've visited this page -->
+    <!-- @author Random Sites On The Web -->
+
+    <!-- Add metadata -->
+    <meta name="description" content="Track how many times you've visited this page">
+    <meta name="keywords" content="visit counter, page visits, web analytics, visit tracker">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='5' y='5' width='40' height='40' rx='5' fill='%234CAF50'/><text x='25' y='32' font-family='Arial' font-size='20' fill='%23fff' text-anchor='middle'>📊</text></svg>">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/howmanytimeswasihere/">
+    <meta property="og:title" content="How Many Times Was I Here? - Visit Counter">
+    <meta property="og:description" content="Track how many times you've visited this page">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/howmanytimeswasihere/">
+    <meta property="twitter:title" content="How Many Times Was I Here? - Visit Counter">
+    <meta property="twitter:description" content="Track how many times you've visited this page">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+    <title>How Many Times Was I Here?</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 80%;
+            width: 500px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .visit-count {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .message {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            opacity: 0.9;
+        }
+
+        button {
+            background: #4CAF50;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Visit Counter</h1>
+        <div class="visit-count" id="visitCount">1</div>
+        <p class="message" id="message">This is your first time here!</p>
+        <!-- <button onclick="resetCount()">Reset Count</button> -->
+    </div>
+
+    <script>
+        function getVisitCount() {
+            return parseInt(localStorage.getItem('visitCount')) || 0;
+        }
+
+        function updateVisitCount() {
+            let count = getVisitCount() + 1;
+            localStorage.setItem('visitCount', count);
+            
+            const countElement = document.getElementById('visitCount');
+            const messageElement = document.getElementById('message');
+            
+            countElement.textContent = count;
+            
+            if (count === 1) {
+                messageElement.textContent = "This is your first time here!";
+            } else if (count === 2) {
+                messageElement.textContent = "Welcome back for the second time!";
+            } else if (count === 10) {
+                messageElement.textContent = "Wow! 10 visits! You must really like it here!";
+            } else if (count === 50) {
+                messageElement.textContent = "50 visits! You're practically family now!";
+            } else if (count === 100) {
+                messageElement.textContent = "100 visits! You deserve a medal! 🏅";
+            } else {
+                messageElement.textContent = `You've been here ${count} times!`;
+            }
+        }
+
+        function resetCount() {
+            localStorage.removeItem('visitCount');
+            updateVisitCount();
+        }
+
+        // Update count when page loads
+        updateVisitCount();
+    </script>
+</body>
+</html>
