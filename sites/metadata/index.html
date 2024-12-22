@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Metadata - RSONW</title>
+    <meta name="description" content="View all available metadata about your device and browser">
+    <meta name="keywords" content="device metadata, browser info, user agent, platform details">
+    <meta name="author" content="Random Sites On The Web">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/metadata/">
+    <meta property="og:title" content="Device Metadata - Browser & System Info">
+    <meta property="og:description" content="View all available metadata about your device and browser">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/metadata/">
+    <meta property="twitter:title" content="Device Metadata - Browser & System Info">
+    <meta property="twitter:description" content="View all available metadata about your device and browser">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Helvetica Neue', sans-serif;
+            background: #FAFAFA;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+
+        .metadata-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .metadata-label {
+            font-weight: bold;
+            color: #6c757d;
+        }
+
+        .metadata-value {
+            margin-left: 10px;
+            word-break: break-all;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .section {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>About My Device</h1>
+    <div class="container" id="metadata-container"></div>
+
+    <style>
+        .container { padding: 20px; }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .data-item {
+            margin: 5px 0;
+            padding: 5px;
+        }
+    </style>
+
+    <script>
+    async function gatherMetadata() {
+        const sections = {
+            browser: {
+                title: "Browser Information",
+                data: {
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    languages: navigator.languages?.join(', '),
+                    cookieEnabled: navigator.cookieEnabled,
+                    doNotTrack: navigator.doNotTrack,
+                    plugins: Array.from(navigator.plugins).map(p => p.name).join(', '),
+                    mimeTypes: Array.from(navigator.mimeTypes).map(m => m.type).join(', '),
+                    vendor: navigator.vendor,
+                    platform: navigator.platform,
+                    javaEnabled: navigator.javaEnabled(),
+                    pdfViewerEnabled: navigator.pdfViewerEnabled,
+                    webdriver: navigator.webdriver,
+                }
+            },
+            screen: {
+                title: "Screen & Window",
+                data: {
+                    screenResolution: `${screen.width}x${screen.height}`,
+                    screenColorDepth: `${screen.colorDepth}-bit`,
+                    screenOrientation: screen.orientation?.type,
+                    windowSize: `${window.innerWidth}x${window.innerHeight}`,
+                    devicePixelRatio: window.devicePixelRatio,
+                    screenAvailSize: `${screen.availWidth}x${screen.availHeight}`,
+                }
+            },
+            system: {
+                title: "System Information",
+                data: {
+                    platform: navigator.userAgentData?.platform,
+                    cores: navigator.hardwareConcurrency,
+                    deviceMemory: `${navigator.deviceMemory || 'Unknown'} GB`,
+                    maxTouchPoints: navigator.maxTouchPoints,
+                    oscpu: navigator.oscpu,
+                }
+            },
+            network: {
+                title: "Network Information",
+                data: {
+                    onlineStatus: navigator.onLine,
+                    connectionType: navigator.connection?.effectiveType,
+                    downlinkSpeed: navigator.connection?.downlink,
+                    rtt: navigator.connection?.rtt,
+                    saveData: navigator.connection?.saveData,
+                }
+            },
+            graphics: {
+                title: "Graphics Information",
+                data: await getGraphicsInfo()
+            },
+            media: {
+                title: "Media Capabilities",
+                data: await getMediaCapabilities()
+            },
+            storage: {
+                title: "Storage Information",
+                data: await getStorageInfo()
+            },
+            sensors: {
+                title: "Device Sensors",
+                data: {
+                    accelerometer: 'Accelerometer' in window,
+                    gyroscope: 'Gyroscope' in window,
+                    magnetometer: 'Magnetometer' in window,
+                    ambient: 'AmbientLightSensor' in window,
+                    proximity: 'ProximitySensor' in window,
+                }
+            },
+            time: {
+                title: "Time & Location",
+                data: {
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    timeformat: Intl.DateTimeFormat().resolvedOptions().locale,
+                    geolocation: 'geolocation' in navigator,
+                }
+            },
+            features: {
+                title: "Browser Features & APIs",
+                data: await getFeatureSupport()
+            },
+            performance: {
+                title: "Performance Data",
+                data: {
+                    memory: performance.memory ? {
+                        jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
+                        totalJSHeapSize: performance.memory.totalJSHeapSize,
+                        usedJSHeapSize: performance.memory.usedJSHeapSize
+                    } : 'Not available',
+                    timing: performance.timing ? {
+                        navigationStart: performance.timing.navigationStart,
+                        loadEventEnd: performance.timing.loadEventEnd
+                    } : 'Not available'
+                }
+            },
+            fonts: {
+                title: "Font Information",
+                data: await getFontData()
+            },
+            rendering: {
+                title: "Rendering Capabilities",
+                data: {
+                    requestAnimationFrame: 'requestAnimationFrame' in window,
+                    webAnimations: 'animate' in Element.prototype,
+                    canvas2D: '2d' in document.createElement('canvas').getContext('2d'),
+                    webGL2: !!document.createElement('canvas').getContext('webgl2'),
+                    colorGamut: getColorGamut(),
+                    contrast: matchMedia('(prefers-contrast: high)').matches ? 'high' : 'normal',
+                    reducedMotion: matchMedia('(prefers-reduced-motion)').matches,
+                    hdr: matchMedia('(dynamic-range: high)').matches
+                }
+            },
+            inputDevices: {
+                title: "Input Capabilities",
+                data: {
+                    pointer: matchMedia('(pointer: fine)').matches ? 'fine' : 'coarse',
+                    hover: matchMedia('(hover: hover)').matches ? 'can hover' : 'no hover',
+                    maxTouchPoints: navigator.maxTouchPoints,
+                    gamepad: 'getGamepads' in navigator,
+                    virtualKeyboard: 'virtualKeyboard' in navigator,
+                    keyboard: 'keyboard' in navigator
+                }
+            },
+            powerPreferences: {
+                title: "Power & Battery",
+                data: {
+                    batteryManager: 'getBattery' in navigator,
+                    powerPreference: getSystemPowerPreference(),
+                    saveData: navigator.connection?.saveData || 'unknown'
+                }
+            }
+        };
+
+        displayMetadata(sections);
+    }
+
+    async function getGraphicsInfo() {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        
+        return {
+            webglVendor: gl?.getParameter(gl.VENDOR),
+            webglRenderer: gl?.getParameter(gl.RENDERER),
+            webglVersion: gl?.getParameter(gl.VERSION),
+            webglShading: gl?.getParameter(gl.SHADING_LANGUAGE_VERSION),
+            maxTextureSize: gl?.getParameter(gl.MAX_TEXTURE_SIZE),
+            maxRenderbufferSize: gl?.getParameter(gl.MAX_RENDERBUFFER_SIZE),
+            extensions: gl?.getSupportedExtensions().join(', '),
+        };
+    }
+
+    async function getMediaCapabilities() {
+        const videoCodecs = ['h264', 'vp8', 'vp9', 'av1'];
+        const audioCodecs = ['aac', 'opus', 'vorbis'];
+        const codecs = {};
+
+        for (const video of videoCodecs) {
+            codecs[`video_${video}`] = await testCodec('video', video);
+        }
+        for (const audio of audioCodecs) {
+            codecs[`audio_${audio}`] = await testCodec('audio', audio);
+        }
+
+        return {
+            ...codecs,
+            audioContext: 'AudioContext' in window,
+            webAudioAPI: 'AudioContext' in window,
+            mediaRecorder: 'MediaRecorder' in window,
+            mediaDevices: 'mediaDevices' in navigator,
+        };
+    }
+
+    async function getStorageInfo() {
+        const estimate = await navigator.storage?.estimate() || {};
+        return {
+            quota: estimate.quota,
+            usage: estimate.usage,
+            persistent: navigator.persistentStorage !== undefined,
+            localStorage: 'localStorage' in window,
+            sessionStorage: 'sessionStorage' in window,
+            indexedDB: 'indexedDB' in window,
+        };
+    }
+
+    async function getFeatureSupport() {
+        return {
+            webRTC: 'RTCPeerConnection' in window,
+            webGL: 'WebGLRenderingContext' in window,
+            webVR: 'getVRDisplays' in navigator,
+            webXR: 'xr' in navigator,
+            bluetooth: 'bluetooth' in navigator,
+            usb: 'usb' in navigator,
+            serial: 'serial' in navigator,
+            nfc: 'nfc' in navigator,
+            battery: 'getBattery' in navigator,
+            credentials: 'credentials' in navigator,
+            permissions: 'permissions' in navigator,
+            presentation: 'presentation' in navigator,
+            speechSynthesis: 'speechSynthesis' in window,
+            speechRecognition: 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window,
+            payment: 'PaymentRequest' in window,
+            bluetooth: 'bluetooth' in navigator,
+            clipboard: 'clipboard' in navigator,
+            share: 'share' in navigator,
+            serviceWorker: 'serviceWorker' in navigator,
+        };
+    }
+
+    async function testCodec(type, codec) {
+        const config = {
+            video: type === 'video' ? {contentType: `video/${codec}`} : undefined,
+            audio: type === 'audio' ? {contentType: `audio/${codec}`} : undefined
+        };
+        try {
+            return await MediaRecorder.isTypeSupported(`${type}/${codec}`);
+        } catch {
+            return false;
+        }
+    }
+
+    async function getFontData() {
+        if (!document.fonts || !document.fonts.check) return 'Font API not supported';
+        
+        const commonFonts = [
+            'Arial', 'Times New Roman', 'Courier New', 'Helvetica',
+            'Calibri', 'Verdana', 'Georgia', 'Palatino',
+            'Garamond', 'Bookman', 'Comic Sans MS', 'Trebuchet MS'
+        ];
+
+        const fontData = {};
+        for (const font of commonFonts) {
+            fontData[font] = await document.fonts.check(`12px "${font}"`);
+        }
+        return fontData;
+    }
+
+    function getColorGamut() {
+        const gamuts = ['srgb', 'p3', 'rec2020'];
+        for (const gamut of gamuts) {
+            if (matchMedia(`(color-gamut: ${gamut})`).matches) {
+                return gamut;
+            }
+        }
+        return 'unknown';
+    }
+
+    function getSystemPowerPreference() {
+        if (matchMedia('(prefers-reduced-data: reduce)').matches) return 'reduced-data';
+        if (matchMedia('(prefers-reduced-transparency: reduce)').matches) return 'reduced-transparency';
+        return 'no-preference';
+    }
+
+    function displayMetadata(sections) {
+        const container = document.getElementById('metadata-container');
+        container.innerHTML = Object.entries(sections)
+            .map(([key, section]) => `
+                <div class="section">
+                    <h2>${section.title}</h2>
+                    ${Object.entries(section.data)
+                        .map(([key, value]) => `
+                            <div class="data-item">
+                                <strong>${key}:</strong> ${value}
+                            </div>
+                        `).join('')}
+                </div>
+            `).join('');
+    }
+
+    // Initialize
+    gatherMetadata();
+    </script>
+</body>
+</html>

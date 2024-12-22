@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalStorage Terminal</title>
+    <style>
+        body {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #terminal {
+            width: 100%;
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+            background: #000;
+            padding: 20px;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        #input-line {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        #prompt {
+            color: #00ff00;
+            margin-right: 10px;
+        }
+
+        #command-input {
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 16px;
+            flex-grow: 1;
+            outline: none;
+        }
+
+        .output-line {
+            margin: 5px 0;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal">
+        <div class="output-line">Welcome to LocalStorage Terminal v1.0</div>
+        <div class="output-line">Type 'help' for available commands</div>
+        <div id="output"></div>
+        <div id="input-line">
+            <span id="prompt">user@localhost:~$</span>
+            <input type="text" id="command-input" autofocus>
+        </div>
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const output = document.getElementById('output');
+        const input = document.getElementById('command-input');
+        let currentDir = '/';
+        const MAX_STORAGE = 5 * 1024 * 1024; // 5MB limit
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        // Always focus input on click anywhere
+        document.addEventListener('click', () => {
+            input.focus();
+        });
+
+        // Focus input when any key is pressed
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    input.value = commandHistory[commandHistory.length - 1 - historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    input.value = commandHistory[commandHistory.length - 1 - historyIndex];
+                } else if (historyIndex === 0) {
+                    historyIndex = -1;
+                    input.value = '';
+                }
+            } else {
+                input.focus();
+            }
+        });
+
+        const fileSystem = {
+            '/': {
+                type: 'directory',
+                contents: {}
+            }
+        };
+
+        // Load existing data from localStorage
+        try {
+            const savedFS = localStorage.getItem('fileSystem');
+            if (savedFS) {
+                Object.assign(fileSystem, JSON.parse(savedFS));
+            }
+        } catch (e) {
+            console.error('Error loading filesystem:', e);
+        }
+
+        function saveFS() {
+            try {
+                localStorage.setItem('fileSystem', JSON.stringify(fileSystem));
+            } catch (e) {
+                printLine('Error: Storage quota exceeded!', 'error');
+            }
+        }
+
+        function printLine(text, className = '') {
+            const line = document.createElement('div');
+            line.className = `output-line ${className}`;
+            line.textContent = text;
+            output.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function normalizePath(path) {
+            // Handle . and ..
+            const parts = path.split('/').filter(p => p);
+            const stack = [];
+            
+            for (const part of parts) {
+                if (part === '.') continue;
+                if (part === '..') {
+                    if (stack.length) stack.pop();
+                    continue;
+                }
+                stack.push(part);
+            }
+            
+            return '/' + stack.join('/');
+        }
+
+        function getPath(path) {
+            if (path.startsWith('/')) return normalizePath(path);
+            return normalizePath(currentDir + '/' + path);
+        }
+
+        function getDirectoryFromPath(path) {
+            path = normalizePath(path);
+            if (path === '/') return fileSystem['/'];
+            
+            let current = fileSystem['/'];
+            const parts = path.split('/').filter(p => p);
+            
+            for (const part of parts) {
+                if (!current.contents[part] || current.contents[part].type !== 'directory') {
+                    return null;
+                }
+                current = current.contents[part];
+            }
+            return current;
+        }
+
+        const commands = {
+            help: () => {
+                printLine('Available commands:');
+                printLine('  ls - List directory contents');
+                printLine('  cd <dir> - Change directory (use .. to go up, . for current)');
+                printLine('  mkdir <name> - Create directory');
+                printLine('  touch <name> - Create file');
+                printLine('  rm <name> - Remove file or directory');
+                printLine('  sudo rm <name> - Force remove directory and contents');
+                printLine('  cat <file> - Display file contents');
+                printLine('  echo "<text>" > <file> - Write text to file');
+                printLine('  pwd - Print working directory');
+                printLine('  clear - Clear terminal');
+                printLine('  df - Show storage usage');
+                printLine('  !! - Repeat last command');
+            },
+
+            ls: () => {
+                const dir = getDirectoryFromPath(currentDir);
+                if (!dir) return printLine('Directory not found', 'error');
+                
+                if (currentDir !== '/') {
+                    printLine('d ..');
+                }
+                printLine('d .');
+                
+                Object.entries(dir.contents).forEach(([name, item]) => {
+                    const prefix = item.type === 'directory' ? 'd ' : '- ';
+                    printLine(prefix + name);
+                });
+            },
+
+            cd: (args) => {
+                if (!args[0]) {
+                    currentDir = '/';
+                    return;
+                }
+
+                const newPath = getPath(args[0]);
+                const dir = getDirectoryFromPath(newPath);
+                
+                if (!dir) {
+                    printLine('Directory not found', 'error');
+                    return;
+                }
+                currentDir = newPath;
+            },
+
+            mkdir: (args) => {
+                if (!args[0]) return printLine('Please specify directory name', 'error');
+                
+                const path = getPath(args[0]);
+                const parentPath = path.substring(0, path.lastIndexOf('/'));
+                const name = path.substring(path.lastIndexOf('/') + 1);
+                
+                const parentDir = getDirectoryFromPath(parentPath);
+                if (!parentDir) return printLine('Invalid path', 'error');
+                
+                parentDir.contents[name] = {
+                    type: 'directory',
+                    contents: {}
+                };
+                saveFS();
+            },
+
+            touch: (args) => {
+                if (!args[0]) return printLine('Please specify file name', 'error');
+                
+                const path = getPath(args[0]);
+                const parentPath = path.substring(0, path.lastIndexOf('/'));
+                const name = path.substring(path.lastIndexOf('/') + 1);
+                
+                const parentDir = getDirectoryFromPath(parentPath);
+                if (!parentDir) return printLine('Invalid path', 'error');
+                
+                parentDir.contents[name] = {
+                    type: 'file',
+                    content: ''
+                };
+                saveFS();
+            },
+
+            rm: (args) => {
+                if (!args[0]) return printLine('Please specify name', 'error');
+                
+                const path = getPath(args[0]);
+                const parentPath = path.substring(0, path.lastIndexOf('/'));
+                const name = path.substring(path.lastIndexOf('/') + 1);
+                
+                const parentDir = getDirectoryFromPath(parentPath);
+                if (!parentDir) return printLine('Invalid path', 'error');
+                
+                if (parentDir.contents[name]) {
+                    // Check if trying to delete a non-empty directory
+                    if (parentDir.contents[name].type === 'directory' && 
+                        Object.keys(parentDir.contents[name].contents).length > 0) {
+                        printLine('Cannot remove directory: Directory not empty', 'error');
+                        return;
+                    }
+                    delete parentDir.contents[name];
+                    saveFS();
+                } else {
+                    printLine('File or directory not found', 'error');
+                }
+            },
+
+            sudo: (args) => {
+                if (args[0] === '!!') {
+                    if (!lastCommand) {
+                        printLine('No previous command to execute', 'error');
+                        return;
+                    }
+                    const [lastCmd, ...lastArgs] = lastCommand.split(' ');
+                    if (lastCmd === 'sudo') {
+                        commands.sudo(lastArgs);
+                    } else {
+                        commands.sudo([lastCmd, ...lastArgs]);
+                    }
+                    return;
+                }
+
+                if (args[0] === 'rm') {
+                    if (!args[1]) return printLine('Please specify name', 'error');
+                    
+                    const path = getPath(args[1]);
+                    const parentPath = path.substring(0, path.lastIndexOf('/'));
+                    const name = path.substring(path.lastIndexOf('/') + 1);
+                    
+                    const parentDir = getDirectoryFromPath(parentPath);
+                    if (!parentDir) return printLine('Invalid path', 'error');
+                    
+                    if (parentDir.contents[name]) {
+                        delete parentDir.contents[name];
+                        saveFS();
+                    } else {
+                        printLine('File or directory not found', 'error');
+                    }
+                } else {
+                    printLine('Unknown sudo command', 'error');
+                }
+            },
+
+            cat: (args) => {
+                if (!args[0]) return printLine('Please specify file name', 'error');
+                
+                const path = getPath(args[0]);
+                const parentPath = path.substring(0, path.lastIndexOf('/'));
+                const name = path.substring(path.lastIndexOf('/') + 1);
+                
+                const parentDir = getDirectoryFromPath(parentPath);
+                if (!parentDir) return printLine('Invalid path', 'error');
+                
+                const file = parentDir.contents[name];
+                if (!file || file.type !== 'file') {
+                    printLine('File not found', 'error');
+                    return;
+                }
+                
+                printLine(file.content);
+            },
+
+            echo: (args) => {
+                // Join all args except the last 2 (> and filename) to handle spaces in text
+                if (args.length < 3) {
+                    printLine('Usage: echo "text" > file', 'error');
+                    return;
+                }
+
+                const redirectIndex = args.indexOf('>');
+                if (redirectIndex === -1 || redirectIndex === args.length - 1) {
+                    printLine('Usage: echo "text" > file', 'error');
+                    return;
+                }
+
+                const text = args.slice(0, redirectIndex).join(' ').replace(/^"/, '').replace(/"$/, '');
+                const filename = args[redirectIndex + 1];
+                
+                const path = getPath(filename);
+                const parentPath = path.substring(0, path.lastIndexOf('/'));
+                const name = path.substring(path.lastIndexOf('/') + 1);
+                
+                const parentDir = getDirectoryFromPath(parentPath);
+                if (!parentDir) return printLine('Invalid path', 'error');
+                
+                parentDir.contents[name] = {
+                    type: 'file',
+                    content: text
+                };
+                saveFS();
+            },
+
+            pwd: () => {
+                printLine(currentDir);
+            },
+
+            clear: () => {
+                output.innerHTML = '';
+            },
+
+            df: () => {
+                const used = new TextEncoder().encode(JSON.stringify(fileSystem)).length;
+                const available = MAX_STORAGE - used;
+                printLine(`Storage usage:`);
+                printLine(`Total: ${MAX_STORAGE} bytes`);
+                printLine(`Used: ${used} bytes`);
+                printLine(`Available: ${available} bytes`);
+            }
+        };
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const cmdLine = input.value.trim();
+                printLine(document.getElementById('prompt').textContent + ' ' + cmdLine);
+                
+                let [cmd, ...args] = cmdLine.split(' ');
+
+                if (cmd === '!!') {
+                    if (!lastCommand) {
+                        printLine('No previous command to execute', 'error');
+                        input.value = '';
+                        return;
+                    }
+                    [cmd, ...args] = lastCommand.split(' ');
+                } else {
+                    if (cmd && cmd !== '!!') {
+                        lastCommand = cmdLine;
+                        commandHistory.push(cmdLine);
+                    }
+                }
+                
+                if (commands[cmd]) {
+                    commands[cmd](args);
+                } else if (cmd) {
+                    printLine(`Command not found: ${cmd}`, 'error');
+                }
+                
+                historyIndex = -1;
+                input.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
