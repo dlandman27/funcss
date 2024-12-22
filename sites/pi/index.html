@@ -13,6 +13,12 @@
     <meta name="theme-color" content="#0a0a1f">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
         body {
             font-family: 'Orbitron', sans-serif;
@@ -28,7 +34,8 @@
         }
         .chart-container {
             margin: 40px auto;
-            width: 800px;
+            width: 100%;
+            max-width: 800px;
             height: 400px;
             background: rgba(255,255,255,0.05);
             border-radius: 15px;
@@ -60,12 +67,14 @@
             transform: translateY(0);
         }
         .slider-container {
-            margin: 40px auto;
-            width: 800px;
+            margin: 20px auto 40px auto;
+            width: 100%;
+            max-width: 800px;
             text-align: center;
-            background: rgba(255,255,255,0.05);
-            padding: 20px;
+            background: rgba(255,255,255,0.08);
+            padding: 25px;
             border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
         }
         #interval-slider {
             width: 100%;
@@ -76,11 +85,12 @@
             border-radius: 20px;
             overflow: hidden;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            cursor: pointer;
         }
         #interval-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 25px;
-            height: 25px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             background: #fff;
             cursor: pointer;
@@ -88,15 +98,33 @@
             box-shadow: 0 0 15px rgba(0,188,212,0.8);
             transition: all 0.3s ease;
         }
-        #interval-slider::-webkit-slider-thumb:hover {
+        #interval-slider::-moz-range-thumb {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 4px solid #00bcd4;
+            box-shadow: 0 0 15px rgba(0,188,212,0.8);
+            transition: all 0.3s ease;
+        }
+        #interval-slider::-webkit-slider-thumb:hover,
+        #interval-slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(0,188,212,0.9);
+        }
+        #interval-slider:active::-webkit-slider-thumb,
+        #interval-slider:active::-moz-range-thumb {
             transform: scale(1.1);
+            background: #00bcd4;
         }
         #interval-value {
             text-align: center;
             font-size: 1.4em;
-            margin: 20px 0;
+            margin-bottom: 20px;
             color: #00bcd4;
             text-shadow: 0 0 10px rgba(0,188,212,0.5);
+            font-weight: bold;
         }
         h1 {
             color: #00bcd4;
@@ -113,16 +141,113 @@
         .axis line {
             stroke: rgba(255,255,255,0.3);
         }
+        .explanation {
+            max-width: 800px;
+            margin: 0 auto 30px auto;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            line-height: 1.6;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            font-size: 16px;
+        }
+        
+        .explanation p {
+            margin: 10px 0;
+            font-size: 0.95em;
+        }
+        
+        .explanation p:first-child {
+            color: #00bcd4;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                font-size: 16px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .chart-container {
+                height: 300px;
+                padding: 10px;
+                margin: 20px auto;
+            }
+
+            .slider-container {
+                padding: 15px;
+                margin: 15px auto;
+            }
+
+            .explanation {
+                padding: 15px;
+                font-size: 14px;
+                margin: 15px auto;
+            }
+
+            .explanation p {
+                margin: 8px 0;
+            }
+
+            .bar-label {
+                font-size: 12px;
+            }
+
+            .axis text {
+                font-size: 12px;
+            }
+
+            #interval-value {
+                font-size: 1.2em;
+                margin-bottom: 15px;
+            }
+
+            #interval-slider {
+                height: 15px;
+            }
+
+            #interval-slider::-webkit-slider-thumb,
+            #interval-slider::-moz-range-thumb {
+                width: 25px;
+                height: 25px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
     </style>
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
     <h1>Digit Distribution in π</h1>
-    <div class="slider-container">
-        <input type="range" id="interval-slider" min="100" max="100000" step="100" value="1000">
-        <div id="interval-value">1,000 digits</div>
+    
+    <div class="explanation">
+        <p>This visualization shows how frequently each digit (0-9) appears in the first N digits of π.</p>
+        <p>In a truly random sequence, each digit would appear approximately 10% of the time. 
+           While π is not random (it's a mathematical constant), its digits appear to be uniformly distributed, 
+           meaning each digit shows up roughly the same number of times as you examine more digits.</p>
+        <p>Use the slider below to explore how the distribution changes as you include more digits in the analysis.</p>
     </div>
+
     <div id="chart-container" class="chart-container"></div>
+    
+    <div class="slider-container">
+        <div id="interval-value">1,000 digits</div>
+        <input type="range" id="interval-slider" min="100" max="1000000" step="100" value="1000">
+    </div>
 
     <script>
         let digits = '';
@@ -164,20 +289,33 @@
             document.getElementById('interval-value').textContent = interval.toLocaleString() + ' digits';
             
             const digitCounts = countDigits(digits, interval);
+            const total = digitCounts.reduce((a, b) => a + b, 0);
 
             // Clear previous chart
             d3.select('#chart-container').html('');
 
-            // Set up chart dimensions
-            const margin = {top: 30, right: 30, bottom: 40, left: 50};
-            const width = 800 - margin.left - margin.right;
-            const height = 400 - margin.top - margin.bottom;
+            // Make chart responsive
+            const containerWidth = document.getElementById('chart-container').clientWidth;
+            const containerHeight = document.getElementById('chart-container').clientHeight;
 
-            // Create SVG
+            // Update margins for smaller screens
+            const margin = {
+                top: containerHeight * 0.075,
+                right: containerWidth * 0.05,
+                bottom: containerHeight * 0.1,
+                left: containerWidth * 0.1
+            };
+
+            const width = containerWidth - margin.left - margin.right;
+            const height = containerHeight - margin.top - margin.bottom;
+
+            // Create SVG with responsive dimensions
             const svg = d3.select('#chart-container')
                 .append('svg')
-                .attr('width', width + margin.left + margin.right)
-                .attr('height', height + margin.top + margin.bottom)
+                .attr('width', '100%')
+                .attr('height', '100%')
+                .attr('viewBox', `0 0 ${containerWidth} ${containerHeight}`)
+                .attr('preserveAspectRatio', 'xMidYMid meet')
                 .append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
@@ -234,12 +372,12 @@
                 .attr('y', height)
                 .attr('height', 0);
 
-            // Add labels for each bar
+            // Add labels for each bar with count and percentage
             bars.append('text')
                 .attr('class', 'bar-label')
                 .attr('x', (d, i) => x(i) + x.bandwidth() / 2)
                 .attr('y', d => y(d) - 10)
-                .text(d => d);
+                .text(d => `${d} (${(d/total * 100).toFixed(1)}%)`);
 
             // Update bar transitions
             bars.select('.bar').transition()
@@ -263,6 +401,22 @@
         slider.addEventListener('input', updateChart);
         
         fetchPiDigits();
+
+        // Add window resize handler
+        window.addEventListener('resize', debounce(updateChart, 250));
+
+        // Debounce function to prevent too many resize events
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
     </script>
 </body>
 </html>
