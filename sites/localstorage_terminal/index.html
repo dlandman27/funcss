@@ -89,6 +89,10 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        #file-input {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -108,6 +112,7 @@
             </div>
         </div>
     </div>
+    <input type="file" id="file-input" accept=".json">
 
     <script>
         const terminal = document.getElementById('terminal');
@@ -116,6 +121,7 @@
         const editor = document.getElementById('editor');
         const editorContent = document.getElementById('editor-content');
         const editorFile = document.getElementById('editor-file');
+        const fileInput = document.getElementById('file-input');
         let currentDir = '/';
         const MAX_STORAGE = 5 * 1024 * 1024; // 5MB limit
         let commandHistory = [];
@@ -128,8 +134,15 @@
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
                 saveCurrentFile();
+                closeEditor(); // Add this line to close editor after saving
             } else if (e.key === 'Escape') {
                 closeEditor();
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editorContent.selectionStart;
+                const end = editorContent.selectionEnd;
+                editorContent.value = editorContent.value.substring(0, start) + '\t' + editorContent.value.substring(end);
+                editorContent.selectionStart = editorContent.selectionEnd = start + 1;
             }
         });
 
@@ -299,6 +312,13 @@
                 printLine('  clear/cls - Clear terminal');
                 printLine('  df - Show storage usage');
                 printLine('  !! - Repeat last command');
+                printLine('  ifconfig/ipconfig - Show network information');
+                printLine('  date - Show current date and time');
+                printLine('  whoami - Show current user');
+                printLine('  hostname - Show system hostname');
+                printLine('  uname - Show system information');
+                printLine('  export - Export filesystem to downloadable file');
+                printLine('  import - Import filesystem from file');
             },
 
             ls: () => {
@@ -499,8 +519,78 @@
                 printLine(`Total: ${MAX_STORAGE} bytes`);
                 printLine(`Used: ${used} bytes`);
                 printLine(`Available: ${available} bytes`);
+            },
+
+            ifconfig: () => {
+                printLine('eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500');
+                printLine('        inet 192.168.1.100  netmask 255.255.255.0  broadcast 192.168.1.255');
+                printLine('        inet6 fe80::1234:5678:9abc:def0  prefixlen 64  scopeid 0x20<link>');
+                printLine('        ether 00:11:22:33:44:55  txqueuelen 1000  (Ethernet)');
+            },
+
+            ipconfig: () => {
+                commands.ifconfig();
+            },
+
+            date: () => {
+                printLine(new Date().toString());
+            },
+
+            whoami: () => {
+                printLine('user');
+            },
+
+            hostname: () => {
+                printLine('localhost');
+            },
+
+            uname: () => {
+                printLine('WebOS 1.0 LocalStorage Terminal x86_64');
+            },
+
+            export: () => {
+                const data = JSON.stringify(fileSystem, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'filesystem.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                printLine('Filesystem exported successfully');
+            },
+
+            import: () => {
+                fileInput.click();
             }
         };
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedFS = JSON.parse(event.target.result);
+                    
+                    // Validate the structure
+                    if (!importedFS['/'] || importedFS['/'].type !== 'directory' || !importedFS['/'].contents) {
+                        throw new Error('Invalid filesystem structure');
+                    }
+                    
+                    Object.assign(fileSystem, importedFS);
+                    saveFS();
+                    printLine('Filesystem imported successfully');
+                } catch (error) {
+                    printLine('Error importing filesystem: Invalid format', 'error');
+                }
+            };
+            reader.readAsText(file);
+            fileInput.value = ''; // Reset file input
+        });
 
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
