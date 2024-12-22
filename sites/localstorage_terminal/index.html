@@ -21,6 +21,7 @@
             padding: 20px;
             border-radius: 5px;
             box-sizing: border-box;
+            position: relative;
         }
 
         #input-line {
@@ -52,6 +53,42 @@
         .error {
             color: #ff0000;
         }
+
+        #editor {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background: #1e1e1e;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        #editor-content {
+            width: 100%;
+            height: calc(100% - 40px);
+            background: #000;
+            color: #00ff00;
+            border: none;
+            font-family: monospace;
+            padding: 10px;
+            resize: none;
+            outline: none;
+        }
+
+        #editor-status {
+            height: 30px;
+            padding: 5px;
+            color: #00ff00;
+            font-family: monospace;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -63,24 +100,98 @@
             <span id="prompt">user@localhost:~$</span>
             <input type="text" id="command-input" autofocus>
         </div>
+        <div id="editor">
+            <textarea id="editor-content"></textarea>
+            <div id="editor-status">
+                <span id="editor-file"></span>
+                <span>Ctrl+S to save, Esc to exit</span>
+            </div>
+        </div>
     </div>
 
     <script>
         const terminal = document.getElementById('terminal');
         const output = document.getElementById('output');
         const input = document.getElementById('command-input');
+        const editor = document.getElementById('editor');
+        const editorContent = document.getElementById('editor-content');
+        const editorFile = document.getElementById('editor-file');
         let currentDir = '/';
         const MAX_STORAGE = 5 * 1024 * 1024; // 5MB limit
         let commandHistory = [];
         let historyIndex = -1;
+        let lastCommand;
+        let currentEditingFile = null;
+
+        // Editor event handlers
+        editorContent.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveCurrentFile();
+            } else if (e.key === 'Escape') {
+                closeEditor();
+            }
+        });
+
+        function saveCurrentFile() {
+            if (!currentEditingFile) return;
+            
+            const path = getPath(currentEditingFile);
+            const parentPath = path.substring(0, path.lastIndexOf('/'));
+            const name = path.substring(path.lastIndexOf('/') + 1);
+            
+            const parentDir = getDirectoryFromPath(parentPath);
+            if (!parentDir) return;
+            
+            parentDir.contents[name] = {
+                type: 'file',
+                content: editorContent.value
+            };
+            saveFS();
+            printLine(`Saved ${currentEditingFile}`);
+        }
+
+        function closeEditor() {
+            editor.style.display = 'none';
+            currentEditingFile = null;
+            input.focus();
+        }
+
+        function openEditor(filename) {
+            const path = getPath(filename);
+            const parentPath = path.substring(0, path.lastIndexOf('/'));
+            const name = path.substring(path.lastIndexOf('/') + 1);
+            
+            const parentDir = getDirectoryFromPath(parentPath);
+            if (!parentDir) return printLine('Invalid path', 'error');
+            
+            const file = parentDir.contents[name];
+            if (!file) {
+                parentDir.contents[name] = {
+                    type: 'file',
+                    content: ''
+                };
+                saveFS();
+            }
+            
+            currentEditingFile = filename;
+            editorContent.value = file ? file.content : '';
+            editorFile.textContent = filename;
+            editor.style.display = 'block';
+            editorContent.focus();
+        }
 
         // Always focus input on click anywhere
-        document.addEventListener('click', () => {
-            input.focus();
+        document.addEventListener('click', (e) => {
+            if (!editor.contains(e.target)) {
+                input.focus();
+            }
         });
 
         // Focus input when any key is pressed
         document.addEventListener('keydown', (e) => {
+            if (editor.style.display === 'block') return;
+            
             if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (historyIndex < commandHistory.length - 1) {
@@ -183,8 +294,9 @@
                 printLine('  sudo rm <name> - Force remove directory and contents');
                 printLine('  cat <file> - Display file contents');
                 printLine('  echo "<text>" > <file> - Write text to file');
+                printLine('  edit <file> - Open text editor');
                 printLine('  pwd - Print working directory');
-                printLine('  clear - Clear terminal');
+                printLine('  clear/cls - Clear terminal');
                 printLine('  df - Show storage usage');
                 printLine('  !! - Repeat last command');
             },
@@ -252,6 +364,11 @@
                     content: ''
                 };
                 saveFS();
+            },
+
+            edit: (args) => {
+                if (!args[0]) return printLine('Please specify file name', 'error');
+                openEditor(args[0]);
             },
 
             rm: (args) => {
@@ -368,6 +485,10 @@
             },
 
             clear: () => {
+                output.innerHTML = '';
+            },
+
+            cls: () => {
                 output.innerHTML = '';
             },
 
