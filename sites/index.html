@@ -14,6 +14,51 @@
             background: #f5f5f5;
         }
 
+        .search-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        #search {
+            width: 80%;
+            max-width: 400px;
+            padding: 10px 15px;
+            border: 2px solid #2c3e50;
+            border-radius: 20px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        #search:focus {
+            border-color: #3498db;
+        }
+
+        .category-title {
+            margin: 40px 0 20px 0;
+            color: #2c3e50;
+            text-align: center;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .category-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 25%;
+            width: 50%;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .educational::after { background-color: #3498db; }
+        .fun::after { background-color: #e74c3c; }
+        .tools::after { background-color: #2ecc71; }
+        .games::after { background-color: #9b59b6; }
+        .entertainment::after { background-color: #f1c40f; }
+        .development::after { background-color: #1abc9c; }
+
         .site-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -24,184 +69,417 @@
         .site-card {
             background: white;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+
+        .site-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
         }
 
         .site-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+            border-color: #3498db;
+        }
+
+        .site-card:hover::before {
+            transform: translateX(100%);
         }
 
         .site-card h2 {
             margin: 0 0 10px 0;
             color: #2c3e50;
+            font-size: 1.4em;
+            position: relative;
+            padding-bottom: 8px;
+        }
+
+        .site-card h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .site-card:hover h2::after {
+            width: 100%;
         }
 
         .site-card a {
             text-decoration: none;
             color: inherit;
+            display: block;
+            height: 100%;
+        }
+
+        .site-card p {
+            color: #666;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+
+        .category {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+            padding: 4px 8px;
+            border-radius: 15px;
+            background: #f8f9fa;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+
+        .site-card:hover .category {
+            background: #e9ecef;
         }
 
         h1 {
             text-align: center;
             color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Educational */
+        .educational ~ .site-grid .site-card:hover {
+            border-color: #3498db;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Fun */
+        .fun ~ .site-grid .site-card:hover {
+            border-color: #e74c3c;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(231, 76, 60, 0.2);
+        }
+
+        /* Tools */
+        .tools ~ .site-grid .site-card:hover {
+            border-color: #2ecc71;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(46, 204, 113, 0.2);
+        }
+
+        /* Games */
+        .games ~ .site-grid .site-card:hover {
+            border-color: #9b59b6;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(155, 89, 182, 0.2);
+        }
+
+        /* Entertainment */
+        .entertainment ~ .site-grid .site-card:hover {
+            border-color: #f1c40f;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(241, 196, 15, 0.2);
+        }
+
+        /* Development */
+        .development ~ .site-grid .site-card:hover {
+            border-color: #1abc9c;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(26, 188, 156, 0.2);
+        }
+
+        /* Educational */
+        .educational ~ .site-grid .site-card h2::after {
+            background: #3498db;
+        }
+
+        /* Fun */
+        .fun ~ .site-grid .site-card h2::after {
+            background: #e74c3c;
+        }
+
+        /* Tools */
+        .tools ~ .site-grid .site-card h2::after {
+            background: #2ecc71;
+        }
+
+        /* Games */
+        .games ~ .site-grid .site-card h2::after {
+            background: #9b59b6;
+        }
+
+        /* Entertainment */
+        .entertainment ~ .site-grid .site-card h2::after {
+            background: #f1c40f;
+        }
+
+        /* Development */
+        .development ~ .site-grid .site-card h2::after {
+            background: #1abc9c;
         }
     </style>
 </head>
 <body>
     <h1>My Websites</h1>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <a href="/" style="color: #2c3e50; text-decoration: none; font-size: 0.9em;">← Back to Home</a>
+    </div>
+    
+    <div class="search-container">
+        <input type="text" id="search" placeholder="Search websites...">
+    </div>
+
+    <!-- Educational Section -->
+    <h2 class="category-title educational">Educational</h2>
     <div class="site-grid">
-        <div class="site-card">
+        <div class="site-card" data-categories="educational mathematics">
             <a href="pi/">
                 <h2>Pi Visualizer</h2>
                 <p>Explore the digits of pi in a visual way</p>
+                <div class="category">Educational • Mathematics</div>
             </a>
         </div>
-        <div class="site-card">
-            <a href="checkboxgrid/">
-                <h2>Checkbox Grid</h2>
-                <p>Interactive grid of checkboxes</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="drips/">
-                <h2>Drips</h2>
-                <p>Watch digital water drip down your screen</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="infinitetictactoe/">
-                <h2>Infinite Tic Tac Toe</h2>
-                <p>Play tic tac toe without boundaries</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="nameashape/">
-                <h2>Name a Shape</h2>
-                <p>Learn about geometric shapes</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="randomphotos/">
-                <h2>Random Photos</h2>
-                <p>View randomly selected photos</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="randommazegenerator/">
-                <h2>Random Maze Generator</h2>
-                <p>Generate and solve random mazes</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="randomcolor/">
-                <h2>Random Color</h2>
-                <p>Generate a random color</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="eyesonme/">
-                <h2>Eyes on Me</h2>
-                <p>Use your imagination on this one!</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="shakespeareinsultmaker/">
-                <h2>Shakespeare Insult Maker</h2>
-                <p>Generate Shakespearean-style insults</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="writemeastory/">
-                <h2>Write Me a Story</h2>
-                <p>Interactive story writing experience</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="fractal/">
-                <h2>Tailwind CSS Fractal</h2>
-                <p>Interactive color scheme visualization</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="dvd/">
-                <h2>DVD Bounce</h2>
-                <p>Watch the DVD logo bounce around the screen</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="comicmoves/">
-                <h2>Comic Move Attacks</h2>
-                <p>Click anywhere to unleash epic comic book action effects!</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="whyamilate/">
-                <h2>Why am I Late?</h2>
-                <p>Generate creative excuses for being late</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="colorle/">
-                <h2>Colorle</h2>
-                <p>Daily color guessing game</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="magic8ball/">
-                <h2>Magic 8 Ball</h2>
-                <p>Ask the mystical 8 ball your questions</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="coolloaders/">
-                <h2>Cool (and Uncool) Loaders</h2>
-                <p>A collection of loading animations</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="unmotivationalquotes/">
-                <h2>Unmotivational Quotes</h2>
-                <p>Your daily dose of disappointment</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="visitcounter/">
-                <h2>Visit Counter</h2>
-                <p>Track how many times you've visited this page</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="hobbyfinder/">
-                <h2>Epic Hobby Finder</h2>
-                <p>Swipe to discover your next favorite hobby</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="dontpressthebutton/">
-                <h2>Don't Press The Button</h2>
-                <p>A button that should not be pressed under any circumstances</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="whatsmyresolution/">
-                <h2>What's My Resolution?</h2>
-                <p>Find out your screen resolution and device specs</p>
-            </a>
-        </div>
-        <div class="site-card">
-            <a href="metadata/">
-                <h2>About My Device</h2>
-                <p>View all available metadata about your device and browser</p>
-            </a>
-        </div>
-        <div class="site-card">
+        <div class="site-card" data-categories="educational development">
             <a href="localstorage-terminal/">
                 <h2>LocalStorage Terminal</h2>
                 <p>A terminal emulator that uses localStorage as a virtual filesystem</p>
+                <div class="category">Educational • Development</div>
             </a>
         </div>
     </div>
+
+    <!-- Fun Section -->
+    <h2 class="category-title fun">Fun & Interactive</h2>
+    <div class="site-grid">
+        <div class="site-card" data-categories="fun interactive">
+            <a href="nameashape/">
+                <h2>Name a Shape</h2>
+                <p>Draw and save geometric shapes as images</p>
+                <div class="category">Fun • Interactive Art</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="fun interactive">
+            <a href="writemeastory/">
+                <h2>Write Me a Story</h2>
+                <p>Interactive story writing experience</p>
+                <div class="category">Fun • Interactive</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="fun interactive">
+            <a href="checkboxgrid/">
+                <h2>Checkbox Grid</h2>
+                <p>Interactive grid of checkboxes</p>
+                <div class="category">Fun • Interactive Art</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="fun interactive">
+            <a href="eyesonme/">
+                <h2>Eyes on Me</h2>
+                <p>Use your imagination on this one!</p>
+                <div class="category">Fun • Interactive</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="fun effects">
+            <a href="comicmoves/">
+                <h2>Comic Move Attacks</h2>
+                <p>Click anywhere to unleash epic comic book action effects!</p>
+                <div class="category">Fun • Visual Effects</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="fun interactive">
+            <a href="dontpressthebutton/">
+                <h2>Don't Press The Button</h2>
+                <p>A button that should not be pressed under any circumstances</p>
+                <div class="category">Fun • Interactive</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="fun fortune">
+            <a href="magic8ball/">
+                <h2>Magic 8 Ball</h2>
+                <p>Ask the mystical 8 ball your questions</p>
+                <div class="category">Fun • Fortune Telling</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="fun interactive">
+            <a href="visitcounter/">
+                <h2>Visit Counter</h2>
+                <p>Track how many times you've visited this page</p>
+                <div class="category">Fun • Interactive</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tools Section -->
+    <h2 class="category-title tools">Tools</h2>
+    <div class="site-grid">
+        <div class="site-card" data-categories="tools design">
+            <a href="randomcolor/">
+                <h2>Random Color</h2>
+                <p>Generate a random color</p>
+                <div class="category">Tools • Design</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="tools gallery">
+            <a href="randomphotos/">
+                <h2>Random Photos</h2>
+                <p>View randomly selected photos</p>
+                <div class="category">Tools • Gallery</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="tools diagnostics">
+            <a href="whatsmyresolution/">
+                <h2>What's My Resolution?</h2>
+                <p>Find out your screen resolution and device specs</p>
+                <div class="category">Tools • Diagnostics</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="tools diagnostics">
+            <a href="metadata/">
+                <h2>About My Device</h2>
+                <p>View all available metadata about your device and browser</p>
+                <div class="category">Tools • Diagnostics</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Games Section -->
+    <h2 class="category-title games">Games</h2>
+    <div class="site-grid">
+        <div class="site-card" data-categories="games strategy">
+            <a href="infinitetictactoe/">
+                <h2>Infinite Tic Tac Toe</h2>
+                <p>Play tic tac toe without boundaries</p>
+                <div class="category">Games • Strategy</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="games design">
+            <a href="colorle/">
+                <h2>Colorle</h2>
+                <p>Daily color guessing game</p>
+                <div class="category">Games • Design</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Entertainment Section -->
+    <h2 class="category-title entertainment">Entertainment</h2>
+    <div class="site-grid">
+        <div class="site-card" data-categories="entertainment visual">
+            <a href="drips/">
+                <h2>Drips</h2>
+                <p>Watch digital water drip down your screen</p>
+                <div class="category">Visual Effects • Animation</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="entertainment gallery">
+            <a href="randomphotos/">
+                <h2>Random Photos</h2>
+                <p>View randomly selected photos</p>
+                <div class="category">Entertainment • Gallery</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="entertainment humor">
+            <a href="shakespeareinsultmaker/">
+                <h2>Shakespeare Insult Maker</h2>
+                <p>Generate Shakespearean-style insults</p>
+                <div class="category">Entertainment • Humor</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="entertainment nostalgia">
+            <a href="dvd/">
+                <h2>DVD Bounce</h2>
+                <p>Watch the DVD logo bounce around the screen</p>
+                <div class="category">Nostalgia • Entertainment</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="entertainment humor">
+            <a href="whyamilate/">
+                <h2>Why am I Late?</h2>
+                <p>Generate creative excuses for being late</p>
+                <div class="category">Humor • Entertainment</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="entertainment fortune">
+            <a href="magic8ball/">
+                <h2>Magic 8 Ball</h2>
+                <p>Ask the mystical 8 ball your questions</p>
+                <div class="category">Fun • Fortune Telling</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="entertainment humor">
+            <a href="unmotivationalquotes/">
+                <h2>Unmotivational Quotes</h2>
+                <p>Your daily dose of disappointment</p>
+                <div class="category">Humor • Entertainment</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Development Section -->
+    <h2 class="category-title development">Development</h2>
+    <div class="site-grid">
+        <div class="site-card" data-categories="development design">
+            <a href="fractal/">
+                <h2>Tailwind CSS Fractal</h2>
+                <p>Interactive color scheme visualization</p>
+                <div class="category">Design • Development</div>
+            </a>
+        </div>
+        <div class="site-card" data-categories="development design">
+            <a href="coolloaders/">
+                <h2>Cool (and Uncool) Loaders</h2>
+                <p>A collection of loading animations</p>
+                <div class="category">Design • Development</div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('search');
+        const siteCards = document.querySelectorAll('.site-card');
+
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            siteCards.forEach(card => {
+                const title = card.querySelector('h2').textContent.toLowerCase();
+                const description = card.querySelector('p').textContent.toLowerCase();
+                const categories = card.querySelector('.category').textContent.toLowerCase();
+                const dataCategories = card.dataset.categories.toLowerCase();
+                
+                if (title.includes(searchTerm) || 
+                    description.includes(searchTerm) || 
+                    categories.includes(searchTerm) ||
+                    dataCategories.includes(searchTerm)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            // Hide empty category sections
+            document.querySelectorAll('.category-title').forEach(title => {
+                const nextGrid = title.nextElementSibling;
+                const hasVisibleCards = Array.from(nextGrid.children).some(card => !card.classList.contains('hidden'));
+                title.style.display = hasVisibleCards ? 'block' : 'none';
+                nextGrid.style.display = hasVisibleCards ? 'grid' : 'none';
+            });
+        });
+    </script>
 </body>
 </html>
