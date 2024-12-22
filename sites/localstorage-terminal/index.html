@@ -118,7 +118,7 @@
         <div class="output-line">Welcome to LocalStorage Terminal v1.0</div>
         <div class="output-line">Type 'help' to see all available commands</div>
         <div class="output-line">Type 'about' to learn more about this project</div>
-        <!-- <div class="output-line">Type 'tutorial' to start an interactive tutorial</div> -->
+        <div class="output-line">Type 'tutorial' to start an interactive tutorial</div>
         <div id="output"></div>
         <div id="input-line">
             <span id="prompt">user@localhost:~$</span>
@@ -149,12 +149,13 @@
         let lastCommand;
         let currentEditingFile = null;
         let tutorialStep = 0;
+        let inTutorial = false;
 
         // Check if this is the first visit
         if (!localStorage.getItem('hasVisited')) {
             localStorage.setItem('hasVisited', 'true');
             printLine('\nWelcome to your first time using LocalStorage Terminal!');
-            // printLine('Type \'tutorial\' to start an interactive tutorial that will teach you the basics.\n');
+            printLine('Type \'tutorial\' to start an interactive tutorial that will teach you the basics.\n');
         }
 
         // Editor event handlers
@@ -326,6 +327,10 @@
 
         const commands = {
             help: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 printLine('Available commands:');
                 printLine('  ls - List directory contents');
                 printLine('  cd <dir> - Change directory (use .. to go up, . for current)');
@@ -353,17 +358,20 @@
 
             tutorial: () => {
                 tutorialStep = 1;
+                inTutorial = true;
+                currentDir = '/'; // Make sure we start at root directory
                 printLine('\n=== Welcome to the Interactive Terminal Tutorial! ===\n');
                 printLine('This tutorial will teach you the basics of using terminal commands.');
                 printLine('Follow the instructions and type the commands as shown.\n');
                 printLine('Let\'s start with a simple command:');
                 printLine('Type \'pwd\' to see your current directory location\n');
-                
-                // Set up tutorial checker
-                input.addEventListener('keypress', checkTutorial);
             },
 
             about: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 printLine('\nAbout LocalStorage Terminal:');
                 printLine('This is an educational web-based terminal emulator that simulates a Unix-like environment');
                 printLine('using your browser\'s localStorage as a virtual filesystem.\n');
@@ -386,7 +394,11 @@
                 printLine('Type \'help\' to see all available commands and get started!');
             },
 
-            ls: () => {
+            ls: (args) => {
+                if (inTutorial && tutorialStep !== 2 && tutorialStep !== 4 && tutorialStep !== 7) {
+                    printLine('Please follow the tutorial instructions!', 'error');
+                    return;
+                }
                 const dir = getDirectoryFromPath(currentDir);
                 if (!dir) return printLine('Directory not found', 'error');
                 
@@ -402,6 +414,10 @@
             },
 
             cd: (args) => {
+                if (inTutorial && tutorialStep !== 4 && tutorialStep !== 8) {
+                    printLine('Please follow the tutorial instructions!', 'error');
+                    return;
+                }
                 if (!args[0]) {
                     currentDir = '/';
                     return;
@@ -418,6 +434,10 @@
             },
 
             mkdir: (args) => {
+                if (inTutorial && tutorialStep !== 3) {
+                    printLine('Please follow the tutorial instructions!', 'error');
+                    return;
+                }
                 if (!args[0]) return printLine('Please specify directory name', 'error');
                 
                 const path = getPath(args[0]);
@@ -435,6 +455,10 @@
             },
 
             touch: (args) => {
+                if (inTutorial && tutorialStep !== 5) {
+                    printLine('Please follow the tutorial instructions!', 'error');
+                    return;
+                }
                 if (!args[0]) return printLine('Please specify file name', 'error');
                 
                 const path = getPath(args[0]);
@@ -452,11 +476,19 @@
             },
 
             edit: (args) => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 if (!args[0]) return printLine('Please specify file name', 'error');
                 openEditor(args[0]);
             },
 
             rm: (args) => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 if (!args[0]) return printLine('Please specify name', 'error');
                 
                 const path = getPath(args[0]);
@@ -481,6 +513,10 @@
             },
 
             sudo: (args) => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 if (args[0] === '!!') {
                     if (!lastCommand) {
                         printLine('No previous command to execute', 'error');
@@ -517,6 +553,10 @@
             },
 
             cat: (args) => {
+                if (inTutorial && tutorialStep !== 7) {
+                    printLine('Please follow the tutorial instructions!', 'error');
+                    return;
+                }
                 if (!args[0]) return printLine('Please specify file name', 'error');
                 
                 const path = getPath(args[0]);
@@ -536,6 +576,10 @@
             },
 
             echo: (args) => {
+                if (inTutorial && tutorialStep !== 6) {
+                    printLine('Please follow the tutorial instructions!', 'error');
+                    return;
+                }
                 // Join all args except the last 2 (> and filename) to handle spaces in text
                 if (args.length < 3) {
                     printLine('Usage: echo "text" > file', 'error');
@@ -566,18 +610,34 @@
             },
 
             pwd: () => {
+                if (inTutorial && tutorialStep !== 1) {
+                    printLine('Please follow the tutorial instructions!', 'error');
+                    return;
+                }
                 printLine(currentDir);
             },
 
             clear: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 output.innerHTML = '';
             },
 
             cls: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 output.innerHTML = '';
             },
 
             df: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 const used = new TextEncoder().encode(JSON.stringify(fileSystem)).length;
                 const available = MAX_STORAGE - used;
                 printLine(`Storage usage:`);
@@ -587,6 +647,10 @@
             },
 
             ifconfig: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 printLine('eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500');
                 printLine('        inet 192.168.1.100  netmask 255.255.255.0  broadcast 192.168.1.255');
                 printLine('        inet6 fe80::1234:5678:9abc:def0  prefixlen 64  scopeid 0x20<link>');
@@ -594,26 +658,50 @@
             },
 
             ipconfig: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 commands.ifconfig();
             },
 
             date: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 printLine(new Date().toString());
             },
 
             whoami: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 printLine('user');
             },
 
             hostname: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 printLine('localhost');
             },
 
             uname: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 printLine('WebOS 1.0 LocalStorage Terminal x86_64');
             },
 
             export: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 const data = JSON.stringify(fileSystem, null, 2);
                 const blob = new Blob([data], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -628,9 +716,126 @@
             },
 
             import: () => {
+                if (inTutorial) {
+                    printLine('Please complete the tutorial first!', 'error');
+                    return;
+                }
                 fileInput.click();
             }
         };
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const cmdLine = input.value.trim();
+                printLine(document.getElementById('prompt').textContent + ' ' + cmdLine);
+                
+                let [cmd, ...args] = cmdLine.split(' ');
+
+                if (cmd === '!!') {
+                    if (!lastCommand) {
+                        printLine('No previous command to execute', 'error');
+                        input.value = '';
+                        return;
+                    }
+                    [cmd, ...args] = lastCommand.split(' ');
+                } else {
+                    if (cmd && cmd !== '!!') {
+                        lastCommand = cmdLine;
+                        commandHistory.push(cmdLine);
+                    }
+                }
+                
+                if (commands[cmd]) {
+                    commands[cmd](args);
+                    
+                    // Handle tutorial progression
+                    if (inTutorial) {
+                        switch(tutorialStep) {
+                            case 1:
+                                if (cmd === 'pwd') {
+                                    tutorialStep = 2;
+                                    printLine('\nGreat! The pwd command shows your current directory. Directories are shown in the format of /path/to/directory, with the root directory shown as just /.');
+                                    printLine('Now, let\'s see what\'s in this directory.');
+                                    printLine('Type \'ls\' to list the contents\n');
+                                }
+                                break;
+                            case 2:
+                                if (cmd === 'ls') {
+                                    tutorialStep = 3;
+                                    printLine('\nExcellent! The ls command shows all files and directories in the current folder.');
+                                    printLine('Let\'s create a new directory.');
+                                    printLine('Type \'mkdir test\' to create a directory named "test"\n');
+                                }
+                                break;
+                            case 3:
+                                if (cmd === 'mkdir' && args[0] === 'test') {
+                                    tutorialStep = 4;
+                                    printLine('\nPerfect! You\'ve created a new directory.');
+                                    printLine('Now let\'s move into it.');
+                                    printLine('Type \'cd test\' to change into the test directory\n');
+                                }
+                                break;
+                            case 4:
+                                if (cmd === 'cd' && args[0] === 'test') {
+                                    tutorialStep = 5;
+                                    printLine('\nWell done! You\'ve changed directories.');
+                                    printLine('Let\'s create a file in this directory.');
+                                    printLine('Type \'touch hello.txt\' to create a new empty file\n');
+                                }
+                                break;
+                            case 5:
+                                if (cmd === 'touch' && args[0] === 'hello.txt') {
+                                    tutorialStep = 6;
+                                    printLine('\nExcellent! You\'ve created a new file.');
+                                    printLine('Let\'s add some content to it.');
+                                    printLine('Type \'echo "Hello, World!" > hello.txt\' to write text to the file\n');
+                                }
+                                break;
+                            case 6:
+                                if (cmd === 'echo' && args.includes('>') && args.includes('hello.txt')) {
+                                    tutorialStep = 7;
+                                    printLine('\nPerfect! Now let\'s read the contents of the file.');
+                                    printLine('Type \'cat hello.txt\' to display the file contents\n');
+                                }
+                                break;
+                            case 7:
+                                if (cmd === 'cat' && args[0] === 'hello.txt') {
+                                    tutorialStep = 8;
+                                    
+                                    printLine('Notice how the text "Hello, World!" is now in the file! You can also use the \'edit\' command');
+                                    printLine('to open files in a text editor right on the screen.\n');
+                                    printLine('Now let\'s go back up one level to return to the root directory.');
+                                    printLine('Type \'cd ..\' to move up one directory level\n');
+                                }
+                                break;
+                            case 8:
+                                if (cmd === 'cd' && args[0] === '..') {
+                                    tutorialStep = 0;
+                                    inTutorial = false;
+                                    printLine('\nCongratulations! You\'ve completed the basic tutorial!');
+                                    printLine('You\'ve learned how to:');
+                                    printLine('- Check your current directory (pwd)');
+                                    printLine('- List directory contents (ls)');
+                                    printLine('- Create directories (mkdir)');
+                                    printLine('- Change directories (cd)');
+                                    printLine('- Create files (touch)');
+                                    printLine('- Write to files (echo)');
+                                    printLine('- Read files (cat)');
+                                    printLine('- Navigate up directories (cd ..)\n');
+                                    printLine('Type \'help\' to see all available commands');
+                                    printLine('Happy exploring!\n');
+                                }
+                                break;
+                        }
+                    }
+                } else if (cmd) {
+                    printLine(`Command not found: ${cmd}`, 'error');
+                }
+                
+                historyIndex = -1;
+                input.value = '';
+            }
+        });
 
         function checkTutorial(e) {
             if (e.key !== 'Enter') return;
@@ -648,7 +853,7 @@
                     break;
                 case 2:
                     if (command === 'ls') {
-                        printLine('\nExcellent! The ls command shows all files and directories.');
+                        printLine('\nExcellent! The ls command shows all files and directories. You can see that there are no files yet, just the special . and .. directories.');
                         printLine('Let\'s create a new directory.');
                         printLine('Type \'mkdir test\' to create a directory named "test"\n');
                         tutorialStep = 3;
@@ -657,7 +862,7 @@
                 case 3:
                     if (command === 'mkdir test') {
                         printLine('\nPerfect! You\'ve created a new directory.');
-                        printLine('Now let\'s move into it.');
+                        printLine('Now let\'s move into this directory by changing our current working directory to "test".');
                         printLine('Type \'cd test\' to change into the test directory\n');
                         tutorialStep = 4;
                     }
@@ -728,38 +933,6 @@
             };
             reader.readAsText(file);
             fileInput.value = ''; // Reset file input
-        });
-
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const cmdLine = input.value.trim();
-                printLine(document.getElementById('prompt').textContent + ' ' + cmdLine);
-                
-                let [cmd, ...args] = cmdLine.split(' ');
-
-                if (cmd === '!!') {
-                    if (!lastCommand) {
-                        printLine('No previous command to execute', 'error');
-                        input.value = '';
-                        return;
-                    }
-                    [cmd, ...args] = lastCommand.split(' ');
-                } else {
-                    if (cmd && cmd !== '!!') {
-                        lastCommand = cmdLine;
-                        commandHistory.push(cmdLine);
-                    }
-                }
-                
-                if (commands[cmd]) {
-                    commands[cmd](args);
-                } else if (cmd) {
-                    printLine(`Command not found: ${cmd}`, 'error');
-                }
-                
-                historyIndex = -1;
-                input.value = '';
-            }
         });
     </script>
 </body>
