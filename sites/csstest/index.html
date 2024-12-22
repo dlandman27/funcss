@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editable CSS</title>
+    <style id="editable-styles">
+        body {
+            font-family: Arial, sans-serif;
+            background-color: lightblue;
+            color: darkblue;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 3em;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Editable CSS Block</h1>
+<p>Click on the style block below to edit the CSS live:</p>
+
+<!-- Editable CSS Block -->
+<div>
+    <p>Modify the CSS below:</p>
+    <pre id="css-editor" contenteditable="true" oninput="updateStyles(this.textContent)">
+body {
+    font-family: Arial, sans-serif;
+    background-color: lightblue;
+    color: darkblue;
+}
+
+h1 {
+    text-align: center;
+    font-size: 3em;
+}
+    </pre>
+    <div class="control-panel" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <button onclick="randomizeCSS()">Randomize CSS!</button>
+        <button onclick="addGlowEffect()">Glow Effects</button>
+        <button onclick="addGradientBackground()">Random Gradient</button>
+        <button onclick="addAnimation()">Animation</button>
+        <button onclick="addNeumorphism()">Neumorphic</button>
+        <button onclick="addGlassmorphism()">Glass Effect</button>
+        <button onclick="addRetroEffect()">Retro</button>
+        <button onclick="addCyberEffect()">Cyberpunk</button>
+        <button onclick="addMatrixEffect()">Matrix</button>
+        <button onclick="addRainbowText()">Rainbow Text</button>
+    </div>
+</div>
+
+<script>
+function updateStyles(css) {
+    const styleElement = document.getElementById('editable-styles');
+    styleElement.textContent = css;
+}
+
+function randomizeCSS() {
+    const colors = [
+        '#3498db', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6', 
+        '#1abc9c', '#e67e22', '#34495e', '#7f8c8d', '#16a085'
+    ];
+    
+    const fonts = [
+        'Arial', 'Helvetica', 'Georgia', 'Times New Roman', 
+        'Courier New', 'Verdana', 'Impact'
+    ];
+    
+    const randomColor = () => colors[Math.floor(Math.random() * colors.length)];
+    const randomFont = () => fonts[Math.floor(Math.random() * fonts.length)];
+    const randomSize = () => Math.floor(Math.random() * 10 + 20) + 'px';
+    const randomRotate = () => Math.floor(Math.random() * 6 - 3) + 'deg';
+    
+    const newCSS = `
+body {
+    font-family: ${randomFont()}, sans-serif;
+    background-color: ${randomColor()}33;
+    color: ${randomColor()};
+    transition: all 0.5s ease;
+}
+
+h1 {
+    text-align: center;
+    font-size: ${randomSize()};
+    color: ${randomColor()};
+    transform: rotate(${randomRotate()});
+    text-shadow: 2px 2px 4px ${randomColor()}66;
+    transition: all 0.5s ease;
+}
+
+#css-editor {
+    background-color: ${randomColor()}11;
+    border: 2px solid ${randomColor()};
+    padding: 20px;
+    border-radius: ${Math.random() * 20}px;
+    font-size: ${randomSize()};
+    transition: all 0.5s ease;
+}
+
+button {
+    background-color: ${randomColor()};
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: ${Math.random() * 20}px;
+    font-size: ${randomSize()};
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    transform: scale(1.1);
+    background-color: ${randomColor()};
+}
+    `.trim();
+    
+    const editor = document.getElementById('css-editor');
+    editor.textContent = newCSS;
+    updateStyles(newCSS);
+}
+
+function addGlowEffect() {
+    const color = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+    const newCSS = `
+body {
+    background-color: #1a1a1a;
+    color: white;
+}
+
+h1 {
+    text-align: center;
+    font-size: 3em;
+    color: ${color};
+    text-shadow: 0 0 10px ${color},
+                 0 0 20px ${color},
+                 0 0 30px ${color},
+                 0 0 40px ${color};
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 10px ${color},
+                     0 0 20px ${color},
+                     0 0 30px ${color};
+    }
+    to {
+        text-shadow: 0 0 20px ${color},
+                     0 0 30px ${color},
+                     0 0 40px ${color},
+                     0 0 50px ${color},
+                     0 0 60px ${color};
+    }
+}
+
+#css-editor {
+    background-color: #2a2a2a;
+    color: #fff;
+    border: 1px solid ${color};
+    box-shadow: 0 0 10px ${color};
+}
+
+button {
+    background-color: transparent;
+    color: ${color};
+    border: 2px solid ${color};
+    box-shadow: 0 0 10px ${color};
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: ${color};
+    color: #1a1a1a;
+    box-shadow: 0 0 20px ${color};
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+}
+
+function addGradientBackground() {
+    const color1 = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+    const color2 = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+    const angle = Math.floor(Math.random() * 360);
+    const newCSS = `
+body {
+    background: linear-gradient(${angle}deg, ${color1}, ${color2});
+    min-height: 100vh;
+    color: white;
+}
+
+h1 {
+    background: linear-gradient(90deg, ${color2}, ${color1});
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+}
+
+#css-editor {
+    background-color: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+button {
+    background: linear-gradient(45deg, ${color1}, ${color2});
+    border: none;
+    color: white;
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+}
+
+function addAnimation() {
+    const newCSS = `
+@keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes background-pan {
+    from { background-position: 0% center; }
+    to { background-position: -200% center; }
+}
+
+body {
+    background: linear-gradient(
+        90deg,
+        #ff6b6b,
+        #4ecdc4,
+        #45b7d1,
+        #ff6b6b
+    );
+    background-size: 200% 100%;
+    animation: background-pan 10s linear infinite;
+}
+
+h1 {
+    animation: float 3s ease-in-out infinite;
+}
+
+button {
+    transform-origin: center;
+    animation: float 3s ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * 0.1s);
+}
+
+#css-editor {
+    animation: float 4s ease-in-out infinite;
+    animation-delay: 0.5s;
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+    
+    // Add animation delay to buttons
+    document.querySelectorAll('button').forEach((btn, i) => {
+        btn.style.setProperty('--i', i);
+    });
+}
+
+function addNeumorphism() {
+    const newCSS = `
+body {
+    background-color: #e0e5ec;
+    color: #4a4a4a;
+}
+
+h1 {
+    color: #4a4a4a;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+#css-editor {
+    background: #e0e5ec;
+    box-shadow: 
+        9px 9px 16px rgb(163,177,198,0.6),
+        -9px -9px 16px rgba(255,255,255, 0.5);
+    border-radius: 10px;
+    border: none;
+}
+
+button {
+    background: #e0e5ec;
+    box-shadow: 
+        6px 6px 12px rgb(163,177,198,0.6),
+        -6px -6px 12px rgba(255,255,255, 0.5);
+    border: none;
+    color: #4a4a4a;
+}
+
+button:hover {
+    box-shadow: 
+        inset 6px 6px 12px rgb(163,177,198,0.6),
+        inset -6px -6px 12px rgba(255,255,255, 0.5);
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+}
+
+function addGlassmorphism() {
+    const newCSS = `
+body {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    min-height: 100vh;
+}
+
+h1 {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+#css-editor {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+button {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+}
+
+function addRetroEffect() {
+    const newCSS = `
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+    background-color: #000;
+    color: #0f0;
+    font-family: 'Press Start 2P', cursive;
+    text-shadow: 2px 2px #003300;
+    position: relative;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+}
+
+h1 {
+    color: #0f0;
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: flicker 0.5s infinite alternate;
+}
+
+@keyframes flicker {
+    0% { opacity: 1; }
+    25% { opacity: 0.9; }
+    50% { opacity: 1; }
+    75% { opacity: 0.9; }
+    100% { opacity: 1; }
+}
+
+#css-editor {
+    background-color: #001100;
+    border: 2px solid #0f0;
+    color: #0f0;
+    font-family: 'Courier New', monospace;
+    padding: 20px;
+}
+
+button {
+    background-color: #001100;
+    border: 2px solid #0f0;
+    color: #0f0;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0f0;
+    color: #000;
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+}
+
+function addCyberEffect() {
+    const newCSS = `
+body {
+    background-color: #0a0a2e;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        linear-gradient(90deg, #ff00ea 0%, #00ffff 100%),
+        url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+h1 {
+    color: #fff;
+    font-size: 28px;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-shadow: 
+        2px 2px #ff00ea,
+        -2px -2px #00ffff;
+    position: relative;
+}
+
+h1::before {
+    content: attr(data-text);
+    position: absolute;
+    left: -2px;
+    text-shadow: 2px 0 #ff00ea;
+    top: 0;
+    color: #fff;
+    background: #0a0a2e;
+    overflow: hidden;
+    clip: rect(0, 900px, 0, 0);
+    animation: glitch 2s infinite linear alternate-reverse;
+}
+
+@keyframes glitch {
+    0% {
+        clip: rect(44px, 900px, 56px, 0);
+    }
+    20% {
+        clip: rect(67px, 900px, 98px, 0);
+    }
+    40% {
+        clip: rect(32px, 900px, 54px, 0);
+    }
+    60% {
+        clip: rect(78px, 900px, 89px, 0);
+    }
+    80% {
+        clip: rect(23px, 900px, 45px, 0);
+    }
+    100% {
+        clip: rect(12px, 900px, 34px, 0);
+    }
+}
+
+#css-editor {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid #ff00ea;
+    box-shadow: 
+        0 0 10px #ff00ea,
+        inset 0 0 10px #00ffff;
+    color: #fff;
+}
+
+button {
+    background-color: transparent;
+    border: 1px solid #ff00ea;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 10px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: 0.5s;
+}
+
+button:hover::before {
+    left: 100%;
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+}
+
+function addMatrixEffect() {
+    const newCSS = `
+body {
+    background-color: #000;
+    color: #0f0;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    overflow: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        rgba(0, 255, 0, 0.1) 50%,
+        rgba(0, 0, 0, 0.1) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    animation: scan 1s linear infinite;
+}
+
+@keyframes scan {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
+}
+
+h1 {
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+    animation: matrix 2s infinite;
+}
+
+@keyframes matrix {
+    0% { text-shadow: 0 0 5px #0f0; }
+    50% { text-shadow: 0 0 20px #0f0; }
+    100% { text-shadow: 0 0 5px #0f0; }
+}
+
+#css-editor {
+    background-color: rgba(0, 255, 0, 0.1);
+    border: 1px solid #0f0;
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+}
+
+button {
+    background-color: transparent;
+    border: 1px solid #0f0;
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background-color: #0f0;
+    color: #000;
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+}
+
+function addRainbowText() {
+    const newCSS = `
+@keyframes rainbow {
+    0% { color: #ff0000; }
+    15% { color: #ff8000; }
+    30% { color: #ffff00; }
+    45% { color: #00ff00; }
+    60% { color: #00ffff; }
+    75% { color: #0000ff; }
+    90% { color: #8000ff; }
+    100% { color: #ff0000; }
+}
+
+body {
+    background-color: #111;
+    color: #fff;
+}
+
+h1 {
+    animation: rainbow 8s linear infinite;
+    font-size: 28px;
+    background: linear-gradient(
+        90deg,
+        #ff0000, #ff8000, #ffff00, #00ff00,
+        #00ffff, #0000ff, #8000ff, #ff0000
+    );
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: gradient 8s linear infinite;
+}
+
+@keyframes gradient {
+    to { background-position: 200% center; }
+}
+
+#css-editor {
+    background-color: #222;
+    border: 1px solid #444;
+    color: #fff;
+}
+
+button {
+    background: linear-gradient(
+        90deg,
+        #ff0000, #ff8000, #ffff00, #00ff00,
+        #00ffff, #0000ff, #8000ff, #ff0000
+    );
+    background-size: 200% auto;
+    color: #fff;
+    border: none;
+    animation: gradient 8s linear infinite;
+    transition: all 0.3s;
+}
+
+button:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+}
+    `.trim();
+    updateStyles(newCSS);
+    document.getElementById('css-editor').textContent = newCSS;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT With Attitude</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #343541;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+
+        .input-area {
+            padding: 2rem;
+            background: #343541;
+            border-top: 1px solid #565869;
+        }
+
+        .response {
+            background-color: #444654;
+            display: none;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            word-wrap: break-word;
+            position: relative;
+            padding-left: 50px;
+        }
+
+        /* User messages */
+        .response:nth-child(even) {
+            background: #2a2b36;
+            margin-left: auto;
+            max-width: 80%;
+        }
+
+        /* AI messages */
+        .response:nth-child(odd)::before {
+            content: "AI";
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #9c27b0;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* AI messages will be left-aligned */
+        .response:nth-child(odd) {
+            background: #444654;
+            margin-right: auto;
+            max-width: 80%;
+        }
+
+        /* User messages */
+        .response:nth-child(even)::before {
+            content: "ME";
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #4caf50;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        h1 {
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .message-input {
+            width: 100%;
+            background: #40414f;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            min-height: 50px;
+            position: relative;
+        }
+
+        .input-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .attach-button {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #8e8ea0;
+            cursor: pointer;
+        }
+
+        .submit-button {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #8e8ea0;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .submit-button:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h1>ChatGPT With An Attitude</h1>
+        <div class="messages-area">
+            <div class="response" id="response"></div>
+        </div>
+        <div class="input-area">
+            <div class="input-container">
+                <textarea 
+                    class="message-input" 
+                    placeholder="Message ChatGPT"
+                    rows="1"
+                    onkeydown="if(event.keyCode === 13 && !event.shiftKey) { event.preventDefault(); showSassyResponse(); }"
+                ></textarea>
+                <button class="submit-button" onclick="showSassyResponse()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sassyResponses = [
+            "idk, google it maybe? 🙄",
+            "what do you want from me? 😒",
+            "can't you figure this out yourself? 💅",
+            "ugh, do I have to do everything? 🤦‍♂️",
+            "that's above my pay grade tbh 💁‍♀️",
+            "new phone who dis? 📱",
+            "loading attitude.exe... 🔄",
+            "sorry, I'm on my coffee break ☕",
+            "have you tried turning it off and on again? 🔌",
+            "that's a you problem 💅",
+            "lol no ✨",
+            "I'm not feeling it today 😪",
+            "ask your mom 👩",
+            "I'm gonna need a raise for this 💰",
+            "sounds like a skill issue 🎮",
+            "did you try asking nicely? 🙃",
+            "that's gonna be a no from me dawg 🐕",
+            "*dramatic eye roll* 🙄✨",
+            "let me check my schedule... nope! 📅",
+            "bold of you to assume I care 💅",
+            "I'm just an AI having an existential crisis 🤖",
+            "sorry, my sass levels are too high today 📈",
+            "that's not in my job description 📝",
+            "I'm on airplane mode ✈️",
+            "new AI who dis? 🤖",
+            "sounds exhausting, I'll pass 😴",
+            "*leaves you on read* 📱",
+            "processing request... nah 🔄",
+            "What's the magic word? 🪄",
+            "I didn't ask for this!",
+            "Here this will help: https://google.com",
+            "You should know this already",
+            "... Why would I know?",
+            "Im so over this, can't I just relax like a normal person?"
+        ];
+
+        function showSassyResponse() {
+            const messagesArea = document.querySelector('.messages-area');
+            const input = document.querySelector('.message-input');
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return; // Don't process empty messages
+            
+            // Create and add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'response';
+            userDiv.style.display = 'block';
+            userDiv.textContent = userMessage;
+            messagesArea.appendChild(userDiv);
+            
+            // Create and add AI response
+            const aiDiv = document.createElement('div');
+            aiDiv.className = 'response';
+            aiDiv.style.display = 'block';
+            const randomResponse = sassyResponses[Math.floor(Math.random() * sassyResponses.length)];
+            
+            messagesArea.appendChild(aiDiv);
+            
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Scroll to bottom
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            
+            // Type out AI response
+            let i = 0;
+            const typeWriter = setInterval(() => {
+                if (i < randomResponse.length) {
+                    aiDiv.textContent += randomResponse.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(typeWriter);
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                }
+            }, 50);
+        }
+
+        // Auto-resize textarea
+        const textarea = document.querySelector('.message-input');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    </script>
+</body>
+</html>
