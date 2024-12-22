@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's My Resolution? - RSONW</title>
+    <meta name="description" content="Find out your screen resolution, viewport dimensions, and safe areas">
+    <meta name="keywords" content="screen resolution, viewport size, device dimensions">
+    <meta name="author" content="Random Sites On The Web">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/whatsmyresolution/">
+    <meta property="og:title" content="What's My Resolution? - Screen Size Tool">
+    <meta property="og:description" content="Find out your screen resolution, viewport dimensions, and safe areas">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/whatsmyresolution/">
+    <meta property="twitter:title" content="What's My Resolution? - Screen Size Tool">
+    <meta property="twitter:description" content="Find out your screen resolution, viewport dimensions, and safe areas">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M40 5H10C7.2 5 5 7.2 5 10v30c0 2.8 2.2 5 5 5h30c2.8 0 5-2.2 5-5V10c0-2.8-2.2-5-5-5zM35 35H15V15h20v20z' fill='%23000000'/></svg>">
+    <style>
+        body {
+            margin: 0;
+            padding: 16px;
+            font-family: 'Helvetica Neue', sans-serif;
+            background: #FAFAFA;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            color: #000000;
+            box-sizing: border-box;
+            padding-top: 32px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #000000;
+            letter-spacing: 1px;
+        }
+
+        .dimensions-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 1rem;
+            border: 1px solid #000000;
+            background: #FAFAFA;
+            border-radius: 0;
+            transition: transform 0.2s ease;
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .dimensions-container:hover {
+            transform: translateY(-4px);
+        }
+
+        .measurement-label {
+            background: #FAFAFA;
+            color: #000000;
+            padding: 8px 12px;
+            border-radius: 0;
+            font-size: 13px;
+            white-space: normal;
+            border: 1px solid #000000;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+            word-break: break-word;
+        }
+
+        .measurement-label:hover {
+            background: #000000;
+            color: #FAFAFA;
+        }
+
+        .safe-area {
+            position: fixed;
+            left: 0;
+            right: 0;
+            background: #000000;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .safe-area-top {
+            top: 0;
+        }
+
+        .safe-area-bottom {
+            bottom: 0;
+        }
+
+        .section-title {
+            font-weight: 400;
+            margin-top: 12px;
+            color: #000000;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .screen-lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .screen-lines::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(90deg, transparent 24%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) 26%, transparent 27%) 0 0,
+                linear-gradient(0deg, transparent 24%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) 26%, transparent 27%) 0 0;
+            background-size: 100px 100px;
+        }
+
+        .screen-lines::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200vmax;
+            height: 200vmax;
+            transform: translate(-50%, -50%);
+            background: conic-gradient(from 0deg at center, transparent 0deg, transparent 30deg, rgba(0,0,0,0.03) 40deg, transparent 50deg);
+            background-size: 100% 100%;
+            animation: rotate 60s linear infinite;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+                padding-top: 24px;
+            }
+
+            .dimensions-container {
+                padding: 0.75rem;
+                gap: 6px;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 0.75rem;
+            }
+
+            .measurement-label {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            .section-title {
+                font-size: 12px;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="screen-lines"></div>
+    <div class="dimensions-container">
+        <h1>Device Specs</h1>
+        <div class="section-title">Viewport Size</div>
+        <p>The viewport is the visible area of a web page on your device's screen.</p>
+        <div class="measurement-label" id="widthLabel"></div>
+        <div class="measurement-label" id="heightLabel"></div>
+        
+        <div class="section-title">Screen Resolution</div>
+        <p>The total width and height of your screen, measured in pixels (px). This is your screen's native resolution.</p>
+        <div class="measurement-label" id="screenWidth"></div>
+        <div class="measurement-label" id="screenHeight"></div>
+        
+        <div class="section-title">Additional Info</div>
+
+        <p>Color depth indicates how many colors your screen can display. Most modern screens use 24-bit or 32-bit color.</p>
+        <div class="measurement-label" id="colorDepth"></div>
+        <p>Orientation indicates whether your device is being held vertically (portrait) or horizontally (landscape).</p>
+        <div class="measurement-label" id="orientation"></div>
+
+        <p>The device pixel ratio shows how sharp your screen is. A higher number (above 1) means you have a high-quality screen like those found on newer phones and tablets.</p>
+        <div class="measurement-label" id="pixelRatio"></div>
+    </div>
+
+    <div class="safe-area safe-area-top" id="safeAreaTop"></div>
+    <div class="safe-area safe-area-bottom" id="safeAreaBottom"></div>
+    
+    <script>
+        function updateValues() {
+            const widthLabel = document.getElementById('widthLabel');
+            const heightLabel = document.getElementById('heightLabel');
+            const pixelRatio = document.getElementById('pixelRatio');
+            const safeAreaTop = document.getElementById('safeAreaTop');
+            const safeAreaBottom = document.getElementById('safeAreaBottom');
+            const screenWidth = document.getElementById('screenWidth');
+            const screenHeight = document.getElementById('screenHeight');
+            const colorDepth = document.getElementById('colorDepth');
+            const orientation = document.getElementById('orientation');
+
+            widthLabel.textContent = `Viewport Width: ${window.innerWidth}px`;
+            heightLabel.textContent = `Viewport Height: ${window.innerHeight}px`;
+            screenWidth.textContent = `Screen Width: ${window.screen.width}px`;
+            screenHeight.textContent = `Screen Height: ${window.screen.height}px`;
+            colorDepth.textContent = `Color Depth: ${window.screen.colorDepth}-bit`;
+            orientation.textContent = `Orientation: ${screen.orientation ? screen.orientation.type : 'N/A'}`;
+            pixelRatio.textContent = `Device Pixel Ratio: ${window.devicePixelRatio.toFixed(2)}`;
+
+            if (CSS.supports('padding-top: env(safe-area-inset-top)')) {
+                const computedStyle = getComputedStyle(document.documentElement);
+                const topInset = computedStyle.getPropertyValue('env(safe-area-inset-top)');
+                const bottomInset = computedStyle.getPropertyValue('env(safe-area-inset-bottom)');
+                
+                safeAreaTop.style.height = topInset;
+                safeAreaBottom.style.height = bottomInset;
+            }
+        }
+
+        updateValues();
+        window.addEventListener('resize', updateValues);
+        if (screen.orientation) {
+            screen.orientation.addEventListener('change', updateValues);
+        }
+    </script>
+</body>
+</html>
