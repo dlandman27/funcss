@@ -116,15 +116,9 @@
 <body>
     <div id="terminal">
         <div class="output-line">Welcome to LocalStorage Terminal v1.0</div>
-        <!-- <div class="output-line">This is an educational terminal emulator that runs entirely in your browser.</div>
-        <div class="output-line">It uses localStorage as a virtual filesystem, allowing you to:</div>
-        <div class="output-line">- Learn and practice Linux/Unix terminal commands safely</div>
-        <div class="output-line">- Understand filesystem operations and navigation</div>
-        <div class="output-line">- Create, edit, and manage files and directories</div>
-        <div class="output-line">- Experience command-line interfaces without system access</div>
-        <div class="output-line">Perfect for students, teachers, and anyone learning terminal basics!</div> -->
         <div class="output-line">Type 'help' to see all available commands</div>
         <div class="output-line">Type 'about' to learn more about this project</div>
+        <!-- <div class="output-line">Type 'tutorial' to start an interactive tutorial</div> -->
         <div id="output"></div>
         <div id="input-line">
             <span id="prompt">user@localhost:~$</span>
@@ -154,6 +148,14 @@
         let historyIndex = -1;
         let lastCommand;
         let currentEditingFile = null;
+        let tutorialStep = 0;
+
+        // Check if this is the first visit
+        if (!localStorage.getItem('hasVisited')) {
+            localStorage.setItem('hasVisited', 'true');
+            printLine('\nWelcome to your first time using LocalStorage Terminal!');
+            // printLine('Type \'tutorial\' to start an interactive tutorial that will teach you the basics.\n');
+        }
 
         // Editor event handlers
         editorContent.addEventListener('keydown', (e) => {
@@ -346,6 +348,19 @@
                 printLine('  export - Export filesystem to downloadable file');
                 printLine('  import - Import filesystem from file');
                 printLine('  about - Learn more about this terminal emulator');
+                printLine('  tutorial - Start interactive command tutorial');
+            },
+
+            tutorial: () => {
+                tutorialStep = 1;
+                printLine('\n=== Welcome to the Interactive Terminal Tutorial! ===\n');
+                printLine('This tutorial will teach you the basics of using terminal commands.');
+                printLine('Follow the instructions and type the commands as shown.\n');
+                printLine('Let\'s start with a simple command:');
+                printLine('Type \'pwd\' to see your current directory location\n');
+                
+                // Set up tutorial checker
+                input.addEventListener('keypress', checkTutorial);
             },
 
             about: () => {
@@ -616,6 +631,79 @@
                 fileInput.click();
             }
         };
+
+        function checkTutorial(e) {
+            if (e.key !== 'Enter') return;
+            
+            const command = input.value.trim();
+            
+            switch(tutorialStep) {
+                case 1:
+                    if (command === 'pwd') {
+                        printLine('\nGreat! The pwd command shows your current directory.');
+                        printLine('Now, let\'s see what\'s in this directory.');
+                        printLine('Type \'ls\' to list the contents\n');
+                        tutorialStep = 2;
+                    }
+                    break;
+                case 2:
+                    if (command === 'ls') {
+                        printLine('\nExcellent! The ls command shows all files and directories.');
+                        printLine('Let\'s create a new directory.');
+                        printLine('Type \'mkdir test\' to create a directory named "test"\n');
+                        tutorialStep = 3;
+                    }
+                    break;
+                case 3:
+                    if (command === 'mkdir test') {
+                        printLine('\nPerfect! You\'ve created a new directory.');
+                        printLine('Now let\'s move into it.');
+                        printLine('Type \'cd test\' to change into the test directory\n');
+                        tutorialStep = 4;
+                    }
+                    break;
+                case 4:
+                    if (command === 'cd test') {
+                        printLine('\nWell done! You\'ve changed directories.');
+                        printLine('Let\'s create a file in this directory.');
+                        printLine('Type \'touch hello.txt\' to create a new empty file\n');
+                        tutorialStep = 5;
+                    }
+                    break;
+                case 5:
+                    if (command === 'touch hello.txt') {
+                        printLine('\nExcellent! You\'ve created a new file.');
+                        printLine('Let\'s add some content to it.');
+                        printLine('Type \'echo "Hello, World!" > hello.txt\' to write text to the file\n');
+                        tutorialStep = 6;
+                    }
+                    break;
+                case 6:
+                    if (command === 'echo "Hello, World!" > hello.txt') {
+                        printLine('\nPerfect! Now let\'s read the contents of the file.');
+                        printLine('Type \'cat hello.txt\' to display the file contents\n');
+                        tutorialStep = 7;
+                    }
+                    break;
+                case 7:
+                    if (command === 'cat hello.txt') {
+                        printLine('\nCongratulations! You\'ve completed the basic tutorial!');
+                        printLine('You\'ve learned how to:');
+                        printLine('- Check your current directory (pwd)');
+                        printLine('- List directory contents (ls)');
+                        printLine('- Create directories (mkdir)');
+                        printLine('- Change directories (cd)');
+                        printLine('- Create files (touch)');
+                        printLine('- Write to files (echo)');
+                        printLine('- Read files (cat)\n');
+                        printLine('Type \'help\' to see all available commands');
+                        printLine('Happy exploring!\n');
+                        input.removeEventListener('keypress', checkTutorial);
+                        tutorialStep = 0;
+                    }
+                    break;
+            }
+        }
 
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
