@@ -104,18 +104,21 @@
             top: 20px;
             right: 20px;
             background: rgba(0, 0, 0, 0.9);
-            padding: 20px;
+            padding: 25px;
             border: 3px solid #00ffff;
             color: #fff;
             font-family: 'Press Start 2P', cursive;
             font-size: 14px;
             z-index: 1000;
             transform-style: preserve-3d;
-            transform: translateZ(10px);
+            transform: translateZ(10px) rotateX(5deg);
             box-shadow: 
                 0 0 20px rgba(0, 255, 255, 0.3),
                 inset 0 0 10px rgba(0, 255, 255, 0.2),
-                0 3px 0 #00ffff;
+                0 5px 0 #00ffff;
+            animation: floatUI 3s ease-in-out infinite;
+            min-width: 200px;
+            text-align: center;
         }
 
         .game-info::before {
@@ -129,6 +132,21 @@
             transform: translateZ(-5px);
             filter: blur(2px);
             box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+        }
+
+        .game-info p {
+            margin: 0;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .game-info span {
+            display: block;
+            margin-top: 10px;
+            font-size: 24px;
+            color: #ff00ff;
+            text-shadow: 
+                0 0 10px rgba(255, 0, 255, 0.5),
+                0 0 20px rgba(255, 0, 255, 0.3);
         }
 
         .elimination-message {
@@ -157,18 +175,19 @@
             position: fixed;
             bottom: 20px;
             left: 50%;
-            transform: translateX(-50%) translateZ(10px);
+            transform: translateX(-50%) translateZ(10px) rotateX(-5deg);
             display: flex;
             gap: 10px;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.9);
-            padding: 15px;
+            padding: 20px;
             border: 3px solid #00ffff;
             box-shadow: 
                 0 0 20px rgba(0, 255, 255, 0.3),
                 inset 0 0 10px rgba(0, 255, 255, 0.2),
-                0 3px 0 #00ffff;
+                0 5px 0 #00ffff;
             transform-style: preserve-3d;
+            animation: floatUI 3s ease-in-out infinite;
         }
 
         .speed-controls::before {
@@ -188,21 +207,43 @@
             background: rgba(0, 0, 0, 0.8);
             color: #fff;
             border: 2px solid #00ffff;
-            padding: 10px 15px;
+            padding: 12px 20px;
             cursor: pointer;
             font-family: 'Press Start 2P', cursive;
-            font-size: 14px;
+            font-size: 16px;
             transition: all 0.2s ease;
             transform-style: preserve-3d;
             transform: translateZ(5px);
             box-shadow: 
-                0 2px 0 #0088ff,
+                0 4px 0 #0088ff,
                 0 0 10px rgba(0, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .speed-button::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            width: 300%;
+            height: 300%;
+            background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+            transform: rotate(45deg);
+            animation: buttonShine 3s linear infinite;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .speed-button:hover::before {
+            opacity: 1;
         }
 
         .speed-button:hover {
             background: rgba(0, 255, 255, 0.1);
             transform: translateZ(8px);
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
         .speed-button.active {
@@ -212,6 +253,7 @@
             box-shadow: 
                 0 0 15px rgba(0, 255, 255, 0.4),
                 inset 0 0 5px rgba(0, 255, 255, 0.3);
+            transform: translateZ(2px);
         }
 
         .winner-screen {
@@ -746,14 +788,15 @@
             gap: 10px;
             z-index: 1002;
             background: rgba(0, 0, 0, 0.9);
-            padding: 15px;
+            padding: 20px;
             border: 3px solid #00ffff;
             transform-style: preserve-3d;
-            transform: translateZ(10px);
+            transform: translateZ(10px) rotateX(5deg);
             box-shadow: 
                 0 0 20px rgba(0, 255, 255, 0.3),
                 inset 0 0 10px rgba(0, 255, 255, 0.2),
-                0 3px 0 #00ffff;
+                0 5px 0 #00ffff;
+            animation: floatUI 3s ease-in-out infinite;
         }
 
         .test-controls::before {
@@ -797,6 +840,33 @@
             box-shadow: 
                 0 0 15px rgba(0, 255, 255, 0.4),
                 inset 0 0 5px rgba(0, 255, 255, 0.3);
+        }
+
+        @keyframes floatUI {
+            0%, 100% { transform: translateZ(10px) rotateX(5deg); }
+            50% { transform: translateZ(15px) rotateX(5deg); }
+        }
+
+        @keyframes buttonShine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        /* Add pulsing effect for active speed */
+        .speed-button.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid #00ffff;
+            animation: pulseBorder 2s infinite;
+        }
+
+        @keyframes pulseBorder {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0; }
         }
     </style>
 </head>
@@ -880,113 +950,275 @@
                 width: GAME_WIDTH,
                 height: GAME_HEIGHT,
                 wireframes: false,
-                background: '#000',
-                pixelRatio: 1
+                background: 'transparent',
+                pixelRatio: 1,
+                showVelocity: true,
+                showCollisions: true,
+                showAxes: false,
+                // Style the debug lines
+                wireframeBackground: 'transparent',
+                vectorColor: 'rgba(0, 255, 255, 0.2)',  // Cyan with low opacity
+                collisionColor: 'rgba(255, 0, 255, 0.2)'  // Magenta with low opacity
             }
         });
 
-        // Predefined maps
+        class MapBuilder {
+            constructor(width, height) {
+                this.width = width;
+                this.height = height;
+                this.bodies = [];
+                this.movingBodies = [];
+            }
+
+            // Basic wall with neon effect
+            addWall(x, y, width, height, options = {}) {
+                const wall = Bodies.rectangle(x, y, width, height, {
+                    isStatic: true,
+                    render: {
+                        fillStyle: '#000000',
+                        strokeStyle: options.color || '#00ffff',
+                        lineWidth: 2,
+                        shadowColor: options.color || '#00ffff',
+                        shadowBlur: 10
+                    },
+                    ...options
+                });
+                this.bodies.push(wall);
+                return this;
+            }
+
+            // Finish line
+            addFinishLine(y = this.height - 10) {
+                return this.addWall(this.width/2, y, this.width, 20, {
+                    color: '#ff00ff',
+                    label: 'finish'
+                });
+            }
+
+            // Bouncy peg
+            addPeg(x, y, options = {}) {
+                const radius = options.radius || 8;
+                const peg = Bodies.circle(
+                    Math.min(Math.max(x, radius), this.width - radius), // Keep within bounds
+                    Math.min(Math.max(y, radius), this.height - radius), // Keep within bounds
+                    radius, 
+                    {
+                        isStatic: true,
+                        render: {
+                            fillStyle: '#000000',
+                            strokeStyle: options.color || '#00ffff',
+                            lineWidth: 2,
+                            shadowColor: options.color || '#00ffff',
+                            shadowBlur: 10
+                        },
+                        ...options
+                    }
+                );
+                this.bodies.push(peg);
+                return this;
+            }
+
+            // Moving platform
+            addMovingPlatform(x, y, width, height, movement, options = {}) {
+                // Ensure platform stays within bounds
+                x = Math.min(Math.max(x, width/2), this.width - width/2);
+                y = Math.min(Math.max(y, height/2), this.height - height/2);
+                
+                const platform = Bodies.rectangle(x, y, width, height, {
+                    isStatic: true,
+                    render: {
+                        fillStyle: '#000000',
+                        strokeStyle: options.color || '#00ffff',
+                        lineWidth: 2,
+                        shadowColor: options.color || '#00ffff',
+                        shadowBlur: 10
+                    },
+                    ...options
+                });
+                
+                this.bodies.push(platform);
+                this.movingBodies.push({
+                    body: platform,
+                    movement: movement,
+                    originalPos: { x, y } // Store original position for relative movement
+                });
+                
+                return this;
+            }
+
+            // Spinner
+            addSpinner(x, y, width, height, options = {}) {
+                // Ensure spinner stays within bounds
+                x = Math.min(Math.max(x, width/2), this.width - width/2);
+                y = Math.min(Math.max(y, height/2), this.height - height/2);
+                
+                const spinner = Bodies.rectangle(x, y, width, height, {
+                    isStatic: true,
+                    render: {
+                        fillStyle: '#000000',
+                        strokeStyle: options.color || '#ff00ff',
+                        lineWidth: 2,
+                        shadowColor: options.color || '#ff00ff',
+                        shadowBlur: 10
+                    },
+                    ...options
+                });
+                
+                this.bodies.push(spinner);
+                this.movingBodies.push({
+                    body: spinner,
+                    movement: (time) => {
+                        Body.setAngle(spinner, time * (options.speed || 0.002));
+                    }
+                });
+                
+                return this;
+            }
+
+            // Standard boundaries
+            addBoundaries() {
+                // Left wall
+                this.addWall(0, this.height/2, 20, this.height);
+                // Right wall
+                this.addWall(this.width, this.height/2, 20, this.height);
+                return this;
+            }
+
+            // Build and return the map
+            build() {
+                return {
+                    bodies: this.bodies,
+                    update: (time) => {
+                        this.movingBodies.forEach(({body, movement, originalPos}) => {
+                            if (originalPos) {
+                                // Use original position for relative movement
+                                movement(time, body, originalPos);
+                            } else {
+                                movement(time, body);
+                            }
+                        });
+                    }
+                };
+            }
+        }
+
         const maps = [
-            // Map 1: Simple Funnel
+            // Map 1: Plinko Style
             () => {
-                const walls = [
-                    // Finish line at bottom
-                    Bodies.rectangle(GAME_WIDTH/2, GAME_HEIGHT - 10, GAME_WIDTH, 20, {
-                        isStatic: true,
-                        render: { fillStyle: '#ff00ff' },
-                        label: 'finish'
-                    }),
-                    // Left funnel wall - angle adjusted to point downward
-                    Bodies.rectangle(0, GAME_HEIGHT/2, GAME_WIDTH-300, 20, {
-                        isStatic: true,
-                        angle: Math.PI * 0.15,  // ~27 degrees, slopes downward
-                        render: { fillStyle: '#00ffff' }
-                    }),
-                    // Right funnel wall - angle adjusted to point downward
-                    Bodies.rectangle(GAME_WIDTH, GAME_HEIGHT/2, GAME_WIDTH - 300, 20, {
-                        isStatic: true,
-                        angle: -Math.PI * 0.15,  // -27 degrees, slopes downward
-                        render: { fillStyle: '#00ffff' }
-                    })
-                ];
-                return walls;
+                const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
+                
+                // Add boundaries and finish line
+                builder.addBoundaries()
+                       .addFinishLine();
+
+                // Create grid of pegs
+                const pegSpacingX = 100;  // Horizontal spacing between pegs
+                const pegSpacingY = 100;  // Vertical spacing between pegs
+                const startX = 100;       // Start 100px from left wall
+                const startY = 100;       // Start 100px from top
+                const rows = 5;
+                const pegsPerRow = 8;
+
+                // Add main grid
+                for (let row = 0; row < rows; row++) {
+                    for (let peg = 0; peg < pegsPerRow; peg++) {
+                        builder.addPeg(
+                            startX + (peg * pegSpacingX),
+                            startY + (row * pegSpacingY)
+                        );
+                    }
+                }
+
+                // Add offset rows between main rows
+                for (let row = 0; row < rows - 1; row++) {
+                    for (let peg = 0; peg < pegsPerRow - 1; peg++) {
+                        builder.addPeg(
+                            startX + (pegSpacingX / 2) + (peg * pegSpacingX),
+                            startY + (pegSpacingY / 2) + (row * pegSpacingY)
+                        );
+                    }
+                }
+
+                return builder.build();
             },
-            // Map 2: Bouncing Balls
+
+            // Map 2: Moving Platforms
             () => {
-                const walls = [
-                    // Finish line at bottom
-                    Bodies.rectangle(GAME_WIDTH/2, GAME_HEIGHT - 10, GAME_WIDTH, 20, {
-                        isStatic: true,
-                        render: { fillStyle: '#ff00ff' },
-                        label: 'finish'
-                    }),
+                const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
+                
+                // Add boundaries and finish line
+                builder.addBoundaries()
+                       .addFinishLine();
 
-                    // Create diamond pattern of pegs
-                    ...Array(8).fill().flatMap((_, row) => 
-                        Array(row % 2 ? 7 : 8).fill().map((_, col) => {
-                            const xOffset = row % 2 ? GAME_WIDTH/7/2 : 0;
-                            return Bodies.circle(
-                                xOffset + (col + 1) * (GAME_WIDTH/8), 
-                                250 + row * 80, // Start lower down at y=250
-                                8, {
-                                    isStatic: true,
-                                    render: { fillStyle: '#00ffff' },
-                                    chamfer: { radius: 8 },
-                                    friction: 0.001,
-                                    restitution: 0.5
-                                }
-                            );
-                        })
-                    ),
+                // Add moving platforms at different heights
+                builder.addMovingPlatform(300, 200, 200, 20, (time, body) => {
+                    const originalX = 300;
+                    Body.setPosition(body, {
+                        x: originalX + Math.sin(time * 0.002) * 100,
+                        y: body.position.y
+                    });
+                });
 
-                    // Left wall
-                    Bodies.rectangle(-10, GAME_HEIGHT/2, 20, GAME_HEIGHT, {
-                        isStatic: true,
-                        render: { fillStyle: '#00ffff' }
-                    }),
+                builder.addMovingPlatform(700, 300, 200, 20, (time, body) => {
+                    const originalX = 700;
+                    Body.setPosition(body, {
+                        x: originalX + Math.sin(time * 0.002 + Math.PI) * 100,
+                        y: body.position.y
+                    });
+                });
 
-                    // Right wall
-                    Bodies.rectangle(GAME_WIDTH + 10, GAME_HEIGHT/2, 20, GAME_HEIGHT, {
-                        isStatic: true,
-                        render: { fillStyle: '#00ffff' }
-                    })
-                ];
-                return walls;
+                builder.addMovingPlatform(500, 400, 200, 20, (time, body) => {
+                    const originalX = 500;
+                    Body.setPosition(body, {
+                        x: originalX + Math.sin(time * 0.002 + Math.PI/2) * 100,
+                        y: body.position.y
+                    });
+                });
+
+                // Add some static pegs for additional challenge
+                builder.addPeg(200, 150)
+                       .addPeg(400, 150)
+                       .addPeg(600, 150)
+                       .addPeg(800, 150);
+
+                return builder.build();
             },
+
+            // Map 3: Spinners and Platforms
+            () => {
+                const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
+                
+                builder.addBoundaries()
+                       .addFinishLine();
+
+                // Add spinners
+                builder.addSpinner(300, 200, 120, 20, { speed: 0.003 })
+                       .addSpinner(700, 200, 120, 20, { speed: -0.003 })
+                       .addSpinner(500, 300, 120, 20, { speed: 0.003 })
+                       .addSpinner(300, 400, 120, 20, { speed: -0.003 })
+                       .addSpinner(700, 400, 120, 20, { speed: 0.003 });
+
+                // Add some static platforms
+                builder.addMovingPlatform(500, 500, 300, 20, () => {}, { angle: Math.PI * 0.1 })
+                       .addMovingPlatform(200, 500, 300, 20, () => {}, { angle: -Math.PI * 0.1 })
+                       .addMovingPlatform(800, 500, 300, 20, () => {}, { angle: Math.PI * 0.1 });
+
+                return builder.build();
+            }
         ];
 
+        // Update createMap function to use the new system
         function createMap() {
             // Clear existing bodies
             World.clear(engine.world);
             
-            // Add current map
-            const mapWalls = maps[currentMap]();
-            World.add(engine.world, mapWalls);
+            // Create new map
+            const mapIndex = Math.floor(Math.random() * maps.length);
+            const currentMap = maps[mapIndex]();
             
-            // Add boundary walls
-            const boundaries = [
-                Bodies.rectangle(0, GAME_HEIGHT/2, 20, GAME_HEIGHT, { 
-                    isStatic: true,
-                    render: { fillStyle: '#39ff14' },
-                    label: 'leftWall'
-                }),
-                Bodies.rectangle(GAME_WIDTH, GAME_HEIGHT/2, 20, GAME_HEIGHT, { 
-                    isStatic: true,
-                    render: { fillStyle: '#39ff14' },
-                    label: 'rightWall'
-                }),
-                Bodies.rectangle(GAME_WIDTH/2, 0, GAME_WIDTH, 20, { 
-                    isStatic: true,
-                    render: { fillStyle: '#39ff14' },
-                    label: 'topWall'
-                }),
-                Bodies.rectangle(GAME_WIDTH/2, GAME_HEIGHT, GAME_WIDTH, 20, { 
-                    isStatic: true,
-                    render: { fillStyle: '#39ff14' },
-                    label: 'bottomWall'
-                })
-            ];
-            World.add(engine.world, boundaries);
+            World.add(engine.world, currentMap.bodies);
+            
+            return currentMap;
         }
 
         // Create runner
@@ -1396,6 +1628,55 @@
                 const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
                 startContent.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
             });
+        });
+
+        // Add this function to create obstacles with neon effect
+        function createObstacle(x, y, width, height, angle = 0) {
+            return Bodies.rectangle(x, y, width, height, {
+                isStatic: true,
+                angle: angle,
+                render: {
+                    fillStyle: '#000000',
+                    strokeStyle: '#00ffff',
+                    lineWidth: 2,
+                    shadowColor: '#00ffff',
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 0
+                }
+            });
+        }
+
+        // Add this function to create pegs with neon effect
+        function createPeg(x, y) {
+            return Bodies.circle(x, y, 8, {
+                isStatic: true,
+                render: {
+                    fillStyle: '#000000',
+                    strokeStyle: '#00ffff',
+                    lineWidth: 2,
+                    shadowColor: '#00ffff',
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 0
+                },
+                chamfer: { radius: 8 },
+                friction: 0.001
+            });
+        }
+
+        // Add this to your existing render setup
+        Render.lookAt(render, {
+            min: { x: 0, y: 0 },
+            max: { x: GAME_WIDTH, y: GAME_HEIGHT }
+        });
+
+        // Optional: Add a post-render effect for extra glow
+        Events.on(render, 'afterRender', () => {
+            const context = render.context;
+            context.globalCompositeOperation = 'screen';
+            context.shadowBlur = 5;
+            context.shadowColor = '#00ffff';
         });
     </script>
 </body>
