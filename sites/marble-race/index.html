@@ -879,8 +879,6 @@
         <button class="speed-button active" data-speed="1">x1</button>
         <button class="speed-button" data-speed="2">x2</button>
         <button class="speed-button" data-speed="4">x4</button>
-        <button class="speed-button" data-speed="8">x8</button>
-        <button class="speed-button" data-speed="16">x16</button>
     </div>
 
     <div class="test-controls">
@@ -1103,38 +1101,37 @@
         }
 
         const maps = [
-            // Map 1: Plinko Style
+            // Map 1: Plinko Paradise
             () => {
                 const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
                 
-                // Add boundaries and finish line
                 builder.addBoundaries()
                        .addFinishLine();
 
-                // Create grid of pegs
-                const pegSpacingX = 100;  // Horizontal spacing between pegs
-                const pegSpacingY = 100;  // Vertical spacing between pegs
-                const startX = 100;       // Start 100px from left wall
-                const startY = 100;       // Start 100px from top
-                const rows = 5;
-                const pegsPerRow = 8;
+                // Parameters for peg distribution
+                const margin = 50;  // Distance from walls
+                const topMargin = 100;  // Distance from top
+                const bottomMargin = 200;  // Distance from bottom
+                const columns = 15;  // More columns for fuller width
+                const rows = 8;  // More rows for fuller coverage
+                
+                const horizontalSpacing = (GAME_WIDTH - margin * 2) / (columns - 1);
+                const verticalSpacing = (GAME_HEIGHT - topMargin - bottomMargin) / (rows - 1);
 
-                // Add main grid
+                // Create classic plinko pattern
                 for (let row = 0; row < rows; row++) {
-                    for (let peg = 0; peg < pegsPerRow; peg++) {
+                    // Offset every other row for zigzag pattern
+                    const offset = row % 2 ? horizontalSpacing/2 : 0;
+                    
+                    for (let col = 0; col < columns; col++) {
+                        const x = margin + col * horizontalSpacing + offset;
+                        const y = topMargin + row * verticalSpacing;
+                        
+                        // Add peg with slight random variation
+                        const jitter = 5; // Reduced jitter for more precise paths
                         builder.addPeg(
-                            startX + (peg * pegSpacingX),
-                            startY + (row * pegSpacingY)
-                        );
-                    }
-                }
-
-                // Add offset rows between main rows
-                for (let row = 0; row < rows - 1; row++) {
-                    for (let peg = 0; peg < pegsPerRow - 1; peg++) {
-                        builder.addPeg(
-                            startX + (pegSpacingX / 2) + (peg * pegSpacingX),
-                            startY + (pegSpacingY / 2) + (row * pegSpacingY)
+                            x + (Math.random() - 0.5) * jitter,
+                            y + (Math.random() - 0.5) * jitter
                         );
                     }
                 }
@@ -1142,69 +1139,54 @@
                 return builder.build();
             },
 
-            // Map 2: Moving Platforms
-            () => {
-                const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
+            // // Map 2: Angled Platforms
+            // () => {
+            //     const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
                 
-                // Add boundaries and finish line
-                builder.addBoundaries()
-                       .addFinishLine();
+            //     // Add boundaries and finish line
+            //     builder.addBoundaries()
+            //            .addFinishLine();
 
-                // Add moving platforms at different heights
-                builder.addMovingPlatform(300, 200, 200, 20, (time, body) => {
-                    const originalX = 300;
-                    Body.setPosition(body, {
-                        x: originalX + Math.sin(time * 0.002) * 100,
-                        y: body.position.y
-                    });
-                });
+            //     // Add static angled platforms
+            //     builder.addMovingPlatform(300, 200, 200, 20, () => {}, { angle: Math.PI * 0.1 })
+            //            .addMovingPlatform(700, 300, 200, 20, () => {}, { angle: -Math.PI * 0.1 })
+            //            .addMovingPlatform(500, 400, 200, 20, () => {}, { angle: Math.PI * 0.1 });
 
-                builder.addMovingPlatform(700, 300, 200, 20, (time, body) => {
-                    const originalX = 700;
-                    Body.setPosition(body, {
-                        x: originalX + Math.sin(time * 0.002 + Math.PI) * 100,
-                        y: body.position.y
-                    });
-                });
+            //     // Add static pegs for additional challenge
+            //     builder.addPeg(200, 150)
+            //            .addPeg(400, 150)
+            //            .addPeg(600, 150)
+            //            .addPeg(800, 150)
+            //            .addPeg(300, 350)
+            //            .addPeg(500, 350)
+            //            .addPeg(700, 350);
 
-                builder.addMovingPlatform(500, 400, 200, 20, (time, body) => {
-                    const originalX = 500;
-                    Body.setPosition(body, {
-                        x: originalX + Math.sin(time * 0.002 + Math.PI/2) * 100,
-                        y: body.position.y
-                    });
-                });
+            //     return builder.build();
+            // },
 
-                // Add some static pegs for additional challenge
-                builder.addPeg(200, 150)
-                       .addPeg(400, 150)
-                       .addPeg(600, 150)
-                       .addPeg(800, 150);
-
-                return builder.build();
-            },
-
-            // Map 3: Spinners and Platforms
-            () => {
-                const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
+            // // Map 3: Zigzag Descent
+            // () => {
+            //     const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
                 
-                builder.addBoundaries()
-                       .addFinishLine();
+            //     builder.addBoundaries()
+            //            .addFinishLine();
 
-                // Add spinners
-                builder.addSpinner(300, 200, 120, 20, { speed: 0.003 })
-                       .addSpinner(700, 200, 120, 20, { speed: -0.003 })
-                       .addSpinner(500, 300, 120, 20, { speed: 0.003 })
-                       .addSpinner(300, 400, 120, 20, { speed: -0.003 })
-                       .addSpinner(700, 400, 120, 20, { speed: 0.003 });
+            //     // Add zigzagging static platforms
+            //     builder.addMovingPlatform(200, 200, 300, 20, () => {}, { angle: Math.PI * 0.1 })
+            //            .addMovingPlatform(800, 300, 300, 20, () => {}, { angle: -Math.PI * 0.1 })
+            //            .addMovingPlatform(200, 400, 300, 20, () => {}, { angle: Math.PI * 0.1 })
+            //            .addMovingPlatform(800, 500, 300, 20, () => {}, { angle: -Math.PI * 0.1 });
 
-                // Add some static platforms
-                builder.addMovingPlatform(500, 500, 300, 20, () => {}, { angle: Math.PI * 0.1 })
-                       .addMovingPlatform(200, 500, 300, 20, () => {}, { angle: -Math.PI * 0.1 })
-                       .addMovingPlatform(800, 500, 300, 20, () => {}, { angle: Math.PI * 0.1 });
+            //     // Add guide pegs
+            //     builder.addPeg(500, 150)
+            //            .addPeg(500, 250)
+            //            .addPeg(500, 350)
+            //            .addPeg(500, 450)
+            //            .addPeg(300, 300)
+            //            .addPeg(700, 400);
 
-                return builder.build();
-            }
+            //     return builder.build();
+            // }
         ];
 
         // Update createMap function to use the new system
@@ -1505,7 +1487,7 @@
 
         function adjustCount(change) {
             const newCount = selectedCount + change;
-            if (newCount >= 4 && newCount <= 32) {
+            if (newCount >= 4 && newCount <= 256) {
                 selectedCount = newCount;
                 document.getElementById('countDisplay').textContent = selectedCount;
             }
@@ -1589,13 +1571,6 @@
         // Show start screen when page loads
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('startScreen').style.display = 'flex';
-        });
-
-        // Initial setup
-        document.getElementById('start-button').addEventListener('click', () => {
-            createMap();
-            handleResize();
-            loadCountries();
         });
 
         let isEnginePaused = false;
