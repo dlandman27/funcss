@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Maker - Create Your Own Avatar</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+
+        .avatar-display {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #dee2e6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .avatar-part {
+            position: absolute;
+            font-size: 150px;
+            line-height: 1;
+        }
+
+        .controls {
+            margin-top: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .download-btn {
+            margin-top: 2rem;
+            background: #2ecc71;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+        }
+
+        .download-btn:hover {
+            background: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create Your Avatar</h1>
+        
+        <div class="avatar-display" id="avatarDisplay">
+            <!-- Parts will be added here dynamically -->
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>Head Style</label>
+                <button onclick="cyclePart('head')">Change Head</button>
+            </div>
+            <div class="control-group">
+                <label>Eyes</label>
+                <button onclick="cyclePart('eyes')">Change Eyes</button>
+            </div>
+            <div class="control-group">
+                <label>Mouth</label>
+                <button onclick="cyclePart('mouth')">Change Mouth</button>
+            </div>
+            <div class="control-group">
+                <label>Hat</label>
+                <button onclick="cyclePart('hat')">Change Hat</button>
+            </div>
+            <div class="control-group">
+                <label>Accessories</label>
+                <button onclick="cyclePart('accessories')">Change Accessories</button>
+            </div>
+            <div class="control-group">
+                <label>Shirt</label>
+                <button onclick="cyclePart('shirt')">Change Shirt</button>
+            </div>
+        </div>
+
+        <button class="download-btn" onclick="downloadAvatar()">Download Avatar</button>
+    </div>
+
+    <script>
+        const avatarParts = {
+            head: ['🥚', '⭕', '🔵', '⬜'],
+            eyes: ['👀', '👁️', '🔴', '💫'],
+            mouth: ['👄', '💋', '🟡', '➖'],
+            hat: ['🎩', '👑', '🧢', '⛑️'],
+            accessories: ['👓', '🕶️', '🎀', ''],
+            shirt: ['👕', '👔', '🎽', '🦺']
+        };
+
+        const currentSelections = {
+            head: 0,
+            eyes: 0,
+            mouth: 0,
+            hat: 0,
+            accessories: 0,
+            shirt: 0
+        };
+
+        function cyclePart(partType) {
+            const parts = avatarParts[partType];
+            currentSelections[partType] = (currentSelections[partType] + 1) % parts.length;
+            updateAvatar();
+        }
+
+        function updateAvatar() {
+            const display = document.getElementById('avatarDisplay');
+            display.innerHTML = '';
+            
+            // Define offsets for each part type
+            const offsets = {
+                shirt: { top: 20, left: 0 },
+                head: { top: -20, left: 0 },
+                eyes: { top: -30, left: 0 },
+                mouth: { top: 0, left: 0 },
+                accessories: { top: -40, left: 0 },
+                hat: { top: -60, left: 0 }
+            };
+            
+            // Create layers in specific order
+            const order = ['shirt', 'head', 'eyes', 'mouth', 'accessories', 'hat'];
+            order.forEach(part => {
+                const div = document.createElement('div');
+                div.className = 'avatar-part';
+                div.textContent = avatarParts[part][currentSelections[part]];
+                div.style.transform = `translate(${offsets[part].left}px, ${offsets[part].top}px)`;
+                display.appendChild(div);
+            });
+        }
+
+        function downloadAvatar() {
+            // Create a canvas to render the avatar
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 300;
+            canvas.height = 300;
+            
+            // Draw background
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, 300, 300);
+            
+            // Convert emoji avatar to image
+            ctx.font = '150px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const order = ['shirt', 'head', 'eyes', 'mouth', 'accessories', 'hat'];
+            order.forEach(part => {
+                ctx.fillText(
+                    avatarParts[part][currentSelections[part]], 
+                    150, 
+                    150
+                );
+            });
+
+            // Create download link
+            const link = document.createElement('a');
+            link.download = 'my-avatar.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Initialize avatar
+        updateAvatar();
+    </script>
+</body>
+</html>

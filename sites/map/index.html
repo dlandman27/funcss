@@ -65,6 +65,150 @@
             z-index: 1002;
             font-size: 12px;
         }
+
+        .elimination-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px 40px;
+            border: 3px solid #ff0000;
+            color: #fff;
+            z-index: 1003;
+            text-align: center;
+            font-size: 24px;
+            animation: fadeInOut 1.5s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        .speed-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1002;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 10px;
+            border: 2px solid #00ffff;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .speed-button {
+            background: transparent;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            border-radius: 3px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .speed-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+        }
+
+        .speed-button.active {
+            background: #00ffff;
+            color: black;
+        }
+
+        .winner-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            color: #00ffff;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .winner-content {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        .rankings {
+            margin-top: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #00ffff;
+            border-radius: 4px;
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .ranking-item img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .ranking-position {
+            font-size: 24px;
+            margin-right: 20px;
+            color: #ff00ff;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .winner-title {
+            color: #ff00ff;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+
+        .play-again-button {
+            background: transparent;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 15px 30px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            margin-top: 30px;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .play-again-button:hover {
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -72,7 +216,24 @@
         <p>Countries Remaining: <span id="remainingCountries"></span></p>
     </div>
 
+    <div class="speed-controls">
+        <button class="speed-button active" data-speed="1">x1</button>
+        <button class="speed-button" data-speed="2">x2</button>
+        <button class="speed-button" data-speed="4">x4</button>
+        <button class="speed-button" data-speed="8">x8</button>
+        <button class="speed-button" data-speed="16">x16</button>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
+
+    <div class="winner-screen" id="winnerScreen">
+        <div class="winner-content">
+            <h1 class="winner-title">WINNER!</h1>
+            <div id="winnerDisplay"></div>
+            <div class="rankings" id="rankings"></div>
+            <button class="play-again-button" onclick="location.reload()">Play Again</button>
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <script>
@@ -82,8 +243,10 @@
 
         const canvas = document.getElementById('gameCanvas');
         let allCountries = [];
-        let remainingCountries = [];
+        let allRemainingCountries = [];  // Track all countries still in the game
+        let currentRoundCountries = [];  // Track countries in current round
         let currentMap = 0;
+        let eliminatedCountries = [];
 
         // Set up Matter.js modules
         const Engine = Matter.Engine;
@@ -116,24 +279,66 @@
                     // Finish line at bottom
                     Bodies.rectangle(GAME_WIDTH/2, GAME_HEIGHT - 10, GAME_WIDTH, 20, {
                         isStatic: true,
-                        render: { fillStyle: '#ff0000' },
+                        render: { fillStyle: '#ff00ff' },
                         label: 'finish'
                     }),
-                    // Left funnel wall
+                    // Left funnel wall - angle adjusted to point downward
                     Bodies.rectangle(0, GAME_HEIGHT/2, GAME_WIDTH-300, 20, {
                         isStatic: true,
-                        angle: Math.PI * 0.15,
-                        render: { fillStyle: '#39ff14' }
+                        angle: Math.PI * 0.15,  // ~27 degrees, slopes downward
+                        render: { fillStyle: '#00ffff' }
                     }),
-                    // Right funnel wall
+                    // Right funnel wall - angle adjusted to point downward
                     Bodies.rectangle(GAME_WIDTH, GAME_HEIGHT/2, GAME_WIDTH - 300, 20, {
                         isStatic: true,
-                        angle: -Math.PI * 0.15,
-                        render: { fillStyle: '#39ff14' }
+                        angle: -Math.PI * 0.15,  // -27 degrees, slopes downward
+                        render: { fillStyle: '#00ffff' }
                     })
                 ];
                 return walls;
-            }
+            },
+            // Map 2: Bouncing Balls
+            () => {
+                const walls = [
+                    // Finish line at bottom
+                    Bodies.rectangle(GAME_WIDTH/2, GAME_HEIGHT - 10, GAME_WIDTH, 20, {
+                        isStatic: true,
+                        render: { fillStyle: '#ff00ff' },
+                        label: 'finish'
+                    }),
+
+                    // Create diamond pattern of pegs
+                    ...Array(8).fill().flatMap((_, row) => 
+                        Array(row % 2 ? 7 : 8).fill().map((_, col) => {
+                            const xOffset = row % 2 ? GAME_WIDTH/7/2 : 0;
+                            return Bodies.circle(
+                                xOffset + (col + 1) * (GAME_WIDTH/8), 
+                                100 + row * 80,
+                                8, {
+                                    isStatic: true,
+                                    render: { fillStyle: '#00ffff' },
+                                    chamfer: { radius: 8 },
+                                    friction: 0.001,
+                                    restitution: 0.5
+                                }
+                            );
+                        })
+                    ),
+
+                    // Left wall
+                    Bodies.rectangle(-10, GAME_HEIGHT/2, 20, GAME_HEIGHT, {
+                        isStatic: true,
+                        render: { fillStyle: '#00ffff' }
+                    }),
+
+                    // Right wall
+                    Bodies.rectangle(GAME_WIDTH + 10, GAME_HEIGHT/2, 20, GAME_HEIGHT, {
+                        isStatic: true,
+                        render: { fillStyle: '#00ffff' }
+                    })
+                ];
+                return walls;
+            },
         ];
 
         function createMap() {
@@ -194,10 +399,10 @@
             try {
                 const response = await fetch('https://restcountries.com/v3.1/all');
                 allCountries = await response.json();
-                remainingCountries = [...allCountries];
+                allRemainingCountries = [...allCountries];  // Initialize overall remaining countries
                 
                 // Create circular flag sprites
-                remainingCountries = await Promise.all(remainingCountries.map(async country => {
+                allRemainingCountries = await Promise.all(allRemainingCountries.map(async country => {
                     if (country.flags && country.flags.png) {
                         const tempCanvas = document.createElement('canvas');
                         const ctx = tempCanvas.getContext('2d');
@@ -229,6 +434,9 @@
                     }
                     return country;
                 }));
+
+                // Keep only 10 random countries
+                allRemainingCountries = shuffleArray(allRemainingCountries).slice(0, 15);
                 
                 createCourse();
             } catch (error) {
@@ -236,41 +444,62 @@
             }
         }
 
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         function createCourse() {
+            // Clear existing world and reset engine
+            World.clear(engine.world);
+            
+            // Get current speed from active button
+            const activeSpeed = document.querySelector('.speed-button.active');
+            const speed = parseFloat(activeSpeed.dataset.speed);
+            engine.timing.timeScale = 0.5 * speed;
+            
+            // Randomly select a map
+            currentMap = Math.floor(Math.random() * maps.length);
+            
             createMap();
 
-            // Create country balls at top
+            // Reset current round with shuffled remaining countries
+            currentRoundCountries = shuffleArray([...allRemainingCountries]);
+            
+            // Create balls with consistent physics properties
             const ballSize = 15;
             const ballSpacing = ballSize * 2.2;
             const maxBallsPerRow = Math.floor(GAME_WIDTH / ballSpacing);
             
-            remainingCountries.forEach((country, index) => {
+            currentRoundCountries.forEach((country, index) => {
                 const col = index % maxBallsPerRow;
                 const row = Math.floor(index / maxBallsPerRow);
                 
-                if (country.circularFlag) {
-                    const ball = Bodies.circle(
-                        col * ballSpacing + ballSpacing,
-                        row * ballSpacing + 50,
-                        ballSize,
-                        {
-                            restitution: 1,
-                            friction: 0,
-                            render: {
-                                sprite: {
-                                    texture: country.circularFlag,
-                                    xScale: ballSize * 2 / 64,
-                                    yScale: ballSize * 2 / 64
-                                }
-                            },
-                            label: country.name.common
-                        }
-                    );
-                    World.add(engine.world, ball);
-                }
+                const ball = Bodies.circle(
+                    col * ballSpacing + ballSpacing,
+                    row * ballSpacing + 50,
+                    ballSize,
+                    {
+                        restitution: 0.8,
+                        friction: 0.001,
+                        density: 0.001,  // Add consistent density
+                        render: {
+                            sprite: {
+                                texture: country.circularFlag,
+                                xScale: ballSize * 2 / 64,
+                                yScale: ballSize * 2 / 64
+                            }
+                        },
+                        label: country.name.common
+                    }
+                );
+                World.add(engine.world, ball);
             });
 
-            document.getElementById('remainingCountries').textContent = remainingCountries.length;
+            document.getElementById('remainingCountries').textContent = allRemainingCountries.length;
         }
 
         Matter.Events.on(engine, 'collisionStart', (event) => {
@@ -284,24 +513,121 @@
                 ) {
                     const ballBody = bodyA.label === 'finish' ? bodyB : bodyA;
                     
-                    remainingCountries = remainingCountries.filter(c => 
+                    // Remove from current round
+                    currentRoundCountries = currentRoundCountries.filter(c => 
                         c.name.common !== ballBody.label
                     );
                     Matter.World.remove(engine.world, ballBody);
-                    
-                    document.getElementById('remainingCountries').textContent = remainingCountries.length;
-                    
-                    // If only one country remains, start new round with new map
-                    if(remainingCountries.length === 1) {
-                        setTimeout(createCourse, 2000);
+
+                    // Check remaining active balls
+                    const activeBalls = engine.world.bodies.filter(body => 
+                        body.label !== 'finish' && 
+                        !body.isStatic && 
+                        body.label !== 'leftWall' && 
+                        body.label !== 'rightWall' && 
+                        body.label !== 'topWall' && 
+                        body.label !== 'bottomWall'
+                    );
+
+                    if (activeBalls.length === 0) {
+                        // Add the eliminated country to our tracking array
+                        eliminatedCountries.unshift(ballBody.label);
+                        
+                        if (allRemainingCountries.length <= 1) {
+                            // Game is over, show winner screen
+                            const winner = allRemainingCountries[0];
+                            showWinnerScreen(winner);
+                        } else {
+                            const finishLine = engine.world.bodies.find(body => body.label === 'finish');
+                            if (finishLine) {
+                                finishLine.render.visible = false;
+                                
+                                // Remove from overall game
+                                allRemainingCountries = allRemainingCountries.filter(c => 
+                                    c.name.common !== ballBody.label
+                                );
+                                
+                                // Only proceed if we still have countries
+                                if (allRemainingCountries.length > 0) {
+                                    const eliminationDiv = document.createElement('div');
+                                    eliminationDiv.className = 'elimination-message';
+                                    eliminationDiv.innerHTML = `${ballBody.label} has been eliminated!`;
+                                    document.body.appendChild(eliminationDiv);
+                                    
+                                    // Update the counter immediately
+                                    document.getElementById('remainingCountries').textContent = allRemainingCountries.length;
+
+                                    setTimeout(() => {
+                                        document.body.removeChild(eliminationDiv);
+                                        finishLine.render.visible = true;
+                                        setTimeout(createCourse, 500);
+                                    }, 1500);
+                                }
+                            }
+                        }
+                    } else {
+                        // Update counter for normal eliminations
+                        document.getElementById('remainingCountries').textContent = allRemainingCountries.length;
                     }
                 }
             });
         });
 
+        // Add speed control functionality
+        const speedButtons = document.querySelectorAll('.speed-button');
+        speedButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update active button
+                speedButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update engine speed
+                const speed = parseFloat(button.dataset.speed);
+                engine.timing.timeScale = 0.5 * speed;
+            });
+        });
+
+        function showWinnerScreen(winner) {
+            // Stop the engine
+            Engine.clear(engine);
+            
+            const winnerScreen = document.getElementById('winnerScreen');
+            const winnerDisplay = document.getElementById('winnerDisplay');
+            const rankingsDiv = document.getElementById('rankings');
+            
+            // Show winner
+            winnerDisplay.innerHTML = `
+                <div class="ranking-item">
+                    <span class="ranking-position">1st</span>
+                    <img src="${winner.flags.png}" alt="${winner.name.common} flag">
+                    <span>${winner.name.common}</span>
+                </div>
+            `;
+            
+            // Show rankings
+            eliminatedCountries.forEach((countryName, index) => {
+                const country = allCountries.find(c => c.name.common === countryName);
+                const position = eliminatedCountries.length - index + 1;
+                const suffix = position === 2 ? 'nd' : position === 3 ? 'rd' : 'th';
+                
+                rankingsDiv.innerHTML += `
+                    <div class="ranking-item">
+                        <span class="ranking-position">${position}${suffix}</span>
+                        <img src="${country.flags.png}" alt="${country.name.common} flag">
+                        <span>${country.name.common}</span>
+                    </div>
+                `;
+            });
+            
+            winnerScreen.style.display = 'flex';
+        }
+
         // Initial setup
-        handleResize();
-        loadCountries();
+        document.addEventListener('DOMContentLoaded', () => {
+            createMap();
+            handleResize();
+            loadCountries();
+        });
     </script>
 </body>
 </html>
