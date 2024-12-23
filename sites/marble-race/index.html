@@ -12,25 +12,65 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
-            background: #000;
+            background: linear-gradient(135deg, #000 0%, #111 100%);
             font-family: 'Press Start 2P', cursive;
             color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
         
+        /* Add the particle and static effects to body */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at center, #00ffff 1px, transparent 1px),
+                radial-gradient(circle at center, #ff00ff 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            animation: particleFloat 20s linear infinite;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.1) 0px,
+                    rgba(0, 0, 0, 0.1) 1px,
+                    transparent 1px,
+                    transparent 2px
+                ),
+                url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgE1xQAAAABh0Uk5TAAgQGCAwQFBgcICPn6+/z9/f7/D+/v7+kgFoOAAAAUZJREFUOMttk71ugzAUhY2ULB0QYnRpVxZYWoEYspV2qhQ2pAw8QNdufYGqS7c+YF+h7tKtz9apd2zgGtuhCYrE0Wf7O/f4B4Nz2GPnuMHrEbxRQ9UzuKJQC+snqGUVc/jZqLqGTwJXiQ3CKERFmNwgjK5RLQyx6ZBMxYBtB7TVpyXCDRP4TUbZ2YJL+nNKL9+Dfm94AF4wJPwh9PkEH5sCPcEbBuq3yV3tJL16zleUZxwqD+hJ7Qqf6OoaZ7hQxXtHB1qQGk2NUct5QtdZEjLP6YR6iWc0BHDEOZqzvFJGPc8zKrVzTJi8oFyZjx7QBWVEwS3NEFHqRnuXJqIXGA2Fx4zG4SWjveGK0SZ3w2iTvWF0yF0xGnI3jLrMFaNB+o5Rm75ltM7eMGpTV4x+kxGjKnnDaJG4YjT/jxidZyNG/+Qdo4n0CcPEhMK/YYZz1SX');
+            pointer-events: none;
+            opacity: 0.3;
+            mix-blend-mode: overlay;
+            z-index: 0;
+        }
+
         #gameCanvas {
             width: 1024px;
             height: 768px;
             max-width: 100%;
             max-height: 100%;
-            background: #000;
+            background: rgba(0, 0, 0, 0.7);
             position: relative;
             cursor: grab;
             image-rendering: pixelated;
             filter: brightness(1.1) contrast(1.2) saturate(1.2);
             object-fit: contain;
+            z-index: 1;
         }
 
         #gameCanvas:active {
@@ -39,31 +79,56 @@
 
         /* Add scanline effect */
         #gameCanvas::after {
-            content: "";
+            content: '';
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 0, 0, 0.15) 0px,
-                rgba(0, 0, 0, 0.15) 1px,
-                transparent 1px,
-                transparent 2px
-            );
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.1) 0px,
+                    rgba(0, 0, 0, 0.1) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
             pointer-events: none;
+            opacity: 0.3;
+            mix-blend-mode: overlay;
+            z-index: 2;
         }
 
         .game-info {
             position: fixed;
             top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border: 2px solid #39ff14;
-            z-index: 1002;
-            font-size: 12px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 3px solid #00ffff;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            z-index: 1000;
+            transform-style: preserve-3d;
+            transform: translateZ(10px);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.3),
+                inset 0 0 10px rgba(0, 255, 255, 0.2),
+                0 3px 0 #00ffff;
+        }
+
+        .game-info::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 3px solid #ff00ff;
+            transform: translateZ(-5px);
+            filter: blur(2px);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
         }
 
         .elimination-message {
@@ -90,40 +155,63 @@
 
         .speed-controls {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateZ(10px);
             display: flex;
             gap: 10px;
-            z-index: 1002;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 10px;
-            border: 2px solid #00ffff;
-            border-radius: 4px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-            backdrop-filter: blur(5px);
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border: 3px solid #00ffff;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.3),
+                inset 0 0 10px rgba(0, 255, 255, 0.2),
+                0 3px 0 #00ffff;
+            transform-style: preserve-3d;
+        }
+
+        .speed-controls::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 3px solid #ff00ff;
+            transform: translateZ(-5px);
+            filter: blur(2px);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
         }
 
         .speed-button {
-            background: transparent;
-            color: #00ffff;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
             border: 2px solid #00ffff;
-            padding: 8px 15px;
+            padding: 10px 15px;
             cursor: pointer;
             font-family: 'Press Start 2P', cursive;
-            font-size: 12px;
+            font-size: 14px;
             transition: all 0.2s ease;
-            border-radius: 3px;
-            min-width: 50px;
-            text-align: center;
+            transform-style: preserve-3d;
+            transform: translateZ(5px);
+            box-shadow: 
+                0 2px 0 #0088ff,
+                0 0 10px rgba(0, 255, 255, 0.3);
         }
 
         .speed-button:hover {
-            background: rgba(0, 255, 255, 0.2);
+            background: rgba(0, 255, 255, 0.1);
+            transform: translateZ(8px);
         }
 
         .speed-button.active {
-            background: #00ffff;
-            color: black;
+            background: rgba(0, 255, 255, 0.2);
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            box-shadow: 
+                0 0 15px rgba(0, 255, 255, 0.4),
+                inset 0 0 5px rgba(0, 255, 255, 0.3);
         }
 
         .winner-screen {
@@ -657,31 +745,58 @@
             display: flex;
             gap: 10px;
             z-index: 1002;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 10px;
-            border: 2px solid #fff;
-            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border: 3px solid #00ffff;
+            transform-style: preserve-3d;
+            transform: translateZ(10px);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.3),
+                inset 0 0 10px rgba(0, 255, 255, 0.2),
+                0 3px 0 #00ffff;
+        }
+
+        .test-controls::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 3px solid #ff00ff;
+            transform: translateZ(-5px);
+            filter: blur(2px);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
         }
 
         .test-button {
-            background: #000;
+            background: rgba(0, 0, 0, 0.8);
             color: #fff;
-            border: 2px solid #fff;
-            padding: 8px 15px;
+            border: 2px solid #00ffff;
+            padding: 10px 15px;
             cursor: pointer;
             font-family: 'Press Start 2P', cursive;
             font-size: 12px;
             transition: all 0.2s ease;
+            transform-style: preserve-3d;
+            transform: translateZ(5px);
+            box-shadow: 
+                0 2px 0 #0088ff,
+                0 0 10px rgba(0, 255, 255, 0.3);
         }
 
         .test-button:hover {
-            background: #fff;
-            color: #000;
+            background: rgba(0, 255, 255, 0.1);
+            transform: translateZ(8px);
         }
 
         .test-button.active {
-            background: #fff;
-            color: #000;
+            background: rgba(0, 255, 255, 0.2);
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            box-shadow: 
+                0 0 15px rgba(0, 255, 255, 0.4),
+                inset 0 0 5px rgba(0, 255, 255, 0.3);
         }
     </style>
 </head>
@@ -730,7 +845,7 @@
         <div class="contestants-content">
             <h2 class="contestants-title">Contestants</h2>
             <div class="contestants-grid" id="contestantsGrid"></div>
-            <button class="ready-button" onclick="startFirstRound()">READY!</button>
+            <button class="ready-button" onclick="startFirstRound()">START THE RACE!</button>
         </div>
     </div>
 
@@ -1171,7 +1286,7 @@
                 const startButton = document.getElementById('startButton');
                 startButton.textContent = 'LOADING...';
                 startButton.disabled = true;
-                
+
                 // Load countries if not already loaded
                 if (!allCountries || allCountries.length === 0) {
                     const response = await fetch('https://restcountries.com/v3.1/all');
