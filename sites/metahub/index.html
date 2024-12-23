@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta Hub - A Site About This Site</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+            color: #ecf0f1;
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #3498db;
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+
+        .meta-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 2rem 0;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .meta-stat {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .meta-stat:last-child {
+            border-bottom: none;
+        }
+
+        .recursion-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .recursion-button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        #recursion-count {
+            font-size: 3rem;
+            color: #e74c3c;
+            text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+
+        .meta-quote {
+            font-style: italic;
+            color: #bdc3c7;
+            margin: 2rem 0;
+        }
+
+        #time-on-page {
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: #2ecc71;
+        }
+
+        @keyframes meta-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .meta-inception {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.1);
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .meta-inception.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-infinity"></i> 
+            Meta Hub
+        </h1>
+        
+        <div class="meta-box">
+            <p>This is a site about this site, which is a site about this site, which is a site about this site...</p>
+            <div id="recursion-count">0</div>
+            <button class="recursion-button" onclick="goDeeper()">
+                <i class="fas fa-arrow-down"></i> Go Deeper
+            </button>
+        </div>
+
+        <div class="meta-box">
+            <h2>Meta Self-Analysis</h2>
+            <div class="meta-stat">
+                <span>Current background color:</span>
+                <span id="bg-color">Analyzing...</span>
+            </div>
+            <div class="meta-stat">
+                <span>Number of meta-boxes on page:</span>
+                <span id="meta-box-count">Counting...</span>
+            </div>
+            <div class="meta-stat">
+                <span>Times "meta" appears in code:</span>
+                <span id="meta-word-count">Calculating...</span>
+            </div>
+            <div class="meta-stat">
+                <span>Current recursion depth:</span>
+                <span id="meta-depth">0</span>
+            </div>
+        </div>
+
+        <div class="meta-box">
+            <h2>Meta Statistics</h2>
+            <div class="meta-stat">
+                <span>Time spent on this meta page:</span>
+                <span id="time-on-page">00:00:00</span>
+            </div>
+            <div class="meta-stat">
+                <span>Characters in this page's source code:</span>
+                <span id="char-count">Loading...</span>
+            </div>
+            <div class="meta-stat">
+                <span>Times you've visited this meta page:</span>
+                <span id="visit-count">Loading...</span>
+            </div>
+        </div>
+
+        <div class="meta-quote">
+            "I'm So Meta, Even This Acronym"
+        </div>
+    </div>
+
+    <script>
+        let recursionLevel = 0;
+        let startTime = new Date();
+        let visitCount = parseInt(localStorage.getItem('metaVisits') || '0') + 1;
+        localStorage.setItem('metaVisits', visitCount);
+
+        function goDeeper() {
+            recursionLevel++;
+            document.getElementById('recursion-count').textContent = recursionLevel;
+            createMetaInception();
+            if (recursionLevel > 5) {
+                document.body.style.transform = `rotate(${recursionLevel * 360}deg)`;
+                document.body.style.transition = 'transform 1s ease';
+            }
+        }
+
+        function updateTimer() {
+            const now = new Date();
+            const diff = new Date(now - startTime);
+            const hours = String(diff.getUTCHours()).padStart(2, '0');
+            const minutes = String(diff.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(diff.getUTCSeconds()).padStart(2, '0');
+            document.getElementById('time-on-page').textContent = 
+                `${hours}:${minutes}:${seconds}`;
+        }
+
+        // Update stats
+        document.getElementById('char-count').textContent = document.documentElement.outerHTML.length;
+        document.getElementById('visit-count').textContent = visitCount;
+        setInterval(updateTimer, 1000);
+
+        // Easter egg: Konami code handler
+        let konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let konamiIndex = 0;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    document.body.style.animation = 'matrix 2s infinite linear';
+                    konamiIndex = 0;
+                }
+            } else {
+                konamiIndex = 0;
+            }
+        });
+
+        // Meta self-analysis functions
+        function updateMetaStats() {
+            // Get background color
+            const bgColor = window.getComputedStyle(document.body).backgroundImage;
+            document.getElementById('bg-color').textContent = bgColor;
+
+            // Count meta-boxes
+            const metaBoxCount = document.getElementsByClassName('meta-box').length;
+            document.getElementById('meta-box-count').textContent = metaBoxCount;
+
+            // Count "meta" occurrences
+            const metaCount = document.documentElement.outerHTML.toLowerCase().split('meta').length - 1;
+            document.getElementById('meta-word-count').textContent = metaCount;
+
+            // Update meta depth
+            const urlParams = new URLSearchParams(window.location.search);
+            const depth = parseInt(urlParams.get('depth') || '0');
+            document.getElementById('meta-depth').textContent = depth;
+        }
+
+        // Create a meta-inception effect
+        function createMetaInception() {
+            const iframe = document.createElement('iframe');
+            iframe.src = window.location.href + '?depth=' + (recursionLevel + 1);
+            iframe.className = 'meta-inception';
+            document.body.appendChild(iframe);
+            setTimeout(() => iframe.classList.add('active'), 100);
+            setTimeout(() => {
+                iframe.classList.remove('active');
+                setTimeout(() => iframe.remove(), 500);
+            }, 2000);
+        }
+
+        // Initial meta stats update
+        updateMetaStats();
+        setInterval(updateMetaStats, 5000); // Update every 5 seconds
+    </script>
+</body>
+</html>

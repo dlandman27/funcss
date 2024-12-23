@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Ball Race</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            font-family: 'Press Start 2P', cursive;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #gameCanvas {
+            width: 1024px;
+            height: 768px;
+            max-width: 100%;
+            max-height: 100%;
+            background: #000;
+            position: relative;
+            cursor: grab;
+            image-rendering: pixelated;
+            filter: brightness(1.1) contrast(1.2) saturate(1.2);
+            object-fit: contain;
+        }
+
+        #gameCanvas:active {
+            cursor: grabbing;
+        }
+
+        /* Add scanline effect */
+        #gameCanvas::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15) 0px,
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+        }
+
+        .game-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 2px solid #39ff14;
+            z-index: 1002;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-info" id="gameInfo">
+        <p>Countries Remaining: <span id="remainingCountries"></span></p>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script>
+        // Fixed game dimensions
+        const GAME_WIDTH = 1024;
+        const GAME_HEIGHT = 768;
+
+        const canvas = document.getElementById('gameCanvas');
+        let allCountries = [];
+        let remainingCountries = [];
+        let currentMap = 0;
+
+        // Set up Matter.js modules
+        const Engine = Matter.Engine;
+        const Render = Matter.Render;
+        const Runner = Matter.Runner;
+        const World = Matter.World;
+        const Bodies = Matter.Bodies;
+
+        const engine = Engine.create({
+            timing: { timeScale: 0.5 }
+        });
+
+        const render = Render.create({
+            canvas: canvas,
+            engine: engine,
+            options: {
+                width: GAME_WIDTH,
+                height: GAME_HEIGHT,
+                wireframes: false,
+                background: '#000',
+                pixelRatio: 1
+            }
+        });
+
+        // Predefined maps
+        const maps = [
+            // Map 1: Simple Funnel
+            () => {
+                const walls = [
+                    // Finish line at bottom
+                    Bodies.rectangle(GAME_WIDTH/2, GAME_HEIGHT - 10, GAME_WIDTH, 20, {
+                        isStatic: true,
+                        render: { fillStyle: '#ff0000' },
+                        label: 'finish'
+                    }),
+                    // Left funnel wall
+                    Bodies.rectangle(0, GAME_HEIGHT/2, GAME_WIDTH-300, 20, {
+                        isStatic: true,
+                        angle: Math.PI * 0.15,
+                        render: { fillStyle: '#39ff14' }
+                    }),
+                    // Right funnel wall
+                    Bodies.rectangle(GAME_WIDTH, GAME_HEIGHT/2, GAME_WIDTH - 300, 20, {
+                        isStatic: true,
+                        angle: -Math.PI * 0.15,
+                        render: { fillStyle: '#39ff14' }
+                    })
+                ];
+                return walls;
+            }
+        ];
+
+        function createMap() {
+            // Clear existing bodies
+            World.clear(engine.world);
+            
+            // Add current map
+            const mapWalls = maps[currentMap]();
+            World.add(engine.world, mapWalls);
+            
+            // Add boundary walls
+            const boundaries = [
+                Bodies.rectangle(0, GAME_HEIGHT/2, 20, GAME_HEIGHT, { 
+                    isStatic: true,
+                    render: { fillStyle: '#39ff14' },
+                    label: 'leftWall'
+                }),
+                Bodies.rectangle(GAME_WIDTH, GAME_HEIGHT/2, 20, GAME_HEIGHT, { 
+                    isStatic: true,
+                    render: { fillStyle: '#39ff14' },
+                    label: 'rightWall'
+                }),
+                Bodies.rectangle(GAME_WIDTH/2, 0, GAME_WIDTH, 20, { 
+                    isStatic: true,
+                    render: { fillStyle: '#39ff14' },
+                    label: 'topWall'
+                }),
+                Bodies.rectangle(GAME_WIDTH/2, GAME_HEIGHT, GAME_WIDTH, 20, { 
+                    isStatic: true,
+                    render: { fillStyle: '#39ff14' },
+                    label: 'bottomWall'
+                })
+            ];
+            World.add(engine.world, boundaries);
+        }
+
+        // Create runner
+        const runner = Runner.create();
+
+        // Start the runner and renderer
+        Runner.run(runner, engine);
+        Render.run(render);
+
+        function handleResize() {
+            const scale = Math.min(
+                window.innerWidth / GAME_WIDTH,
+                window.innerHeight / GAME_HEIGHT
+            );
+            
+            canvas.style.transform = `scale(${scale})`;
+            canvas.style.transformOrigin = 'center center';
+        }
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        async function loadCountries() {
+            try {
+                const response = await fetch('https://restcountries.com/v3.1/all');
+                allCountries = await response.json();
+                remainingCountries = [...allCountries];
+                
+                // Create circular flag sprites
+                remainingCountries = await Promise.all(remainingCountries.map(async country => {
+                    if (country.flags && country.flags.png) {
+                        const tempCanvas = document.createElement('canvas');
+                        const ctx = tempCanvas.getContext('2d');
+                        const size = 64;
+                        tempCanvas.width = size;
+                        tempCanvas.height = size;
+                        
+                        const img = await new Promise((resolve) => {
+                            const image = new Image();
+                            image.crossOrigin = "Anonymous";
+                            image.onload = () => resolve(image);
+                            image.src = country.flags.png;
+                        });
+
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+                        ctx.closePath();
+                        ctx.clip();
+                        
+                        const scale = Math.max(size / img.width, size / img.height);
+                        const x = (size - img.width * scale) / 2;
+                        const y = (size - img.height * scale) / 2;
+                        
+                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                        ctx.restore();
+                        
+                        country.circularFlag = tempCanvas.toDataURL();
+                    }
+                    return country;
+                }));
+                
+                createCourse();
+            } catch (error) {
+                console.error('Error loading countries:', error);
+            }
+        }
+
+        function createCourse() {
+            createMap();
+
+            // Create country balls at top
+            const ballSize = 15;
+            const ballSpacing = ballSize * 2.2;
+            const maxBallsPerRow = Math.floor(GAME_WIDTH / ballSpacing);
+            
+            remainingCountries.forEach((country, index) => {
+                const col = index % maxBallsPerRow;
+                const row = Math.floor(index / maxBallsPerRow);
+                
+                if (country.circularFlag) {
+                    const ball = Bodies.circle(
+                        col * ballSpacing + ballSpacing,
+                        row * ballSpacing + 50,
+                        ballSize,
+                        {
+                            restitution: 1,
+                            friction: 0,
+                            render: {
+                                sprite: {
+                                    texture: country.circularFlag,
+                                    xScale: ballSize * 2 / 64,
+                                    yScale: ballSize * 2 / 64
+                                }
+                            },
+                            label: country.name.common
+                        }
+                    );
+                    World.add(engine.world, ball);
+                }
+            });
+
+            document.getElementById('remainingCountries').textContent = remainingCountries.length;
+        }
+
+        Matter.Events.on(engine, 'collisionStart', (event) => {
+            event.pairs.forEach((pair) => {
+                const bodyA = pair.bodyA;
+                const bodyB = pair.bodyB;
+
+                if (
+                    (bodyA.label === 'finish' && bodyB.label && bodyB.label !== 'finish') ||
+                    (bodyB.label === 'finish' && bodyA.label && bodyA.label !== 'finish')
+                ) {
+                    const ballBody = bodyA.label === 'finish' ? bodyB : bodyA;
+                    
+                    remainingCountries = remainingCountries.filter(c => 
+                        c.name.common !== ballBody.label
+                    );
+                    Matter.World.remove(engine.world, ballBody);
+                    
+                    document.getElementById('remainingCountries').textContent = remainingCountries.length;
+                    
+                    // If only one country remains, start new round with new map
+                    if(remainingCountries.length === 1) {
+                        setTimeout(createCourse, 2000);
+                    }
+                }
+            });
+        });
+
+        // Initial setup
+        handleResize();
+        loadCountries();
+    </script>
+</body>
+</html>
