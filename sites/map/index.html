@@ -209,6 +209,80 @@
             background: rgba(0, 255, 255, 0.1);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
         }
+
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            color: #00ffff;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .start-content {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            text-align: center;
+        }
+
+        .count-selector {
+            margin: 40px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .count-selector button {
+            background: transparent;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 20px;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .count-selector button:hover {
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        }
+
+        .count-selector span {
+            min-width: 80px;
+            font-size: 32px;
+            color: #ff00ff;
+        }
+
+        .start-button {
+            background: transparent;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 15px 30px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .start-button:hover {
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -232,6 +306,18 @@
             <div id="winnerDisplay"></div>
             <div class="rankings" id="rankings"></div>
             <button class="play-again-button" onclick="location.reload()">Play Again</button>
+        </div>
+    </div>
+
+    <div class="start-screen" id="startScreen">
+        <div class="start-content">
+            <h1>Country Battle</h1>
+            <div class="count-selector">
+                <button onclick="adjustCount(-1)">-</button>
+                <span id="countDisplay">16</span>
+                <button onclick="adjustCount(1)">+</button>
+            </div>
+            <button class="start-button" onclick="startGame()">Start Battle</button>
         </div>
     </div>
 
@@ -622,8 +708,98 @@
             winnerScreen.style.display = 'flex';
         }
 
-        // Initial setup
+        async function createCircularFlag(imageUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const size = 64; // Size of the circular flag
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Draw circular clip path
+                    ctx.beginPath();
+                    ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2, true);
+                    ctx.closePath();
+                    ctx.clip();
+                    
+                    // Draw the image
+                    ctx.drawImage(img, 0, 0, size, size);
+                    
+                    resolve(canvas.toDataURL());
+                };
+                
+                img.onerror = () => reject(new Error('Failed to load flag image'));
+                img.src = imageUrl;
+            });
+        }
+
+        let selectedCount = 16;
+
+        function adjustCount(change) {
+            const newCount = selectedCount + change;
+            if (newCount >= 4 && newCount <= 32) {
+                selectedCount = newCount;
+                document.getElementById('countDisplay').textContent = selectedCount;
+            }
+        }
+
+        async function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            
+            try {
+                // Load countries if not already loaded
+                if (!allCountries || allCountries.length === 0) {
+                    const response = await fetch('https://restcountries.com/v3.1/all');
+                    allCountries = await response.json();
+                    
+                    // Filter out countries without flags
+                    allCountries = allCountries.filter(country => country.flags && country.flags.png);
+                    
+                    // Create circular flags
+                    allCountries = await Promise.all(allCountries.map(async country => {
+                        try {
+                            country.circularFlag = await createCircularFlag(country.flags.png);
+                            return country;
+                        } catch (error) {
+                            console.error(`Failed to create circular flag for ${country.name.common}`);
+                            return null;
+                        }
+                    }));
+                    
+                    // Remove any countries where flag creation failed
+                    allCountries = allCountries.filter(country => country !== null);
+                }
+
+                // Randomly select countries for the game
+                allRemainingCountries = shuffleArray([...allCountries]).slice(0, selectedCount);
+                
+                // Start the game engine if not running
+                if (!engine.enabled) {
+                    Engine.run(engine);
+                    Render.run(render);
+                }
+                
+                // Create the first course
+                createCourse();
+                
+            } catch (error) {
+                console.error('Error starting game:', error);
+                // Optionally show an error message to the user
+                alert('Failed to start game. Please try again.');
+            }
+        }
+
+        // Show start screen when page loads
         document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('startScreen').style.display = 'flex';
+        });
+
+        // Initial setup
+        document.getElementById('start-button').addEventListener('click', () => {
             createMap();
             handleResize();
             loadCountries();
