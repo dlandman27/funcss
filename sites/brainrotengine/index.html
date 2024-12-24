@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Rot Engine</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+        }
+        canvas {
+            border: 2px solid #fff;
+            background: #111;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = 800;
+        canvas.height = 600;
+
+        // Physics constants
+        const GRAVITY = 0.4;
+        const BOUNCE_DAMPING = 1.05; // Made slightly more energetic
+
+        // Effect system
+        const effects = {
+            rainbow: {
+                enabled: true,
+                speed: 2, // Doubled rainbow speed
+                apply: (object) => {
+                    if (!object.hue) object.hue = 0;
+                    object.hue = (object.hue + effects.rainbow.speed) % 360;
+                    return `hsl(${object.hue}, 100%, 50%)`;
+                }
+            },
+            trail: {
+                enabled: true,
+                lifetime: 45, // Increased trail lifetime
+                interval: 2, // Decreased interval for more frequent trails
+                snapshots: [],
+                frameCount: 0,
+                createSnapshot: (object) => {
+                    if (!effects.trail.enabled) return;
+                    if (effects.trail.frameCount % effects.trail.interval === 0) {
+                        effects.trail.snapshots.push({
+                            x: object.x,
+                            y: object.y,
+                            radius: object.radius,
+                            fillColor: object.fillColor,
+                            strokeColor: object.strokeColor,
+                            lifetime: effects.trail.lifetime,
+                            rotation: Math.random() * Math.PI * 2 // Added rotation for more visual interest
+                        });
+                    }
+                    effects.trail.frameCount++;
+                },
+                draw: (ctx) => {
+                    for (let i = effects.trail.snapshots.length - 1; i >= 0; i--) {
+                        const snapshot = effects.trail.snapshots[i];
+                        
+                        ctx.save();
+                        ctx.translate(snapshot.x, snapshot.y);
+                        ctx.rotate(snapshot.rotation);
+                        
+                        ctx.beginPath();
+                        ctx.strokeStyle = snapshot.strokeColor;
+                        ctx.fillStyle = snapshot.fillColor;
+                        ctx.globalAlpha = snapshot.lifetime / effects.trail.lifetime;
+                        ctx.lineWidth = 2;
+                        ctx.arc(0, 0, snapshot.radius * (1 + Math.sin(Date.now() * 0.01) * 0.1), 0, Math.PI * 2); // Added pulsing effect
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.restore();
+                        
+                        snapshot.lifetime--;
+                        snapshot.rotation += 0.1; // Rotate trails over time
+                        
+                        if (snapshot.lifetime <= 0) {
+                            effects.trail.snapshots.splice(i, 1);
+                        }
+                    }
+                    ctx.globalAlpha = 1;
+                }
+            },
+            glow: { // Added new glow effect
+                enabled: true,
+                draw: (ctx, object) => {
+                    const gradient = ctx.createRadialGradient(
+                        object.x, object.y, 0,
+                        object.x, object.y, object.radius * 2
+                    );
+                    gradient.addColorStop(0, object.fillColor);
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(object.x, object.y, object.radius * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        };
+
+        // Game objects
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            dx: 5,
+            dy: 3,
+            strokeWidth: 2,
+            strokeColor: '#fff',
+            fillColor: '#fff',
+            growthRate: 0.5
+        };
+
+        const container = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 200,
+            strokeWidth: 16,
+            color: '#fff',
+            rotation: 0 // Added rotation
+        };
+
+        function animate() {
+            // Clear canvas with fade effect
+            ctx.fillStyle = 'rgba(17, 17, 17, 0.3)'; // Creates motion blur
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Rotate container
+            container.rotation += 0.005;
+
+            // Apply effects
+            if (effects.rainbow.enabled) {
+                container.color = effects.rainbow.apply(container);
+                ball.fillColor = effects.rainbow.apply(ball);
+                ball.strokeColor = ball.fillColor;
+            }
+
+            if (effects.trail.enabled) {
+                effects.trail.createSnapshot(ball);
+                effects.trail.draw(ctx);
+            }
+
+            // Draw container with rotation
+            ctx.save();
+            ctx.translate(container.x, container.y);
+            ctx.rotate(container.rotation);
+            ctx.beginPath();
+            ctx.strokeStyle = container.color;
+            ctx.lineWidth = container.strokeWidth;
+            ctx.arc(0, 0, container.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // Apply physics
+            ball.dy += GRAVITY;
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Check for collisions
+            const dx = ball.x - container.x;
+            const dy = ball.y - container.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance + ball.radius > container.radius) {
+                ball.radius += ball.growthRate;
+                
+                const angle = Math.atan2(dy, dx);
+                ball.x = container.x + (container.radius - ball.radius) * Math.cos(angle);
+                ball.y = container.y + (container.radius - ball.radius) * Math.sin(angle);
+                
+                const normalX = Math.cos(angle);
+                const normalY = Math.sin(angle);
+                const dotProduct = ball.dx * normalX + ball.dy * normalY;
+                
+                ball.dx = (ball.dx - 2 * dotProduct * normalX) * BOUNCE_DAMPING;
+                ball.dy = (ball.dy - 2 * dotProduct * normalY) * BOUNCE_DAMPING;
+            }
+
+            // Draw glow effect
+            if (effects.glow.enabled) {
+                effects.glow.draw(ctx, ball);
+            }
+
+            // Draw ball with pulsing effect
+            ctx.beginPath();
+            ctx.strokeStyle = ball.strokeColor;
+            ctx.fillStyle = ball.fillColor;
+            ctx.lineWidth = ball.strokeWidth;
+            const pulseScale = 1 + Math.sin(Date.now() * 0.01) * 0.1;
+            ctx.arc(ball.x, ball.y, ball.radius * pulseScale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
