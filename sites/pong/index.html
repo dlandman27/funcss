@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong</title>
+    <meta name="description" content="A classic Pong game implementation with keyboard and mouse controls. Play against the computer in this retro arcade game.">
+    <meta name="keywords" content="pong, game, arcade, retro, paddle game, browser game">
+    <meta name="author" content="@randomsitesontheweb">
+    <meta name="theme-color" content="#000000">
+    <meta property="og:title" content="Pong Game">
+    <meta property="og:description" content="Play the classic arcade game Pong in your browser. Control your paddle with keyboard or mouse and compete against the computer.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Random Sites on the Web">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+            font-family: 'Courier New', monospace;
+        }
+
+        canvas {
+            border: 2px solid #fff;
+            cursor: none; /* Hide cursor over canvas */
+        }
+
+        .score {
+            position: absolute;
+            top: 20px;
+            color: #fff;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        #player-score {
+            left: 40%;
+        }
+
+        #computer-score {
+            right: 40%;
+        }
+
+        #play-again {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 24px;
+            background: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            display: none;
+        }
+
+        #play-again:hover {
+            background: #ddd;
+        }
+
+        .game-container {
+            position: relative;
+            text-align: center;
+        }
+
+        .title {
+            color: #fff;
+            font-size: 72px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .button {
+            padding: 15px 30px;
+            font-size: 24px;
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .button:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        canvas {
+            border: 2px solid #fff;
+            cursor: none;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            display: none; /* Hide canvas initially */
+        }
+
+        .score {
+            display: none; /* Hide scores initially */
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">PONG</h1>
+        <button id="start-game" class="button">Start Game</button>
+        <div id="player-score" class="score">0</div>
+        <div id="computer-score" class="score">0</div>
+        <canvas id="pongCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+        const playerScoreElement = document.getElementById('player-score');
+        const computerScoreElement = document.getElementById('computer-score');
+        const startButton = document.getElementById('start-game');
+
+        canvas.width = 800;
+        canvas.height = 400;
+
+        const paddleWidth = 10;
+        const paddleHeight = 60;
+        const ballSize = 8;
+        const paddleSpeed = 8;
+
+        let playerScore = 0;
+        let computerScore = 0;
+        let mouseY = canvas.height/2;
+        
+        const player = {
+            y: canvas.height/2 - paddleHeight/2,
+            speed: 0
+        };
+
+        const computer = {
+            y: canvas.height/2 - paddleHeight/2,
+            speed: 5
+        };
+
+        const ball = {
+            x: canvas.width/2,
+            y: canvas.height/2,
+            speedX: 5,
+            speedY: 5
+        };
+
+        // Add game over state
+        let isGameOver = false;
+        const WINNING_SCORE = 5;
+
+        function drawRect(x, y, width, height) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(x, y, width, height);
+        }
+
+        function drawBall(x, y) {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x, y, ballSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawDottedLine() {
+            ctx.strokeStyle = '#fff';
+            ctx.setLineDash([5, 15]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2, 0);
+            ctx.lineTo(canvas.width/2, canvas.height);
+            ctx.stroke();
+        }
+
+        // Handle keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                player.y -= paddleSpeed;
+            } else if (e.key === 'ArrowDown') {
+                player.y += paddleSpeed;
+            }
+
+            // Keep paddle within canvas bounds
+            if (player.y < 0) player.y = 0;
+            if (player.y > canvas.height - paddleHeight) player.y = canvas.height - paddleHeight;
+        });
+
+        // Handle mouse movement
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseY = e.clientY - rect.top;
+            player.y = mouseY - paddleHeight/2;
+
+            // Keep paddle within canvas bounds
+            if (player.y < 0) player.y = 0;
+            if (player.y > canvas.height - paddleHeight) player.y = canvas.height - paddleHeight;
+        });
+
+        function computerMovement() {
+            const computerCenter = computer.y + paddleHeight/2;
+            const ballCenter = ball.y;
+            
+            if (computerCenter < ballCenter - 35) {
+                computer.y += computer.speed;
+            } else if (computerCenter > ballCenter + 35) {
+                computer.y -= computer.speed;
+            }
+        }
+
+        function ballMovement() {
+            // Don't move the ball if game is over
+            if (isGameOver) return;
+
+            // Ball collision with top and bottom
+            if (ball.y <= 0 || ball.y >= canvas.height) {
+                ball.speedY = -ball.speedY;
+            }
+
+            // Ball collision with paddles
+            if (ball.x <= paddleWidth && ball.y >= player.y && ball.y <= player.y + paddleHeight) {
+                ball.speedX = -ball.speedX;
+                const diff = ball.y - (player.y + paddleHeight/2);
+                ball.speedY = diff * 0.2;
+            }
+
+            if (ball.x >= canvas.width - paddleWidth && ball.y >= computer.y && ball.y <= computer.y + paddleHeight) {
+                ball.speedX = -ball.speedX;
+                const diff = ball.y - (computer.y + paddleHeight/2);
+                ball.speedY = diff * 0.2;
+            }
+
+            // Scoring
+            if (ball.x < 0) {
+                computerScore++;
+                computerScoreElement.textContent = computerScore;
+                checkGameOver();
+                resetBall();
+            } else if (ball.x > canvas.width) {
+                playerScore++;
+                playerScoreElement.textContent = playerScore;
+                checkGameOver();
+                resetBall();
+            }
+
+            ball.x += ball.speedX;
+            ball.y += ball.speedY;
+        }
+
+        function resetBall() {
+            ball.x = canvas.width/2;
+            ball.y = canvas.height/2;
+            ball.speedX = -ball.speedX;
+            ball.speedY = Math.random() * 10 - 5;
+        }
+
+        function resetGame() {
+            isGameOver = false;
+            playerScore = 0;
+            computerScore = 0;
+            playerScoreElement.textContent = '0';
+            computerScoreElement.textContent = '0';
+            player.y = canvas.height/2 - paddleHeight/2;
+            computer.y = canvas.height/2 - paddleHeight/2;
+            resetBall();
+            startButton.style.display = 'none';
+        }
+
+        // Add new function to check for game over
+        function checkGameOver() {
+            if (playerScore >= WINNING_SCORE || computerScore >= WINNING_SCORE) {
+                isGameOver = true;
+                startButton.style.display = 'block';
+            }
+        }
+
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw center line
+            drawDottedLine();
+            
+            // Draw paddles
+            drawRect(0, player.y, paddleWidth, paddleHeight);
+            drawRect(canvas.width - paddleWidth, computer.y, paddleWidth, paddleHeight);
+            
+            // Draw ball
+            drawBall(ball.x, ball.y);
+            
+            computerMovement();
+            ballMovement();
+            
+            // Draw game over message last, after everything else is drawn
+            if (isGameOver) {
+                // Add semi-transparent overlay
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw game over text
+                ctx.fillStyle = '#fff';
+                ctx.font = '48px "Courier New"';
+                ctx.textAlign = 'center';
+                const winner = playerScore >= WINNING_SCORE ? 'Player' : 'Computer';
+                ctx.fillText(`Game Over!`, canvas.width/2, canvas.height/2 - 30);
+                ctx.fillText(`${winner} wins!`, canvas.width/2, canvas.height/2 + 30);
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            canvas.style.display = 'block';
+            document.querySelectorAll('.score').forEach(el => el.style.display = 'block');
+            startButton.style.display = 'none';
+            resetGame();
+        }
+
+        startButton.addEventListener('click', startGame);
+
+        gameLoop();
+    </script>
+</body>
+</html>

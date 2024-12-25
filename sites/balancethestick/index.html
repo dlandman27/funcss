@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance the Stick</title>
+    <meta name="description" content="Test your balancing skills by keeping a stick upright on a moving platform">
+    <meta name="keywords" content="balance game, physics game, stick balance, browser game">
+    <meta name="author" content="@randomsitesontheweb">
+    <meta name="theme-color" content="#000000">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='45' y='10' width='10' height='80' fill='white'/><rect x='20' y='85' width='60' height='5' fill='white'/></svg>">
+    <meta property="og:title" content="Balance the Stick">
+    <meta property="og:description" content="How long can you keep the stick balanced? Test your skills in this physics-based balancing game.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Random Sites on the Web">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+
+        canvas {
+            border: 2px solid #fff;
+        }
+
+        .score {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background: #fff;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+        }
+
+        button:hover {
+            background: #ddd;
+        }
+
+        .leaderboard {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
+
+        .leaderboard h3 {
+            margin-bottom: 5px;
+        }
+
+        .leaderboard ol {
+            margin: 0;
+            padding-left: 25px;
+        }
+
+        #title-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+        }
+
+        #title-screen h1 {
+            font-size: 48px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #0f0;
+        }
+
+        .glow-text {
+            color: #fff;
+            text-shadow: 0 0 10px #0f0;
+        }
+
+        .initials-container {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .initial {
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            font-size: 24px;
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="title-screen">
+        <h1>balance the stick</h1>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+    <div class="score">Time: <span id="timer">0</span>s</div>
+    <div class="leaderboard">
+        <h3>Top Scores</h3>
+        <ol id="leaderboard-list"></ol>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="game-over">
+        <h2>Game Over!</h2>
+        <p>You lasted: <span id="final-time">0</span> seconds</p>
+        <div id="initials-input">
+            <p>Enter your initials:</p>
+            <div class="initials-container">
+                <input type="text" maxlength="1" class="initial" value="A">
+                <input type="text" maxlength="1" class="initial" value="A">
+                <input type="text" maxlength="1" class="initial" value="A">
+            </div>
+            <button onclick="submitScore()">Submit Score</button>
+        </div>
+        <button onclick="resetGame()" style="display: none;" id="try-again-btn">Try Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const timerElement = document.getElementById('timer');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalTimeElement = document.getElementById('final-time');
+        const highScoreElement = document.getElementById('high-score');
+
+        canvas.width = 800;
+        canvas.height = 600;
+
+        const platform = {
+            width: 100,
+            height: 20,
+            x: canvas.width / 2 - 50,
+            y: canvas.height - 50
+        };
+
+        const stick = {
+            length: 100,
+            width: 5,
+            angle: 0,
+            angleVelocity: 0,
+            angleAcceleration: 0,
+            x: canvas.width / 2,
+            y: canvas.height - 50,
+            lastPlatformX: canvas.width / 2 - 50  // Track last platform position
+        };
+
+    let isGameOver = false;
+    let startTime = Date.now();
+    let elapsedTime = 0;
+    let highScore = localStorage.getItem('highScore') || 0;
+    let scores = JSON.parse(localStorage.getItem('scores') || '[]');
+    // highScoreElement.textContent = highScore;
+    let gameStarted = false;
+
+        function drawPlatform() {
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#0f0';
+            ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+            ctx.shadowBlur = 0;
+        }
+
+        function drawStick() {
+            ctx.save();
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#0f0';
+            ctx.translate(stick.x, stick.y);
+            ctx.rotate(stick.angle);
+            
+            // Draw stick outline
+            ctx.beginPath();
+            ctx.moveTo(-stick.width/2, -stick.length);
+            ctx.lineTo(-stick.width/2, 0);
+            ctx.lineTo(stick.width/2, 0);
+            ctx.lineTo(stick.width/2, -stick.length);
+            ctx.stroke();
+            
+            // Draw a small circle at the top to indicate weight
+            ctx.beginPath();
+            ctx.arc(0, -stick.length, stick.width * 1.5, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        function updateStick() {
+            const gravity = 0.0015;      // Reduced gravity
+            const dampening = 0.998;     // More dampening for smoother motion
+            const platformSensitivity = 0.0005; // Increased platform sensitivity
+            const topHeavyFactor = 2;  // Slightly reduced top-heaviness
+
+            // Calculate platform movement
+            const platformDelta = platform.x - stick.lastPlatformX;
+            
+            // Update angle acceleration with gentler physics
+            stick.angleAcceleration = Math.sin(stick.angle) * gravity * topHeavyFactor;
+            stick.angleAcceleration += -platformDelta * platformSensitivity;
+            
+            // Update velocity and apply dampening
+            stick.angleVelocity += stick.angleAcceleration;
+            stick.angleVelocity *= dampening;
+            
+            // Update angle
+            stick.angle += stick.angleVelocity;
+            
+            // Store platform position for next frame
+            stick.lastPlatformX = platform.x;
+            
+            // Game over if stick falls too far (increased angle tolerance)
+            if (Math.abs(stick.angle) > Math.PI/2) { // More forgiving angle
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            const seconds = Math.floor(elapsedTime / 1000);
+            const milliseconds = elapsedTime % 1000;
+            const currentTime = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+            gameOverScreen.style.display = 'block';
+            finalTimeElement.textContent = currentTime;
+            document.getElementById('try-again-btn').style.display = 'none';
+            document.getElementById('initials-input').style.display = 'block';
+        }
+
+        function submitScore() {
+            const inputs = document.querySelectorAll('.initial');
+            const initials = Array.from(inputs).map(input => input.value).join('');
+            const score = elapsedTime / 1000; // Store as seconds with decimals
+            
+            scores.push({ initials, score });
+            scores.sort((a, b) => b.score - a.score);
+            scores = scores.slice(0, 5);
+            
+            localStorage.setItem('scores', JSON.stringify(scores));
+            updateLeaderboard();
+            
+            // Reset the game immediately after submitting
+            resetGame();
+            gameOverScreen.style.display = 'none';
+        }
+
+        function updateLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+            
+            scores.forEach(score => {
+                const li = document.createElement('li');
+                li.textContent = `${score.initials} - ${score.score.toFixed(3)}s`;
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        function resetGame() {
+            isGameOver = false;
+            gameOverScreen.style.display = 'none';
+            
+            // Reset stick physics
+            stick.angle = 0;
+            stick.angleVelocity = 0;
+            stick.angleAcceleration = 0;
+            
+            // Reset positions
+            platform.x = canvas.width / 2 - platform.width / 2;
+            stick.x = platform.x + platform.width / 2;
+            stick.lastPlatformX = platform.x;
+            
+            // Reset timer
+            startTime = Date.now();
+            elapsedTime = 0;
+            timerElement.textContent = '0';
+            
+            // Add this line to update leaderboard when resetting
+            updateLeaderboard();
+        }
+
+        function updateTimer() {
+            if (!isGameOver) {
+                elapsedTime = Date.now() - startTime;
+                const seconds = Math.floor(elapsedTime / 1000);
+                const milliseconds = elapsedTime % 1000;
+                timerElement.textContent = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (gameStarted && !isGameOver) {
+                updateStick();
+                updateTimer();
+            }
+            
+            drawPlatform();
+            drawStick();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Mouse/Touch movement
+        function handleMove(e) {
+            if (isGameOver || !gameStarted) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            let x;
+            
+            if (e.type.startsWith('touch')) {
+                x = e.touches[0].clientX - rect.left;
+            } else {
+                x = e.clientX - rect.left;
+            }
+            
+            // Update platform and stick position
+            platform.x = Math.max(0, Math.min(canvas.width - platform.width, x - platform.width/2));
+            stick.x = platform.x + platform.width/2;
+        }
+
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('touchmove', handleMove);
+        canvas.addEventListener('touchstart', handleMove);
+
+        function startGame() {
+            document.getElementById('title-screen').style.display = 'none';
+            gameStarted = true;
+            scores = JSON.parse(localStorage.getItem('scores') || '[]');
+            updateLeaderboard();
+            setupInitialsInput();
+            resetGame();
+        }
+
+        // Start game
+        updateLeaderboard();
+        gameLoop();
+
+        // Add this new function to handle initial input navigation
+        function setupInitialsInput() {
+            const inputs = document.querySelectorAll('.initial');
+            
+            inputs.forEach((input, index) => {
+                // Clear the 'A' when focusing on the input
+                input.addEventListener('focus', () => {
+                    input.value = '';
+                });
+
+                // Remove the input event listener that was causing issues
+                // and handle all input through keydown instead
+                input.addEventListener('keydown', (e) => {
+                    // Only allow A-Z and a-z keys
+                    if (e.key.match(/^[A-Za-z]$/)) {
+                        input.value = e.key.toUpperCase();
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        } else if (index === inputs.length - 1) {
+                            // Auto-submit if it's the last input
+                            submitScore();
+                        }
+                    } else if (e.key === 'Backspace') {
+                        input.value = '';
+                        if (index > 0) {
+                            inputs[index - 1].focus();
+                        }
+                    } else {
+                        e.preventDefault();
+                    }
+                });
+
+                // Prevent paste unless it's a single letter
+                input.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const paste = (e.clipboardData || window.clipboardData).getData('text');
+                    if (paste.length === 1 && paste.match(/^[A-Za-z]$/)) {
+                        input.value = paste.toUpperCase();
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        } else {
+                            // Auto-submit if it's the last input
+                            submitScore();
+                        }
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
