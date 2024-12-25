@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interdimensional DVR</title>
+    <meta name="description" content="Watch interdimensional cable shows from across the multiverse">
+    <meta name="keywords" content="interdimensional cable, tv guide, multiverse television">
+    <meta name="author" content="@randomsitesontheweb">
+    <meta name="theme-color" content="#7af7ff">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='20' width='80' height='60' fill='%237af7ff'/><rect x='30' y='35' width='40' height='30' fill='%230a0a0a'/><circle cx='50' cy='50' r='8' fill='%237af7ff'/></svg>">
+    <meta property="og:title" content="Interdimensional DVR">
+    <meta property="og:description" content="Your portal to infinite channels across the multiverse">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Random Sites on the Web">
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #7af7ff;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px #7af7ff;
+        }
+        .guide-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 2px solid #7af7ff;
+            box-shadow: 0 0 15px #7af7ff;
+            padding: 10px;
+            background-color: rgba(10, 10, 10, 0.9);
+            position: relative;
+            overflow: visible;
+            z-index: 1;
+        }
+        .time-bar {
+            display: flex;
+            justify-content: space-between;
+            background-color: #1a1a1a;
+            padding: 10px;
+            border: 1px solid #7af7ff;
+            margin-bottom: 5px;
+            font-weight: bold;
+            position: relative;
+        }
+        .channel-row {
+            display: flex;
+            border-bottom: 1px solid #7af7ff;
+            height: 60px;
+            align-items: center;
+            transition: background-color 0.3s;
+            position: relative;
+            z-index: 2;
+        }
+        .channel-row:hover {
+            background-color: rgba(122, 247, 255, 0.1);
+            cursor: pointer;
+        }
+        .channel-info {
+            width: 100px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px;
+            font-weight: bold;
+            border-right: 1px solid #7af7ff;
+        }
+        .program {
+            flex: 1;
+            min-width: 150px;
+            width: calc(25% - 2px);
+            padding: 10px;
+            border-left: 1px solid #444;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background-color 0.3s;
+            position: relative;
+            z-index: 2;
+            box-sizing: border-box;
+        }
+        .program:hover {
+            background-color: rgba(122, 247, 255, 0.15);
+        }
+        .hd-tag {
+            background-color: #ff3c78;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            text-shadow: none;
+        }
+        .new-tag {
+            background-color: #00ff66;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 5px;
+            text-shadow: none;
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 5px #00ff66;
+            }
+            to {
+                box-shadow: 0 0 15px #00ff66;
+            }
+        }
+
+        .title {
+            text-align: center;
+            font-size: 2.5em;
+            margin: 20px 0;
+            letter-spacing: 2px;
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            from {
+                text-shadow: 0 0 5px #7af7ff, 0 0 10px #7af7ff;
+            }
+            to {
+                text-shadow: 0 0 10px #7af7ff, 0 0 20px #7af7ff, 0 0 30px #7af7ff;
+            }
+        }
+
+        .time-bar span {
+            flex: 1;
+            min-width: 150px;
+            width: calc(25% - 2px);
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Add/modify these styles for mobile responsiveness */
+        @media (max-width: 768px) {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .guide-container {
+                margin: 5px;
+                padding: 2px;
+                border-width: 1px;
+                width: auto;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            .channel-info {
+                width: 50px;
+                min-width: 50px;
+                font-size: 0.8em;
+                padding: 2px;
+                gap: 2px;
+            }
+
+            .program {
+                min-width: 120px;
+                width: 120px;
+                flex: 0 0 120px;
+                padding: 2px 5px;
+                font-size: 0.8em;
+                border-left-width: 1px;
+            }
+
+            .time-bar {
+                padding: 3px;
+                font-size: 0.8em;
+                gap: 5px;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
+
+            .title {
+                font-size: 1.5em;
+                margin: 5px 0;
+                word-wrap: break-word;
+            }
+
+            .hd-tag, .new-tag {
+                font-size: 8px;
+                padding: 1px 2px;
+                margin-left: 2px;
+            }
+
+            .channel-row {
+                height: 40px;
+                min-height: 40px;
+                width: max-content;
+            }
+
+            .time-bar span {
+                min-width: 120px;
+                width: 120px;
+                flex: 0 0 120px;
+            }
+
+            #channel-list {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .time-bar span:nth-child(even) {
+                display: none;
+            }
+
+            .guide-container {
+                margin: 2px;
+                border-width: 1px;
+            }
+
+            .channel-info {
+                width: 40px;
+                min-width: 40px;
+            }
+
+            .program {
+                font-size: 0.7em;
+            }
+
+            .title {
+                font-size: 1.2em;
+            }
+        }
+
+        /* Add horizontal scrolling for program grid */
+        @media (max-width: 768px) {
+            .channel-row {
+                display: flex;
+                width: 100%;
+                min-width: max-content;
+            }
+
+            .program {
+                min-width: 120px;
+                flex: 1;
+            }
+
+            #channel-list {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .guide-container {
+                overflow-x: hidden;
+            }
+        }
+
+        /* Add these new styles */
+        .current-time-indicator {
+            position: absolute;
+            width: 2px;
+            background-color: #ff3c78;
+            top: 0;
+            bottom: 0;
+            z-index: 2;
+            box-shadow: 0 0 8px #ff3c78;
+        }
+
+        .current-time {
+            color: #ff3c78;
+            text-shadow: 0 0 5px #ff3c78;
+        }
+
+        .program.current {
+            background-color: rgba(255, 60, 120, 0.1);
+        }
+
+        .program.upcoming {
+            opacity: 0.8;
+        }
+
+        .program.past {
+            opacity: 0.5;
+        }
+
+        #channel-list {
+            overflow-x: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        [data-tooltip] {
+            position: relative;
+            z-index: 3;
+        }
+
+        [data-tooltip]:before {
+            content: attr(data-tooltip);
+            position: fixed;
+            bottom: auto;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -150%);
+            padding: 8px;
+            background-color: rgba(10, 10, 10, 0.95);
+            color: #7af7ff;
+            border: 1px solid #7af7ff;
+            box-shadow: 0 0 15px rgba(122, 247, 255, 0.3);
+            border-radius: 4px;
+            font-size: 14px;
+            white-space: normal;
+            width: max-content;
+            max-width: 200px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        [data-tooltip]:hover:before {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">INTERDIMENSIONAL CABLE DVR</h1>
+    <div class="guide-container">
+        <div class="time-bar">
+            <span>8:00pm</span>
+            <span>8:30pm</span>
+            <span>9:00pm</span>
+            <span>9:30pm</span>
+            <span>10:00pm</span>
+        </div>
+        <div id="channel-list">
+            <!-- Channels will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        const channelTypes = [
+            { name: "News", prefix: "IDN-", shows: [
+                "Interdimensional Cable News", "Screaming Sun Weather Report", "Opposite News",
+                "Gear World News", "Dimension C-137 Tonight", "The Real Housewives of Dimension 35-C",
+                "Pluto's Planetary Status Update", "Intergalactic Morning Show", "Alien Weather Network",
+                "Multiverse Breaking News", "The Daily Portal", "Dimension 54 Politics Today",
+                "Quantum News Network", "The Galactic Report", "Time Travel Updates", "Meta News",
+                "Parallel Universe Sports Center", "The Citadel Report", "Dimension Hopping with Doofus Rick",
+                "Galactic Stock Market Updates", "Federation News Network", "Portal Gun Safety Tips",
+                "Interdimensional Weather Forecast", "The Unity Collective", "Council of Ricksty Minutes",
+                "4D Rocks That See All Time Report", "Testicle Monsters Time Update", "Temporal News with Time-Seeing Rocks",
+            ]},
+            { name: "Crime", prefix: "CRIME-", shows: [
+                "Baby Legs Detective Hour", "Gromflomite Cops", "Space Prison Break",
+                "Ballfondlers: Special Victims Unit", "The Zigerion Scammers", "Quick Mysteries",
+                "Law & Order: Gromflomite Unit", "CSI: Dimension X-99", "Unsolved Space Mysteries",
+                "Intergalactic Cold Cases", "Federation Most Wanted", "Portal Heists Gone Wrong",
+                "Alien Prison Break", "Citadel Security Cam", "Space Pirates: Most Dangerous",
+                "Interdimensional Bounty Hunters", "Cyborg Crime Stoppers", "MoonSpiracy", "Booger AIDS AIDS Booger",
+                "Search for Evil Morty"
+            ]},
+            { name: "Food", prefix: "FOOD-", shows: [
+                "Gazorpazorp Kitchen Nightmares", "Cooking Things with Things", "Octopus Recipe Man",
+                "Ghost Food Hunters", "Cooking with Kalaxian Crystals", "Plutonian Chef Masters",
+                "Eyeholes Cereal Taste Test", "Turbulent Juice Cooking Show", "Dimension D-99 BBQ",
+                "Cooking with Unity", "Intergalactic Iron Chef", "Microverse Battery Baking",
+                "Flurbos Food Fight", "Gromflomite Gourmet", "Cooking with Snuffles",
+                "Dimension C-137's Kitchen", "Plumbus Recipes", "Portal Gun Grilling",
+                "Cooking with Rick", "Morty's Munchies", "Interdimensional Food Truck Wars",
+                "Cooking in Zero Gravity"
+            ]},
+            { name: "Reality", prefix: "REAL-", shows: [
+                "How Did I Get Here?", "The Personal Space Show", "Real Fake Doors Infomercial",
+                "Alien Antiques Roadshow", "Dimension J-22 Reality Show", "Get Schwifty: Behind the Music",
+                "Keeping Up with the Meeseeks", "Interdimensional House Hunters", "Plumbus Makeover",
+                "The Real Gromflomites of the Citadel", "Squanchy's Dating Show", "Unity's Next Top Hive Mind",
+                "Project Dimension Runway", "Gazorpazorp Shore", "Love Island: Purge Planet", "Keeping Up With Jerryberrie",
+                "The Bachelor: Robot Edition", "Survivor: Cronenberg World", "Top Chef: Dimension Z-789",
+                "Dancing with the Gearpeople", "Interdimensional Pawn Stars", "Storage Wars: Citadel Edition",
+                "Flip or Flop: Microverse", "90 Day Fiance: Alien Edition", "The Amazing Space Race", "Storage Wars"
+            ]},
+            { name: "Action", prefix: "ACT-", shows: [
+                "Ball Fondlers", "Two Brothers vs Everything", "The Vindicators",
+                "Man vs Car", "Space Beth", "Bird Person Chronicles",
+                "Interdimensional Warriors", "Gear Wars", "Phoenix Person: Origins",
+                "Time Cops", "Galactic Federation Special Forces", "Seal Team Rick",
+                "Squanch Rangers", "Pickle Rick: Black Ops", "Cromulon Warriors", "Gazorpazorp Special Forces",
+                "Butter Robot's Revenge", "Mr. Nimbus: King of the Seas", "Noob Noob: The Series",
+                "Scary Terry's Nightmare Squad", "Krombopulos Michael: Licensed to Kill",
+                "Snowball's Army", "Rick's Portal Gun Adventures", "Shoot Me"
+            ]},
+            { name: "Educational", prefix: "EDU-", shows: [
+                "Plumbus Making", "How It's Made: Plumbuses", "Adventures in Bureaucracy",
+                "Tales from the Microverse", "Anatomy Park: The Series", "Mr. Poopybutthole's Stories",
+                "Interdimensional Physics 101", "History of the Citadel", "How to make Concentrated Dark Matter",
+                "Understanding Portal Technology", "Quantum Physics for Mortys", "The Nature of Reality",
+                "Gromflomite Biology", "Doofus Rick's Guide to the Multiverse", "The Science of Love Potions", "Mega Seeds Explained",
+                "Understanding Meseeks Physics", "Purge Planet Sociology", "Froopyland Ecology", "Dimension Hopping 101",
+                "Advanced Robotics with Rick", "The Philosophy of Mr. Poopybutthole", "Snake Physics"
+            ]},
+            { name: "Comedy", prefix: "COM-", shows: [
+                "Ants in my Eyes Johnson's Electronics", "Gazorpazorpfield", "The Floop Floopian Show",
+                "Hamster in Butt World", "Squanchy Time", "SNL: Interdimensional Cable Edition", "Boob World",
+                "Mr. Meeseeks Comedy Hour", "Rick's Garage Improv", "The Jerry Show", "Summer's TikTok Compilation",
+                "Bird Person's Open Mic Night", "Morty's Awkward Adventures", "Pickle Rick's Comedy Club",
+                "Scary Terry's Nightmare Comedy", "The Council of Ricks Roast", "Beth's Horse Surgery Bloopers",
+                "Mr. Poopybutthole's Greatest Hits", "Noob Noob's Comedy Central Special", "Anatomy Park Outtakes",
+                "Plumbus Factory Fails", "Zigerion Comedy Hour", "Gearhead's Stand-Up Special",
+                "Squanchy's Late Night", "Unity's Million Voice Choir"
+            ]},
+            { name: "Gaming", prefix: "GAME-", shows: [
+                "Blips and Chitz Gaming Hour", "Roy: A Life Well Lived", "Interdimensional Game Show",
+                "Froopyland Adventures", "Morty's Mind Blowers Presents", "Virtual Rick-ality",
+                "Meeseeks Battle Royale", "Pocket Mortys Tournament", "Operation Phoenix Gaming",
+                "Microverse Battery Simulator", "Portal Combat",
+                "Anatomy Park: The Game", "Purge Planet PvP", "Interdimensional Cable Gaming",
+                "Pickle Rick's Platform Adventure", "Mr. Poopybutthole's Party Games",
+                "Snuffles' Dog Fighting Simulator", "Plumbus Crafting", "Minecraft",
+                "Gazorpazorp Battle Arena", "Unity's Hivemind Olympics",
+                "Gear Wars: The Video Game", "Squanchy's Button Masher",
+                "Zigerion Virtual Scamming", "Gromflomite Training Simulator"
+            ]},
+            { name: "Community", prefix: "COM-", shows: [
+                "Troy and Abed in the Morning",
+                "Inspector Spacetime",
+                "Dean-gerous Minds",
+                "Advanced Dungeons & Dragons",
+                "Greendale News Network",
+                "Journey to the Center of Hawkthorne"
+            ]}
+        ];
+
+        const movies = [
+            {
+                name: "MOVIES-1",
+                lineup: [
+                    "Jan Quadrant Vincent 16",
+                    "Alien Invasion Tomato Monster Mexican Armada Brothers", 
+                    "Two Brothers 2: Three Brothers",
+                    "The Last Glorbon (Interdimensional Cut)",
+                    "Ball Fondlers: The Movie",
+                    "How They Got There",
+                    "Samurai Jack 3: Return of Aku",
+                    "The Flesh Curtains: Behind the Music",
+                    "Interdimensional Cable: The Movie"
+                ]
+            },
+            {
+                name: "MOVIES-2",
+                lineup: [
+                    "Weekend at Blimflark's",
+                    "Shlaam's Big Heist",
+                    "Adventures of Trunk People",
+                    "Attack of the Garblovians"
+                ]
+            },
+            {
+                name: "MOVIES-3",
+                lineup: [
+                    "Mrs. Refrigerator's Revenge",
+                    "Cloud Atlas 2: More Clouds",
+                    "The Chronicles of SHOW ME WHAT YOU GOT",
+                    "Space Prison Break-In"
+                ]
+            },
+            {
+                name: "MOVIES-4",
+                lineup: [
+                    "Six Seasons and a Movie",
+                    "Community: The Movie",
+                    "Advanced Crisis Management",
+                    "Paintball: The Movie",
+                    "The Plumbus Origin Story",
+                    "Gazorpazorpfield: The Movie",
+                    "Real Fake Doors: The Documentary",
+                    "Ants In My Eyes Johnson's Biopic",
+                    "Two Brothers 3: Four Brothers",
+                    "Stealy's Big Score",
+                    "Personal Space: The Movie",
+                    "How They Got There 2: Where Did They Go?",
+                    "Lil' Bits: Supersized",
+                    "Eyeholes: The Forbidden Snack"
+                ]
+            }
+        ];
+
+        function generateProgramForChannel(channelType, timeSlot) {
+            // For movie channels, return specific movies in order
+            if (channelType.name.startsWith("MOVIES-")) {
+                return channelType.lineup[timeSlot % channelType.lineup.length];
+            }
+            // For regular channels, return a random show from their category
+            return channelType.shows[Math.floor(Math.random() * channelType.shows.length)];
+        }
+
+        function updateTimeBar() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            
+            // Round to nearest 30 minutes for slot start
+            const currentSlotStart = new Date(now);
+            currentSlotStart.setMinutes(currentMinute >= 30 ? 30 : 0);
+            currentSlotStart.setSeconds(0);
+            currentSlotStart.setMilliseconds(0);
+
+            const timeBar = document.querySelector('.time-bar');
+            timeBar.innerHTML = ''; // Clear existing times
+
+            // Calculate position for current time indicator
+            const minutesSinceSlotStart = (now - currentSlotStart) / (1000 * 60);
+            const percentageThrough = (minutesSinceSlotStart / 30) * 100;
+            
+            // Add current time indicator
+            const indicator = document.createElement('div');
+            indicator.className = 'current-time-indicator';
+            indicator.style.left = `${percentageThrough}%`;
+            timeBar.appendChild(indicator);
+
+            // Generate next 5 time slots
+            for (let i = 0; i < 5; i++) {
+                const slotTime = new Date(currentSlotStart);
+                slotTime.setMinutes(slotTime.getMinutes() + (i * 30));
+                
+                const span = document.createElement('span');
+                const timeString = slotTime.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+                span.textContent = timeString;
+                
+                if (i === 0) {
+                    span.classList.add('current-time');
+                }
+                timeBar.appendChild(span);
+            }
+
+            // Update program states
+            document.querySelectorAll('.program').forEach((program, index) => {
+                program.classList.remove('current', 'upcoming', 'past');
+                if (index % 4 === 0) {
+                    program.classList.add('current');
+                } else if (index % 4 > 0) {
+                    program.classList.add('upcoming');
+                } else {
+                    program.classList.add('past');
+                }
+            });
+        }
+
+        // Initial call and update every minute
+        updateTimeBar();
+        setInterval(updateTimeBar, 60000);
+
+        function createChannelList() {
+            const channelList = document.getElementById('channel-list');
+            let channelNumber = 1;
+
+            // Add themed channels
+            channelTypes.forEach(type => {
+                for (let i = 0; i < 3; i++) { // Create 3 channels of each type
+                    const row = document.createElement('div');
+                    row.className = 'channel-row';
+                    
+                    const channelInfo = document.createElement('div');
+                    channelInfo.className = 'channel-info';
+                    channelInfo.innerHTML = `
+                        ${channelNumber} ${type.prefix}${i + 1}
+                        ${Math.random() > 0.3 ? '<span class="hd-tag">HD</span>' : ''}
+                    `;
+                    
+                    row.appendChild(channelInfo);
+
+                    // Add 4 program slots
+                    for (let j = 0; j < 4; j++) {
+                        const program = document.createElement('div');
+                        program.className = 'program';
+                        const programTitle = generateProgramForChannel(type, j);
+                        program.innerHTML = `
+                            ${programTitle}
+                            ${Math.random() > 0.8 ? '<span class="new-tag">NEW</span>' : ''}
+                        `;
+                        program.title = programTitle;
+                        row.appendChild(program);
+                    }
+
+                    channelList.appendChild(row);
+                    channelNumber++;
+                }
+            });
+
+            // Add movie channels
+            movies.forEach(movieChannel => {
+                const row = document.createElement('div');
+                row.className = 'channel-row';
+                
+                const channelInfo = document.createElement('div');
+                channelInfo.className = 'channel-info';
+                channelInfo.innerHTML = `
+                    ${channelNumber} ${movieChannel.name}
+                    <span class="hd-tag">HD</span>
+                `;
+                
+                row.appendChild(channelInfo);
+
+                // Add 4 program slots with specific movies in order
+                for (let j = 0; j < 4; j++) {
+                    const program = document.createElement('div');
+                    program.className = 'program';
+                    const programTitle = generateProgramForChannel(movieChannel, j);
+                    program.innerHTML = `
+                        ${programTitle}
+                        ${Math.random() > 0.8 ? '<span class="new-tag">NEW</span>' : ''}
+                    `;
+                    program.title = programTitle;
+                    row.appendChild(program);
+                }
+
+                channelList.appendChild(row);
+                channelNumber++;
+            });
+        }
+
+        createChannelList();
+    </script>
+</body>
+</html>
