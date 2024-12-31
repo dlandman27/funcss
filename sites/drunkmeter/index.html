@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drink Counter</title>
+    <meta name="author" content="@randomsitesontheweb">
+    <style>
+        /* Update the root variables */
+        :root {
+            --surface-color: #1a1a1a;
+            --button-color: #2a2a2a;
+            --accent-blue: #00f2fe;
+            --accent-purple: #4f46e5;
+            --text-color: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --glow-color: rgba(0, 242, 254, 0.08);
+        }
+
+        /* Update body background */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--surface-color);
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        /* Update container style */
+        .container {
+            background: #242424;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 
+                0 0 30px var(--glow-color),
+                inset 0 2px 2px rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        /* Update buttons with skeuomorphic style */
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            background: var(--button-color);
+            color: var(--accent-blue);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.4),
+                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+        }
+
+        button:hover {
+            background: #323232;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                inset 0 1px 1px rgba(255, 255, 255, 0.15);
+            color: var(--accent-purple);
+        }
+
+        /* Update input fields */
+        input, select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            flex: 1;
+            border: 1px solid #333;
+            border-radius: 10px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            background: #1c1c1c;
+            color: var(--text-color);
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.2),
+                0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(26,42,108,0.3);
+        }
+
+        /* Update drink items */
+        .drink-item {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px;
+            margin: 10px 0;
+            background: #2a2a2a;
+            border-radius: 10px;
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.2),
+                inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+
+        .drink-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .drink-item button {
+            width: 100%;
+            background: #e74c3c;
+            padding: 8px 15px;
+            color: white;
+        }
+
+        /* Update total display */
+        .total {
+            text-align: center;
+            font-size: 1.4em;
+            margin: 30px 0;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            font-weight: bold;
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.2),
+                inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            color: var(--accent-blue);
+        }
+
+        .clear-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            margin-top: 20px;
+            width: 100%;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: linear-gradient(135deg, #c0392b, #e74c3c);
+            color: white!important;
+        }
+
+        /* Animation for new drinks */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .drink-item {
+            animation: slideIn 0.3s ease;
+        }
+
+        .meter-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #242424;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.2),
+                0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .meter {
+            width: 100%;
+            height: 30px;
+            background: #2c2417;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.4),
+                0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, 
+                #4CAF50,  /* Safe - green */
+                #FFC107,  /* Warning - yellow */
+                #FF5722,  /* Danger - orange */
+                #f44336   /* Severe - red */
+            );
+            position: relative;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .meter-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(
+                    circle at 50% 150%,
+                    rgba(255, 255, 255, 0.2) 2px,
+                    transparent 4px
+                ),
+                radial-gradient(
+                    circle at 20% 130%,
+                    rgba(255, 255, 255, 0.2) 3px,
+                    transparent 6px
+                );
+            animation: bubbles 2s ease-in-out infinite;
+        }
+
+        @keyframes bubbles {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        .drunk-level {
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .drunk-level.danger {
+            color: #f44336;
+            animation: pulse 1s infinite;
+            text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Add subtle glow to headings */
+        h1 {
+            text-align: center;
+            color: var(--text-color);
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px var(--accent-blue);
+        }
+
+        /* Add styling for the icons */
+        .drink-item i {
+            margin-right: 8px;
+            color: var(--accent-blue);
+        }
+
+        /* Make input group stack on mobile */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Add responsive text sizing */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .drunk-level {
+                font-size: 1em;
+            }
+            
+            .total {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Drunk Meter</h1>
+        
+        <div style="text-align: center; margin-bottom: 20px; color: #888;">
+            Note: This is just an estimate. Many factors affect intoxication levels including weight, gender, food consumption, and metabolism.
+        </div>
+        
+        <div class="meter-container">
+            <div class="meter">
+                <div class="meter-fill" id="meterFill"></div>
+            </div>
+            <div class="drunk-level" id="drunkLevel">Sober</div>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="drinkInput" placeholder="What did you drink?">
+            <select id="drinkType">
+                <option value="12" data-icon="🍺">Beer (12 oz)</option>
+                <option value="16" data-icon="🍺">Pint of Beer (16 oz)</option>
+                <option value="12" data-icon="🥤">Hard Seltzer (12 oz)</option>
+                <option value="12" data-icon="🍎">Hard Cider (12 oz)</option>
+                <option value="5" data-icon="🍷">Wine (5 oz)</option>
+                <option value="3" data-icon="🍷">Dessert Wine (3 oz)</option>
+                <option value="2" data-icon="🍸">Martini (2 oz)</option>
+                <option value="1.5" data-icon="🥃">Shot (1.5 oz)</option>
+                <option value="4" data-icon="🍹">Mixed Drink (4 oz)</option>
+                <option value="6" data-icon="🍹">Long Island Iced Tea (6 oz)</option>
+            </select>
+            <button onclick="addDrink()">Add Drink</button>
+        </div>
+
+        <div class="drink-list" id="drinkList"></div>
+        
+        <div class="total" id="total">Total Drinks: 0</div>
+        
+        <button class="clear-btn" onclick="clearDrinks()">Clear All Drinks</button>
+    </div>
+
+    <script>
+        let drinks = JSON.parse(localStorage.getItem('drinks')) || [];
+        
+        // Constants for BAC calculation
+        const METABOLISM_RATE = 0.015; // BAC reduction per hour
+        const WEIGHT = 160; // Default weight in pounds
+        const GENDER_CONSTANT = 0.68; // Male constant (use 0.55 for females)
+
+        function calculateCurrentBAC() {
+            const currentTime = new Date();
+            let totalBAC = 0;
+            
+            drinks.forEach(drink => {
+                const drinkTime = new Date(drink.timestamp);
+                const hoursElapsed = (currentTime - drinkTime) / (1000 * 60 * 60);
+                
+                // Calculate initial BAC for this drink
+                const alcoholGrams = drink.ounces * 0.045 * 28.35;
+                const initialBAC = (alcoholGrams * 100) / (WEIGHT * GENDER_CONSTANT * 454);
+                
+                // Subtract metabolism over time
+                const remainingBAC = initialBAC - (METABOLISM_RATE * hoursElapsed);
+                
+                if (remainingBAC > 0) {
+                    totalBAC += remainingBAC;
+                }
+            });
+            
+            return Math.max(0, totalBAC);
+        }
+
+        function getDrunkLevel(bac) {
+            if (bac === 0) return ['Sober', 'normal'];
+            if (bac < 0.04) return ['Slightly Tipsy', 'normal'];
+            if (bac < 0.08) return ['Buzzed', 'normal'];
+            if (bac < 0.15) return ['Drunk - Don\'t Drive!', 'warning'];
+            if (bac < 0.30) return ['VERY DRUNK - Seek Help!', 'danger'];
+            return ['DANGER - Medical Emergency!', 'danger'];
+        }
+
+        function updateMeter() {
+            const bac = calculateCurrentBAC();
+            const meterFill = document.getElementById('meterFill');
+            const drunkLevel = document.getElementById('drunkLevel');
+            
+            // Convert BAC to percentage (max BAC of 0.4 = 100%)
+            const percentage = Math.min((bac / 0.4) * 100, 100);
+            meterFill.style.width = `${percentage}%`;
+            
+            const [level, severity] = getDrunkLevel(bac);
+            drunkLevel.textContent = `${level} (BAC: ${bac.toFixed(3)})`;
+            
+            // Update danger indication
+            drunkLevel.className = 'drunk-level' + (severity === 'danger' ? ' danger' : '');
+            
+            // Add emergency message for dangerous levels
+            if (bac >= 0.15) {
+                const container = document.querySelector('.meter-container');
+                if (!container.querySelector('.emergency-message')) {
+                    const emergency = document.createElement('div');
+                    emergency.className = 'emergency-message';
+                    emergency.style.color = '#f44336';
+                    emergency.style.marginTop = '10px';
+                    emergency.style.fontWeight = 'bold';
+                    emergency.innerHTML = '⚠️ Call emergency services if someone is unresponsive or showing signs of alcohol poisoning';
+                    container.appendChild(emergency);
+                }
+            }
+        }
+
+        function addDrink() {
+            const input = document.getElementById('drinkInput');
+            const drinkType = document.getElementById('drinkType');
+            const drink = input.value.trim();
+            
+            if (drink) {
+                const timestamp = new Date().toISOString();
+                const selectedOption = drinkType.options[drinkType.selectedIndex];
+                drinks.push({
+                    name: drink,
+                    time: new Date().toLocaleTimeString(),
+                    timestamp: timestamp,
+                    ounces: parseFloat(drinkType.value),
+                    icon: selectedOption.dataset.icon
+                });
+                localStorage.setItem('drinks', JSON.stringify(drinks));
+                updateDisplay();
+                updateMeter();
+                input.value = '';
+            }
+        }
+
+        // Update the meter every minute
+        setInterval(updateMeter, 60000);
+        
+        // Update initial display
+        updateDisplay();
+        updateMeter();
+
+        function updateDisplay() {
+            const list = document.getElementById('drinkList');
+            const total = document.getElementById('total');
+            
+            list.innerHTML = drinks.map((drink, index) => `
+                <div class="drink-item">
+                    <span>${drink.icon} ${drink.name} - ${drink.time}</span>
+                    <button onclick="removeDrink(${index})">Remove</button>
+                </div>
+            `).join('');
+            
+            total.textContent = `Total Drinks: ${drinks.length}`;
+        }
+
+        function removeDrink(index) {
+            drinks.splice(index, 1);
+            localStorage.setItem('drinks', JSON.stringify(drinks));
+            updateDisplay();
+            updateMeter();
+        }
+
+        function clearDrinks() {
+            drinks = [];
+            localStorage.removeItem('drinks');
+            updateDisplay();
+            window.location.reload();
+        }
+
+        // Add enter key support
+        document.getElementById('drinkInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addDrink();
+            }
+        });
+    </script>
+</body>
+</html>

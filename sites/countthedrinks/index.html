@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drink Counter</title>
+    <meta name="description" content="A simple and elegant drink counter to help track your beverage consumption">
+    <meta name="keywords" content="drink counter, beverage tracker, hydration, drink tracking">
+    <meta name="author" content="Count The Drinks">
+    <meta name="theme-color" content="#1a2a6c">
+    <meta property="og:title" content="Drink Counter">
+    <meta property="og:description" content="Track your daily drink consumption with this easy-to-use counter">
+    <meta property="og:type" content="website">
+    <meta name="robots" content="index, follow">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            color: #2c3e50;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a2a6c;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #1a2a6c;
+            border-radius: 10px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(26,42,108,0.3);
+        }
+
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            background: #1a2a6c;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .drink-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .drink-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .drink-item button {
+            background: #e74c3c;
+            padding: 8px 15px;
+        }
+
+        .total {
+            text-align: center;
+            font-size: 1.4em;
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a2a6c, #2980b9);
+            color: white;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .clear-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .clear-btn:hover {
+            background: linear-gradient(135deg, #c0392b, #e74c3c);
+        }
+
+        /* Animation for new drinks */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .drink-item {
+            animation: slideIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Drink Counter</h1>
+        
+        <div class="input-group">
+            <input type="text" id="drinkInput" placeholder="What did you drink?">
+            <button onclick="addDrink()">Add Drink</button>
+        </div>
+
+        <div class="drink-list" id="drinkList"></div>
+        
+        <div class="total" id="total">Total Drinks: 0</div>
+        
+        <button class="clear-btn" onclick="clearDrinks()">Clear All Drinks</button>
+    </div>
+
+    <script>
+        let drinks = JSON.parse(localStorage.getItem('drinks')) || [];
+
+        function addDrink() {
+            const input = document.getElementById('drinkInput');
+            const drink = input.value.trim();
+            
+            if (drink) {
+                const timestamp = new Date().toLocaleTimeString();
+                drinks.push({ name: drink, time: timestamp });
+                localStorage.setItem('drinks', JSON.stringify(drinks));
+                updateDisplay();
+                input.value = '';
+            }
+        }
+
+        function updateDisplay() {
+            const list = document.getElementById('drinkList');
+            const total = document.getElementById('total');
+            
+            list.innerHTML = drinks.map((drink, index) => `
+                <div class="drink-item">
+                    <span>${drink.name} - ${drink.time}</span>
+                    <button onclick="removeDrink(${index})">Remove</button>
+                </div>
+            `).join('');
+            
+            total.textContent = `Total Drinks: ${drinks.length}`;
+        }
+
+        function removeDrink(index) {
+            drinks.splice(index, 1);
+            localStorage.setItem('drinks', JSON.stringify(drinks));
+            updateDisplay();
+        }
+
+        function clearDrinks() {
+            drinks = [];
+            localStorage.removeItem('drinks');
+            updateDisplay();
+        }
+
+        // Initialize display
+        updateDisplay();
+
+        // Add enter key support
+        document.getElementById('drinkInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addDrink();
+            }
+        });
+    </script>
+</body>
+</html>
