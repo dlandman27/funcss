@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Light, Green Light</title>
+    <meta name="description" content="A web-based Red Light, Green Light game where players must move forward when the light is green and stop when it's red">
+    <meta name="keywords" content="game, red light green light, browser game, reaction game">
+    <meta name="author" content="@randomsitesontheweb">
+    <meta property="og:title" content="Red Light, Green Light">
+    <meta property="og:description" content="Test your reflexes in this web version of Red Light, Green Light">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#1a1a1a">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #player {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: left 0.1s linear;
+        }
+
+        #finish-line {
+            position: absolute;
+            right: 20px;
+            top: 0;
+            width: 5px;
+            height: 100%;
+            background: gold;
+        }
+
+        #status {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .red {
+            background: #ff4444 !important;
+        }
+
+        .green {
+            background: #44ff44 !important;
+        }
+
+        #restart {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+
+        #restart:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="player"></div>
+        <div id="finish-line"></div>
+        <div id="status">Get Ready!</div>
+        <button id="restart">Play Again</button>
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        const container = document.getElementById('game-container');
+        const status = document.getElementById('status');
+        const restartBtn = document.getElementById('restart');
+        
+        let isRed = false;
+        let isGameOver = false;
+        let playerX = 40;
+        
+        function switchLight() {
+            if (isGameOver) return;
+            
+            isRed = !isRed;
+            container.className = isRed ? 'red' : 'green';
+            status.textContent = isRed ? 'RED LIGHT!' : 'GREEN LIGHT!';
+            
+            // Random timing for next switch (2-4 seconds)
+            setTimeout(switchLight, Math.random() * 2000 + 2000);
+        }
+
+        function movePlayer(e) {
+            if (isGameOver) return;
+            
+            if (e.key === 'ArrowRight') {
+                if (isRed) {
+                    gameOver();
+                    return;
+                }
+                
+                playerX += 5;
+                player.style.left = playerX + 'px';
+                
+                // Check win condition
+                if (playerX >= container.offsetWidth - 60) {
+                    win();
+                }
+            }
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            status.textContent = 'Game Over! You moved on red light!';
+            status.style.color = '#ff4444';
+            restartBtn.style.display = 'block';
+        }
+
+        function win() {
+            isGameOver = true;
+            status.textContent = 'You Win!';
+            status.style.color = '#44ff44';
+            restartBtn.style.display = 'block';
+        }
+
+        function restart() {
+            isGameOver = false;
+            playerX = 40;
+            player.style.left = playerX + 'px';
+            status.textContent = 'Get Ready!';
+            status.style.color = 'white';
+            container.className = '';
+            restartBtn.style.display = 'none';
+            isRed = false;
+            
+            setTimeout(switchLight, 1000);
+        }
+
+        document.addEventListener('keydown', movePlayer);
+        restartBtn.addEventListener('click', restart);
+        
+        // Start the game
+        setTimeout(switchLight, 1000);
+    </script>
+</body>
+</html>

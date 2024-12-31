@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Security Checker</title>
+    <meta name="description" content="Check how secure your password is with sassy feedback">
+    <meta name="keywords" content="password, security, checker, password strength, password security">
+    <meta name="author" content="@randomsitesontheweb">
+    <meta property="og:title" content="Password Security Checker">
+    <meta property="og:description" content="Check how secure your password is with sassy feedback">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAABYklEQVR4nO2WPU7DQBCFv0NBES6QG1CmTsEVKKhyAIQoKHILGiQKzkDFT8kNwoXokKA4QrwSI43kZLOx1yvHhUda2bsz8+bN7K5h4L9hBEyBJbAGdsBn8m2dPJsAw5y8BbADPoCnpOFr8i3k2QI4y8pdAXfAGngHxsCwYGPgI3m3Ai5bJ78GnoG3kgRFWANPwFVV8jC5Bz5bJg5YAXd5yQV4aCh5wD1wnpc8AG47SA6wBO7ykoO2XHeQHLQl+JaXfNBBcoCfRgkEeBRNLsBzR8nfgBvpuQCvHSUHbTlrkiAm+UuTBDHJn5okiEn+2CRBFV6Ac+AEOAUmwHzPuqhJ6OQ6Bw6Bk+TbvEZN1CR0cp0Bh8AZcJ98q1ITVRM6uY6Sxsck36rURNWETq79pPExybeymqia0Ml1kDQ+JvlWVhNVEzq5RsnjY5JvZTVRNaGT6/88/h9ADN4B9HH0MXCxr0MAAAAASUVORK5CYII=">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1b26;
+            color: #ffffff;
+        }
+        .container {
+            background-color: #24283b;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            margin: 1rem;
+            border-radius: 12px;
+        }
+        input {
+            padding: 1rem;
+            font-size: 1.2rem;
+            margin: 1.5rem 0;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            background-color: #414868;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        input::placeholder {
+            color: #a9b1d6;
+        }
+        input:focus {
+            outline: none;
+            background-color: #565f89;
+            transform: scale(1.01);
+        }
+        #result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+            transform-origin: center;
+            width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            margin-bottom: 2rem;
+            color: #ffffff;
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+                margin: 0.5rem;
+            }
+            input {
+                padding: 0.8rem;
+                font-size: 1rem;
+            }
+            #result {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 Password Security Checker</h1>
+        <input type="password" id="passwordInput" placeholder="Enter your password">
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById('passwordInput');
+        const result = document.getElementById('result');
+
+        const funnyMessages = {
+            terrible: [
+                "Even your pet could hack this! 🐹",
+                "My grandma could guess this password! 👵",
+                "Might as well use 'password123' 🤦‍♂️",
+                "This password is so weak, it needs emotional support! 🤗",
+                "I've seen better security on a piggy bank! 🐷",
+                "Your password and my will to live have something in common... 😅",
+                "This is the kind of password a hacker would use as an example of what not to do! 🚫",
+                "Even a broken keyboard could generate a better password! ⌨️",
+                "This password belongs in a museum... of terrible ideas! 🏛️",
+                "Your password security is giving me trust issues! 😰",
+                "This password is weaker than my WiFi signal in the basement! 📶",
+                "A toddler mashing the keyboard would make a stronger password! 👶",
+                "Your password and my social life have something in common - they're both non-existent! 😭",
+                "This password is about as secure as a chocolate teapot! 🍫",
+                "Even a fortune cookie has better secrets than this! 🥠",
+                "This password needs therapy... and maybe a complete makeover! 💅",
+                "I've seen better protection on a screen door! 🚪",
+                "Your password is giving me second-hand embarrassment! 😳",
+                "This is the kind of password that keeps security experts awake at night! 😴",
+                "If this password was a superhero, its superpower would be disappointing everyone! 🦸‍♂️",
+                "I'm not saying this is bad, but... actually, yes I am! 🙈"
+            ],
+            weak: [
+                "Not great, not terrible. Like lukewarm coffee! ☕",
+                "Your password is as strong as a wet paper bag 📄",
+                "Better than nothing, I guess... barely 😅",
+                "Your password is like a bicycle lock - it might stop amateurs 🚲",
+                "This password needs some protein shakes 🥤",
+                "Better than '123456', but that's a low bar 📊",
+                "Your password is the equivalent of a 'Keep Out' sign 🚫",
+                "This would only slow down a lazy hacker ⏰",
+                "Your password is like diet security - less filling, less protecting 🥤",
+                "The password equivalent of wearing a paper bag as armor 📦",
+                "This password needs to level up! 🎮",
+                "Security level: Mall Cop 🚔",
+                "Your password is trying its best... but its best isn't great 😅",
+                "Your password is like a screen door on a submarine 🌊",
+                "This password needs to do some security push-ups 💪",
+                "Your password is the digital equivalent of a 'Please Don't Steal' sign 🚫",
+                "This password would make a security expert cry 😢",
+                "About as secure as a cardboard safe 📦",
+                "Your password is having an identity crisis 🤔",
+                "Security level: Thoughts and Prayers 🙏",
+                "This password needs adult supervision 👀",
+                "Like a fence made of marshmallows 🍡",
+                "Your password is basically wearing a 'Hack Me' sign 🎯",
+                "This password needs some serious self-improvement 📚",
+                "Security rating: Participation Trophy 🏆"
+            ],
+            medium: [
+                "Now we're getting somewhere! 🚀",
+                "Not bad, but your password could hit the gym more often 💪",
+                "Your password is like a decent cup of tea - satisfactory! 🫖",
+                "Getting better! Like a teenager learning karate 🥋",
+                "Your password has potential, like an unripe avocado 🥑",
+                "This password is trying its best, and it's not half bad! 👍",
+                "Your password is like a bouncer at a small club - decent but not intimidating 🚪",
+                "Not quite Fort Knox, but maybe Fort Cardboard Box? 📦",
+                "This password could probably stop your little brother 👦",
+                "Security level: Above Average Joe 🏃",
+                "Like a guard dog that's more golden retriever than german shepherd 🐕",
+                "Your password is the equivalent of a 'No Trespassing' sign with a fence 🚧",
+                "This password has graduated from security school... with a C+ 📝",
+                "Better than most, but still room for improvement! 📈",
+                "Your password is like a locked door with a window next to it 🚪",
+                "Security level: Determined Hall Monitor 🏫"
+            ],
+            strong: [
+                "This password is stronger than my morning coffee! ⚡",
+                "Hackers will need a time machine to crack this one! ⏰",
+                "Your password is like a digital fortress! 🏰",
+                "Even quantum computers would break a sweat! 💻",
+                "This password eats weak passwords for breakfast! 🍳",
+                "Your password is basically Chuck Norris in digital form! 💪",
+                "Hackers see this password and run away crying! 😭",
+                "This password could protect the nuclear codes! ☢️",
+                "Your password is wearing a titanium suit of armor! 🛡️",
+                "Security level: Legendary! 🏆",
+                "This password makes bank vaults look weak! 🏦",
+                "Your password is like a black belt in digital self-defense! 🥋",
+                "This password could survive a zombie apocalypse! 🧟",
+                "Your password is the superhero of passwords! 🦸",
+                "This is what peak security looks like! 📈",
+                "Your password deserves a security Oscar! 🏆"
+            ]
+        };
+
+        function getRandomMessage(category) {
+            const messages = funnyMessages[category];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        function checkPassword() {
+            const password = passwordInput.value;
+            let strength = 0;
+            
+            // Length check
+            if (password.length >= 8) strength += 1;
+            if (password.length >= 12) strength += 1;
+            
+            // Complexity checks
+            if (/[A-Z]/.test(password)) strength += 1;
+            if (/[a-z]/.test(password)) strength += 1;
+            if (/[0-9]/.test(password)) strength += 1;
+            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+
+            // Set result message and color
+            let category;
+            let color;
+            
+            if (strength <= 2) {
+                category = 'terrible';
+                color = '#ff4d4d';
+            } else if (strength <= 3) {
+                category = 'weak';
+                color = '#ffa64d';
+            } else if (strength <= 4) {
+                category = 'medium';
+                color = '#4d94ff';
+            } else {
+                category = 'strong';
+                color = '#2ecc71';
+            }
+
+            result.style.backgroundColor = color;
+            result.style.transform = 'scale(1.02)';
+            setTimeout(() => result.style.transform = 'scale(1)', 200);
+            result.textContent = getRandomMessage(category);
+        }
+
+        passwordInput.addEventListener('input', checkPassword);
+    </script>
+</body>
+</html>
