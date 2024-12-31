@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Piano Keyboard</title>
+    <meta name="description" content="Play music on a virtual piano keyboard">
+    <meta name="keywords" content="piano, keyboard, virtual piano, music">
+    <meta name="author" content="@randomsitesontheweb">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+        }
+
+        .piano {
+            display: flex;
+            position: relative;
+            margin: 20px;
+        }
+
+        .key {
+            width: 60px;
+            height: 200px;
+            background: white;
+            border: 1px solid #000;
+            border-radius: 0 0 5px 5px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 10px 0;
+            user-select: none;
+        }
+
+        .key:hover {
+            background: #f0f0f0;
+            transform: translateY(2px);
+        }
+
+        .key.black:hover {
+            background: #222;
+        }
+
+        .key.black {
+            position: absolute;
+            width: 40px;
+            height: 120px;
+            background: #000;
+            color: white;
+            z-index: 1;
+        }
+
+        .key:active,
+        .key.active {
+            background: #ccc;
+            transform: translateY(4px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) inset;
+        }
+
+        .key.black:active,
+        .key.black.active {
+            background: #333;
+        }
+
+        .instructions {
+            position: fixed;
+            top: 20px;
+            color: white;
+            text-align: center;
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 0 20px;
+        }
+
+        .controls {
+            margin-top: 15px;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: white;
+        }
+
+        input[type="range"] {
+            width: 200px;
+            accent-color: #666;
+        }
+
+        .note-name {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .key.black .note-name {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h2>Virtual Piano</h2>
+        <p>Use your keyboard or click/tap the keys to play!</p>
+        <p>Keys: A S D F G H J K L</p>
+        <div class="controls">
+            <div class="volume-control">
+                <label for="volume">Volume:</label>
+                <input type="range" id="volume" min="0" max="100" value="30">
+                <span id="volume-value">30%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="piano">
+        <div data-note="C4" class="key" data-key="65">
+            <span class="note-name">C</span>
+            <span class="key-label">A</span>
+        </div>
+        <div data-note="Db4" class="key black" style="left: 40px;" data-key="87">
+            <span class="note-name">Db</span>
+            <span class="key-label">W</span>
+        </div>
+        <div data-note="D4" class="key" data-key="83">
+            <span class="note-name">D</span>
+            <span class="key-label">S</span>
+        </div>
+        <div data-note="Eb4" class="key black" style="left: 105px;" data-key="69">
+            <span class="note-name">Eb</span>
+            <span class="key-label">E</span>
+        </div>
+        <div data-note="E4" class="key" data-key="68">
+            <span class="note-name">E</span>
+            <span class="key-label">D</span>
+        </div>
+        <div data-note="F4" class="key" data-key="70">
+            <span class="note-name">F</span>
+            <span class="key-label">F</span>
+        </div>
+        <div data-note="Gb4" class="key black" style="left: 225px;" data-key="84">
+            <span class="note-name">Gb</span>
+            <span class="key-label">T</span>
+        </div>
+        <div data-note="G4" class="key" data-key="71">
+            <span class="note-name">G</span>
+            <span class="key-label">G</span>
+        </div>
+        <div data-note="Ab4" class="key black" style="left: 290px;" data-key="89">
+            <span class="note-name">Ab</span>
+            <span class="key-label">Y</span>
+        </div>
+        <div data-note="A4" class="key" data-key="72">
+            <span class="note-name">A</span>
+            <span class="key-label">H</span>
+        </div>
+        <div data-note="Bb4" class="key black" style="left: 355px;" data-key="85">
+            <span class="note-name">Bb</span>
+            <span class="key-label">U</span>
+        </div>
+        <div data-note="B4" class="key" data-key="74">
+            <span class="note-name">B</span>
+            <span class="key-label">J</span>
+        </div>
+        <div data-note="C5" class="key" data-key="75">
+            <span class="note-name">C</span>
+            <span class="key-label">K</span>
+        </div>
+    </div>
+
+    <script>
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        let volume = 0.3;
+        const volumeSlider = document.getElementById('volume');
+        const volumeValue = document.getElementById('volume-value');
+
+        volumeSlider.addEventListener('input', (e) => {
+            volume = e.target.value / 100;
+            volumeValue.textContent = `${e.target.value}%`;
+        });
+
+        function playNote(frequency) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+            
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1);
+        }
+
+        const noteFrequencies = {
+            'C4': 261.63, 'Db4': 277.18, 'D4': 293.66, 'Eb4': 311.13,
+            'E4': 329.63, 'F4': 349.23, 'Gb4': 369.99, 'G4': 392.00,
+            'Ab4': 415.30, 'A4': 440.00, 'Bb4': 466.16, 'B4': 493.88,
+            'C5': 523.25, 'D5': 587.33
+        };
+
+        const keys = document.querySelectorAll('.key');
+        const activeKeys = new Set();
+        
+        function playSound(key) {
+            const note = key.dataset.note;
+            playNote(noteFrequencies[note]);
+            key.classList.add('active');
+            setTimeout(() => key.classList.remove('active'), 100);
+        }
+
+        keys.forEach(key => {
+            key.addEventListener('mousedown', () => playSound(key));
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                playSound(key);
+            });
+        });
+
+        document.addEventListener('keydown', e => {
+            const key = document.querySelector(`.key[data-key="${e.keyCode}"]`);
+            if (key && !activeKeys.has(e.keyCode)) {
+                activeKeys.add(e.keyCode);
+                playSound(key);
+            }
+        });
+
+        document.addEventListener('keyup', e => {
+            activeKeys.delete(e.keyCode);
+        });
+    </script>
+</body>
+</html>
