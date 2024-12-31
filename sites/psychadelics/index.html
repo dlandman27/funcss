@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psychedelic Waves</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255,255,255,0.5);
+            font-family: monospace;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            opacity: 1;
+        }
+
+        body:hover .info {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="info">Move your mouse around...</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        let mouseX = width / 2;
+        let mouseY = height / 2;
+        let time = 0;
+
+        const particles = [];
+        const numParticles = 100;
+        const colors = [
+            '#FF6B6B',
+            '#4ECDC4',
+            '#45B7D1',
+            '#96CEB4',
+            '#FFEEAD',
+            '#D4A5A5',
+            '#FF69B4',
+            '#7B68EE',
+            '#00FA9A'
+        ];
+
+        let currentMode = 0;
+        let transitionProgress = 0;
+        const TRANSITION_SPEED = 0.005;
+        
+        const visualModes = [
+            {
+                name: 'waves',
+                update: (particle, time) => {
+                    const dx = mouseX - particle.x;
+                    const dy = mouseY - particle.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const force = Math.min(100 / (dist * dist), 5);
+                    
+                    particle.angle += 0.02;
+                    const waveForce = Math.sin(particle.angle + time) * 2;
+                    
+                    particle.speedX += (dx / dist) * force + waveForce;
+                    particle.speedY += (dy / dist) * force + Math.cos(particle.angle + time);
+                }
+            },
+            {
+                name: 'vortex',
+                update: (particle, time) => {
+                    const dx = mouseX - particle.x;
+                    const dy = mouseY - particle.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx);
+                    
+                    const vortexStrength = 5 + Math.sin(time) * 2;
+                    particle.speedX += Math.cos(angle + Math.PI/2) * vortexStrength;
+                    particle.speedY += Math.sin(angle + Math.PI/2) * vortexStrength;
+                    particle.speedX *= 0.98;
+                    particle.speedY *= 0.98;
+                }
+            },
+            {
+                name: 'fireworks',
+                update: (particle, time) => {
+                    const gravity = 0.2;
+                    particle.speedY += gravity;
+                    
+                    if (particle.y > height) {
+                        particle.y = height;
+                        particle.speedY = -Math.random() * 15;
+                        particle.speedX = (Math.random() - 0.5) * 10;
+                    }
+                    
+                    particle.speedX *= 0.99;
+                }
+            },
+            {
+                name: 'tornado',
+                update: (particle, time) => {
+                    const centerX = mouseX;
+                    const centerY = mouseY;
+                    const dx = centerX - particle.x;
+                    const dy = centerY - particle.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    particle.angle += 0.1 / (dist * 0.1);
+                    const radius = 100 + Math.sin(time + particle.angle) * 50;
+                    
+                    particle.speedX += (dx - radius * Math.cos(particle.angle)) * 0.02;
+                    particle.speedY += (dy - radius * Math.sin(particle.angle)) * 0.02;
+                }
+            },
+            {
+                name: 'dna',
+                update: (particle, time) => {
+                    const waveLength = 200;
+                    const amplitude = 100;
+                    
+                    particle.speedX += (mouseX + Math.sin(particle.y / waveLength + time) * amplitude - particle.x) * 0.1;
+                    particle.speedY += (particle.y < height ? 1 : -height) * 2;
+                }
+            },
+            {
+                name: 'blackhole',
+                update: (particle, time) => {
+                    const dx = mouseX - particle.x;
+                    const dy = mouseY - particle.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    const gravitationalPull = 50 / (dist + 1);
+                    particle.speedX += dx * gravitationalPull * 0.01;
+                    particle.speedY += dy * gravitationalPull * 0.01;
+                    
+                    particle.speedX *= 0.99;
+                    particle.speedY *= 0.99;
+                }
+            },
+            {
+                name: 'matrix',
+                update: (particle, time) => {
+                    particle.speedY = 3 + Math.sin(time + particle.x) * 2;
+                    
+                    if (particle.y > height) {
+                        particle.y = 0;
+                        particle.x = Math.random() * width;
+                    }
+                    
+                    particle.speedX = Math.sin(time + particle.y * 0.1) * 0.5;
+                }
+            },
+            {
+                name: 'constellation',
+                update: (particle, time) => {
+                    const nearbyParticles = particles.filter(p => {
+                        const dx = p.x - particle.x;
+                        const dy = p.y - particle.y;
+                        return Math.sqrt(dx * dx + dy * dy) < 100;
+                    });
+                    
+                    nearbyParticles.forEach(p => {
+                        const dx = p.x - particle.x;
+                        const dy = p.y - particle.y;
+                        particle.speedX += dx * 0.0001;
+                        particle.speedY += dy * 0.0001;
+                    });
+                    
+                    particle.speedX += (Math.random() - 0.5) * 0.5;
+                    particle.speedY += (Math.random() - 0.5) * 0.5;
+                }
+            },
+            {
+                name: 'spiral',
+                update: (particle, time) => {
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const dx = centerX - particle.x;
+                    const dy = centerY - particle.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    particle.angle += 0.02;
+                    const spiralForce = 0.5 + Math.sin(time) * 0.3;
+                    
+                    particle.speedX += (dx / dist) * spiralForce + Math.cos(particle.angle) * 2;
+                    particle.speedY += (dy / dist) * spiralForce + Math.sin(particle.angle) * 2;
+                }
+            },
+            {
+                name: 'galaxy',
+                update: (particle, time) => {
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const dx = centerX - particle.x;
+                    const dy = centerY - particle.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx);
+                    
+                    particle.speedX += Math.cos(angle + Math.PI/2) * (3 + Math.sin(time));
+                    particle.speedY += Math.sin(angle + Math.PI/2) * (3 + Math.sin(time));
+                    particle.speedX *= 0.95;
+                    particle.speedY *= 0.95;
+                }
+            },
+            {
+                name: 'flower',
+                update: (particle, time) => {
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const dx = centerX - particle.x;
+                    const dy = centerY - particle.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const petals = 5 + Math.sin(time) * 2;
+                    
+                    particle.angle += 0.02;
+                    const r = Math.cos(petals * Math.atan2(dy, dx)) * 100;
+                    
+                    particle.speedX += (dx - r * Math.cos(particle.angle)) * 0.01;
+                    particle.speedY += (dy - r * Math.sin(particle.angle)) * 0.01;
+                }
+            }
+        ];
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 4 + 2;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.speedX = Math.random() * 2 - 1;
+                this.speedY = Math.random() * 2 - 1;
+                this.angle = Math.random() * Math.PI * 2;
+                this.colorIndex = Math.floor(Math.random() * colors.length);
+                this.colorTransitionSpeed = 0.01 + Math.random() * 0.02;
+            }
+
+            update() {
+                // Get current and next mode
+                const currentModeIndex = Math.floor(currentMode);
+                const nextModeIndex = (currentModeIndex + 1) % visualModes.length;
+                const transitionT = currentMode - currentModeIndex;
+
+                // Update particle using both modes
+                visualModes[currentModeIndex].update(this, time);
+                
+                if (transitionT > 0) {
+                    // Blend with next mode during transition
+                    const tempSpeedX = this.speedX;
+                    const tempSpeedY = this.speedY;
+                    
+                    visualModes[nextModeIndex].update(this, time);
+                    
+                    this.speedX = tempSpeedX * (1 - transitionT) + this.speedX * transitionT;
+                    this.speedY = tempSpeedY * (1 - transitionT) + this.speedY * transitionT;
+                }
+
+                this.speedX *= 0.97;
+                this.speedY *= 0.97;
+
+                this.colorIndex = (this.colorIndex + this.colorTransitionSpeed) % colors.length;
+
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size
+                );
+                
+                const colorIndex = Math.floor(this.colorIndex);
+                const nextColorIndex = (colorIndex + 1) % colors.length;
+                const t = this.colorIndex - colorIndex;
+                
+                gradient.addColorStop(0, colors[colorIndex]);
+                gradient.addColorStop(1, colors[nextColorIndex]);
+                
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, width, height);
+
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // Update current mode
+            currentMode = (currentMode + TRANSITION_SPEED) % visualModes.length;
+            time += 0.01;
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        animate();
+    </script>
+</body>
+</html>
