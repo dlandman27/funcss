@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Happy Birthday!</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A fun birthday celebration page with animated effects">
+    <meta name="author" content="randomsitesontheweb">
+    <meta name="theme-color" content="#87CEEB">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: radial-gradient(circle at center, #ffffff 0%, #87CEEB 100%);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Add sunburst effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-conic-gradient(from 0deg, #87CEEB 0deg 10deg, #5FB6E5 10deg 20deg);
+            animation: rotate 60s linear infinite;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        @keyframes rotate {
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .birthday-message {
+            font-size: 5em;
+            text-align: center;
+            filter: drop-shadow(0 0 10px white);
+            opacity: 0;  /* Start hidden */
+            transform: scale(0.5);  /* Start smaller */
+            animation: popMessage 1s cubic-bezier(0.17, 0.89, 0.32, 1.28) forwards;  /* Add pop animation */
+        }
+
+        @keyframes popMessage {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            70% {
+                transform: scale(1.1);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .birthday-letter {
+            display: inline-block;
+            animation: float 2s ease-in-out infinite;
+            margin: 0 5px;
+            padding: 10px;
+            border-radius: 15px;
+            background: white;
+            border: 4px solid #333;
+        }
+
+        /* Different colors for each letter */
+        .birthday-letter:nth-child(5n+1) { color: #FF0000; animation-delay: 0.0s; }
+        .birthday-letter:nth-child(5n+2) { color: #0000FF; animation-delay: 0.1s; }
+        .birthday-letter:nth-child(5n+3) { color: #FF69B4; animation-delay: 0.2s; }
+        .birthday-letter:nth-child(5n+4) { color: #32CD32; animation-delay: 0.3s; }
+        .birthday-letter:nth-child(5n+5) { color: #FFA500; animation-delay: 0.4s; }
+        
+
+        .balloon {
+            position: absolute;
+            font-size: 80px;
+            opacity: 0;
+            transform: translateY(100vh);
+            animation: floatBalloon 6s ease-in-out infinite,
+                       balloonEntrance 1s ease-out forwards;
+        }
+
+        @keyframes floatBalloon {
+            0%, 100% { transform: translateY(0) rotate(3deg); }
+            50% { transform: translateY(-30px) rotate(-3deg); }
+        }
+
+        @keyframes balloonEntrance {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .prompt-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            margin: 20px;
+        }
+
+        .share-link {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+
+        /* Add new styles for copy feedback */
+        .copy-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ff69b4;
+            color: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 1.5em;
+            animation: popIn 1.5s ease-out forwards;
+            z-index: 1000;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        button {
+            background: #ff69b4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            margin: 10px;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 1.2em;
+            margin: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        h2{
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .prompt-container h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="content"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script>
+        const NOTES = {
+            'C4': 261.63,
+            'D4': 293.66,
+            'E4': 329.63,
+            'F4': 349.23,
+            'G4': 392.00,
+            'A4': 440.00,
+            'B4': 493.88,
+            'Bb4': 466.16,
+            'C5': 523.25
+        };
+
+        const BIRTHDAY_SONG = [
+            { note: 'C4', duration: 0.25 },
+            { note: 'C4', duration: 0.25 },
+            { note: 'D4', duration: 0.5 },
+            { note: 'C4', duration: 0.5 },
+            { note: 'F4', duration: 0.5 },
+            { note: 'E4', duration: 1 },
+            
+            { note: 'C4', duration: 0.25 },
+            { note: 'C4', duration: 0.25 },
+            { note: 'D4', duration: 0.5 },
+            { note: 'C4', duration: 0.5 },
+            { note: 'G4', duration: 0.5 },
+            { note: 'F4', duration: 1 },
+            
+            { note: 'C4', duration: 0.25 },
+            { note: 'C4', duration: 0.25 },
+            { note: 'C5', duration: 0.5 },
+            { note: 'A4', duration: 0.5 },
+            { note: 'F4', duration: 0.5 },
+            { note: 'E4', duration: 0.5 },
+            { note: 'D4', duration: 0.5 },
+            
+            { note: 'Bb4', duration: 0.25 },
+            { note: 'Bb4', duration: 0.25 },
+            { note: 'A4', duration: 0.5 },
+            { note: 'F4', duration: 0.5 },
+            { note: 'G4', duration: 0.5 },
+            { note: 'F4', duration: 1 }
+        ];
+
+        function playNote(frequency, duration) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration - 0.05);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playBirthdaySong() {
+            let time = 0;
+            const totalDuration = BIRTHDAY_SONG.reduce((sum, note) => sum + note.duration, 0);
+            
+            function playSongLoop() {
+                BIRTHDAY_SONG.forEach(note => {
+                    setTimeout(() => {
+                        playNote(NOTES[note.note], note.duration);
+                    }, time * 1000);
+                    time += note.duration;
+                });
+                
+                // Reset time and schedule next loop
+                setTimeout(() => {
+                    time = 0;
+                    playSongLoop();
+                }, totalDuration * 1000);
+            }
+            
+            playSongLoop();
+        }
+
+        function getUrlParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        function createBalloon() {
+            const balloon = document.createElement('div');
+            balloon.className = 'balloon';
+            balloon.style.left = Math.random() * window.innerWidth + 'px';
+            balloon.style.top = Math.random() * window.innerHeight + 'px';
+            balloon.style.background = `hsl(${Math.random() * 360}, 70%, 50%)`;
+            balloon.style.animationDelay = Math.random() * 2 + 's';
+            document.body.appendChild(balloon);
+        }
+
+        function showBirthdayMessage(name) {
+            const letters = (name + '!!').split('');
+            const message = `
+                <div class="birthday-message">
+                    <div style="margin-bottom: 20px">
+                        ${'HAPPY'.split('').map((letter, i) => 
+                            `<span class="birthday-letter">${letter}</span>`
+                        ).join('')}
+                    </div>
+                    <div style="margin-bottom: 20px">
+                        ${`BIRTHDAY`.split('').map((letter, i) => 
+                            `<span class="birthday-letter">${letter}</span>`
+                        ).join('')}
+                    </div>
+                    <div>
+                        ${letters.map((letter, i) => 
+                            `<span class="birthday-letter">${letter}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('content').innerHTML = message;
+
+            // Update balloon creation to use colored divs instead of emojis
+            for(let i = 0; i < 80; i++) {
+                const balloon = document.createElement('div');
+                balloon.className = 'balloon';
+                balloon.style.width = '20px';
+                balloon.style.height = '25px';
+                balloon.style.borderRadius = '50% 50% 50% 50% / 40% 40% 60% 60%';
+                balloon.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                balloon.style.left = Math.random() * window.innerWidth + 'px';
+                balloon.style.top = Math.random() * window.innerHeight + 'px';
+                balloon.style.animationDelay = `${(Math.random() * 1 + 0.5)}s`;  // Adjusted delay
+                document.body.appendChild(balloon);
+            }
+
+            // Add initial confetti burst
+            confetti({
+                particleCount: 150,
+                spread: 180,
+                origin: { y: 0.7 },
+                startVelocity: 45,
+                gravity: 1.2,
+                ticks: 400
+            });
+
+            // Then start the regular confetti
+            setTimeout(() => {
+                setInterval(function() {
+                    confetti({
+                        ...defaults,
+                        particleCount: 50,
+                        origin: { x: Math.random(), y: Math.random() - 0.2 }
+                    });
+                }, 1000);
+            }, 1000);
+        }
+
+        function showNamePrompt() {
+            document.getElementById('content').innerHTML = `
+                <div class="prompt-container">
+                    <h2>WHO'S BIRTHDAY IS IT?</h2>
+                    <input type="text" id="nameInput" placeholder="Enter their name...">
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button onclick="submitName()">Celebrate! 🎉</button>
+                        <button onclick="shareLink()">Share Birthday Page 🎈</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function submitName() {
+            const name = document.getElementById('nameInput').value;
+            if(name.trim()) {
+                window.location.href = `?name=${encodeURIComponent(name)}`;
+            }
+        }
+
+        function showFeedback(message) {
+            return new Promise((resolve) => {
+                // Remove existing feedback if present
+                const existingFeedback = document.querySelector('.copy-feedback');
+                if (existingFeedback) {
+                    existingFeedback.remove();
+                }
+                
+                const feedback = document.createElement('div');
+                feedback.className = 'copy-feedback';
+                feedback.textContent = message;
+                document.body.appendChild(feedback);
+                
+                setTimeout(() => {
+                    feedback.remove();
+                    resolve();
+                }, 2000); // Increased from 1500 to 2000
+            });
+        }
+
+        function shareLink() {
+            const name = document.getElementById('nameInput').value;
+            if(name.trim()) {
+                const shareUrl = `${window.location.origin}${window.location.pathname}?name=${encodeURIComponent(name)}`;
+                navigator.clipboard.writeText(shareUrl)
+                    .then(async () => {
+                        await showFeedback('Copied! 🎈');
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 }
+                        });
+                    })
+                    .catch(async () => {
+                        await showFeedback('Oops! Could not copy link 😅');
+                    });
+            } else {
+                showFeedback('Please enter a name first! 🎂');
+            }
+        }
+
+        // Main execution
+        const name = getUrlParam('name');
+        if(name) {
+            showBirthdayMessage(name);
+        } else {
+            showNamePrompt();
+        }
+    </script>
+</body>
+</html>
+
