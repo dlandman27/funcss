@@ -29,18 +29,20 @@
         body {
             margin: 0;
             padding: 20px;
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             min-height: 100vh;
+            background: #1e1e2e url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="none"/><circle cx="3" cy="3" r="1" fill="%23333"/></svg>') repeat;
+            color: #fff;
         }
 
         #numbers-container {
             font-size: 128px;
             text-align: center;
-            line-height: 1.5;
+            line-height: 1.2;
             font-weight: bold;
             padding: 20px;
-            transition: opacity 0.3s ease-in-out;
-            transform: translateZ(0);
+            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+            font-family: 'Arial Black', sans-serif;
         }
 
         .number {
@@ -48,7 +50,12 @@
             margin-bottom: 20px;
             opacity: 0;
             transform: translateY(50px);
-            animation: slideIn 0.5s forwards;
+            animation: slideIn 0.5s forwards, shimmer 2s infinite;
+            background: linear-gradient(45deg, #2c2c2c 0%, #1a1a1a 100%);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #gold;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
         }
 
         @keyframes slideIn {
@@ -58,54 +65,107 @@
             }
         }
 
-        .rarity-text{
-            font-size: 22px;
+        @keyframes shimmer {
+            0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
+            100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+        }
+
+        .rarity-text {
+            font-size: 24px;
             display: block;
+            font-family: 'Arial', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 10px;
         }
 
         .special-number-common {
             color: #2ecc71;
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
         }
         
         .special-number-rare {
             color: #3498db;
+            text-shadow: 0 0 15px rgba(52, 152, 219, 0.6);
         }
 
         .special-number-epic {
             color: #9b59b6;
+            text-shadow: 0 0 20px rgba(155, 89, 182, 0.7);
         }
         
         .special-number-legendary {
-            color: #f1c40f;
-            text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+            color: #ffd700;
+            text-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+            animation: legendary-pulse 2s infinite;
+        }
+
+        @keyframes legendary-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .rarity-guide {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: rgba(0,0,0,0.8);
+            z-index: 1111;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .rarity-guide h2 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .rarity-guide ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .rarity-guide li {
+            margin: 15px 0;
+            font-size: 16px;
+            text-align: left;
         }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #333; margin: 20px 0; font-size: 56px;">Scroll Down, If You Dare...</h1>
-    <p style="text-align: center; color: #666; font-size: 18px;">Check the rarity guide below to discover special numbers!</p>
+    <h1 style="text-align: center; color: #ffd700; margin: 20px 0; font-size: 56px; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);">Lucky Numbers Casino</h1>
+    <p style="text-align: center; color: #fff; font-size: 20px; text-shadow: 0 0 10px rgba(255,255,255,0.3);">Keep scrolling to test your luck!</p>
 
-    <div style="text-align: center; margin: 20px auto; max-width: 600px; background: rgba(255,255,255,0.9); padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h2 style="color: #333; margin-bottom: 15px;">Rarity Guide</h2>
-        <ul style="list-style: none; padding: 0;">
-            <li style="margin: 10px 0;">
-                <span style="color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);">✨ LEGENDARY</span>
-                <br>Chance: 0.001% (1 in 100,000)
+    <!-- Move rarity guide to floating position -->
+    <div class="rarity-guide">
+        <h2>Rarity Guide</h2>
+        <ul>
+            <li>
+                <span style="color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">✨ LEGENDARY</span>
+                <br>Chance: 0.001%
             </li>
-            <li style="margin: 10px 0;">
+            <li>
                 <span style="color: #9b59b6;">💫 EPIC</span>
-                <br>Chance: 0.1% (1 in 1,000)
+                <br>Chance: 0.1%
             </li>
-            <li style="margin: 10px 0;">
+            <li>
                 <span style="color: #3498db;">🌟 RARE</span>
-                <br>Chance: 0.33% (1 in 300)
+                <br>Chance: 0.33%
             </li>
-            <li style="margin: 10px 0;">
+            <li>
                 <span style="color: #2ecc71;">⭐ COMMON</span>
-                <br>Chance: 1% (1 in 100)
+                <br>Chance: 1%
             </li>
         </ul>
     </div>
+
     <div id="numbers-container"></div>
 
     <script>

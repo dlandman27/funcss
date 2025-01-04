@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Prop Hunt</title>
+    <meta name="description" content="A fun emoji-based hide and seek game where you search for target emojis among decoys">
+    <meta name="keywords" content="emoji game, prop hunt, hide and seek, browser game, emoji hunt">
+    <meta name="author" content="Emoji Prop Hunt">
+    <meta property="og:title" content="Emoji Prop Hunt">
+    <meta property="og:description" content="Can you find the hidden emoji among the decoys? Test your observation skills in this fun browser game!">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#1a1c2c">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1c2c 0%, #2a3c54 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        #game-container {
+            flex: 1;
+            min-height: 60vh;
+            margin: 10px 0;
+            background: #2a2a2a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .emoji {
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s;
+            position: absolute;
+            pointer-events: none;
+            transform-origin: center;
+            opacity: 0.9;
+        }
+
+        .emoji.target {
+            pointer-events: all !important;
+            cursor: pointer;
+            animation: pulse 1.5s infinite;
+            z-index: 1000;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(var(--scale, 1)) rotate(var(--rotation)); }
+            50% { transform: scale(calc(var(--scale, 1) * 1.1)) rotate(var(--rotation)); }
+            100% { transform: scale(var(--scale, 1)) rotate(var(--rotation)); }
+        }
+
+        #score, #target-display {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        #score:hover, #timer-display:hover, #target-display:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        #score {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        #target-display {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #FFF;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: none;
+            margin: 20px auto;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal .content {
+            margin: 20px 0;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(52, 73, 94, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            animation: modalPop 0.3s ease-out;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal h2 {
+            margin: 0 0 20px 0;
+            font-size: 32px;
+        }
+
+        .modal .emoji-display {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+
+        #timer-display {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .theme-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-button:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-button.active {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .theme-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 600px;
+            margin: 40px auto;
+        }
+
+        .theme-button {
+            padding: 30px;
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .theme-button .emoji-preview {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            margin: 10px 0;
+        }
+
+        #game-screen {
+            display: none;
+            min-height: 100vh;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="start-screen" id="start-screen">
+        <h1>Emoji Prop Hunt</h1>
+        <h2>Select a Theme</h2>
+        <div class="theme-selector">
+            <button class="theme-button" data-theme="nature">
+                <div class="emoji-preview">🌲 🌺 🦊</div>
+                Nature
+            </button>
+            <button class="theme-button" data-theme="food">
+                <div class="emoji-preview">🍎 🥨 🍕</div>
+                Food
+            </button>
+            <button class="theme-button" data-theme="animals">
+                <div class="emoji-preview">🐈 🦒 🦁</div>
+                Animals
+            </button>
+            <button class="theme-button" data-theme="space">
+                <div class="emoji-preview">⭐ 🌍 🚀</div>
+                Space
+            </button>
+            <button class="theme-button" data-theme="sports">
+                <div class="emoji-preview">⚽ 🎾 🏆</div>
+                Sports
+            </button>
+            <button class="theme-button" data-theme="travel">
+                <div class="emoji-preview">✈️ 🗺️ 🏖️</div>
+                Travel
+            </button>
+            <button class="theme-button" data-theme="music">
+                <div class="emoji-preview">🎸 🎹 🎼</div>
+                Music
+            </button>
+            <button class="theme-button" data-theme="weather">
+                <div class="emoji-preview">☀️ 🌧️ ⛈️</div>
+                Weather
+            </button>
+        </div>
+    </div>
+
+    <div id="game-screen" style="display: none;">
+        <h1>Emoji Prop Hunt</h1>
+        <div id="score">Score: <span id="score-value">0</span></div>
+        <div id="timer-display">Time: <span id="timer-value">60</span>s</div>
+        <div id="target-display">Find the: <span id="current-target"></span></div>
+        <div id="game-container"></div>
+    </div>
+
+    <div id="round-modal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <h2>Round <span id="modal-round">1</span></h2>
+            <div class="content">
+                <div>Find the:</div>
+                <div class="emoji-display"><span id="modal-target"></span></div>
+                <div id="loading-text" style="display: none;">Generating new round...</div>
+                <div class="loader" id="loading-spinner"></div>
+                <div id="start-text">(Click anywhere to start)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themes = {
+            nature: {
+                decoys: ['🌲', '🌳', '🌴', '🌵', '🎄', '🌿', '☘️', '🍀', '🌺', '🌸', '🌼', '🌻', '🍄', '🪴', '🎋', '🎍'],
+                targets: ['🦊', '🐰', '🦁', '🐯', '🐷', '🐸']
+            },
+            food: {
+                decoys: ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🥝', '🍅', '🥕', '🥨', '🥯', '🥖', '🥐'],
+                targets: ['🍔', '🍕', '🌮', '🍦', '🍪', '🎂']
+            },
+            animals: {
+                decoys: ['🐅', '🐆', '🦬', '🦏', '🐪', '🐫', '🦙', '🦌', '🦣', '🐗', '🦗', '🦂', '🐜', '🐛', '🦋', '🐌'],
+                targets: ['🦁', '🐘', '🦒', '🦈', '🐋', '🦭']
+            },
+            space: {
+                decoys: ['🌗', '🌘', '🌙', '🌚', '🌛', '🌜', '🌡️', '🌋', '🌊', '💫', '☄️', '🌠', '🌌', '🌓', '🌔', '🌕'],
+                targets: ['🚀', '🛸', '👾', '🛰️', '🌞', '⭐']
+            },
+            sports: {
+                decoys: ['🎽', '🥋', '🥊', '🎿', '🛷', '🥌', '🎯', '🪀', '🎳', '🎮', '🎲', '🎭', '🎨', '🎪', '🎟️', '🎗️'],
+                targets: ['🏆', '🥇', '🥈', '🥉', '🏅', '🎖️']
+            },
+            travel: {
+                decoys: ['🗺️', '🗿', '🗽', '🗼', '🗻', '🏰', '🏯', '🏛️', '⛩️', '🕌', '🕍', '⛪', '🏙️', '🌄', '🌅', '🌆'],
+                targets: ['✈️', '🚂', '🚢', '🏖️', '🎡', '🎪']
+            },
+            music: {
+                decoys: ['🎵', '🎶', '🎼', '🎹', '🎸', '🎻', '🎺', '🎷', '🪘', '🥁', '🪗', '🎤', '📻', '🎧', '🔔', '🎙️'],
+                targets: ['🎭', '🎪', '🎬', '🎨', '🎩', '🎮']
+            },
+            weather: {
+                decoys: ['🌤️', '🌥️', '🌦️', '🌧️', '🌨️', '🌩️', '🌪️', '🌫️', '🌬️', '🌀', '🌈', '☁️', '⛅', '⛈️', '❄️', '🌊'],
+                targets: ['☀️', '🌙', '⚡', '💧', '🔥', '💨']
+            }
+        };
+
+        let currentTheme = 'nature';
+        let score = 0;
+        let currentTarget;
+        let emojiCount = 10; // Starting number of emojis
+        let timeLeft = 60;
+        let timerInterval;
+        const MAX_ROUNDS = 10;
+
+        function showRoundModal(isLoading = false) {
+            const modal = document.getElementById('round-modal');
+            const loadingText = document.getElementById('loading-text');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const startText = document.getElementById('start-text');
+            
+            document.getElementById('modal-round').textContent = `${score + 1}/${MAX_ROUNDS}`;
+            document.getElementById('modal-target').textContent = currentTarget;
+            
+            const modalContent = modal.querySelector('.content');
+            modalContent.innerHTML = `
+                <div>Find the:</div>
+                <div class="emoji-display"><span id="modal-target">${currentTarget}</span></div>
+                <p>Time remaining: ${timeLeft} seconds</p>
+                <div id="loading-text" style="display: ${isLoading ? 'block' : 'none'}">Generating new round...</div>
+                <div class="loader" id="loading-spinner" style="display: ${isLoading ? 'block' : 'none'}"></div>
+                <div id="start-text" style="display: ${isLoading ? 'none' : 'block'}">(Click anywhere to start)</div>
+            `;
+            
+            if (isLoading) {
+                modal.onclick = null;
+            } else {
+                modal.onclick = function() {
+                    modal.style.display = 'none';
+                    if (score === 0) {
+                        startTimer();
+                    } else {
+                        if (timeLeft <= 0 || score >= MAX_ROUNDS) {
+                            showEndGameModal();
+                        } else {
+                            timerInterval = setInterval(() => {
+                                timeLeft--;
+                                document.getElementById('timer-value').textContent = timeLeft;
+                                
+                                if (timeLeft <= 0 || score >= MAX_ROUNDS) {
+                                    clearInterval(timerInterval);
+                                    showEndGameModal();
+                                }
+                            }, 1000);
+                        }
+                    }
+                };
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function generateGame() {
+            const container = document.getElementById('game-container');
+            
+            // Show loading state in modal
+            showRoundModal(true);
+            
+            // Use setTimeout to allow the loading state to render
+            setTimeout(() => {
+                container.innerHTML = '';
+                currentTarget = themes[currentTheme].targets[Math.floor(Math.random() * themes[currentTheme].targets.length)];
+                document.getElementById('current-target').textContent = currentTarget;
+                
+                const targetPosition = Math.floor(Math.random() * emojiCount);
+                
+                // Generate all emojis
+                for (let i = 0; i < emojiCount; i++) {
+                    const emoji = document.createElement('span');
+                    emoji.className = 'emoji';
+                    
+                    const randomX = Math.random() * (container.offsetWidth - 50);
+                    const randomY = Math.random() * (container.offsetHeight - 50);
+                    
+                    const randomSize = Math.max(8, 24 - (score * 0.5)) + Math.random() * 8; // Reduced size variation
+                    
+                    const randomRotation = -45 + Math.random() * 90;
+                    emoji.style.setProperty('--rotation', `${randomRotation}deg`);
+                    
+                    emoji.style.left = `${randomX}px`;
+                    emoji.style.top = `${randomY}px`;
+                    emoji.style.fontSize = `${randomSize}px`;
+                    
+                    if (i === targetPosition) {
+                        emoji.textContent = currentTarget;
+                        emoji.classList.add('target');
+                        
+                        emoji.onclick = function() {
+                            clearInterval(timerInterval);
+                            score++;
+                            emojiCount = Math.floor(10 * Math.pow(2, score));
+                            document.getElementById('score-value').textContent = score;
+                            
+                            // Check if game should end before generating next round
+                            if (score >= MAX_ROUNDS || timeLeft <= 0) {
+                                showEndGameModal();
+                            } else {
+                                generateGame();
+                            }
+                        };
+                    } else {
+                        emoji.textContent = themes[currentTheme].decoys[Math.floor(Math.random() * themes[currentTheme].decoys.length)];
+                    }
+                    
+                    container.appendChild(emoji);
+                }
+                
+                // After generation is complete, update modal to ready state
+                showRoundModal(false);
+            }, 0);
+        }
+
+        function handleTargetClick() {
+            clearInterval(timerInterval);
+            score++;
+            emojiCount = Math.floor(10 * Math.pow(2, score));
+            document.getElementById('score-value').textContent = score;
+            
+            // Check if game should end before generating next round
+            if (score >= MAX_ROUNDS || timeLeft <= 0) {
+                showEndGameModal();
+            } else {
+                generateGame();
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-value').textContent = timeLeft;
+                
+                if (timeLeft <= 0 || score >= MAX_ROUNDS) {
+                    clearInterval(timerInterval);
+                    showEndGameModal();
+                }
+            }, 1000);
+        }
+
+        function showEndGameModal() {
+            const modal = document.getElementById('round-modal');
+            const modalContent = modal.querySelector('.content');
+            
+            // Highlight the target emoji by adding a new class
+            const targetEmoji = document.querySelector('.emoji.target');
+            if (targetEmoji) {
+                targetEmoji.style.setProperty('--scale', '3');
+                targetEmoji.style.transition = 'filter 0.5s ease-out';
+                targetEmoji.style.filter = 'drop-shadow(0 0 10px red)';
+            }
+            
+            // Add 5 second delay before showing the end game modal
+            setTimeout(() => {
+                if (score >= MAX_ROUNDS) {
+                    modalContent.innerHTML = `
+                        <h3>You Win! 🎉</h3>
+                        <p>You completed the game in ${60 - timeLeft} seconds!</p>
+                        <p>Time remaining: ${timeLeft} seconds</p>
+                        <div id="start-text">(Click anywhere to play again)</div>
+                    `;
+                    document.getElementById('modal-round').textContent = `${score}/${MAX_ROUNDS}`;
+                    
+                    modal.onclick = function() {
+                        modal.style.display = 'none';
+                        score = 0;
+                        emojiCount = 10;
+                        timeLeft = 60;
+                        document.getElementById('score-value').textContent = score;
+                        document.getElementById('timer-value').textContent = timeLeft;
+                        generateGame();
+                    };
+                } else {
+                    modalContent.innerHTML = `
+                        <h3>Time's Up! ⏰</h3>
+                        <p>Final Score: ${score}</p>
+                        <p>Time remaining: ${timeLeft} seconds</p>
+                        <div id="start-text">(Click anywhere to try again)</div>
+                    `;
+                }
+                modal.style.display = 'flex';
+            }, 5000); // 5 second delay
+        }
+
+        function startGame(theme) {
+            currentTheme = theme;
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            score = 0;
+            emojiCount = 10;
+            timeLeft = 60;
+            document.getElementById('score-value').textContent = score;
+            document.getElementById('timer-value').textContent = timeLeft;
+            generateGame();
+        }
+
+        document.querySelectorAll('.theme-button').forEach(button => {
+            button.addEventListener('click', () => {
+                startGame(button.dataset.theme);
+            });
+        });
+    </script>
+</body>
+</html>
