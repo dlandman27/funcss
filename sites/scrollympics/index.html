@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scrollympics</title>
+    <meta name="description" content="Track how far you've scrolled in real-world distances">
+    <meta name="keywords" content="scroll tracker, distance, scrolling game">
+    <meta name="author" content="Scrollympics">
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 1000vh;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        .stats-panel {
+            position: fixed;
+            top: 50%;
+            right: 50%;
+            transform: translate(50%, -50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            max-width: calc(100% - 60px);
+            width: 300px;
+            box-sizing: border-box;
+            z-index: 1000;
+            max-height: fit-content;
+        }
+
+        .stat {
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .instructions {
+            text-align: center;
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin-bottom: 50px;
+        }
+
+        .disclaimer {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            z-index: 1000;
+        }
+
+        @media (max-width: 600px) {
+            .stats-panel {
+                position: fixed;
+                bottom: 70px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: calc(100% - 20px);
+                max-width: 300px;
+            }
+
+            .disclaimer {
+                bottom: 0;
+                left: 0;
+                right: 0;
+                text-align: center;
+                border-radius: 0;
+            }
+
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .instructions {
+                font-size: 1em;
+            }
+
+            .stat {
+                margin: 5px 0;
+            }
+
+            .stat-value {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Scrollympics 🏃‍♂️</h1>
+    <div class="instructions">
+        Start scrolling to see how far you can go!
+    </div>
+
+    <div class="stats-panel">
+        <div class="stat">
+            <div class="stat-label">Pixels Scrolled</div>
+            <div class="stat-value" id="pixels">0 px</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Meters</div>
+            <div class="stat-value" id="meters">0 m</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Comparison</div>
+            <div class="stat-value" id="comparison">Start scrolling!</div>
+        </div>
+    </div>
+
+    <div class="disclaimer">
+        Note: For this simulation, every 10 pixels scrolled equals 1 meter in real-world distance.
+    </div>
+
+    <script>
+        let totalScrolled = 0;
+        const pixelsPerMeter = 1000; // Approximate scale
+        
+        const comparisons = [
+            { distance: 1.7, description: "iPhone 13 length" },
+            { distance: 2.4, description: "Average human height" },
+            { distance: 4.3, description: "Standard door height" },
+            { distance: 10, description: "Basketball hoop height" },
+            { distance: 15, description: "Typical house height" },
+            { distance: 30, description: "Average telephone pole" },
+            { distance: 46, description: "Statue of Liberty height" },
+            { distance: 100, description: "Football field length" },
+            { distance: 169, description: "Washington Monument height" },
+            { distance: 324, description: "Eiffel Tower height" },
+            { distance: 381, description: "Empire State Building height" },
+            { distance: 828, description: "Burj Khalifa height" },
+            { distance: 1000, description: "1 kilometer" },
+            { distance: 2228, description: "Tallest underwater waterfall (Denmark Strait)" },
+            { distance: 3776, description: "Mount Fuji height" },
+            { distance: 5895, description: "Mount Kilimanjaro height" },
+            { distance: 8848, description: "Mount Everest height" },
+            { distance: 11000, description: "Mariana Trench depth" },
+            { distance: 34000000, description: "Distance light travels in 1 second" },
+            { distance: 40075000, description: "Earth's circumference" },
+            { distance: 40000, description: "Cruising altitude of commercial aircraft" },
+            { distance: 57900000, description: "Distance to Mercury" },
+            { distance: 100000, description: "Edge of space (Kármán line)" },
+            { distance: 108200000, description: "Distance to Venus" },
+            { distance: 384400000, description: "Distance to the Moon" },
+            { distance: 408000, description: "International Space Station orbit" },
+            { distance: 1000000, description: "Distance to edge of Earth's atmosphere" },
+            { distance: 6371000, description: "Earth's radius" },
+            { distance: 12742000, description: "Earth's diameter" },
+            { distance: 14927000, description: "Saturn's diameter" },
+            { distance: 149600000000, description: "Distance to the Sun" },
+            { distance: 227900000000, description: "Distance to Mars" },
+            { distance: 778500000000, description: "Distance to Jupiter" },
+            { distance: 1427000000000, description: "Distance to Saturn" },
+            { distance: 2871000000000, description: "Distance to Uranus" },
+            { distance: 4497000000000, description: "Distance to Neptune" },
+            { distance: 4.246e+16, description: "Distance to Proxima Centauri" },
+            { distance: 1.057e+18, description: "Width of the Milky Way" }
+        ];
+
+        document.body.style.minHeight = '100vh';
+
+        function checkScroll() {
+            const buffer = 2000; // pixels before bottom when we add more height
+            const increment = 5000; // pixels to add each time
+            
+            const remainingScroll = 
+                document.documentElement.scrollHeight - 
+                (window.innerHeight + window.scrollY);
+
+            if (remainingScroll < buffer) {
+                document.body.style.minHeight = 
+                    (document.documentElement.scrollHeight + increment) + 'px';
+            }
+        }
+
+        window.addEventListener('scroll', () => {
+            totalScrolled = window.scrollY;
+            const meters = totalScrolled / pixelsPerMeter;
+            
+            document.getElementById('pixels').textContent = `${Math.round(totalScrolled)} px`;
+            document.getElementById('meters').textContent = `${meters.toFixed(2)} m`;
+            
+            const comparison = comparisons.find(c => meters <= c.distance) || 
+                              comparisons[comparisons.length - 1];
+            document.getElementById('comparison').textContent = 
+                `${((meters / comparison.distance) * 100).toFixed(1)}% of ${comparison.description}`;
+            
+            checkScroll();
+        });
+    </script>
+</body>
+</html>

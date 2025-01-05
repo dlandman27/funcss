@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lots of Cats!</title>
+    <meta name="description" content="An endless scroll of adorable cat pictures">
+    <meta name="keywords" content="cats, kittens, infinite scroll, placekitten">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            columns: 4;
+            column-gap: 20px;
+        }
+
+        .cat-image {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+            break-inside: avoid;
+            object-fit: cover;
+        }
+
+        .cat-image:hover {
+            transform: scale(1.02);
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                columns: 3;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                columns: 2;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                columns: 1;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="catContainer"></div>
+    <div class="loading">Loading more cats...</div>
+
+    <script>
+        const APIs = [
+            { url: 'https://placebear.com/{w}/{h}', name: 'Bear', type: 'direct' },
+            { url: 'https://randomfox.ca/images/{i}.jpg', name: 'Fox', type: 'direct' },
+            { url: 'https://dog.ceo/api/breeds/image/random', name: 'Dog', type: 'json' },
+        ];
+
+        let loading = false;
+        let imageCount = 0;
+
+        function getRandomAPI() {
+            return APIs[Math.floor(Math.random() * APIs.length)];
+        }
+
+        async function generateImageUrl(api) {
+            const width = 600;
+            const height = 300;
+            
+            if (api.type === 'json') {
+                try {
+                    const response = await fetch(api.url);
+                    const data = await response.json();
+                    return data.message;
+                } catch (error) {
+                    console.error('Error fetching dog image:', error);
+                    return generateImageUrl(getRandomAPI()); // Try another API as fallback
+                }
+            }
+
+            if (api.url.includes('{i}')) {
+                const randomNum = Math.floor(Math.random() * 122) + 1;
+                return api.url.replace('{i}', randomNum);
+            }
+            
+            return api.url
+                .replace('{w}', width)
+                .replace('{h}', height);
+        }
+
+        async function loadMoreCats() {
+            if (loading) return;
+            loading = true;
+
+            const promises = Array(12).fill().map(async () => {
+                const api = getRandomAPI();
+                const img = document.createElement('img');
+                img.src = await generateImageUrl(api);
+                img.className = 'cat-image';
+                img.loading = 'lazy';
+                img.alt = `Adorable ${api.name.toLowerCase()} ${imageCount + 1}`;
+                document.getElementById('catContainer').appendChild(img);
+                imageCount++;
+            });
+
+            await Promise.all(promises);
+            loading = false;
+        }
+
+        // Initial load
+        loadMoreCats();
+
+        // Infinite scroll
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                loadMoreCats();
+            }
+        });
+    </script>
+</body>
+</html>
