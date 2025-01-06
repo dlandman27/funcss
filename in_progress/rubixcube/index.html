@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        .cube {
+            display: grid;
+            grid-template-columns: repeat(3, 30px);
+            grid-template-rows: repeat(3, 30px);
+            gap: 2px;
+            padding: 5px;
+            background: #333;
+            border-radius: 5px;
+            position: relative;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .cube-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: black;
+            font-weight: bold;
+        }
+        button {
+            margin: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="cube" class="cube"></div>
+    <button onclick="openAllFaces()">Open All Faces</button>
+    <button onclick="closeAllFaces()">Close All Faces</button>
+
+    <script>
+        console.log('Main window origin:', window.location.origin);
+
+        const faceColors = {
+            'top': 'white',
+            'left': 'red',
+            'front': 'green',
+            'right': 'orange',
+            'back': 'blue',
+            'bottom': 'yellow'
+        };
+
+        // Get the face type from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const face = urlParams.get('face');
+        
+        // Initialize the face
+        const cube = document.getElementById('cube');
+        const label = document.createElement('div');
+        label.className = 'cube-label';
+        label.textContent = face.charAt(0).toUpperCase() + face.slice(1) + ' Face';
+        cube.appendChild(label);
+
+        // Create the cells
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.style.backgroundColor = faceColors[face];
+            cell.dataset.position = i;
+            cube.appendChild(cell);
+        }
+
+        // Store references to face windows when they're created
+        const faceWindows = {};
+
+        function createFace(face) {
+            console.log(`Creating face window for ${face}`);
+            const win = window.open('face.html', face, 'width=300,height=300');
+            
+            if (!win) {
+                console.error('Window creation blocked! Check popup blocker.');
+                return;
+            }
+            
+            faceWindows[face] = win;
+            console.log(`Stored window reference for ${face}:`, win);
+            
+            win.addEventListener('load', () => {
+                console.log(`${face} window loaded, initializing...`);
+                win.initializeFace(face);
+            });
+        }
+
+        function rotateFace(clockwise) {
+            const cells = Array.from(cube.children).filter(child => child.className === 'cell');
+            const colors = cells.map(cell => cell.style.backgroundColor);
+            
+            const clockwisePattern = [6, 3, 0, 7, 4, 1, 8, 5, 2];
+            const counterClockwisePattern = [2, 5, 8, 1, 4, 7, 0, 3, 6];
+            
+            const rotationPattern = clockwise ? clockwisePattern : counterClockwisePattern;
+            
+            cells.forEach((cell, i) => {
+                cell.style.backgroundColor = colors[rotationPattern[i]];
+            });
+
+            // Broadcast the rotation to other windows
+            const message = {
+                face: face,
+                clockwise: clockwise
+            };
+            window.opener.postMessage(message, '*');
+        }
+
+        function openAllFaces() {
+            // Only open faces if this is the main window
+            if (window.opener) {
+                window.opener.openAllFaces();
+                return;
+            }
+
+            const faces = ['top', 'left', 'front', 'right', 'back', 'bottom'];
+            faces.forEach(face => {
+                const width = 400;
+                const height = 300;
+                const left = (screen.width - width) / 2;
+                const top = (screen.height - height) / 2;
+                window.open(
+                    `face.html?face=${face}`,
+                    face,
+                    `width=${width},height=${height},left=${left + faces.indexOf(face) * 50},top=${top + faces.indexOf(face) * 50}`
+                );
+            });
+        }
+
+        function closeAllFaces() {
+            // If this is a child window, delegate to parent
+            if (window.opener) {
+                window.opener.closeAllFaces();
+                return;
+            }
+
+            // Close all opened windows
+            const faces = ['top', 'left', 'front', 'right', 'back', 'bottom'];
+            faces.forEach(face => {
+                const win = window.open('', face);
+                if (win) {
+                    win.close();
+                }
+            });
+        }
+
+        // Listen for messages from other windows
+        window.addEventListener('message', (event) => {
+            console.log('Main window received message:', event.data);
+            
+            if (event.data.type === 'rotation') {
+                const { face, clockwise, colors } = event.data;
+                console.log(`Rotation received from ${face} face:`, { clockwise, colors });
+                updateAdjacentFaces(face, clockwise, colors);
+            }
+        });
+
+        function updateAdjacentFaces(rotatedFace, clockwise, colors) {
+            const adjacency = {
+                'top': ['back', 'right', 'front', 'left'],
+                'front': ['top', 'right', 'bottom', 'left'],
+                'right': ['top', 'back', 'bottom', 'front'],
+                'back': ['top', 'left', 'bottom', 'right'],
+                'left': ['top', 'front', 'bottom', 'back'],
+                'bottom': ['front', 'right', 'back', 'left']
+            };
+
+            console.log(`Updating adjacent faces for ${rotatedFace} rotation`);
+            
+            const adjacentFaces = adjacency[rotatedFace];
+            if (!adjacentFaces) {
+                console.warn(`No adjacency rules found for face: ${rotatedFace}`);
+                return;
+            }
+
+            // Send updates to each adjacent face using stored window references
+            adjacentFaces.forEach((adjacentFace, index) => {
+                const win = faceWindows[adjacentFace];  // Use stored reference
+                if (win && !win.closed) {  // Check if window exists and is not closed
+                    const message = {
+                        type: 'updateCells',
+                        face: adjacentFace,
+                        cells: [0, 1, 2], // This needs to be adjusted based on which edge is being updated
+                        colors: colors[index]
+                    };
+                    console.log(`Sending update to ${adjacentFace}:`, message);
+                    win.postMessage(message, '*');
+                } else {
+                    console.warn(`Could not find window for ${adjacentFace} face or window is closed`);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
