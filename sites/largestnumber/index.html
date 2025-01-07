@@ -135,20 +135,29 @@
 
         function playGame() {
             const userInput = document.getElementById('userNumber').value;
-            const userNumber = userInput;
+            let userNumber;
+            
+            try {
+                // Convert to BigInt instead of Number
+                userNumber = BigInt(userInput);
+            } catch (e) {
+                alert('Please enter a valid number');
+                return;
+            }
             
             // Hide the input container
             document.getElementById('current-element').style.display = 'none';
             
-            const myNumber = userInput + " + 1";
+            // Add 1 using BigInt
+            const myNumber = userNumber + 1n;
             
             const resultElement = document.getElementById('result');
             resultElement.innerHTML = '';
             
-            // Create and show user's number
+            // Convert BigInt to string when displaying
             const userChoice = document.createElement('div');
             userChoice.className = 'fade-in-up';
-            userChoice.textContent = `You chose ${userNumber}`;  // No need for toString()
+            userChoice.textContent = `You chose ${userNumber.toString()}`;
             resultElement.appendChild(userChoice);
             
             // Slight delay before showing the first fade
@@ -159,7 +168,7 @@
                 setTimeout(() => {
                     const computerChoice = document.createElement('div');
                     computerChoice.className = 'fade-in-up';
-                    computerChoice.textContent = `I choose ${myNumber}`;  // No need for toString()
+                    computerChoice.textContent = `I choose ${myNumber.toString()}`;
                     resultElement.appendChild(computerChoice);
                     
                     // Show computer's choice fade after 2 seconds
