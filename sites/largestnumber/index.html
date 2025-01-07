@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Largest Number Game</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A game where you try to enter the largest number possible">
+    <meta name="keywords" content="number game, largest number, math game, numbers">
+    <meta name="author" content="Largest Number Game">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJhSURBVFiF7ZdNSFRRFMd/580MWqYVhFAu2kRF0SIIWrSJFrWKVi2iTV8GQdGHH0GbIFpUizYFQdCiTV8URBt1UxsRgqB2UhCUVGQ1jjPv3NOi92bmzXvz3rw3EwT+4S7uPef8/+fde+6914gI6xkm08bGmCpgN7ATKAEbgR/AR+C1iPzONkBGBYwxrcBZ4AiwGTCp+iLwFrgP3BWR0WwCZFTAGLMZuAEcXEPvKXBWRL5kEiB0CowxrcBLVi9+CDgHdAObgC3AQWA/0Kd9q3kBvDDGbEsnQNoExphNwDAwCEwCl4EHIjKXxrMBOA5cA7YBH4B9IvIrVYe0CRhjLgJXgVGgR0S+hhRPeNuBF0A78ExEDqXKpzwDxpgdwBVgGjicbvEAIvIJ6AUWgKPGmI5k+VQn4QQwD1wXkR9hxX0RmQFuAQY4lSyfVAFjTDVwGPgjIk/DCvtwD5gDDhljav3CZB64HZgBhiIK+wLMAq1Ah1+YTIEm4LeITEcRTsIkUAs0+gXJFKgHZiOKJmMaqPELkinwE6iPKJqMBqDgFyRTYAKoM8bsiSjuw16gCvjoFyZT4C0qeimKsA/HUOvxRkR++YXJFBgBFoEeY0xbWHFjTCNwEj0Jg8nyKRUQkUngJlALPDbGbA0jbozZATwG6oDbIjKRLJ/OZXQeGAPagWFjzL5UwsaYE8Aw0AG8B86n0k/rQWKMqQMGgD6gCX2QVAA/0Xv+EfBQRBbSCZDx01BECiLSj7bnLvRNWEAn5jvQJyK9YRYHMEsNkv8FfwF7T6Ui5ex0/QAAAABJRU5ErkJggg==">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            background: #f0f0f0;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        input {
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            width: 200px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            font-size: 1.1rem;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        #result {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hidden {
+            display: none;
+        }
+        #current-element{
+            font-size: 1.5rem;
+            margin: 2rem auto;
+            max-width: 600px;
+            padding: 1rem;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="current-element" class="fade-in-up"></div>
+    <div id="result"></div>
+
+    <script>
+        const messages = [
+            "Let's play a game!",
+            "Here are the rules:",
+            "Whoever guesses the higher number wins.",
+            "Thats it.",
+            "You go first!",
+            "Enter your number"
+        ];
+
+        window.onload = function() {
+            let currentIndex = 0;
+            const elementContainer = document.getElementById('current-element');
+
+            function showNextMessage() {
+                elementContainer.classList.remove('visible');
+                
+                setTimeout(() => {
+                    // Clear previous content
+                    elementContainer.innerHTML = '';
+                    
+                    if (currentIndex < messages.length) {
+                        if (messages[currentIndex] === "Enter your number") {
+                            // Create input and button for number entry
+                            const input = document.createElement('input');
+                            input.type = 'number';
+                            input.id = 'userNumber';
+                            input.placeholder = 'Enter your number';
+                            
+                            const button = document.createElement('button');
+                            button.onclick = playGame;
+                            button.textContent = 'Submit';
+                            
+                            elementContainer.appendChild(input);
+                            elementContainer.appendChild(button);
+                        } else {
+                            // Show regular message
+                            elementContainer.textContent = messages[currentIndex];
+                        }
+                        
+                        elementContainer.classList.add('visible');
+                        currentIndex++;
+                        
+                        if (currentIndex < messages.length) {
+                            setTimeout(showNextMessage, 2500);
+                        }
+                    }
+                }, 500); // Wait for fade out before changing content
+            }
+
+            // Start the sequence
+            showNextMessage();
+        }
+
+        function playGame() {
+            const userInput = document.getElementById('userNumber').value;
+            const userNumber = parseInt(userInput);
+            
+            if (isNaN(userNumber)) {
+                document.getElementById('result').innerHTML = "Please enter a valid number!";
+                return;
+            }
+
+            // Remove the current-element container completely
+            const elementContainer = document.getElementById('current-element');
+            elementContainer.remove();
+
+            const myNumber = userNumber + 1;
+            const resultElement = document.getElementById('result');
+            resultElement.innerHTML = ''; // Clear previous results
+            
+            // Create and show user's number
+            const userChoice = document.createElement('div');
+            userChoice.className = 'fade-in-up';
+            userChoice.textContent = `You chose ${userNumber}`;
+            resultElement.appendChild(userChoice);
+            
+            // Slight delay before showing the first fade
+            setTimeout(() => {
+                userChoice.classList.add('visible');
+                
+                // Show computer's number after 2 second delay
+                setTimeout(() => {
+                    const computerChoice = document.createElement('div');
+                    computerChoice.className = 'fade-in-up';
+                    computerChoice.textContent = `I choose ${myNumber}`;
+                    resultElement.appendChild(computerChoice);
+                    
+                    // Show computer's choice fade after 2 seconds
+                    setTimeout(() => {
+                        computerChoice.classList.add('visible');
+                        
+                        // Show winning message after 2 seconds
+                        setTimeout(() => {
+                            const winMessage = document.createElement('div');
+                            winMessage.className = 'fade-in-up';
+                            winMessage.textContent = 'I win! 😎';
+                            resultElement.appendChild(winMessage);
+                            
+                            // Show win message fade after 2 seconds
+                            setTimeout(() => {
+                                winMessage.classList.add('visible');
+                                
+                                // Add play again button after 2 seconds
+                                setTimeout(() => {
+                                    const playAgainBtn = document.createElement('button');
+                                    playAgainBtn.textContent = 'Play Again';
+                                    playAgainBtn.className = 'fade-in-up';
+                                    playAgainBtn.style.marginTop = '1rem';
+                                    playAgainBtn.onclick = () => {
+                                        // Reset the game
+                                        resultElement.innerHTML = '';
+                                        currentIndex = 0;
+                                        showNextMessage();
+                                    };
+                                    resultElement.appendChild(playAgainBtn);
+                                    
+                                    // Show button fade
+                                    setTimeout(() => {
+                                        playAgainBtn.classList.add('visible');
+                                    }, 100);
+                                }, 2000);
+                            }, 100);
+                        }, 2000);
+                    }, 100);
+                }, 2000);
+            }, 100);
+        }
+    </script>
+</body>
+</html>
