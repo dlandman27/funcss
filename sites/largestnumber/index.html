@@ -135,25 +135,18 @@
 
         function playGame() {
             const userInput = document.getElementById('userNumber').value;
-            const userNumber = parseInt(userInput);
+            const userNumber = userInput;  // Keep as string
             
-            if (isNaN(userNumber)) {
-                document.getElementById('result').innerHTML = "Please enter a valid number!";
-                return;
-            }
-
-            // Remove the current-element container completely
-            const elementContainer = document.getElementById('current-element');
-            elementContainer.remove();
-
-            const myNumber = userNumber + 1;
+            // Simply append "1" to create a larger number
+            const myNumber = userInput + " + 1";
+            
             const resultElement = document.getElementById('result');
-            resultElement.innerHTML = ''; // Clear previous results
+            resultElement.innerHTML = '';
             
             // Create and show user's number
             const userChoice = document.createElement('div');
             userChoice.className = 'fade-in-up';
-            userChoice.textContent = `You chose ${userNumber}`;
+            userChoice.textContent = `You chose ${userNumber}`;  // No need for toString()
             resultElement.appendChild(userChoice);
             
             // Slight delay before showing the first fade
@@ -164,7 +157,7 @@
                 setTimeout(() => {
                     const computerChoice = document.createElement('div');
                     computerChoice.className = 'fade-in-up';
-                    computerChoice.textContent = `I choose ${myNumber}`;
+                    computerChoice.textContent = `I choose ${myNumber}`;  // No need for toString()
                     resultElement.appendChild(computerChoice);
                     
                     // Show computer's choice fade after 2 seconds
@@ -190,9 +183,7 @@
                                     playAgainBtn.style.marginTop = '1rem';
                                     playAgainBtn.onclick = () => {
                                         // Reset the game
-                                        resultElement.innerHTML = '';
-                                        currentIndex = 0;
-                                        showNextMessage();
+                                        window.location.reload();
                                     };
                                     resultElement.appendChild(playAgainBtn);
                                     
