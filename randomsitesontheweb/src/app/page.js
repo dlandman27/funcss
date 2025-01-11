@@ -575,6 +575,14 @@ export default function HomePage() {
             `
           }
         </style>
+      
+      <Script id="custom-js" strategy='afterInteractive'>
+        {
+          `
+            
+          `
+        }
+      </Script>
 
       {/* Embed scripts using next/script or React useEffect */}
       {/* <Script id="custom-js" strategy="afterInteractive">
