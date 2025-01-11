@@ -22,6 +22,41 @@ export default function HomePage() {
       <main>
         <div className="container mx-auto p-4">
           <i className="fas fa-compass animate-spin text-4xl"></i>
+          <i className="fas fa-exclamation-triangle text-yellow-500 text-2xl mr-2"></i>
+          <div className="relative w-full my-8">
+            <div className="absolute w-full transform -rotate-3" style={{zIndex: 10}}>
+              <div className="flex items-center justify-center bg-yellow-300 py-4 px-12 text-white font-bold text-3xl"
+                   style={{
+                     border: '4px solid #000',
+                     borderStyle: 'dashed',
+                     textShadow: '2px 2px 0 #000',
+                     boxShadow: '0 6px 10px rgba(0, 0, 0, 0.3)',
+                     position: 'relative',
+                     backgroundImage: 'repeating-linear-gradient(-45deg, #ffd700, #ffd700 10px, #ffed4a 10px, #ffed4a 20px)'
+                   }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '-12px',
+                  left: '0',
+                  width: '100%',
+                  height: '4px',
+                  background: '#000',
+                  borderStyle: 'dashed'
+                }}></div>
+                <div style={{
+                  position: 'absolute',
+                  bottom: '-12px',
+                  left: '0',
+                  width: '100%',
+                  height: '4px',
+                  background: '#000',
+                  borderStyle: 'dashed'
+                }}></div>
+                ⚠️ UPDATE IN PROGRESS ⚠️
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 italic mb-4">(In progress of making the site more intelligent)</p>
           <h2 className="text-2xl font-bold">Random Sites On the Web <span className="text-blue-500">.com</span></h2>
           <h1 className="text-3xl font-extrabold">Discover Fun Random Websites!</h1>
           <p className="description mt-4">
