@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falling Keys</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+        }
+
+        .key {
+            position: absolute;
+            color: #fff;
+            font-size: 24px;
+            user-select: none;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 24px;
+            pointer-events: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">start typing...</div>
+    <script>
+        class FallingKey {
+            constructor(key, x) {
+                this.element = document.createElement('div');
+                this.element.className = 'key';
+                this.element.textContent = key;
+                this.element.style.left = x + 'px';
+                this.element.style.top = '0px';
+                
+                this.x = x;
+                this.y = 0;
+                this.velocityY = 0;
+                this.velocityX = (Math.random() - 0.5) * 2;
+                this.gravity = 0.6;
+                
+                // Add rotation properties
+                this.rotation = Math.random() * 360;
+                this.angularVelocity = (Math.random() - 0.5) * 10;
+                this.rotationalFriction = 0.98;
+                
+                const letterProperties = this.getLetterProperties(key);
+                this.radius = letterProperties.radius;
+                this.bounce = letterProperties.bounce;
+                this.friction = letterProperties.friction;
+                
+                // Apply initial rotation
+                this.element.style.transform = `rotate(${this.rotation}deg)`;
+                document.body.appendChild(this.element);
+            }
+
+            getLetterProperties(key) {
+                // Round letters - more bouncy, larger radius
+                const roundLetters = 'oOpPqQbBdD';
+                // Tall letters - less friction, smaller radius
+                const tallLetters = 'ilIjJtT1|';
+                // Wide letters - more friction, larger radius
+                const wideLetters = 'mMwWvV';
+                
+                if (roundLetters.includes(key)) {
+                    return {
+                        radius: 25,
+                        bounce: 0.95,
+                        friction: 0.8
+                    };
+                } else if (tallLetters.includes(key)) {
+                    return {
+                        radius: 15,
+                        bounce: 0.85,
+                        friction: 0.65
+                    };
+                } else if (wideLetters.includes(key)) {
+                    return {
+                        radius: 30,
+                        bounce: 0.75,
+                        friction: 0.85
+                    };
+                }
+                
+                // Default properties for other letters
+                return {
+                    radius: 20,
+                    bounce: 0.9,
+                    friction: 0.75
+                };
+            }
+
+            checkCollision(other) {
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < this.radius + other.radius) {
+                    // Collision detected - calculate new velocities
+                    const angle = Math.atan2(dy, dx);
+                    const sin = Math.sin(angle);
+                    const cos = Math.cos(angle);
+
+                    // Rotate velocities
+                    const vx1 = this.velocityX * cos + this.velocityY * sin;
+                    const vy1 = this.velocityY * cos - this.velocityX * sin;
+                    const vx2 = other.velocityX * cos + other.velocityY * sin;
+                    const vy2 = other.velocityY * cos - other.velocityX * sin;
+
+                    // Swap the rotated velocities
+                    this.velocityX = vx2 * cos - vy1 * sin;
+                    this.velocityY = vy1 * cos + vx2 * sin;
+                    other.velocityX = vx1 * cos - vy2 * sin;
+                    other.velocityY = vy2 * cos + vx1 * sin;
+
+                    // Apply bounce effect
+                    this.velocityX *= this.bounce;
+                    this.velocityY *= this.bounce;
+                    other.velocityX *= other.bounce;
+                    other.velocityY *= other.bounce;
+
+                    // Prevent sticking by moving apart
+                    const overlap = (this.radius + other.radius - distance) / 2;
+                    const moveX = overlap * cos;
+                    const moveY = overlap * sin;
+                    this.x += moveX;
+                    this.y += moveY;
+                    other.x -= moveX;
+                    other.y -= moveY;
+
+                    // Add rotational energy transfer
+                    const rotationTransfer = (this.angularVelocity + other.angularVelocity) * 0.5;
+                    this.angularVelocity = rotationTransfer * this.bounce;
+                    other.angularVelocity = -rotationTransfer * other.bounce;
+                }
+            }
+
+            update() {
+                this.velocityY += this.gravity;
+                this.y += this.velocityY;
+                this.x += this.velocityX;
+
+                // Update rotation
+                this.rotation += this.angularVelocity;
+                this.angularVelocity *= this.rotationalFriction;
+                this.element.style.transform = `rotate(${this.rotation}deg)`;
+
+                // Bottom boundary with rotation effect
+                if (this.y + this.element.offsetHeight > window.innerHeight) {
+                    this.y = window.innerHeight - this.element.offsetHeight;
+                    this.velocityY = -this.velocityY * this.bounce;
+                    this.velocityX *= this.friction;
+                    // Add some spin on ground impact
+                    this.angularVelocity += this.velocityX * 0.2;
+                }
+
+                // Side boundaries with rotation effect
+                if (this.x + this.element.offsetWidth > window.innerWidth) {
+                    this.x = window.innerWidth - this.element.offsetWidth;
+                    this.velocityX *= -this.bounce;
+                    this.angularVelocity *= -0.8;
+                }
+                if (this.x < 0) {
+                    this.x = 0;
+                    this.velocityX *= -this.bounce;
+                    this.angularVelocity *= -0.8;
+                }
+
+                // Check collisions
+                for (const other of activeKeys) {
+                    if (other !== this) {
+                        this.checkCollision(other);
+                    }
+                }
+
+                this.element.style.top = this.y + 'px';
+                this.element.style.left = this.x + 'px';
+
+                return Math.abs(this.velocityY) > 0.05 || 
+                       Math.abs(this.velocityX) > 0.05 || 
+                       Math.abs(this.angularVelocity) > 0.05;
+            }
+
+            remove() {
+                document.body.removeChild(this.element);
+            }
+        }
+
+        const activeKeys = new Set();
+
+        function createKey(event) {
+            let displayKey = event.key;
+            
+            // Map special keys to display text
+            const keyMap = {
+                ' ': 'SPACE',
+                'Tab': 'TAB',
+                'Enter': 'ENTER',
+                'Backspace': 'BACKSPACE',
+                'Delete': 'DELETE',
+                'Escape': 'ESC',
+                'ArrowUp': '↑',
+                'ArrowDown': '↓',
+                'ArrowLeft': '←',
+                'ArrowRight': '→',
+                'Control': 'CTRL',
+                'Alt': 'ALT',
+                'Shift': 'SHIFT'
+            };
+
+            if (keyMap[displayKey]) {
+                displayKey = keyMap[displayKey];
+                const x = Math.random() * (window.innerWidth - 50);
+                const fallingKey = new FallingKey(displayKey, x);
+                activeKeys.add(fallingKey);
+                event.preventDefault(); // Prevent default behavior for special keys
+            } else if (displayKey.length === 1) { // Handle regular characters
+                const x = Math.random() * (window.innerWidth - 50);
+                const fallingKey = new FallingKey(displayKey, x);
+                activeKeys.add(fallingKey);
+            }
+        }
+
+        function update() {
+            for (const key of activeKeys) {
+                const isActive = key.update();
+                if (!isActive) {
+                    key.remove();
+                    activeKeys.delete(key);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        document.removeEventListener('keypress', createKey);
+        document.addEventListener('keydown', createKey);
+        update();
+    </script>
+</body>
+</html>

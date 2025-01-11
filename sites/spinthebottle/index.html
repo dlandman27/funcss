@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin the Bottle</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            cursor: pointer;
+        }
+
+        #bottle {
+            width: 400px;
+            height: 300px;
+            position: relative;
+            transform-origin: center center;
+            transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            background: url('bottle1.png') no-repeat center center;
+            background-size: contain;
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5));
+        }
+
+        .instructions {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-family: Arial, sans-serif;
+            pointer-events: none;
+        }
+
+        .randomize-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .randomize-button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">Click anywhere to spin the bottle</div>
+    <div id="bottle"></div>
+    <button class="randomize-button">Change Bottle</button>
+
+    <script>
+        const bottle = document.getElementById('bottle');
+        let isSpinning = false;
+        let currentBottle = 1;
+        let currentRotation = 0;
+
+        function changeBottle() {
+            const newBottle = Math.floor(Math.random() * 20) + 1;
+            bottle.style.backgroundImage = `url('bottle${newBottle}.png')`;
+            currentBottle = newBottle;
+        }
+
+        document.querySelector('.randomize-button').addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering the spin
+            if (!isSpinning) {
+                changeBottle();
+            }
+        });
+
+        document.addEventListener('click', () => {
+            if (!isSpinning) {
+                isSpinning = true;
+                
+                const rotations = (Math.random() * 5 + 8) * 360;
+                const endAngle = Math.random() * 360;
+                const totalRotation = currentRotation + rotations + endAngle;
+                currentRotation = totalRotation;
+                
+                bottle.style.transform = `rotate(${totalRotation}deg)`;
+                
+                setTimeout(() => {
+                    isSpinning = false;
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
