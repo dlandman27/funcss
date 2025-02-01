@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I'm sorry :(</title>
+    <style>
+        body {
+            font-family: "Comic Sans MS", cursive;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: black;
+            text-align: center;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            max-width: 90%;
+            padding: 1rem;
+            animation: crazyBg 0.5s infinite;
+        }
+
+        @keyframes crazyBg {
+            0% { background: red; }
+            25% { background: yellow; }
+            50% { background: green; }
+            75% { background: blue; }
+            100% { background: purple; }
+        }
+
+        h1 {
+            font-size: 3em;
+            margin: 0;
+            animation: shake 0.1s infinite, rainbow 1s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(2px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(0px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(2px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(2px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        @keyframes rainbow {
+            0% { color: red; }
+            14% { color: orange; }
+            28% { color: yellow; }
+            42% { color: green; }
+            56% { color: blue; }
+            70% { color: indigo; }
+            84% { color: violet; }
+            100% { color: red; }
+        }
+
+        .message {
+            font-size: 1.5em;
+            margin: 1rem 0;
+            animation: spin 2s linear infinite;
+            color: white;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .emoji-spam {
+            font-size: 2em;
+            position: fixed;
+            animation: float 3s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(100vw, 100vh); }
+            50% { transform: translate(0, 100vh); }
+            75% { transform: translate(100vw, 0); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay">I'M SORRY</div>
+    <div class="container">
+        <h1>FOR</h1>
+        <h1>ABSOLUTELY</h1>
+        <h1>NOTHING!!!</h1>
+        <div class="message">DEAL WITH IT! 🤪</div>
+    </div>
+
+    <audio id="chaos" loop>
+        <source src="https://www.example.com/new-sound.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Start the chaos when page loads
+        window.onload = function() {
+            const overlay = document.getElementById('overlay');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                
+                // Start playing the audio after the overlay is hidden
+                const audio = document.getElementById('chaos');
+                audio.play();
+                audio.volume = 0.5;
+            }, 3000); // Hide overlay and start music after 3 seconds
+
+            const apologyText = document.getElementById('apology-text');
+            setTimeout(() => {
+                apologyText.textContent = "FOR NOTHING!!!";
+            }, 6000); // Change text after 6 seconds
+
+            // Create floating emojis
+            const emojis = ['🤪', '😜', '🤡', '👻', '💩', '🎉', '🌈', '💥', '🔥', '⚡️'];
+            
+            setInterval(() => {
+                const emoji = document.createElement('div');
+                emoji.className = 'emoji-spam';
+                emoji.style.left = Math.random() * window.innerWidth + 'px';
+                emoji.style.top = Math.random() * window.innerHeight + 'px';
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                document.body.appendChild(emoji);
+                
+                // Remove emoji after animation
+                setTimeout(() => emoji.remove(), 3000);
+            }, 200);
+
+            // Make the background flash different colors
+            setInterval(() => {
+                document.body.style.backgroundColor = 
+                    '#' + Math.floor(Math.random()*16777215).toString(16);
+            }, 200);
+
+            // Make everything rotate randomly
+            setInterval(() => {
+                document.querySelector('.container').style.transform = 
+                    `rotate(${Math.random() * 360}deg)`;
+            }, 1000);
+        };
+
+        // Make cursor trail
+        document.addEventListener('mousemove', function(e) {
+            const trail = document.createElement('div');
+            trail.className = 'emoji-spam';
+            trail.style.left = e.pageX + 'px';
+            trail.style.top = e.pageY + 'px';
+            trail.textContent = '🤪';
+            document.body.appendChild(trail);
+            setTimeout(() => trail.remove(), 1000);
+        });
+    </script>
+</body>
+</html>
+
