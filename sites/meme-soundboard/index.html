@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meme Soundboard</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .soundboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 25px;
+            grid-row-gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .sound-button {
+            background: radial-gradient(circle at 30% 30%, #ff7e5f, #ff6b4a);
+            border: none;
+            border-radius: 50%;
+            color: transparent;
+            cursor: pointer;
+            width: 100px;
+            height: 100px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 15px 25px rgba(0, 0, 0, 0.3),
+                inset 0 -8px 12px rgba(0, 0, 0, 0.2),
+                inset 0 8px 12px rgba(255, 255, 255, 0.3);
+            margin: 0 auto;
+        }
+
+        .sound-button::before {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 54%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .sound-button::after {
+            content: '';
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            width: 30%;
+            height: 30%;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .button-label {
+            color: #fff;
+            font-size: 0.9em;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 500;
+        }
+
+        .sound-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 
+                0 20px 30px rgba(0, 0, 0, 0.4),
+                inset 0 -8px 12px rgba(0, 0, 0, 0.3),
+                inset 0 8px 12px rgba(255, 255, 255, 0.4);
+            background: radial-gradient(circle at 30% 30%, #ff8f6f, #ff7e5f);
+        }
+
+        .sound-button:active {
+            transform: translateY(2px) scale(0.95);
+            box-shadow: 
+                0 5px 15px rgba(0, 0, 0, 0.2),
+                inset 0 -4px 8px rgba(0, 0, 0, 0.1),
+                inset 0 4px 8px rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #00bfff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>Meme Soundboard</h1>
+    <div class="soundboard" id="soundboard">
+        <!-- Sound buttons will be added here via JavaScript -->
+    </div>
+
+    <script>
+        const sounds = [
+            { name: "Emotional Damage", file: "emotional-damage.mp3" },
+            { name: "Bruh", file: "bruh.mp3" },
+            { name: "Look At This Dude", file: "look-at-this-dude.mp3" },
+            { name: "Mission Failed", file: "mission-failed.mp3" },
+            { name: "Nope", file: "nope.mp3" },
+            { name: "Windows Error", file: "windows-error.mp3" },
+            { name: "MLG Air Horn", file: "mlg-airhorn.mp3" },
+            { name: "John Cena", file: "john-cena.mp3" },
+            { name: "Yeah Boy", file: "yeah-boy.mp3" },
+            { name: "Pufferfish eating carrot", file: "pufferfish-eating-carrot.mp3" },
+            { name: "Goofy Car Horn", file: "goofy-ahh-car-horn.mp3" },
+            { name: "Waterphone", file: "waterphone.mp3" },
+            { name: "Hello There", file: "hello-there.mp3" },
+            { name: "Get Out", file: "get-out.mp3" },
+            { name: "Quack", file: "quack.mp3" },
+            { name: "Indian", file: "indian-sounds.mp3" },
+            { name: "Ahhh!", file: "ahh.mp3" },
+            { name: "Stop the Cap", file: "stop-the-cap.mp3" },
+            { name: "BOOMBAMBOP", file: "BOOMBAMBOP.mp3" },
+            { name: "DING", file: "DING.mp3" },
+            { name: "FBI OPEN UP", file: "FBI OPEN UP.mp3" },
+            { name: "HA! GOTEE! HA!", file: "HA!GOTEE!HA!.mp3" },
+            { name: "Hello There", file: "Hello There.mp3" },
+            { name: "Scooby Laugh", file: "scooby.mp3" },
+            { name: "Hi How Are Ya", file: "Hi How Are Ya.mp3" },
+            { name: "HUH", file: "HUH.mp3" },
+            { name: "INCEPTION", file: "INCEPTION.mp3" },
+            { name: "MEANWHILE", file: "MEANWHILE.mp3" },
+            { name: "Metal Boom", file: "Metal Boom.mp3" },
+            { name: "MINECRAFT OOF", file: "MINECRAFT OOF.mp3" },
+            { name: "MY LEG", file: "MY LEG.mp3" },
+            { name: "NO GOD PLEASE NO", file: "NO GOD PLEASE NO.mp3" },
+            { name: "OH!!!!!!!", file: "OH!!!!!!!.mp3" },
+            { name: "RIMSHOT", file: "RIMSHOT.mp3" },
+            { name: "Fortnite Dance", file: "fortnite-dance.mp3" },
+            { name: "Sadness-1", file: "Sadness-1.mp3" },
+            { name: "Sadness-2", file: "Sadness-2.mp3" },
+            { name: "Sadness-3", file: "Sadness-3.mp3" },
+            { name: "SHREK-SWAMP", file: "SHREK-SWAMP.mp3" },
+            { name: "TACTICAL NUKE", file: "TACTICAL NUKE.mp3" },
+            { name: "TBC", file: "TBC.mp3" },
+            { name: "The Screaming Sheep", file: "The Screaming Sheep.mp3" },
+            { name: "Titanic-Paroday", file: "Titanic-Paroday.mp3" },
+            { name: "Wait a minute....", file: "Wait a minute....mp3" },
+            { name: "WINDOWS-STARTUP", file: "WINDOWS-STARTUP.mp3" },
+            { name: "WOW", file: "WOW.mp3" },
+            { name: "HEHEHEHA", file: "heheheha.mp3" },
+            { name: "King Tower Sad (CLASH ROYALE)", file: "clash-royale-sad.mp3" },
+            { name: "YEET", file: "YEET.mp3" }
+        ];
+
+        const soundboard = document.getElementById('soundboard');
+        const audioElements = new Map();
+
+        sounds.forEach(sound => {
+            // Create container for button and label
+            const container = document.createElement('div');
+            container.className = 'button-container';
+
+            // Create button
+            const button = document.createElement('button');
+            button.className = 'sound-button';
+
+            // Create label
+            const label = document.createElement('div');
+            label.className = 'button-label';
+            label.textContent = sound.name;
+
+            // Create download link
+            const downloadLink = document.createElement('a');
+            downloadLink.href = sound.file;
+            downloadLink.download = sound.file;
+            downloadLink.textContent = 'Download';
+            downloadLink.style.color = '#00bfff';
+            downloadLink.style.textDecoration = 'none';
+            downloadLink.style.fontSize = '0.8em';
+
+            // Create audio element
+            const audio = new Audio(`${sound.file}`);
+            audioElements.set(sound.name, audio);
+
+            // Add click handler
+            button.addEventListener('click', () => {
+                // Stop all other sounds
+                audioElements.forEach(audio => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                });
+                
+                // Play this sound
+                audio.play();
+            });
+
+            container.appendChild(button);
+            container.appendChild(label);
+            container.appendChild(downloadLink);
+            soundboard.appendChild(container);
+        });
+    </script>
+</body>
+</html>
