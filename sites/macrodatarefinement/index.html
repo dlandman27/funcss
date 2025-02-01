@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macro Data Refinement</title>
+    <style>
+        body {
+            background: #0F1F38;
+            color: #00bfff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        * {
+            user-select: none;
+        }
+
+        .screen {
+            background: radial-gradient(circle, rgba(15, 31, 56, 0.8), #0F1F38);
+            border-radius: 50px;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.7);
+            padding: 40px;
+            max-width: 1200px;
+            width: 90%;
+            margin: 20px;
+            border: 10px solid #001f3f;
+            transform: perspective(800px) rotateX(5deg);
+        }
+
+        .container {
+            max-width: 100%;
+            width: 100%;
+            text-align: center;
+        }
+
+        .numbers {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr); /* 15 numbers per row */
+            gap: 10px;
+            margin: 20px 0;
+            width: 100%;
+            justify-items: center;
+        }
+
+        .number {
+            pointer-events: none; /* Disable pointer events */
+            color: #00bfff; /* Default text color */
+            background: none;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-size: 1.2em;
+            height: 1.2em; /* Fixed height to prevent container size change */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .number:hover {
+            transform: scale(3, 3); /* Scale only horizontally */
+            transform-origin: center; /* Ensure scaling is centered */
+        }
+
+        .number.adjacent {
+            transform: scale(2.5, 2.5); /* Increase scale for adjacent */
+        }
+
+        .number.selected {
+            background: #004080;
+        }
+
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        button {
+            background: #001f3f;
+            color: #00bfff;
+            border: 1px solid #00bfff;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin: 0 10px;
+        }
+
+        button:hover {
+            background: #003366;
+        }
+
+        .status {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .progress-bar {
+            background: #003366;
+            border: 1px solid #00bfff;
+            height: 20px;
+            width: 100%;
+            margin: 5px 0;
+            position: relative;
+        }
+
+        .progress {
+            background: #00bfff;
+            height: 100%;
+            width: 20%; /* Example width */
+        }
+
+        .top-section {
+            background: #001f3f;
+            color: #00bfff;
+            padding: 8px 4px;
+            max-width: 90vw;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            border: 1px solid #00bfff;
+            margin-bottom: 16px
+        }
+
+        .completion {
+            margin-right: 20px;
+            margin-left: 20px;
+        }
+
+        .header-name{
+            font-size: 32px;
+        }
+
+        .logo {
+            background: url('./lumon.png') no-repeat center;
+            background-size: contain;
+            width: 128px;
+            height: 128px;
+            margin-left: 10px;
+            display: inline-block;
+            margin-top: -48px;
+            margin-bottom: -48px;
+        }
+
+        hr {
+            width: 100%;
+            border: 1px solid #00bfff; /* Same color as the text */
+            margin-top: 0;
+        }
+
+        .boxes {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .box {
+            background: #001f3f;
+            border: 1px solid #00bfff;
+            padding: 10px;
+            text-align: center;
+            width: 18%;
+        }
+
+        .box-number {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .box-progress {
+            background: #00bfff;
+            height: 20px;
+            width: 100%;
+            color: #001f3f;
+            font-weight: bold;
+        }
+
+        @keyframes move {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(5px, -5px); }
+            50% { transform: translate(-5px, 5px); }
+            75% { transform: translate(5px, 5px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        @keyframes wiggle {
+            0% { transform: translate(0, 0) scale(1.2); }
+            25% { transform: translate(2px, -2px) scale(1.2); }
+            50% { transform: translate(-2px, 2px) scale(1.2); }
+            75% { transform: translate(2px, 2px) scale(1.2); }
+            100% { transform: translate(0, 0) scale(1.2); }
+        }
+
+        .number.scary {
+            animation: wiggle 0.5s infinite; /* Faster movement for scary numbers */
+        }
+
+        .number.adjacent-moving {
+            animation: wiggle 1s infinite;
+        }
+
+        .number.in-box {
+            color: red; /* Turn text red when inside the box */
+        }
+
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #001f3f;
+            color: #00bfff;
+            padding: 20px;
+            border: 2px solid #00bfff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .selection-box {
+            position: absolute;
+            border: 2px dashed #00bfff;
+            background-color: rgba(0, 191, 255, 0.2);
+            pointer-events: none; /* Ensure the box itself doesn't capture events */
+        }
+
+        .number.large {
+            font-size: 2em; /* Larger font size */
+        }
+
+        .number.moving {
+            animation: move 2s infinite; /* Slower movement for regular numbers */
+        }
+
+        .number.adjacent-moving {
+            animation: wiggle 1s infinite;
+        }
+
+        .number.in-box {
+            color: red; /* Turn text red when inside the box */
+        }
+    </style>
+</head>
+<body>
+    <div class="screen">
+        <div class="top-section">
+            <span class="header-name">Dranesville</span>
+            <div style="display: flex; align-items: center; justify-content: flex-end; width: 100%;">
+                <span class="completion">19% Complete</span>
+                <span class="logo"></span>
+            </div>
+        </div>
+        <hr>
+        <hr>
+        <div class="numbers" id="numbers"></div>
+        <div class="controls">
+            <!-- Removed buttons -->
+        </div>
+        <hr>
+        <hr>
+        <div class="boxes">
+            <div class="box">
+                <div class="box-number">01</div>
+                <div class="box-progress">0%</div>
+            </div>
+            <div class="box">
+                <div class="box-number">02</div>
+                <div class="box-progress">0%</div>
+            </div>
+            <div class="box">
+                <div class="box-number">03</div>
+                <div class="box-progress">0%</div>
+            </div>
+            <div class="box">
+                <div class="box-number">04</div>
+                <div class="box-progress">0%</div>
+            </div>
+            <div class="box">
+                <div class="box-number">05</div>
+                <div class="box-progress">0%</div>
+            </div>
+        </div>
+        <hr style="margin-top: 8px; margin-bottom: 4px">
+        <div class="center-text" style="text-align: center; margin: 8px 0; font-family: monospace; font-size: 1.2em;">
+            0x15A5A7 : 0x0AE7A4
+        </div>
+    </div>
+
+    <div id="modal" class="modal"></div>
+
+    <script>
+        let selectedNumbers = new Set();
+        
+        function generateNumbers() {
+            const numbersContainer = document.getElementById('numbers');
+            for (let i = 0; i < 100; i++) {
+                const number = document.createElement('div');
+                number.className = 'number';
+                number.textContent = Math.floor(Math.random() * 10);
+                number.onclick = () => toggleNumber(number);
+                number.onmouseover = () => adjustAdjacentNumbers(i, true);
+                number.onmouseout = () => adjustAdjacentNumbers(i, false);
+                numbersContainer.appendChild(number);
+            }
+        }
+
+        function toggleNumber(element) {
+            element.classList.toggle('selected');
+            if (selectedNumbers.has(element)) {
+                selectedNumbers.delete(element);
+            } else {
+                selectedNumbers.add(element);
+            }
+            updateProgress();
+        }
+
+        function adjustAdjacentNumbers(index, isHovering, isScary = false) {
+            const numbers = document.querySelectorAll('.number');
+            const columns = 15; // Number of columns in the grid
+
+            if (index > 0) {
+                numbers[index - 1].classList.toggle(isScary ? 'adjacent-moving' : 'adjacent', isHovering);
+            }
+            if (index < numbers.length - 1) {
+                numbers[index + 1].classList.toggle(isScary ? 'adjacent-moving' : 'adjacent', isHovering);
+            }
+            if (index + columns < numbers.length) {
+                numbers[index + columns].classList.toggle(isScary ? 'adjacent-moving' : 'adjacent', isHovering);
+            }
+        }
+
+        function updateProgress() {
+            const progressElement = document.getElementById('overall-progress');
+            const progressPercentage = (selectedNumbers.size / 100) * 100;
+            progressElement.style.width = `${progressPercentage}%`;
+            document.querySelector('.completion').textContent = `${Math.round(progressPercentage)}% Complete`;
+        }
+
+        document.addEventListener('mousemove', (event) => {
+            const numbers = document.querySelectorAll('.number');
+            numbers.forEach(number => number.classList.remove('adjacent'));
+
+            // Remove scaling effect
+            // numbers.forEach(number => {
+            //     const rect = number.getBoundingClientRect();
+            //     const distance = Math.sqrt(
+            //         Math.pow(mouseX - (rect.left + rect.width / 2), 2) +
+            //         Math.pow(mouseY - (rect.top + rect.height / 2), 2)
+            //     );
+
+            //     if (distance < 80) {
+            //         number.classList.add('adjacent');
+            //     } else if (distance >= 100 && distance < 128) {
+            //         number.style.transform = 'scale(1.5, 1.5)'; // Apply a smaller scale
+            //     } else {
+            //         number.style.transform = ''; // Reset scale
+            //     }
+            // });
+        });
+
+        function makeNumbersScary() {
+            const numbers = document.querySelectorAll('.number');
+            numbers.forEach((number, index) => {
+                if (Math.random() > 0.8) { // 20% chance to become "scary"
+                    number.classList.add('scary');
+                    adjustAdjacentNumbers(index, true, true); // Make adjacent numbers move
+                } else if (Math.random() > 0.95) { // 5% chance to move subtly
+                    number.classList.add('moving');
+                } else if (Math.random() > 0.9) { // 10% chance to start larger
+                    number.classList.add('large');
+                }
+            });
+        }
+
+        let isDragging = false;
+        let startX, startY;
+        const selectionBox = document.createElement('div');
+        selectionBox.className = 'selection-box';
+        document.body.appendChild(selectionBox);
+
+        document.addEventListener('mousedown', (event) => {
+            isDragging = true;
+            startX = event.clientX;
+            startY = event.clientY;
+            selectionBox.style.left = `${startX}px`;
+            selectionBox.style.top = `${startY}px`;
+            selectionBox.style.width = '0px';
+            selectionBox.style.height = '0px';
+        });
+
+        document.addEventListener('mousemove', (event) => {
+            if (!isDragging) return;
+
+            const currentX = event.clientX;
+            const currentY = event.clientY;
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+
+            selectionBox.style.width = `${width}px`;
+            selectionBox.style.height = `${height}px`;
+            selectionBox.style.left = `${Math.min(currentX, startX)}px`;
+            selectionBox.style.top = `${Math.min(currentY, startY)}px`;
+
+            const numbers = document.querySelectorAll('.number');
+            numbers.forEach(number => {
+                const rect = number.getBoundingClientRect();
+                if (
+                    rect.left < currentX && rect.right > startX &&
+                    rect.top < currentY && rect.bottom > startY
+                ) {
+                    number.classList.add('in-box');
+                } else {
+                    number.classList.remove('in-box');
+                }
+            });
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            selectionBox.style.width = '0px';
+            selectionBox.style.height = '0px';
+
+            const numbers = document.querySelectorAll('.number');
+            let allScarySelected = true;
+            let scaryNumbersInCluster = new Set();
+
+            numbers.forEach(number => {
+                if (number.classList.contains('scary')) {
+                    scaryNumbersInCluster.add(number);
+                }
+            });
+
+            numbers.forEach(number => {
+                if (number.classList.contains('scary') && !number.classList.contains('in-box')) {
+                    allScarySelected = false;
+                }
+                number.classList.remove('in-box');
+                if (number.classList.contains('scary')) {
+                    number.style.color = ''; // Reset color after drag
+                }
+            });
+
+            const modal = document.getElementById('modal');
+            if (allScarySelected && scaryNumbersInCluster.size === selectedNumbers.size) {
+                modal.textContent = "You did indeed do the job!";
+            } else {
+                modal.textContent = "Incorrect";
+            }
+            modal.classList.add('show');
+
+            setTimeout(() => {
+                modal.classList.remove('show');
+            }, 3000); // Hide modal after 3 seconds
+        });
+
+        window.onload = function() {
+            generateNumbers();
+            makeNumbersScary(); // Ensure this function is called after numbers are generated
+        };
+    </script>
+</body>
+</html>
