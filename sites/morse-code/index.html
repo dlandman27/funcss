@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse Code Trainer</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Courier New', monospace;
+            color: #E3342F;
+            text-transform: uppercase;
+        }
+
+        .morse-table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #e6e6e6;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .morse-table td, .morse-table th {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .morse-table tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+
+        .practice-area {
+            margin: 30px auto;
+            padding: 20px;
+            border: 8px solid #E3342F;
+            border-radius: 15px;
+            background-color: #e6e6e6;
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,0.1),
+                0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        #output {
+            font-size: 28px;
+            margin: 20px 0;
+            min-height: 40px;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            background-color: #d4d4d4;
+            border: 3px solid #ccc;
+            border-radius: 8px;
+            letter-spacing: 2px;
+        }
+
+        .instructions {
+            background-color: #e6e6e6;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 3px solid #E3342F;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        button {
+            padding: 12px 24px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #E3342F;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #b91d19;
+            transition: all 0.1s ease;
+        }
+
+        button:hover {
+            background-color: #d12f2a;
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #b91d19;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        #current {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            color: #E3342F;
+            letter-spacing: 3px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Morse Code Trainer</h1>
+    
+    <div class="instructions">
+        <h3>How to Use:</h3>
+        <p>Press and hold the spacebar for different durations:</p>
+        <p>Quick tap (.) for dot • | Hold longer (-) for dash —</p>
+        <p>Release and wait briefly for letter spacing | Wait longer for word spacing</p>
+    </div>
+
+    <h2>Morse Code Reference</h2>
+    <button id="toggleTable">Hide Reference</button>
+    <table class="morse-table" id="morseTable">
+        <tr>
+            <th>Letter</th>
+            <th>Morse Code</th>
+            <th>Letter</th>
+            <th>Morse Code</th>
+        </tr>
+        <tr>
+            <td>A</td>
+            <td>• —</td>
+            <td>N</td>
+            <td>— •</td>
+        </tr>
+        <tr>
+            <td>B</td>
+            <td>— • • •</td>
+            <td>O</td>
+            <td>— — —</td>
+        </tr>
+        <tr>
+            <td>C</td>
+            <td>— • — •</td>
+            <td>P</td>
+            <td>• — — •</td>
+        </tr>
+        <tr>
+            <td>D</td>
+            <td>— • •</td>
+            <td>Q</td>
+            <td>— — • —</td>
+        </tr>
+        <tr>
+            <td>E</td>
+            <td>•</td>
+            <td>R</td>
+            <td>• — •</td>
+        </tr>
+        <tr>
+            <td>F</td>
+            <td>• • — •</td>
+            <td>S</td>
+            <td>• • •</td>
+        </tr>
+        <tr>
+            <td>G</td>
+            <td>— — •</td>
+            <td>T</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>H</td>
+            <td>• • • •</td>
+            <td>U</td>
+            <td>• • —</td>
+        </tr>
+        <tr>
+            <td>I</td>
+            <td>• •</td>
+            <td>V</td>
+            <td>• • • —</td>
+        </tr>
+        <tr>
+            <td>J</td>
+            <td>• — — —</td>
+            <td>W</td>
+            <td>• — —</td>
+        </tr>
+        <tr>
+            <td>K</td>
+            <td>— • —</td>
+            <td>X</td>
+            <td>— • • —</td>
+        </tr>
+        <tr>
+            <td>L</td>
+            <td>• — • •</td>
+            <td>Y</td>
+            <td>— • — —</td>
+        </tr>
+        <tr>
+            <td>M</td>
+            <td>— —</td>
+            <td>Z</td>
+            <td>— — • •</td>
+        </tr>
+    </table>
+
+    <div class="practice-area">
+        <h2>Practice Area</h2>
+        <div id="output"></div>
+        <p>Current input: <span id="current"></span></p>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const current = document.getElementById('current');
+        let startTime = 0;
+        let currentSequence = '';
+        let letterTimeoutId = null;
+        let wordTimeoutId = null;
+        let isSpaceDown = false;
+
+        const morseMap = {
+            '.-': 'A', '-...': 'B', '-.-.': 'C', '-..': 'D', '.': 'E',
+            '..-.': 'F', '--.': 'G', '....': 'H', '..': 'I', '.---': 'J',
+            '-.-': 'K', '.-..': 'L', '--': 'M', '-.': 'N', '---': 'O',
+            '.--.': 'P', '--.-': 'Q', '.-.': 'R', '...': 'S', '-': 'T',
+            '..-': 'U', '...-': 'V', '.--': 'W', '-..-': 'X', '-.--': 'Y',
+            '--..': 'Z'
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !e.repeat && !isSpaceDown) {
+                e.preventDefault();
+                isSpaceDown = true;
+                startTime = Date.now();
+                
+                // Clear timeouts when starting a new input
+                if (letterTimeoutId) clearTimeout(letterTimeoutId);
+                if (wordTimeoutId) clearTimeout(wordTimeoutId);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!isSpaceDown) return;
+                isSpaceDown = false;
+                
+                const duration = Date.now() - startTime;
+                const signal = duration < 200 ? '.' : '-';
+                currentSequence += signal;
+                current.textContent = currentSequence;
+
+                // Clear existing timeouts
+                if (letterTimeoutId) clearTimeout(letterTimeoutId);
+                if (wordTimeoutId) clearTimeout(wordTimeoutId);
+
+                // Set new timeouts
+                letterTimeoutId = setTimeout(() => {
+                    if (currentSequence) {
+                        const letter = morseMap[currentSequence] || '?';
+                        output.textContent += letter;
+                        currentSequence = '';
+                        current.textContent = '';
+                    }
+
+                    wordTimeoutId = setTimeout(() => {
+                        output.textContent += ' ';
+                    }, 1000);
+                }, 500);
+            }
+        });
+
+        // Add toggle functionality
+        const toggleButton = document.getElementById('toggleTable');
+        const morseTable = document.getElementById('morseTable');
+
+        toggleButton.addEventListener('click', () => {
+            morseTable.classList.toggle('hidden');
+            toggleButton.textContent = morseTable.classList.contains('hidden') 
+                ? 'Show Reference' 
+                : 'Hide Reference';
+        });
+    </script>
+</body>
+</html>

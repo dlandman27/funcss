@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Should I Do?</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 20px;
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.5));
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            transform: rotate(0deg);
+            filter: brightness(0.95);
+        }
+
+        .wheel-section {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 50%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 20px;
+            font-size: 14px;
+            text-align: left;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .wheel-section span {
+            position: absolute;
+            transform-origin: 50% 50%;
+            width: 60px;
+            top: 20%;
+        }
+
+        .pointer {
+            position: absolute;
+            top: 50%;
+            right: -40px;
+            width: 50px;
+            height: 30px;
+            background: linear-gradient(90deg, #ff3333, #cc0000);
+            clip-path: polygon(0 50%, 100% 0, 100% 100%);
+            transform: translateY(-50%);
+            filter: drop-shadow(0 0 5px rgba(255,0,0,0.5));
+            animation: pointerPulse 1s ease-in-out infinite;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            color: white;
+            border-radius: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
+            padding: 30px 50px;
+            border-radius: 15px;
+            text-align: center;
+            animation: modalPop 0.3s ease-out;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @keyframes modalPop {
+            0% { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 5px rgba(255,255,255,0.3);
+            }
+            to {
+                text-shadow: 0 0 15px rgba(255,255,255,0.5);
+            }
+        }
+
+        @keyframes pointerPulse {
+            0% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.1); }
+            100% { transform: translateY(-50%) scale(1); }
+        }
+
+        /* Add shine effect to wheel sections */
+        .wheel path {
+            transition: all 0.3s ease;
+        }
+
+        .wheel path:hover {
+            filter: brightness(1.2);
+        }
+
+        .wheel text {
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <h1>What Should I Do Today?</h1>
+    <div class="wheel-container">
+        <svg class="wheel" id="wheel" viewBox="0 0 100 100">
+            <!-- Sections will be added by JavaScript -->
+        </svg>
+        <div class="pointer"></div>
+    </div>
+    <button onclick="spinWheel()">SPIN</button>
+
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <h2 id="modalText"></h2>
+        </div>
+    </div>
+
+    <script>
+        const activities = [
+            { text: "Do Chores", color: "#FF6B6B", angle: 60 },
+            { text: "Exercise", color: "#4ECDC4", angle: 60 },
+            { text: "Chill with the Boys", color: "#D4A017", angle: 60 },
+            { text: "Study/Work", color: "#45B7D1", angle: 60 },
+            { text: "Family Time", color: "#96CEB4", angle: 60 },
+            { text: "Read a Book", color: "#FFEEAD", angle: 60 },
+        ];
+
+        const wheel = document.getElementById('wheel');
+
+        // Create wheel sections
+        let currentRotation = 0;
+        activities.forEach((activity) => {
+            const section = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            
+            // Calculate the path for the section
+            const startAngle = currentRotation * Math.PI / 180;
+            const endAngle = (currentRotation + activity.angle) * Math.PI / 180;
+            const radius = 50;
+            const centerX = 50;
+            const centerY = 50;
+            
+            const x1 = centerX + radius * Math.cos(startAngle);
+            const y1 = centerY + radius * Math.sin(startAngle);
+            const x2 = centerX + radius * Math.cos(endAngle);
+            const y2 = centerY + radius * Math.sin(endAngle);
+            
+            const largeArcFlag = activity.angle > 180 ? 1 : 0;
+            
+            const pathData = `
+                M ${centerX},${centerY}
+                L ${x1},${y1}
+                A ${radius},${radius} 0 ${largeArcFlag} 1 ${x2},${y2}
+                Z
+            `;
+            
+            section.setAttribute("d", pathData);
+            section.setAttribute("fill", activity.color);
+            
+            // Add text
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            const textAngle = currentRotation + (activity.angle / 2);
+            const textRadius = radius * 0.7;
+            const textX = centerX + textRadius * Math.cos(textAngle * Math.PI / 180);
+            const textY = centerY + textRadius * Math.sin(textAngle * Math.PI / 180);
+            
+            text.setAttribute("x", textX);
+            text.setAttribute("y", textY);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("fill", "white");
+            text.setAttribute("font-size", "4");
+            text.setAttribute("transform", `rotate(${textAngle}, ${textX}, ${textY})`);
+            text.textContent = activity.text;
+            
+            wheel.appendChild(section);
+            wheel.appendChild(text);
+            
+            currentRotation += activity.angle;
+        });
+
+        // Change initial rotation to align with pointer (adjusted by -90 degrees)
+        const initialRotation = 210;
+        wheel.style.transform = `rotate(${initialRotation}deg)`;
+
+        let totalRotation = initialRotation;
+
+        function spinWheel() {
+            // Force the wheel to land on "Chill with the Boys" (index 2)
+            const targetSection = 2; // This corresponds to "Chill with the Boys"
+            const rotations = Math.floor(Math.random() * 6) + 3;
+            const sectionAngle = 60;
+            
+            const additionalRotation = (rotations * 360);
+            totalRotation += additionalRotation;
+            
+            wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+            wheel.style.transform = `rotate(${totalRotation}deg)`;
+
+            // Show modal after wheel stops spinning
+            setTimeout(() => {
+                const modal = document.getElementById('resultModal');
+                const modalText = document.getElementById('modalText');
+                modalText.textContent = "You should Chill with the Boys";
+                modal.style.display = 'block';
+
+                // Hide modal after 3 seconds
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 3000);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
