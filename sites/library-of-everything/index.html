@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Everything That Ever Was and Will Be</title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            overflow-wrap: break-word;
+        }
+
+        #container {
+            max-width: 1200px;  /* Added max-width for better readability */
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 20px;    /* Added padding */
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0f0;
+            margin-bottom: 40px;
+        }
+
+        #binary {
+            font-size: 14px;
+            width: 100%;
+            word-wrap: break-word;
+            word-break: break-all;
+            height: 80vh;
+            overflow-y: scroll;
+            padding: 20px;
+            border: 1px solid #0f0;
+            box-sizing: border-box;
+            white-space: pre-wrap;  /* Preserve whitespace and wrapping */
+        }
+
+        .explanation {
+            color: #0a0;
+            margin: 20px 0;
+            font-style: italic;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>The Library of Everything</h1>
+        
+        <div class="explanation">
+            Within these infinite sequences of 0s and 1s lies everything that has ever happened and everything that will ever happen...
+            <br>
+            Every thought, every word, every moment in history and every possible future...
+            <br>
+            Keep scrolling to see it all unfold...
+        </div>
+
+        <div id="binary"></div>
+    </div>
+
+    <script>
+        const binaryDiv = document.getElementById('binary');
+        
+        function generateRandomBinary() {
+            const charWidth = 8.4;
+            const containerWidth = binaryDiv.clientWidth - 40; // Account for padding
+            const lineLength = Math.floor(containerWidth / charWidth);
+            return Array.from({length: lineLength}, () => Math.random() < 0.5 ? '0' : '1').join('');
+        }
+
+        function addMoreContent() {
+            binaryDiv.innerHTML += generateRandomBinary() + '\n';
+            // Auto-scroll to bottom
+            binaryDiv.scrollTop = binaryDiv.scrollHeight;
+        }
+
+        function regenerateContent() {
+            binaryDiv.innerHTML = '';
+            for (let i = 0; i < 50; i++) {
+                binaryDiv.innerHTML += generateRandomBinary() + '\n';
+            }
+            binaryDiv.scrollTop = binaryDiv.scrollHeight;
+        }
+
+        // Initial content
+        regenerateContent();
+
+        // Handle window resize
+        window.addEventListener('resize', regenerateContent);
+
+        // Continuously add content and auto-scroll
+        setInterval(addMoreContent, 100);
+    </script>
+</body>
+</html>

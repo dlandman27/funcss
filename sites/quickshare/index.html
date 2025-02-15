@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickShare - Local Network File Sharing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .connection-status {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f0f0f0;
+        }
+        #fileInput {
+            margin: 10px 0;
+        }
+        #messageInput {
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QuickShare</h1>
+        
+        <!-- Connection Section -->
+        <div class="connection-section">
+            <h2>Connect</h2>
+            <button id="createSession">Create New Session</button>
+            <div id="sessionCode" style="display: none;">
+                Session Code: <span id="codeDisplay"></span>
+            </div>
+            <div>
+                <input type="text" id="joinCode" placeholder="Enter session code">
+                <button id="joinSession">Join Session</button>
+            </div>
+        </div>
+
+        <!-- File Transfer Section -->
+        <div class="transfer-section" style="display: none;">
+            <h2>File Transfer</h2>
+            <div class="connection-status">
+                Status: <span id="connectionStatus">Not Connected</span>
+            </div>
+            
+            <div>
+                <input type="file" id="fileInput">
+                <button id="sendFile">Send File</button>
+            </div>
+
+            <div>
+                <textarea id="messageInput" placeholder="Type a message..."></textarea>
+                <button id="sendMessage">Send Message</button>
+            </div>
+
+            <div id="messages">
+                <!-- Messages will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let peerConnection;
+        let dataChannel;
+        const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+        // Session management
+        document.getElementById('createSession').addEventListener('click', createNewSession);
+        document.getElementById('joinSession').addEventListener('click', joinExistingSession);
+        document.getElementById('sendFile').addEventListener('click', sendFile);
+        document.getElementById('sendMessage').addEventListener('click', sendMessage);
+
+        function createNewSession() {
+            peerConnection = new RTCPeerConnection(configuration);
+            setupPeerConnection();
+            
+            // Create data channel
+            dataChannel = peerConnection.createDataChannel('fileTransfer');
+            setupDataChannel();
+
+            // Create and show offer
+            peerConnection.createOffer()
+                .then(offer => peerConnection.setLocalDescription(offer))
+                .then(() => {
+                    // Generate a session code that includes ICE candidates
+                    const sessionData = {
+                        sdp: peerConnection.localDescription,
+                        candidates: [] // Will store ICE candidates
+                    };
+                    
+                    // Show loading message while gathering candidates
+                    document.getElementById('codeDisplay').textContent = 'Generating code...';
+                    document.getElementById('sessionCode').style.display = 'block';
+                    
+                    // Wait for ICE gathering to complete
+                    setTimeout(() => {
+                        const sessionCode = btoa(JSON.stringify(sessionData));
+                        document.getElementById('codeDisplay').textContent = sessionCode;
+                        document.querySelector('.transfer-section').style.display = 'block';
+                    }, 2000); // Give time for ICE candidates to gather
+                });
+        }
+
+        function joinExistingSession() {
+            const code = document.getElementById('joinCode').value;
+            if (!code) return;
+
+            peerConnection = new RTCPeerConnection(configuration);
+            setupPeerConnection();
+
+            peerConnection.ondatachannel = (event) => {
+                dataChannel = event.channel;
+                setupDataChannel();
+            };
+
+            // Decode and apply the session data including ICE candidates
+            const sessionData = JSON.parse(atob(code));
+            peerConnection.setRemoteDescription(new RTCSessionDescription(sessionData.sdp))
+                .then(() => peerConnection.createAnswer())
+                .then(answer => peerConnection.setLocalDescription(answer))
+                .then(() => {
+                    // Add all received ICE candidates
+                    if (sessionData.candidates) {
+                        return Promise.all(sessionData.candidates.map(candidate => 
+                            peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+                        ));
+                    }
+                });
+
+            document.querySelector('.transfer-section').style.display = 'block';
+        }
+
+        function setupPeerConnection() {
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    // Get the current display content
+                    const displayElement = document.getElementById('codeDisplay');
+                    let sessionData;
+                    
+                    try {
+                        // Try to parse existing session data
+                        sessionData = JSON.parse(atob(displayElement.textContent));
+                    } catch {
+                        // If parsing fails, create new session data
+                        sessionData = {
+                            sdp: peerConnection.localDescription,
+                            candidates: []
+                        };
+                    }
+                    
+                    // Add the new candidate
+                    sessionData.candidates.push(event.candidate);
+                    displayElement.textContent = btoa(JSON.stringify(sessionData));
+                }
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                document.getElementById('connectionStatus').textContent = peerConnection.connectionState;
+            };
+        }
+
+        function setupDataChannel() {
+            dataChannel.onopen = () => {
+                console.log('Data channel opened');
+                document.getElementById('connectionStatus').textContent = 'Connected';
+            };
+
+            dataChannel.onclose = () => {
+                console.log('Data channel closed');
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+            };
+
+            dataChannel.onmessage = event => {
+                if (typeof event.data === 'string') {
+                    // Handle text message
+                    const messageDiv = document.createElement('div');
+                    messageDiv.textContent = `Received: ${event.data}`;
+                    document.getElementById('messages').appendChild(messageDiv);
+                } else {
+                    // Handle file
+                    const blob = new Blob([event.data]);
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'received-file';
+                    a.textContent = 'Download received file';
+                    document.getElementById('messages').appendChild(a);
+                }
+            };
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            if (dataChannel && dataChannel.readyState === 'open' && message) {
+                dataChannel.send(message);
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = `Sent: ${message}`;
+                document.getElementById('messages').appendChild(messageDiv);
+                document.getElementById('messageInput').value = '';
+            }
+        }
+
+        function sendFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            if (dataChannel && dataChannel.readyState === 'open') {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    dataChannel.send(e.target.result);
+                    const messageDiv = document.createElement('div');
+                    messageDiv.textContent = `Sent file: ${file.name}`;
+                    document.getElementById('messages').appendChild(messageDiv);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+    </script>
+</body>
+</html>
