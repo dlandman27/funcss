@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parallel Lines</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .line {
+            position: absolute;
+            height: 2px;
+            background: #fff;
+            animation: moveLine 8s linear infinite;
+        }
+
+        #line1 {
+            width: 200px;
+            top: 40%;
+        }
+
+        #line2 {
+            width: 200px;
+            top: 60%;
+        }
+
+        @keyframes moveLine {
+            from {
+                transform: translateX(-200px);
+            }
+            to {
+                transform: translateX(100vw);
+            }
+        }
+
+        .description {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div id="line1" class="line"></div>
+    <div id="line2" class="line"></div>
+    <div class="description">
+        <p>These lines are parallel - they will continue infinitely but never meet.</p>
+    </div>
+
+    <script>
+        // Restart animation when lines reach the end
+        const lines = document.querySelectorAll('.line');
+        lines.forEach(line => {
+            line.addEventListener('animationend', () => {
+                line.style.animation = 'none';
+                line.offsetHeight; // Trigger reflow
+                line.style.animation = 'moveLine 8s linear infinite';
+            });
+        });
+    </script>
+</body>
+</html>
