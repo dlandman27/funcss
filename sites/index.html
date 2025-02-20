@@ -288,17 +288,13 @@
                 box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 10px 20px; z-index: 1000;">
         <div style="max-width: 800px; margin: 0 auto; display: flex; align-items: center; gap: 20px;">
             <div style="flex: 0 0 auto;">
-                <h2 style="margin: 0; font-size: 1.2em;">My Websites</h2>
+                <h2 style="margin: 0; font-size: 1.2em;"><a href="/" style="text-decoration: none; color: inherit;">RSOTW</a></h2>
             </div>
             <div style="flex: 1; display: flex; justify-content: center;">
                 <input type="text" id="search" placeholder="Search websites..." 
                        style="width: 100%; max-width: 300px; padding: 8px 15px; border: 2px solid #2c3e50; border-radius: 20px;">
             </div>
             <div style="flex: 0 0 auto; display: flex; gap: 10px;">
-                <button id="toggleCategories" style="padding: 8px 15px; border: none; background: #3498db; 
-                        color: white; border-radius: 20px; cursor: pointer;">
-                    Categories
-                </button>
                 <select id="sortSelect" style="padding: 8px 15px; border: 2px solid #2c3e50; border-radius: 20px;">
                     <option value="default">Default Order</option>
                     <option value="az">A-Z</option>
@@ -321,14 +317,14 @@
 
     <!-- Add margin-top to accommodate fixed header -->
     <div style="margin-top: 80px;">
-        <h1>My Websites</h1>
+        <!-- <h1>My Websites</h1>
         <div style="text-align: center; margin-bottom: 20px;">
             <a href="/" style="color: #2c3e50; text-decoration: none; font-size: 0.9em;">← Back to Home</a>
         </div>
         
         <div class="search-container">
             <input type="text" id="search" placeholder="Search websites...">
-        </div>
+        </div> -->
 
         <!-- Educational Section -->
         <h2 class="category-title educational">Educational</h2>
@@ -829,6 +825,9 @@
         const categoryFilters = document.getElementById('categoryFilters');
         const sortSelect = document.getElementById('sortSelect');
 
+        // Add rickroll terms
+        const rickrollTerms = ['rickroll', 'rick roll', 'rick astley', 'never gonna give you up'];
+
         // Collect all unique categories
         const categories = new Set();
         siteCards.forEach(card => {
@@ -848,14 +847,84 @@
             categoryFilters.appendChild(div);
         });
 
-        // Toggle category panel
-        toggleCategories.addEventListener('click', () => {
-            categoryPanel.style.display = categoryPanel.style.display === 'none' ? 'block' : 'none';
-        });
+        // // Toggle category panel
+        // toggleCategories.addEventListener('click', () => {
+        //     categoryPanel.style.display = categoryPanel.style.display === 'none' ? 'block' : 'none';
+        // });
+
+        // Add confetti function
+        function createConfetti() {
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed;
+                    top: -10px;
+                    left: ${Math.random() * 100}vw;
+                    width: 10px;
+                    height: 10px;
+                    background: ${['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'][Math.floor(Math.random() * 6)]};
+                    transform: rotate(${Math.random() * 360}deg);
+                    z-index: 1001;
+                    pointer-events: none;
+                    animation: fall ${Math.random() * 3 + 2}s linear forwards;
+                `;
+                document.body.appendChild(confetti);
+                
+                // Remove confetti after animation
+                confetti.addEventListener('animationend', () => confetti.remove());
+            }
+        }
+
+        // Add CSS animation for confetti
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                to {
+                    transform: translateY(100vh) rotate(960deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
 
         // Filter function
         function filterCards() {
             const searchTerm = searchInput.value.toLowerCase();
+            
+            // Check for special effects
+            if (searchTerm.includes('confetti')) {
+                createConfetti();
+            }
+            
+            // Handle greyscale and invert filters
+            if (searchTerm.includes('invert')) {
+                document.body.classList.add('invert');
+            }
+            
+            // Check for rickroll terms
+            if (rickrollTerms.some(term => searchTerm.includes(term))) {
+                window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+                return;
+            }
+
+            // Add CSS for filters if not already present
+            if (!document.querySelector('#filter-styles')) {
+                const style = document.createElement('style');
+                style.id = 'filter-styles';
+                style.textContent = `
+                    .greyscale {
+                        filter: grayscale(100%);
+                    }
+                    .invert * {
+                        filter: invert(100%);
+                    }
+                    .greyscale.invert * {
+                        filter: grayscale(100%) invert(100%);
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
             const activeCategories = Array.from(categoryFilters.querySelectorAll('input:checked'))
                 .map(input => input.value);
 
@@ -927,6 +996,23 @@
             });
         }
 
+        // Add this new function to initialize filters from localStorage
+        function initializeFilters() {
+            if (localStorage.getItem('greyscale') === 'true') {
+                document.body.classList.add('greyscale');
+            }
+            if (localStorage.getItem('invert') === 'true') {
+                document.body.classList.add('invert');
+            }
+        }
+
+        // Add a function to clear filters
+        function clearFilters() {
+            document.body.classList.remove('greyscale', 'invert');
+            localStorage.removeItem('greyscale');
+            localStorage.removeItem('invert');
+        }
+
         // Event listeners
         searchInput.addEventListener('input', filterCards);
         categoryFilters.addEventListener('change', filterCards);
@@ -939,6 +1025,12 @@
                 categoryPanel.style.display = 'none';
             }
         });
+
+        // Initialize filters when page loads
+        document.addEventListener('DOMContentLoaded', initializeFilters);
+
+        // Add double-click event to clear filters
+        document.addEventListener('dblclick', clearFilters);
     </script>
 </body>
 </html>
