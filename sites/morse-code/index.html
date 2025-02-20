@@ -120,8 +120,8 @@
     </div>
 
     <h2>Morse Code Reference</h2>
-    <button id="toggleTable">Hide Reference</button>
-    <table class="morse-table" id="morseTable">
+    <button id="toggleTable">Show Cheat Sheet</button>
+    <table class="morse-table hidden" id="morseTable">
         <tr>
             <th>Letter</th>
             <th>Morse Code</th>
@@ -212,11 +212,13 @@
         <h2>Practice Area</h2>
         <div id="output"></div>
         <p>Current input: <span id="current"></span></p>
+        <button id="clearOutput">Clear Text</button>
     </div>
 
     <script>
         const output = document.getElementById('output');
         const current = document.getElementById('current');
+        const clearButton = document.getElementById('clearOutput');
         let startTime = 0;
         let currentSequence = '';
         let letterTimeoutId = null;
@@ -275,6 +277,19 @@
             }
         });
 
+        // Add backspace/delete functionality
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Backspace' || e.code === 'Delete') {
+                e.preventDefault();
+                output.textContent = output.textContent.slice(0, -1);
+            }
+        });
+
+        // Add clear functionality
+        clearButton.addEventListener('click', () => {
+            output.textContent = '';
+        });
+
         // Add toggle functionality
         const toggleButton = document.getElementById('toggleTable');
         const morseTable = document.getElementById('morseTable');
@@ -282,7 +297,7 @@
         toggleButton.addEventListener('click', () => {
             morseTable.classList.toggle('hidden');
             toggleButton.textContent = morseTable.classList.contains('hidden') 
-                ? 'Show Reference' 
+                ? 'Show Cheat Sheet' 
                 : 'Hide Reference';
         });
     </script>

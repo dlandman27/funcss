@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timezone Converter</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .converter {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            border: 2px dashed #ddd;
+        }
+
+        .converter::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            width: 20px;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+
+        .converter::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            width: 20px;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .time-display {
+            font-size: 2.2em;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        .search-input {
+            width: calc(100% - 22px);  /* Adjust for padding + border */
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f8f9fa;
+            box-sizing: border-box;  /* Include padding and border in width calculation */
+        }
+
+        label {
+            font-weight: bold;
+            color: #666;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            letter-spacing: 1px;
+        }
+
+        .arrow {
+            text-align: center;
+            font-size: 1.5em;
+            color: #999;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .arrow::before,
+        .arrow::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 35%;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .arrow::before {
+            left: 0;
+        }
+
+        .arrow::after {
+            right: 0;
+        }
+
+        .timezone-section {
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="converter">
+        <h1>Time Zone Ticket</h1>
+        
+        <div class="timezone-section">
+            <label for="fromTimezone">Departure</label>
+            <input type="text" id="fromSearch" class="search-input" placeholder="Search timezone...">
+            <select id="fromTimezone"></select>
+            <div class="time-display" id="fromTime"></div>
+        </div>
+
+        <div class="arrow">✈️</div>
+
+        <div class="timezone-section">
+            <label for="toTimezone">Arrival</label>
+            <input type="text" id="toSearch" class="search-input" placeholder="Search timezone...">
+            <select id="toTimezone"></select>
+            <div class="time-display" id="toTime"></div>
+        </div>
+
+        <div id="timeDifference" style="text-align: center; margin-top: 15px; color: #666;"></div>
+    </div>
+
+    <script>
+        const timezones = Intl.supportedValuesOf('timeZone');
+        const fromSelect = document.getElementById('fromTimezone');
+        const toSelect = document.getElementById('toTimezone');
+        const fromTimeDisplay = document.getElementById('fromTime');
+        const toTimeDisplay = document.getElementById('toTime');
+        const fromSearch = document.getElementById('fromSearch');
+        const toSearch = document.getElementById('toSearch');
+        const timeDifferenceDisplay = document.getElementById('timeDifference');
+
+        // Function to populate timezone dropdown
+        function populateTimezoneSelect(select, searchTerm = '') {
+            select.innerHTML = '';
+            const filteredTimezones = timezones.filter(tz => 
+                tz.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            filteredTimezones.forEach(timezone => {
+                select.add(new Option(timezone, timezone));
+            });
+        }
+
+        // Initial population of dropdowns
+        populateTimezoneSelect(fromSelect);
+        populateTimezoneSelect(toSelect);
+
+        // Search functionality
+        fromSearch.addEventListener('input', () => {
+            populateTimezoneSelect(fromSelect, fromSearch.value);
+        });
+
+        toSearch.addEventListener('input', () => {
+            populateTimezoneSelect(toSelect, toSearch.value);
+        });
+
+        // Try to detect user's timezone
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        fromSelect.value = userTimezone;
+        
+        // Default "to" timezone to a different one
+        toSelect.value = userTimezone === 'America/New_York' ? 'Europe/London' : 'America/New_York';
+
+        function updateTimes() {
+            const now = new Date();
+            
+            // Calculate time difference
+            const fromTime = new Date(now.toLocaleString('en-US', { timeZone: fromSelect.value }));
+            const toTime = new Date(now.toLocaleString('en-US', { timeZone: toSelect.value }));
+            const diffHours = (toTime - fromTime) / (1000 * 60 * 60);
+            const diffText = diffHours === 0 
+                ? 'Same time zone' 
+                : `${Math.abs(diffHours)} hour${Math.abs(diffHours) !== 1 ? 's' : ''} ${diffHours > 0 ? 'ahead' : 'behind'}`;
+            timeDifferenceDisplay.textContent = diffText;
+
+            // Update "from" time
+            fromTimeDisplay.textContent = now.toLocaleTimeString('en-US', {
+                timeZone: fromSelect.value,
+                hour12: true,
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+
+            // Update "to" time
+            toTimeDisplay.textContent = now.toLocaleTimeString('en-US', {
+                timeZone: toSelect.value,
+                hour12: true,
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+
+        // Update times when selections change
+        fromSelect.addEventListener('change', updateTimes);
+        toSelect.addEventListener('change', updateTimes);
+
+        // Update times immediately and every second
+        updateTimes();
+        setInterval(updateTimes, 1000);
+    </script>
+</body>
+</html>
