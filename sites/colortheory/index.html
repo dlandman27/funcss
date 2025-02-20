@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Color Theory - Every Color, One Day at a Time</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.5s;
+        }
+
+        .container {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            margin: 20px auto;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .color-info {
+            margin: 25px 0;
+            font-size: 1.1em;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .color-box {
+            width: 90%;
+            max-width: 250px;
+            aspect-ratio: 1;
+            margin: 25px auto;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .color-box:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .code {
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+
+        .code:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .date {
+            font-size: 1.8em;
+            font-weight: 500;
+            margin: 20px 0;
+            padding: 8px;
+            color: #333;
+        }
+
+        .project-day {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .progress {
+            margin-top: 25px;
+            font-size: 1em;
+            color: #666;
+        }
+
+        .explanation {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #444;
+            padding: 0 15px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                padding: 10px;
+                width: 95%;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .date {
+                font-size: 1.3em;
+            }
+
+            .color-info {
+                font-size: 0.9em;
+            }
+
+            .code {
+                font-size: 0.8em;
+                padding: 3px 6px;
+            }
+
+            .explanation {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Color Theory</h1>
+        <div class="date" id="date"></div>
+        <div class="project-day" id="projectDay"></div>
+        <div class="color-box" id="colorBox"></div>
+        <div class="color-info">
+            <div>RGB: <span class="code" id="rgb"></span></div>
+            <div>HEX: <span class="code" id="hex"></span></div>
+            <div>HSL: <span class="code" id="hsl"></span></div>
+        </div>
+        <div class="progress" id="progress"></div>
+        <div class="progress" id="completionDate"></div>
+    </div>
+
+    <div class="container">
+        <p class="explanation">
+            Welcome to a 45,964-year journey through every possible RGB color! Each day, this page displays one of the 16,777,216 unique colors that computers can represent. Starting from <span style="color: #2196F3;">February 19, 2025</span>, we're slowly working our way through the entire RGB spectrum, one day at a time. Check back daily to see a new color in this multi-generational art project.
+        </p>
+    </div>
+
+    <script>
+        // Start date: February 19, 2025
+        const startDate = new Date(2025, 1, 19);
+        const totalColors = 256 * 256 * 256; // 16,777,216 colors
+
+        function getCompletionDate() {
+            return "August 5, 47959";
+        }
+
+        function getDayNumber() {
+            const today = new Date();
+            const diffTime = Math.abs(today - startDate);
+            return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function getColorForDay(day) {
+            const colorNumber = day % totalColors;
+            const r = Math.floor(colorNumber / (256 * 256));
+            const g = Math.floor((colorNumber % (256 * 256)) / 256);
+            const b = colorNumber % 256;
+            return [r, g, b];
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+
+            return [
+                Math.round(h * 360),
+                Math.round(s * 100),
+                Math.round(l * 100)
+            ];
+        }
+
+        function updateColor() {
+            const dayNumber = getDayNumber();
+            const [r, g, b] = getColorForDay(dayNumber);
+            const hex = rgbToHex(r, g, b);
+            const [h, s, l] = rgbToHsl(r, g, b);
+
+            // Add fade animation when updating colors
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                document.getElementById('colorBox').style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                document.getElementById('rgb').textContent = `rgb(${r}, ${g}, ${b})`;
+                document.getElementById('hex').textContent = hex;
+                document.getElementById('hsl').textContent = `hsl(${h}, ${s}%, ${l}%)`;
+                document.body.style.opacity = '1';
+            }, 300);
+
+            document.getElementById('date').textContent = new Date().toLocaleDateString();
+            document.getElementById('projectDay').textContent = `Day ${dayNumber + 1} of this project`;
+            document.getElementById('progress').textContent = 
+                `Color ${(dayNumber % totalColors + 1).toLocaleString()} of ${totalColors.toLocaleString()}`;
+            document.getElementById('completionDate').textContent = 
+                `Estimated completion date: ${getCompletionDate()}`;
+        }
+
+        updateColor();
+        // Update color at midnight
+        setInterval(() => {
+            const now = new Date();
+            if (now.getHours() === 0 && now.getMinutes() === 0) {
+                updateColor();
+            }
+        }, 60000); // Check every minute
+
+        // Add click-to-copy functionality for color codes
+        document.querySelectorAll('.code').forEach(el => {
+            el.addEventListener('click', function() {
+                navigator.clipboard.writeText(this.textContent);
+                const originalText = this.textContent;
+                this.textContent = 'Copied!';
+                setTimeout(() => this.textContent = originalText, 1000);
+            });
+        });
+    </script>
+</body>
+</html>
