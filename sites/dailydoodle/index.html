@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=2.0">
+    <title>Daily Doodles</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Add Ionicons CDN -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 100%;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .top-controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 15px;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-sizing: border-box;
+        }
+
+        .logo {
+            font-size: 2.2rem;
+            background: linear-gradient(45deg, #4a90e2, #000DFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+        }
+
+        .prompt {
+            font-size: 1.3rem;
+            text-align: center;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            margin: 0 auto;
+            max-width: 600px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            color: #2c3e50;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        #canvas {
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            cursor: crosshair;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            background: white;
+            width: 100%;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .color-palette {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            justify-content: center;
+            margin: 5px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .color-options {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        .clear-link {
+            color: #dc3545;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .clear-link:hover {
+            color: #c82333;
+            text-decoration: underline;
+        }
+
+        .submit-btn {
+            padding: 10px 25px;
+            border: 2px solid;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .clear-btn {
+            background: transparent;
+            border-color: #dc3545;
+            color: #dc3545;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .clear-btn:hover {
+            background: #dc3545;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .finish-btn {
+            background: transparent;
+            border-color: #4a90e2;
+            color: #4a90e2;
+        }
+
+        .finish-btn:hover {
+            background: linear-gradient(45deg, #4a90e2, #000DFF);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .color:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .color.active {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 3px #4a90e2;
+        }
+
+        .submit-btn:active {
+            transform: translateY(1px);
+        }
+
+        #share-container {
+            display: block;
+            text-align: center;
+        }
+
+        .share-img {
+            max-width: 400px;
+            max-height: 60vh;
+            width: auto;
+            height: auto;
+            border-radius: 12px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            object-fit: contain;
+        }
+
+        .share-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 0 10px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .share-btn {
+            padding: 12px;
+            border-radius: 50%;  /* Make all buttons circular by default */
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1;  /* Make all buttons square/circular by default */
+        }
+
+        .share-btn i {
+            font-size: 1.2rem;  /* Slightly larger icons */
+        }
+
+        .twitter { background: linear-gradient(45deg, #1da1f2, #0d8ecf); }
+        .facebook { background: linear-gradient(45deg, #4267B2, #2f4a8f); }
+        .instagram { 
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .bottom-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .color-palette {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 600px;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            width: 100%;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            box-sizing: border-box;
+        }
+
+        .toggle-controls {
+            position: fixed;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #toggle-bottom {
+            bottom: 10px;
+        }
+
+        .randomsites {
+            display: none; /* Hide the randomsites section */
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 1.8rem;
+                margin-bottom: 12px;
+            }
+
+            .prompt {
+                font-size: 1.1rem;
+                padding: 12px 20px;
+                margin: 0 10px;
+            }
+
+            .top-controls {
+                padding: 12px 10px;
+            }
+
+            .bottom-controls {
+                padding: 10px;
+            }
+
+            .color-palette {
+                padding: 12px;
+            }
+
+            .controls {
+                padding: 0 12px;
+            }
+
+            .submit-btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+
+            .color {
+                width: 22px;
+                height: 22px;
+            }
+
+            .share-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .color-options {
+                grid-template-columns: repeat(8, 1fr);
+                gap: 6px;
+            }
+        }
+
+        /* Add new style for the bottom icon */
+        #toggle-bottom ion-icon {
+            font-size: 24px;  /* Make the icon larger */
+        }
+
+        /* Update modal styles for better mobile experience */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(0, 0, 0, 0.2);
+            color: #000;
+        }
+
+        #share-container {
+            text-align: center;
+        }
+
+        #share-container h3 {
+            font-size: 2.2rem;
+            background: linear-gradient(45deg, #4a90e2, #000DFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 20px 0;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+        }
+
+        .share-img {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            margin: 0 0 25px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .share-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 0 10px;
+        }
+
+        .share-btn {
+            padding: 12px;
+            border-radius: 50%;  /* Make all buttons circular by default */
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1;  /* Make all buttons square/circular by default */
+        }
+
+        .share-btn i {
+            font-size: 1.2rem;  /* Slightly larger icons */
+        }
+
+        .download { 
+            background: linear-gradient(45deg, #2ecc71, #27ae60); 
+        }
+
+        @media (max-width: 768px) {
+            .modal {
+                padding: 15px;
+                align-items: flex-end;
+            }
+
+            .modal-content {
+                padding: 25px 15px;
+                border-radius: 20px;
+                margin-bottom: 0;
+            }
+
+            #share-container h3 {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
+            }
+
+            .share-buttons {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+            }
+
+            .share-btn {
+                padding: 0;
+                aspect-ratio: 1;
+                border-radius: 50%;
+                font-size: 1.2rem;
+                width: 100%;
+            }
+
+            .share-btn i {
+                font-size: 1.2rem;
+            }
+
+            /* Hide the text labels on mobile */
+            .share-btn span {
+                display: none;
+            }
+
+            .close-modal {
+                top: 10px;
+                right: 10px;
+            }
+        }
+
+        .share-btn.linkedin { background: linear-gradient(45deg, #0077b5, #005582); }
+        .share-btn.share { background: linear-gradient(45deg, #6B73FF, #000DFF); }
+
+        .bottom-controls.hide-bottom {
+            transform: translateY(100%);  /* Slide down to hide */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-controls">
+            <div class="logo">
+                <i class="fas fa-pencil-alt"></i> Daily Doodle
+            </div>
+            <div style="text-align: center; margin-bottom: 10px;">
+                <a href="https://randomsitesontheweb.com" style="color: #4a90e2; text-decoration: none; font-size: 0.9rem;">
+                    randomsitesontheweb.com
+                </a>
+            </div>
+            <div class="prompt" id="daily-prompt">
+                Loading today's prompt...
+            </div>
+        </div>
+
+        <canvas id="canvas"></canvas>
+
+        <!-- Remove toggle-top button -->
+        <button id="toggle-bottom" class="toggle-controls">
+            <ion-icon name="brush-outline"></ion-icon>
+        </button>
+
+        <div class="bottom-controls">
+            <div class="color-palette">
+                <div class="color-options">
+                    <!-- Neutrals -->
+                    <div class="color" style="background: #000000" data-color="#000000"></div>
+                    <div class="color" style="background: #FFFFFF" data-color="#FFFFFF"></div>
+                    <div class="color" style="background: #808080" data-color="#808080"></div>
+                    <!-- Browns -->
+                    <div class="color" style="background: #8B4513" data-color="#8B4513"></div>
+                    <div class="color" style="background: #D2691E" data-color="#D2691E"></div>
+                    <div class="color" style="background: #DEB887" data-color="#DEB887"></div>
+                    <!-- Rainbow Colors -->
+                    <div class="color" style="background: #FF0000" data-color="#FF0000"></div>
+                    <div class="color" style="background: #FF8C00" data-color="#FF8C00"></div>
+                    <div class="color" style="background: #FFD700" data-color="#FFD700"></div>
+                    <div class="color" style="background: #008000" data-color="#008000"></div>
+                    <div class="color" style="background: #0000FF" data-color="#0000FF"></div>
+                    <div class="color" style="background: #4B0082" data-color="#4B0082"></div>
+                    <div class="color" style="background: #800080" data-color="#800080"></div>
+                    <!-- Additional Colors -->
+                    <div class="color" style="background: #FF69B4" data-color="#FF69B4"></div>
+                    <div class="color" style="background: #00FFFF" data-color="#00FFFF"></div>
+                    <div class="color" style="background: #32CD32" data-color="#32CD32"></div>
+                    <div class="color" style="background: #FF4500" data-color="#FF4500"></div>
+                    <div class="color" style="background: #4169E1" data-color="#4169E1"></div>
+                    <div class="color" style="background: #8B0000" data-color="#8B0000"></div>
+                    <div class="color" style="background: #006400" data-color="#006400"></div>
+                    <div class="color" style="background: #000080" data-color="#000080"></div>
+                    <div class="color" style="background: #9400D3" data-color="#9400D3"></div>
+                    <div class="color" style="background: #FF00FF" data-color="#FF00FF"></div>
+                    <div class="color" style="background: #7FFF00" data-color="#7FFF00"></div>
+                </div>
+                <button class="submit-btn clear-btn" onclick="clearCanvas()">
+                    <ion-icon name="trash-outline"></ion-icon>
+                    Clear Canvas
+                </button>
+                <button class="submit-btn finish-btn" onclick="submitDoodle()">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                    I'm Finished!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add modal structure -->
+    <div class="modal" id="submit-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div id="share-container">
+                <img class="share-img" id="share-img" src="" alt="Your doodle">
+                <h3>Share your doodle!</h3>
+                <div class="share-buttons">
+                    <a href="#" class="share-btn download" onclick="downloadImage()">
+                        <i class="fas fa-download"></i>
+                    </a>
+                    <a href="#" class="share-btn twitter" onclick="shareToTwitter()">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="share-btn linkedin" onclick="shareToLinkedIn()">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a href="#" class="share-btn share" onclick="shareMessage()">
+                        <i class="fas fa-share-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentColor = '#000000';
+
+        // Daily prompts
+        const prompts = [
+            "Draw your favorite animal wearing a hat",            
+            "Create a whimsical landscape",
+            "Design a silly monster",
+            "Draw your dream house",
+            "Sketch your favorite food with a face",
+            "Create a magical creature",
+            "Draw a robot doing human things",
+            "Draw a superhero with an unusual power",
+            "Create a futuristic city skyline",
+            "Design your own emoji",
+            "Draw your perfect day",
+            "Sketch a mythical creature hybrid",
+            "Draw something that makes you happy",
+            "Create an alien's family portrait",
+            "Design a new species of flower",
+            "Draw your favorite book character",
+            "Sketch a time machine",
+            "Create an underwater scene",
+            "Draw a flying vehicle",
+            "Design a treehouse",
+            "Sketch your spirit animal",
+            "Draw a scene from your dreams",
+            "Create a new sport",
+            "Draw your perfect sandwich",
+            "Design a magical potion",
+            "Sketch a friendly ghost",
+            "Draw your ideal superpower",
+            "Create a new holiday tradition",
+            "Draw a scene from space",
+            "Design your own video game character",
+            "Sketch your perfect pet",
+            "Draw a mad scientist's lab",
+            "Create a fantasy map",
+            "Draw a day in the life of a cloud",
+            "Design your own candy",
+            "Sketch a secret garden",
+            "Draw your favorite memory",
+            "Create a new musical instrument",
+            "Draw what's inside a monster's pocket",
+            "Design your dream theme park ride",
+            "Sketch a scene from the future",
+            "Draw your perfect birthday cake",
+            "Create a new dinosaur species",
+            "Draw a magical doorway",
+            "Design your own superhero costume",
+            "Sketch what lives under your bed",
+            "Draw your perfect pizza",
+            "Create a new constellation",
+            "Draw a scene from history with a twist",
+            "Design your own robot helper",
+            "Sketch your dream job",
+            "Create your own fairy tale character",
+            "Draw a day at the beach in winter",
+            "Design your perfect tree fort",
+            "Sketch what courage looks like",
+            "Draw your favorite season as a person",
+            "Create a new type of transportation",
+            "Design your own magical creature",
+            "Sketch your perfect day off",
+            "Create your own board game",
+            "Draw a scene from another planet",
+            "Design your own fantasy weapon",
+            "Sketch what peace looks like",
+            "Create a new mythological creature",
+            "Sketch your dream house",
+            "Draw a scene from your favorite book",
+            "Design your own magical wand",
+            "Create a new type of flower",
+            "Sketch a scene from your childhood",
+            "Draw your perfect treehouse",
+            "Design your own time machine",
+            "Create a new type of weather",
+            "Sketch your ideal pet companion",
+            "Design your own fantasy kingdom",
+            "Draw a scene from a fairy tale with a twist",
+            "Create a new type of food",
+            "Sketch what dreams are made of",
+            "Draw your perfect day",
+            "Design your own magical portal",
+            "Design your own magical spell",
+            "Draw a scene from your favorite movie", 
+            "Create a new type of sea creature",
+            "Design your own space station",
+            "Draw your perfect garden",
+            "Create a new type of dragon",
+            "Design your own magical potion",
+            "Draw a scene from your dreams",
+            "Create a new type of monster",
+            "Design your own fantasy vehicle", 
+            "Draw your perfect playground",
+            "Create a new type of alien",
+            "Design your own magical artifact",
+            "Draw a scene from your imagination",
+            "Create a new type of plant",
+            "Design your own flying machine",
+            "Draw an underwater city",
+            "Create your own magical creature companion",
+            "Design a futuristic vehicle",
+            "Draw a floating island paradise",
+            "Design your own superhero costume",
+            "Draw a musical instrument from the future",
+            "Create a magical forest creature",
+            "Sketch your own fantasy map",
+            "Design a steampunk invention",
+            "Create your own constellation story",
+            "Design a door to another dimension",
+            "Draw a hybrid of two animals",
+            "Sketch what music looks like",
+            "Create your own magical school",
+            "Design a fantasy shop selling impossible things",
+            "Draw what thunder would look like as a person",
+            "Create your own mystical runes",
+            "Design a magical library",
+            "Draw a scene where gravity works differently",
+            "Create your own enchanted forest",
+            "Design a potion bottle collection",
+            "Sketch a garden of impossible flowers",
+            "Create your own spirit animal guide",
+            "Design a magical marketplace",
+            "Create your own wizard's study",
+            "Design a collection of magical keys",
+            "Create your own fantasy festival",
+            "Design a magical creature's home",
+            "Sketch your own magical doorway"
+        ];
+
+        // Set daily prompt
+        function setDailyPrompt() {
+            const startDate = new Date('2025-02-21');
+            const today = new Date();
+            const diffTime = Math.abs(today - startDate);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const promptIndex = diffDays % prompts.length;
+            document.getElementById('daily-prompt').textContent = prompts[promptIndex];
+        }
+
+        // Drawing functions
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = currentColor;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Color selection with active state
+        document.querySelectorAll('.color').forEach(color => {
+            color.addEventListener('click', () => {
+                document.querySelectorAll('.color').forEach(c => c.classList.remove('active'));
+                color.classList.add('active');
+                currentColor = color.dataset.color;
+            });
+        });
+
+        // Set initial active color
+        document.querySelector('.color').classList.add('active');
+
+        function submitDoodle() {
+            const modal = document.getElementById('submit-modal');
+            const shareImg = document.getElementById('share-img');
+            
+            // Create temporary canvas with fixed dimensions
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Set temp canvas dimensions
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            
+            // Fill background
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Draw the original doodle
+            tempCtx.drawImage(canvas, 0, 0);
+            
+            // Add prompt text at the bottom with responsive font size
+            tempCtx.fillStyle = '#2c3e50';
+            const promptFontSize = Math.min(32, Math.max(16, width / 25));
+            tempCtx.font = `bold ${promptFontSize}px Poppins, sans-serif`;
+            const prompt = document.getElementById('daily-prompt').textContent;
+            
+            // Add padding from bottom
+            const padding = Math.min(20, height / 30);
+            tempCtx.fillText(prompt, 20, tempCanvas.height - padding);
+            
+            // Add Daily Doodle text only (no icon)
+            const logoFontSize = Math.min(24, Math.max(14, width / 30));
+            const gradient = tempCtx.createLinearGradient(20, 0, 150, 0);
+            gradient.addColorStop(0, '#4a90e2');
+            gradient.addColorStop(1, '#000DFF');
+            tempCtx.fillStyle = gradient;
+            tempCtx.font = `bold ${logoFontSize}px Poppins, sans-serif`;
+            tempCtx.fillText('Daily Doodle', 20, tempCanvas.height - padding - logoFontSize - 10);
+            
+            // Set the share image and show modal
+            shareImg.src = tempCanvas.toDataURL();
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('submit-modal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('submit-modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Social sharing functions
+        function shareToTwitter() {
+            const prompt = document.getElementById('daily-prompt').textContent;
+            const text = `Check out my daily doodle for "${prompt}" 🎨`;
+            const url = 'https://randomsitesontheweb.com/sites/dailydoodle';
+            const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+            window.open(shareUrl, '_blank');
+        }
+
+        function shareToLinkedIn() {
+            const url = 'https://randomsitesontheweb.com/sites/dailydoodle';
+            const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+            window.open(shareUrl, '_blank');
+        }
+
+        function shareMessage() {
+            const prompt = document.getElementById('daily-prompt').textContent;
+            const shareText = `My daily doodle was "${prompt}" - check out my masterpiece! 🎨\n\nhttps://randomsitesontheweb.com/sites/dailydoodle`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Daily Doodle',
+                    text: shareText,
+                    url: 'https://randomsitesontheweb.com/sites/dailydoodle'
+                }).catch(console.error);
+            } else {
+                // Fallback: Copy to clipboard
+                navigator.clipboard.writeText(shareText)
+                    .then(() => alert('Share text copied to clipboard!'))
+                    .catch(() => alert('Unable to copy text'));
+            }
+        }
+
+        // Initialize
+        setDailyPrompt();
+
+        // Add touch event support
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing);
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            isDrawing = true;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!isDrawing) return;
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = currentColor;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        // Update toggle functionality
+        const bottomControls = document.querySelector('.bottom-controls');
+        const toggleBottom = document.getElementById('toggle-bottom');
+        let isBottomHidden = false;
+
+        toggleBottom.addEventListener('click', () => {
+            isBottomHidden = !isBottomHidden;
+            bottomControls.classList.toggle('hide-bottom');
+            toggleBottom.innerHTML = isBottomHidden 
+                ? '<ion-icon name="brush-outline"></ion-icon>' 
+                : '<ion-icon name="close-outline"></ion-icon>';
+        });
+
+        // Update resize function
+        function resizeCanvas() {
+            const canvas = document.getElementById('canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            canvas.style.touchAction = 'none';
+        }
+
+        window.addEventListener('load', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
+
+        function downloadImage() {
+            const shareImg = document.getElementById('share-img');
+            
+            // Create a temporary link
+            const downloadLink = document.createElement('a');
+            downloadLink.href = shareImg.src;
+            
+            // Get today's date for the filename
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            
+            // Set filename
+            downloadLink.download = `daily-doodle-${dateStr}.png`;
+            
+            // Trigger download
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+    </script>
+</body>
+</html>
