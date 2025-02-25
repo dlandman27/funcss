@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sliding Puzzle</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 95vw;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 1.5rem;
+        }
+
+        .controls {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #shuffle {
+            background-color: #2196F3;
+        }
+
+        #shuffle:hover {
+            background-color: #1976D2;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .puzzle-container {
+            width: min(400px, 95vw);
+            height: min(400px, 95vw);
+            position: relative;
+            margin: 20px auto;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .puzzle-tile {
+            position: absolute;
+            border: 1px solid #ddd;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .puzzle-tile:hover {
+            transform: scale(1.02);
+        }
+
+        .game-info {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            font-size: 1rem;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        #moves, #timer {
+            background-color: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            button {
+                width: 100%;
+                padding: 12px;
+            }
+
+            input[type="file"] {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>Sliding Puzzle</h1>
+        <p>Click on a tile to move it. The goal is to arrange the tiles in order.</p>
+        <div class="controls">
+            <input type="file" id="image-input" accept="image/*">
+            <button id="shuffle">Shuffle</button>
+        </div>
+        <div id="puzzle-container" class="puzzle-container">
+            <!-- Tiles will be generated here -->
+        </div>
+        <div class="game-info">
+            <span id="moves">Moves: 0</span>
+            <span id="timer">Time: 00:00</span>
+        </div>
+
+        <p>
+            <a href="https://randomsitesontheweb.com">@randomsitesontheweb</a>
+        </p>
+    </div>
+    <script>
+        let moves = 0;
+        let timer = 0;
+        let timerInterval;
+        let tiles = [];
+        let emptyTile = { row: 3, col: 3 };
+        const GRID_SIZE = 4;
+
+        document.getElementById('shuffle').addEventListener('click', shuffleTiles);
+        document.getElementById('image-input').addEventListener('change', handleImageUpload);
+
+        function startGame() {
+            resetGame();
+            createTiles();
+            shuffleTiles();
+            startTimer();
+        }
+
+        function resetGame() {
+            moves = 0;
+            timer = 0;
+            updateDisplay();
+            clearInterval(timerInterval);
+            document.getElementById('puzzle-container').innerHTML = '';
+        }
+
+        function createTiles() {
+            const container = document.getElementById('puzzle-container');
+            const imageInput = document.getElementById('image-input');
+            const tileSize = 100;
+
+            container.style.position = 'relative';
+            container.style.border = '2px solid #333';
+            container.style.backgroundColor = '#ddd';
+            
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    if (row === GRID_SIZE - 1 && col === GRID_SIZE - 1) continue;
+
+                    const tile = document.createElement('div');
+                    tile.className = 'puzzle-tile';
+                    tile.style.width = tileSize + 'px';
+                    tile.style.height = tileSize + 'px';
+                    tile.style.position = 'absolute';
+
+                    if (imageInput.files && imageInput.files[0]) {
+                        const img = document.createElement('img');
+                        img.src = URL.createObjectURL(imageInput.files[0]);
+                        img.style.width = (GRID_SIZE * tileSize) + 'px';
+                        img.style.height = (GRID_SIZE * tileSize) + 'px';
+                        img.style.position = 'absolute';
+                        img.style.left = `-${col * tileSize}px`;
+                        img.style.top = `-${row * tileSize}px`;
+                        tile.appendChild(img);
+                    } else {
+                        tile.style.backgroundColor = '#ddd';
+                        tile.style.display = 'flex';
+                        tile.style.alignItems = 'center';
+                        tile.style.justifyContent = 'center';
+                        tile.style.fontSize = '24px';
+                        tile.textContent = row * GRID_SIZE + col + 1;
+                    }
+
+                    tile.dataset.row = row;
+                    tile.dataset.col = col;
+                    tile.style.left = (col * tileSize) + 'px';
+                    tile.style.top = (row * tileSize) + 'px';
+                    
+                    tile.addEventListener('click', () => moveTile(tile));
+                    container.appendChild(tile);
+                    tiles.push(tile);
+                }
+            }
+        }
+
+        function moveTile(tile) {
+            const row = parseInt(tile.dataset.row);
+            const col = parseInt(tile.dataset.col);
+
+            if (isAdjacent(row, col)) {
+                swapTiles(tile, row, col);
+                moves++;
+                updateDisplay();
+                checkWin();
+            }
+        }
+
+        function isAdjacent(row, col) {
+            return (
+                (Math.abs(row - emptyTile.row) === 1 && col === emptyTile.col) ||
+                (Math.abs(col - emptyTile.col) === 1 && row === emptyTile.row)
+            );
+        }
+
+        function swapTiles(tile, row, col) {
+            const tileSize = tile.offsetWidth;
+            tile.style.left = (emptyTile.col * tileSize) + 'px';
+            tile.style.top = (emptyTile.row * tileSize) + 'px';
+            tile.dataset.row = emptyTile.row;
+            tile.dataset.col = emptyTile.col;
+            emptyTile.row = row;
+            emptyTile.col = col;
+        }
+
+        function shuffleTiles() {
+            for (let i = 0; i < 1000; i++) {
+                const movableTiles = tiles.filter(tile => 
+                    isAdjacent(parseInt(tile.dataset.row), parseInt(tile.dataset.col))
+                );
+                const randomTile = movableTiles[Math.floor(Math.random() * movableTiles.length)];
+                moveTile(randomTile);
+            }
+            moves = 0;
+            updateDisplay();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timer = 0;
+            timerInterval = setInterval(() => {
+                timer++;
+                updateDisplay();
+            }, 1000);
+        }
+
+        function updateDisplay() {
+            document.getElementById('moves').textContent = `Moves: ${moves}`;
+            const minutes = Math.floor(timer / 60);
+            const seconds = timer % 60;
+            document.getElementById('timer').textContent = 
+                `Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function checkWin() {
+            const win = tiles.every(tile => {
+                const row = parseInt(tile.dataset.row);
+                const col = parseInt(tile.dataset.col);
+                const value = parseInt(tile.textContent || '0');
+                return value === row * GRID_SIZE + col + 1;
+            });
+
+            if (win) {
+                clearInterval(timerInterval);
+                alert(`Congratulations! You won in ${moves} moves and ${timer} seconds!`);
+            }
+        }
+
+        function handleImageUpload(event) {
+            const container = document.getElementById('puzzle-container');
+            container.innerHTML = '';
+            tiles = [];
+            startGame();
+        }
+    </script>
+</body>
+</html>
+
