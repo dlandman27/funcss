@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Names in a Hat</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #111111;
+            color: #ffffff;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(90deg, transparent 95%, rgba(52, 152, 219, 0.05) 95%),
+                linear-gradient(transparent 95%, rgba(52, 152, 219, 0.05) 95%);
+            background-size: 30px 30px;
+            animation: backgroundMove 60s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 100px 100px; }
+        }
+
+        .input-container {
+            margin: 40px 0;
+            text-align: center;
+            background: rgba(52, 152, 219, 0.1);
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(52, 152, 219, 0.2);
+        }
+
+        #names {
+            width: 80%;
+            max-width: 400px;
+            padding: 15px 25px;
+            border: 2px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50px;
+            font-size: 18px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            margin-bottom: 15px;
+        }
+
+        #names::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #names:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .names-list {
+            margin: 30px 0;
+            padding: 0;
+            list-style: none;
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .names-list li {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 20px;
+            background: rgba(52, 152, 219, 0.2);
+            border-radius: 50px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            color: #ffffff;
+        }
+
+        .names-list li:hover {
+            background: rgba(52, 152, 219, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .names-list li::after {
+            content: '×';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .names-list li:hover::after {
+            opacity: 1;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            background: #3498db;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #begin-button {
+            background: #27ae60;
+        }
+
+        #begin-button:hover {
+            background: #219a52;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.95);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            animation: modalPop 0.3s ease;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .remove-button {
+            background: #e74c3c !important;
+        }
+        
+        .remove-button:hover {
+            background: #c0392b !important;
+        }
+        
+        .keep-button {
+            background: #27ae60 !important;
+        }
+        
+        .keep-button:hover {
+            background: #219a52 !important;
+        }
+
+        .winner-name {
+            font-size: 4.5em;
+            margin: 20px 0;
+            color: #e74c3c;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            opacity: 0;
+        }
+
+        .animation-style-1 { animation: fadeInScale 1s forwards; }
+        .animation-style-2 { animation: slideInRotate 1s forwards; }
+        .animation-style-3 { animation: bounceIn 1s forwards; }
+        .animation-style-4 { animation: glowPulse 1s forwards; }
+        .animation-style-5 { animation: splitLetters 1s forwards; }
+        .animation-style-6 { animation: typewriter 1s forwards; }
+        .animation-style-7 { animation: neonFlicker 1.5s forwards; }
+        .animation-style-8 { animation: rainbowWave 1s forwards; }
+        .animation-style-9 { animation: spinIn 1s forwards; }
+        .animation-style-10 { animation: dropAndBounce 1s forwards; }
+
+        @keyframes fadeInScale {
+            0% { transform: scale(0.3); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes slideInRotate {
+            0% { transform: translateX(-100vw) rotate(-540deg); opacity: 0; }
+            100% { transform: translateX(0) rotate(0); opacity: 1; }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: translateY(-200px); opacity: 0; }
+            60% { transform: translateY(30px); opacity: 0.7; }
+            80% { transform: translateY(-10px); opacity: 0.9; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes glowPulse {
+            0% { text-shadow: 0 0 0 rgba(231, 76, 60, 0); opacity: 0; }
+            50% { text-shadow: 0 0 30px rgba(231, 76, 60, 0.8); opacity: 0.5; }
+            100% { text-shadow: 0 0 10px rgba(231, 76, 60, 0.3); opacity: 1; }
+        }
+
+        @keyframes splitLetters {
+            0% { letter-spacing: 100px; opacity: 0; }
+            50% { letter-spacing: 5px; opacity: 0.5; }
+            100% { letter-spacing: normal; opacity: 1; }
+        }
+
+        @keyframes typewriter {
+            0% { width: 0; opacity: 0; }
+            100% { width: 100%; opacity: 1; }
+        }
+
+        @keyframes neonFlicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { 
+                text-shadow: 0 0 7px #e74c3c, 0 0 10px #e74c3c, 0 0 21px #e74c3c;
+                opacity: 1;
+            }
+            20%, 24%, 55% { 
+                text-shadow: none;
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes rainbowWave {
+            0% { transform: translateY(50px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes spinIn {
+            0% { transform: rotate(1080deg) scale(0); opacity: 0; }
+            100% { transform: rotate(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes dropAndBounce {
+            0% { transform: translateY(-200px); opacity: 0; }
+            40% { transform: translateY(20px); opacity: 0.7; }
+            60% { transform: translateY(-10px); opacity: 0.9; }
+            80% { transform: translateY(5px); opacity: 1; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .picking-animation {
+            animation: pickingNames 0.1s linear infinite;
+        }
+
+        @keyframes pickingNames {
+            0% { transform: translateY(-10px); opacity: 0; }
+            100% { transform: translateY(10px); opacity: 1; }
+        }
+
+        #clear-all {
+            background: #e74c3c;
+        }
+
+        #clear-all:hover {
+            background: #c0392b;
+        }
+
+        .shake {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .results-container {
+            text-align: center;
+            margin-top: 20px;
+            background: rgba(52, 152, 219, 0.1);
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(52, 152, 219, 0.2);
+        }
+
+        .results-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .results-list li {
+            margin: 5px;
+            padding: 15px 25px;
+            background: rgba(52, 152, 219, 0.2);
+            border-radius: 50px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .results-list li:hover {
+            background: rgba(52, 152, 219, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .results-header {
+            font-size: 2em;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .curtain-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .curtain {
+            width: 50%;
+            height: 100%;
+            background: #8b0000;
+            position: relative;
+            transition: transform 1s ease-out;
+            background: repeating-linear-gradient(
+                90deg,
+                #8b0000,
+                #8b0000 20px,
+                #7a0000 20px,
+                #7a0000 40px
+            );
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .curtain::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 15%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                rgba(0, 0, 0, 0.3),
+                rgba(0, 0, 0, 0.1) 50%,
+                transparent
+            );
+        }
+
+        .curtain::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.1),
+                rgba(255, 255, 255, 0.1) 1px,
+                transparent 1px,
+                transparent 30px
+            );
+        }
+
+        .curtain.left::after {
+            right: 0;
+        }
+
+        .curtain.right::after {
+            left: 0;
+        }
+
+        .curtain.left {
+            transform-origin: left;
+        }
+
+        .curtain.right {
+            transform-origin: right;
+        }
+
+        .curtain.open.left {
+            transform: translateX(-100%);
+        }
+
+        .curtain.open.right {
+            transform: translateX(100%);
+        }
+
+        .intro-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2000;
+        }
+
+        .intro-title {
+            font-size: 4em;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s ease;
+        }
+
+        .intro-title.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .start-button {
+            font-size: 1.5em;
+            padding: 15px 40px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s ease;
+            transition-delay: 0.5s;
+        }
+
+        .start-button.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .main-content {
+            display: none;
+            position: relative;
+            z-index: 1;
+            transition: z-index 0s linear 1s;
+        }
+    </style>
+</head>
+<body>
+    <div class="curtain-container">
+        <div class="curtain left"></div>
+        <div class="curtain right"></div>
+    </div>
+
+    <div class="intro-content">
+        <h1 class="intro-title">Names in a Hat</h1>
+        <button class="button start-button" onclick="startApp()">Begin</button>
+    </div>
+
+    <div class="main-content">
+        <div class="input-container" id="nameInputSection">
+            <input type="text" id="names" placeholder="Enter a name and press Enter" maxlength="30">
+            <button class="button" onclick="addName()">Add Name</button>
+        </div>
+        <ul id="namesList" class="names-list"></ul>
+        <div class="button-container" id="buttonContainer">
+            <button class="button" id="begin-button" onclick="pickName()">Start Picking!</button>
+        </div>
+
+        <div class="winner-display" style="display: none; text-align: center;">
+            <div class="winner-name" id="winnerName"></div>
+            <div class="button-container">
+                <button class="button remove-button" onclick="handleWinner(true)">Next</button>
+            </div>
+            <div class="results-container" id="resultsContainer" style="display: none;">
+                <h2 class="results-header">Final Results</h2>
+                <ul class="results-list" id="resultsList"></ul>
+                <button class="button" onclick="startNewSession()">Start New Session</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.querySelector('.curtain.left').classList.add('open');
+                document.querySelector('.curtain.right').classList.add('open');
+                document.querySelector('.intro-title').classList.add('show');
+                document.querySelector('.start-button').classList.add('show');
+            }, 500);
+        });
+
+        function startApp() {
+            document.querySelector('.intro-content').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'block';
+        }
+
+        let namesList = [];
+        const maxNames = 50;
+        let currentWinnerIndex = -1;
+        let pickedNames = []; // Track picked names
+
+        // Add keyboard support
+        document.getElementById('names').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addName();
+            }
+        });
+
+        function addName() {
+            const nameInput = document.getElementById('names');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                shakeInput(nameInput);
+                return;
+            }
+
+            if (namesList.length >= maxNames) {
+                alert(`Maximum ${maxNames} names allowed!`);
+                return;
+            }
+
+            if (namesList.includes(name)) {
+                alert('This name is already in the list!');
+                shakeInput(nameInput);
+                return;
+            }
+
+            namesList.push(name);
+            updateNamesList();
+            nameInput.value = '';
+            nameInput.focus();
+        }
+
+        function updateNamesList() {
+            const list = document.getElementById('namesList');
+            list.innerHTML = '';
+            namesList.forEach((name, index) => {
+                const li = document.createElement('li');
+                li.textContent = name;
+                li.onclick = () => removeName(index);
+                list.appendChild(li);
+            });
+        }
+
+        function removeName(index) {
+            if (confirm('Remove this name?')) {
+                namesList.splice(index, 1);
+                updateNamesList();
+            }
+        }
+
+        function clearAll() {
+            if (namesList.length === 0) return;
+            if (confirm('Are you sure you want to clear all names?')) {
+                namesList = [];
+                updateNamesList();
+            }
+        }
+
+        function pickName() {
+            if (namesList.length === 0) {
+                alert('Please add some names first!');
+                return;
+            }
+
+            // Hide all input elements
+            document.getElementById('nameInputSection').style.display = 'none';
+            document.getElementById('namesList').style.display = 'none';
+            document.getElementById('buttonContainer').style.display = 'none';
+
+            // Close curtains first
+            const leftCurtain = document.querySelector('.curtain.left');
+            const rightCurtain = document.querySelector('.curtain.right');
+            leftCurtain.classList.remove('open');
+            rightCurtain.classList.remove('open');
+
+            // Wait for curtains to close, then show name
+            setTimeout(() => {
+                const mainContent = document.querySelector('.main-content');
+                const winnerDisplay = document.querySelector('.winner-display');
+                const winnerName = document.getElementById('winnerName');
+                
+                // Remove any existing animation classes
+                winnerName.className = 'winner-name';
+                
+                currentWinnerIndex = Math.floor(Math.random() * namesList.length);
+                const randomName = namesList[currentWinnerIndex];
+
+                // Randomly select an animation style
+                const animationStyle = `animation-style-${Math.floor(Math.random() * 10) + 1}`;
+                
+                // Update z-index after curtains close
+                mainContent.style.zIndex = '1001';
+                
+                winnerDisplay.style.display = 'block';
+                winnerName.textContent = randomName;
+                winnerName.classList.add(animationStyle);
+
+                // Open curtains to reveal the winner
+                setTimeout(() => {
+                    leftCurtain.classList.add('open');
+                    rightCurtain.classList.add('open');
+                    
+                    // Reset z-index after curtains open
+                    setTimeout(() => {
+                        mainContent.style.zIndex = '1';
+                    }, 1000);
+                }, 100);
+            }, 1000);
+        }
+
+        function handleWinner(shouldRemove) {
+            const winnerName = namesList[currentWinnerIndex];
+            
+            if (shouldRemove) {
+                pickedNames.push(winnerName);
+                namesList.splice(currentWinnerIndex, 1);
+                updateNamesList();
+            }
+            
+            if (namesList.length === 0) {
+                showResults();
+            } else {
+                pickName();
+            }
+            currentWinnerIndex = -1;
+        }
+
+        function showResults() {
+            const winnerName = document.getElementById('winnerName');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsList = document.getElementById('resultsList');
+            const buttonContainer = document.querySelector('.winner-display .button-container');
+            
+            winnerName.style.display = 'none';
+            buttonContainer.style.display = 'none';
+            resultsContainer.style.display = 'block';
+            
+            resultsList.innerHTML = '';
+            pickedNames.forEach((name, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${name}`;
+                resultsList.appendChild(li);
+            });
+        }
+
+        function startNewSession() {
+            const winnerDisplay = document.querySelector('.winner-display');
+            const winnerName = document.getElementById('winnerName');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const buttonContainer = document.querySelector('.winner-display .button-container');
+            
+            winnerDisplay.style.display = 'none';
+            winnerName.style.display = 'block';
+            buttonContainer.style.display = 'flex';
+            resultsContainer.style.display = 'none';
+            
+            // Show all input elements
+            document.getElementById('nameInputSection').style.display = 'block';
+            document.getElementById('namesList').style.display = 'block';
+            document.getElementById('buttonContainer').style.display = 'flex';
+            
+            pickedNames = [];
+            namesList = [];
+            updateNamesList();
+        }
+
+        function shakeInput(element) {
+            element.classList.add('shake');
+            setTimeout(() => element.classList.remove('shake'), 500);
+        }
+    </script>
+</body>
+</html>

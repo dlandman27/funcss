@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Snake Game</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #0f172a; /* slate-900 */
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #94a3b8; /* slate-400 */
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            text-shadow: 2px 2px #1e293b; /* slate-800 */
+            z-index: 100;
+        }
+        #highScore {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            color: #94a3b8; /* slate-400 */
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            text-shadow: 2px 2px #1e293b; /* slate-800 */
+            z-index: 100;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #94a3b8; /* slate-400 */
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            text-align: right;
+            text-shadow: 2px 2px #1e293b; /* slate-800 */
+            z-index: 100;
+        }
+        #gameOver, #startScreen {
+            display: none;
+        }
+        .blink {
+            animation: blink-animation 1s steps(2, start) infinite;
+        }
+        @keyframes blink-animation {
+            to {
+                visibility: hidden;
+            }
+        }
+        #minimap {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            border: 2px solid #94a3b8; /* slate-400 */
+            background-color: rgba(15, 23, 42, 0.8); /* slate-900 with opacity */
+            z-index: 100;
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div id="score">SCORE: 0</div>
+    <div id="highScore">HI-SCORE: 0</div>
+    <div id="controls">
+        ARROWS: MOVE<br>
+        SPACE: START/RESTART
+    </div>
+    <div id="gameOver"></div>
+    <div id="startScreen"></div>
+    <div id="minimap"></div>
+    <!-- Add Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let snake = [];
+        let food;
+        let direction = new THREE.Vector3(1, 0, 0);
+        let score = 0;
+        let gridSize = 20;
+        let speed = 200; // Lower = faster
+        let lastUpdateTime = 0;
+        let highScore = 0;
+        let asteroids = [];
+        let minimapCamera, minimapRenderer;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Update lighting setup
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6); // Increased intensity
+            scene.add(ambientLight);
+
+            // Add multiple directional lights for better coverage
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight1.position.set(5, 5, 5);
+            scene.add(directionalLight1);
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+            directionalLight2.position.set(-5, 5, -5);
+            scene.add(directionalLight2);
+
+            // Add point lights for more dynamic lighting
+            const pointLight1 = new THREE.PointLight(0xffffff, 0.4);
+            pointLight1.position.set(0, 10, 0);
+            scene.add(pointLight1);
+
+            // Update grid lines with better visibility
+            const divisions = gridSize;
+            const gridHelper = new THREE.GridHelper(gridSize, divisions);
+            // Customize grid colors - making them light blue
+            gridHelper.material.color.setHex(0x7dd3fc);  // sky-300 for main lines
+            gridHelper.material.opacity = 0.4;
+            gridHelper.material.transparent = true;
+
+            // Create a second grid for the darker lines
+            const subGrid = new THREE.GridHelper(gridSize, divisions * 2);
+            subGrid.material.color.setHex(0x0ea5e9);  // sky-500 for secondary lines
+            subGrid.material.opacity = 0.2;
+            subGrid.material.transparent = true;
+
+            // Position both grids at y=0 since we don't need to offset them anymore
+            gridHelper.position.y = 0;
+            subGrid.position.y = 0;
+            scene.add(gridHelper);
+            scene.add(subGrid);
+
+            // Update wall creation to only include side walls (remove bottom)
+            const wallSize = gridSize;
+            const wallHeight = 4; // Make walls taller to enhance bottomless effect
+            const wallSegments = 20;
+            const wallGeometry = new THREE.PlaneGeometry(wallSize, wallHeight, wallSegments, 4);
+            const wallMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x64748b, // slate-500
+                wireframe: true,
+                wireframeLinewidth: 2,
+                side: THREE.DoubleSide
+            });
+            
+            // Adjust wall positions to account for increased height
+            const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.position.set(-gridSize/2, wallHeight/2, 0);
+            scene.add(leftWall);
+
+            const rightWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            rightWall.rotation.y = -Math.PI / 2;
+            rightWall.position.set(gridSize/2, wallHeight/2, 0);
+            scene.add(rightWall);
+
+            const frontWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            frontWall.position.set(0, wallHeight/2, -gridSize/2);
+            scene.add(frontWall);
+
+            const backWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            backWall.position.set(0, wallHeight/2, gridSize/2);
+            scene.add(backWall);
+
+            // Update glow walls to match new dimensions
+            const wallGlowMaterial = new THREE.MeshPhongMaterial({
+                color: 0x94a3b8,
+                wireframe: true,
+                wireframeLinewidth: 1,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+
+            const glowScale = 1.02;
+            const leftWallGlow = new THREE.Mesh(wallGeometry, wallGlowMaterial);
+            leftWallGlow.rotation.y = Math.PI / 2;
+            leftWallGlow.position.set(-gridSize/2, wallHeight/2, 0);
+            leftWallGlow.scale.set(glowScale, glowScale, glowScale);
+            scene.add(leftWallGlow);
+
+            const rightWallGlow = new THREE.Mesh(wallGeometry, wallGlowMaterial);
+            rightWallGlow.rotation.y = -Math.PI / 2;
+            rightWallGlow.position.set(gridSize/2, wallHeight/2, 0);
+            rightWallGlow.scale.set(glowScale, glowScale, glowScale);
+            scene.add(rightWallGlow);
+
+            const frontWallGlow = new THREE.Mesh(wallGeometry, wallGlowMaterial);
+            frontWallGlow.position.set(0, wallHeight/2, -gridSize/2);
+            frontWallGlow.scale.set(glowScale, glowScale, glowScale);
+            scene.add(frontWallGlow);
+
+            const backWallGlow = new THREE.Mesh(wallGeometry, wallGlowMaterial);
+            backWallGlow.position.set(0, wallHeight/2, gridSize/2);
+            backWallGlow.scale.set(glowScale, glowScale, glowScale);
+            scene.add(backWallGlow);
+
+            // Update snake material for better visibility
+            const snakeGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const snakeMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x22c55e, // green-600
+                shininess: 50,
+                specular: 0x86efac, // green-300
+                emissive: 0x16a34a, // green-700
+                emissiveIntensity: 0.2
+            });
+            const snakeHead = new THREE.Mesh(snakeGeometry, snakeMaterial);
+            
+            // Add eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const eyeMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xffffff,
+                shininess: 100,
+                specular: 0xffffff
+            });
+            const pupilGeometry = new THREE.SphereGeometry(0.07, 16, 16);
+            const pupilMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
+
+            // Left eye
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            leftEye.position.set(0.3, 0.3, -0.35);
+            leftPupil.position.set(0.35, 0.3, -0.42);
+            
+            // Right eye
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            rightEye.position.set(0.3, 0.3, 0.35);
+            rightPupil.position.set(0.35, 0.3, 0.42);
+
+            // Add tongue
+            const tongueGeometry = new THREE.BoxGeometry(0.4, 0.05, 0.1);
+            const tongueMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xff0000,
+                shininess: 30
+            });
+            const tongue = new THREE.Mesh(tongueGeometry, tongueMaterial);
+            tongue.position.set(0.7, 0, 0);
+
+            // Create a group for the head and its features
+            const headGroup = new THREE.Group();
+            headGroup.add(snakeHead);
+            headGroup.add(leftEye);
+            headGroup.add(rightEye);
+            headGroup.add(leftPupil);
+            headGroup.add(rightPupil);
+            headGroup.add(tongue);
+            
+            headGroup.position.set(-gridSize/2 + 1, 0.5, -gridSize/2 + 1);
+            snake.push(headGroup);
+            scene.add(headGroup);
+
+            // Create food (apple)
+            const appleGroup = new THREE.Group();
+            
+            // Main apple body
+            const appleGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const appleMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xff0000, // Bright red
+                shininess: 100,
+                specular: 0xff6666,
+                emissive: 0xff0000,
+                emissiveIntensity: 0.3
+            });
+            const appleBody = new THREE.Mesh(appleGeometry, appleMaterial);
+            
+            // Apple stem
+            const stemGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.2, 8);
+            const stemMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x4a3c2c,
+                shininess: 30
+            });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.y = 0.4;
+            
+            // Small leaf
+            const leafGeometry = new THREE.BoxGeometry(0.2, 0.05, 0.1);
+            const leafMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x228B22,
+                shininess: 30
+            });
+            const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+            leaf.position.y = 0.4;
+            leaf.position.x = 0.15;
+            leaf.rotation.z = Math.PI / 6;
+            
+            appleGroup.add(appleBody);
+            appleGroup.add(stem);
+            appleGroup.add(leaf);
+            
+            food = appleGroup;
+            food.position.y = 0.5;
+            spawnFood();
+            scene.add(food);
+
+            camera.position.y = 15;  // Moved camera higher
+            camera.position.z = 20;  // Moved camera back slightly
+            camera.lookAt(0, 0, 0);
+
+            // Add asteroids
+            createAsteroids();
+
+            // Add minimap setup after main renderer setup
+            minimapCamera = new THREE.OrthographicCamera(
+                -gridSize/2, gridSize/2,
+                gridSize/2, -gridSize/2,
+                1, 1000
+            );
+            minimapCamera.position.set(0, 50, 0);
+            minimapCamera.lookAt(0, 0, 0);
+            minimapCamera.rotation.z = Math.PI; // Rotate to match game controls
+
+            minimapRenderer = new THREE.WebGLRenderer({ alpha: true });
+            minimapRenderer.setSize(200, 200);
+            minimapRenderer.domElement.style.position = 'absolute';
+            document.getElementById('minimap').appendChild(minimapRenderer.domElement);
+
+            // Add event listener for keyboard controls
+            document.addEventListener('keydown', onKeyDown);
+
+            // Add text geometry for screens
+            const fontLoader = new THREE.FontLoader();
+            fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+                // Create start screen
+                createStartScreen(font);
+                // Create game over screen (but keep it hidden initially)
+                createGameOverScreen(font);
+            });
+        }
+
+        function spawnFood() {
+            const halfGrid = gridSize/2;
+            // Generate random grid positions (whole numbers)
+            const x = Math.floor(Math.random() * (gridSize - 1)); // Subtract 1 to stay within bounds
+            const z = Math.floor(Math.random() * (gridSize - 1));
+            // Position food at grid intersections by subtracting halfGrid and adding 0.5
+            food.position.x = x - halfGrid + 0.5;
+            food.position.z = z - halfGrid + 0.5;
+            food.position.y = 0.5;
+
+            // Prevent food from spawning on snake
+            for (const segment of snake) {
+                if (Math.abs(food.position.x - segment.position.x) < 0.1 &&
+                    Math.abs(food.position.z - segment.position.z) < 0.1) {
+                    spawnFood(); // Try again if food spawns on snake
+                    return;
+                }
+            }
+        }
+
+        function onKeyDown(event) {
+            const head = snake[0];
+            switch(event.key) {
+                case 'ArrowUp':
+                    if (direction.z !== 1) {
+                        direction.set(0, 0, -1);
+                        head.rotation.y = Math.PI / 2; // Changed from -Math.PI / 2 to Math.PI / 2
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (direction.z !== -1) {
+                        direction.set(0, 0, 1);
+                        head.rotation.y = -Math.PI / 2; // Changed from Math.PI / 2 to -Math.PI / 2
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (direction.x !== 1) {
+                        direction.set(-1, 0, 0);
+                        head.rotation.y = Math.PI;
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (direction.x !== -1) {
+                        direction.set(1, 0, 0);
+                        head.rotation.y = 0;
+                    }
+                    break;
+            }
+        }
+
+        function growSnake() {
+            const snakeGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const snakeMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x22c55e, // green-600
+                shininess: 50,
+                specular: 0x86efac, // green-300
+                emissive: 0x16a34a, // green-700
+                emissiveIntensity: 0.2
+            });
+            const segment = new THREE.Mesh(snakeGeometry, snakeMaterial);
+            
+            // Position the new segment opposite to the direction of movement
+            const lastSegment = snake[snake.length - 1];
+            segment.position.copy(lastSegment.position);
+            segment.position.sub(direction); // Subtract the direction to place it behind the last segment
+            segment.position.y = 0.5; // Maintain Y position
+            
+            snake.push(segment);
+            scene.add(segment);
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+            
+            // Check food collision - reduced from 1.5 to 0.8
+            if (Math.abs(head.position.x - food.position.x) < 0.8 &&
+                Math.abs(head.position.z - food.position.z) < 0.8) {
+                score += 10;
+                document.getElementById('score').textContent = `SCORE: ${score}`;
+                spawnFood();
+                growSnake();
+            }
+
+            // Check wall collision (unchanged since it's already precise)
+            if (Math.abs(head.position.x) > gridSize/2 || Math.abs(head.position.z) > gridSize/2) {
+                gameOver();
+                return true;
+            }
+
+            // Check self collision - reduced from 0.5 to 0.3
+            for (let i = 1; i < snake.length; i++) {
+                if (Math.abs(head.position.x - snake[i].position.x) < 0.3 &&
+                    Math.abs(head.position.z - snake[i].position.z) < 0.3) {
+                    gameOver();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function resetGame() {
+            // Remove all snake segments except head
+            for (let i = snake.length - 1; i > 0; i--) {
+                scene.remove(snake[i]);
+            }
+            snake = [snake[0]];
+            snake[0].position.set(0.5, 0.5, 0.5); // Added offset of 0.5 to both x and z
+            direction.set(1, 0, 0);
+            score = 0;
+            document.getElementById('score').textContent = `SCORE: ${score}`;
+            document.getElementById('gameOver').style.display = 'none';
+            spawnFood();
+        }
+
+        function gameOver() {
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                document.getElementById('highScore').textContent = `HI-SCORE: ${highScore}`;
+            }
+            const gameOverScreen = scene.getObjectByName('gameOverScreen');
+            gameOverScreen.visible = true;
+            
+            // Update score text
+            const scoreText = gameOverScreen.getObjectByName('scoreText');
+            scoreText.geometry.dispose();
+            
+            const fontLoader = new THREE.FontLoader();
+            fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+                const newScoreGeometry = new THREE.TextGeometry(`SCORE: ${score}`, {
+                    font: font,
+                    size: 1.5,
+                    height: 0.2,
+                });
+                scoreText.geometry = newScoreGeometry;
+            });
+
+            // Add space key listener for restart
+            const spaceHandler = (event) => {
+                if (event.code === 'Space') {
+                    gameOverScreen.visible = false;
+                    document.removeEventListener('keydown', spaceHandler);
+                    resetGame();
+                }
+            };
+            document.addEventListener('keydown', spaceHandler);
+        }
+
+        function createStartScreen(font) {
+            const startGroup = new THREE.Group();
+            startGroup.name = 'startScreen';
+
+            const titleGeometry = new THREE.TextGeometry('SNAKE 3D', {
+                font: font,
+                size: 3,
+                height: 0.5,
+            });
+            titleGeometry.center();
+            const titleMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x00ff00,
+                emissive: 0x004400,
+                emissiveIntensity: 0.5
+            });
+            const titleMesh = new THREE.Mesh(titleGeometry, titleMaterial);
+            titleMesh.position.set(0, 5, -10);
+            
+            const instructGeometry = new THREE.TextGeometry('PRESS SPACE TO START', {
+                font: font,
+                size: 1,
+                height: 0.2,
+            });
+            instructGeometry.center();
+            const instructMesh = new THREE.Mesh(instructGeometry, titleMaterial);
+            instructMesh.position.set(0, 2, -10);
+
+            startGroup.add(titleMesh);
+            startGroup.add(instructMesh);
+            scene.add(startGroup);
+
+            // Add blinking and floating animation
+            function animateStart() {
+                if (startGroup.visible) {
+                    titleMesh.rotation.y += 0.01;
+                    instructMesh.visible = Math.floor(Date.now() / 500) % 2 === 0; // Blink effect
+                    titleMesh.position.y = 5 + Math.sin(Date.now() / 500) * 0.2; // Floating effect
+                    requestAnimationFrame(animateStart);
+                }
+            }
+            animateStart();
+
+            // Add space key listener
+            const startHandler = (event) => {
+                if (event.code === 'Space') {
+                    startGroup.visible = false;
+                    document.removeEventListener('keydown', startHandler);
+                    resetGame();
+                }
+            };
+            document.addEventListener('keydown', startHandler);
+        }
+
+        function createGameOverScreen(font) {
+            const gameOverGroup = new THREE.Group();
+            gameOverGroup.name = 'gameOverScreen';
+            gameOverGroup.visible = false;
+
+            const gameOverGeometry = new THREE.TextGeometry('GAME OVER', {
+                font: font,
+                size: 3,
+                height: 0.5,
+            });
+            const gameOverMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            const gameOverMesh = new THREE.Mesh(gameOverGeometry, gameOverMaterial);
+            gameOverMesh.position.set(-8, 5, -10);
+
+            const scoreGeometry = new THREE.TextGeometry('SCORE: 0', {
+                font: font,
+                size: 1.5,
+                height: 0.2,
+            });
+            const scoreMesh = new THREE.Mesh(scoreGeometry, gameOverMaterial);
+            scoreMesh.position.set(-5, 2, -10);
+            scoreMesh.name = 'scoreText';
+
+            const restartGeometry = new THREE.TextGeometry('PRESS SPACE TO RESTART', {
+                font: font,
+                size: 1,
+                height: 0.2,
+            });
+            const restartMesh = new THREE.Mesh(restartGeometry, gameOverMaterial);
+            restartMesh.position.set(-10, 0, -10);
+
+            gameOverGroup.add(gameOverMesh);
+            gameOverGroup.add(scoreMesh);
+            gameOverGroup.add(restartMesh);
+            scene.add(gameOverGroup);
+        }
+
+        function createAsteroids() {
+            const asteroidCount = 20;
+            const asteroidGeometry = new THREE.IcosahedronGeometry(0.5, 0);
+            const asteroidMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x94a3b8, // slate-400
+                shininess: 30,
+                flatShading: true
+            });
+
+            for (let i = 0; i < asteroidCount; i++) {
+                const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+                
+                // Position asteroids in a larger space around the game area
+                asteroid.position.set(
+                    (Math.random() - 0.5) * 60,
+                    (Math.random() - 0.5) * 20 + 20,
+                    (Math.random() - 0.5) * 60
+                );
+                
+                // Random rotation and scale
+                asteroid.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                const scale = 0.5 + Math.random() * 1.5;
+                asteroid.scale.set(scale, scale, scale);
+                
+                // Add random rotation speeds
+                asteroid.userData.rotationSpeed = {
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02
+                };
+                
+                // Add random movement speeds
+                asteroid.userData.moveSpeed = {
+                    x: (Math.random() - 0.5) * 0.05,
+                    y: (Math.random() - 0.5) * 0.05,
+                    z: (Math.random() - 0.5) * 0.05
+                };
+
+                asteroids.push(asteroid);
+                scene.add(asteroid);
+            }
+        }
+
+        function updateAsteroids() {
+            asteroids.forEach(asteroid => {
+                // Rotate asteroid
+                asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
+                asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
+                asteroid.rotation.z += asteroid.userData.rotationSpeed.z;
+
+                // Move asteroid
+                asteroid.position.x += asteroid.userData.moveSpeed.x;
+                asteroid.position.y += asteroid.userData.moveSpeed.y;
+                asteroid.position.z += asteroid.userData.moveSpeed.z;
+
+                // Wrap around when asteroid goes too far
+                const bound = 30;
+                if (Math.abs(asteroid.position.x) > bound) asteroid.position.x *= -0.95;
+                if (Math.abs(asteroid.position.y) > bound) asteroid.position.y *= -0.95;
+                if (Math.abs(asteroid.position.z) > bound) asteroid.position.z *= -0.95;
+            });
+        }
+
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+
+            // Update asteroids every frame
+            updateAsteroids();
+
+            // Only update if neither start screen nor game over screen is visible
+            const gameOverScreen = scene.getObjectByName('gameOverScreen');
+            const startScreen = scene.getObjectByName('startScreen');
+            
+            if (!gameOverScreen?.visible && !startScreen?.visible) {
+                if (currentTime - lastUpdateTime > speed) {
+                    // Move body
+                    for (let i = snake.length - 1; i > 0; i--) {
+                        snake[i].position.copy(snake[i-1].position);
+                    }
+
+                    // Move head
+                    const head = snake[0];
+                    head.position.add(direction);
+
+                    checkCollision();
+                    lastUpdateTime = currentTime;
+                }
+            }
+
+            // Add minimap rendering at the end
+            minimapRenderer.render(scene, minimapCamera);
+            renderer.render(scene, camera);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
+
