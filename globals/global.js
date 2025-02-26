@@ -11,3 +11,11 @@
         gtag('config', 'G-ZHEXFVEQT1');
     };
 })();
+
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Home') {
+        window.location.href = 'https://randomsitesontheweb.com';
+    }
+});
+
