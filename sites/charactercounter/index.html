@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Counter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            width: 80%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        .results, .advanced-stats {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            display: none;
+        }
+        .stat-group {
+            margin: 10px 0;
+            padding: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .stat-group:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .advanced-toggle {
+            margin: 15px 0;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: white;
+            background-color: #2962ff;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            display: none;
+        }
+        .advanced-toggle:hover {
+            background-color: #1e4bd8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Character Counter</h1>
+        <textarea id="text" placeholder="Paste your text here..." oninput="countCharacters()"></textarea>
+        <div class="advanced-toggle" onclick="toggleAdvanced()">Show Advanced Statistics</div>
+        <div class="results" id="results"></div>
+        <div class="advanced-stats" id="advancedStats"></div>
+    </div>
+    <script>
+        function countCharacters() {
+            let text = document.getElementById('text').value;
+            let characters = text.length;
+            
+            // Hide both stats sections if there's no text
+            const resultsDiv = document.getElementById('results');
+            const advancedStatsDiv = document.getElementById('advancedStats');
+            const toggleButton = document.querySelector('.advanced-toggle');
+            
+            if (characters === 0) {
+                resultsDiv.style.display = 'none';
+                advancedStatsDiv.style.display = 'none';
+                toggleButton.style.display = 'none';
+                return;
+            }
+            
+            // Show results and toggle button when there's text
+            resultsDiv.style.display = 'block';
+            toggleButton.style.display = 'block';
+            
+            let charactersNoSpaces = text.replace(/\s/g, '').length;
+            let words = text.split(/\s/g).filter(function(str) {
+                return str != '';
+            }).length;
+            let lines = text.split(/\n/).length;
+            
+            // Basic stats
+            let results = `
+                <div class="stat-group">
+                    <div><span class="stat-label">Characters:</span> ${characters}</div>
+                    <div><span class="stat-label">Characters (no spaces):</span> ${charactersNoSpaces}</div>
+                    <div><span class="stat-label">Words:</span> ${words}</div>
+                    <div><span class="stat-label">Lines:</span> ${lines}</div>
+                </div>`;
+            document.getElementById('results').innerHTML = results;
+            
+            // Advanced stats with additional metrics
+            let paragraphs = text.split(/\n\s*\n/).filter(para => para.trim().length > 0).length;
+            let sentences = text.split(/[.!?]+/).filter(sent => sent.trim().length > 0).length;
+            let avgWordLength = charactersNoSpaces / (words || 1);
+            let uniqueWords = new Set(text.toLowerCase().match(/\b\w+\b/g) || []).size;
+            
+            // Calculate word frequency and length distribution
+            let wordFreq = {};
+            let lengthDist = {};
+            let words_arr = text.toLowerCase().match(/\b\w+\b/g) || [];
+            words_arr.forEach(word => {
+                wordFreq[word] = (wordFreq[word] || 0) + 1;
+                lengthDist[word.length] = (lengthDist[word.length] || 0) + 1;
+            });
+            let mostFreqWord = Object.entries(wordFreq)
+                .sort((a, b) => b[1] - a[1])[0] || ['none', 0];
+            
+            // Find longest and shortest words
+            let longestWord = words_arr.reduce((a, b) => a.length >= b.length ? a : b, '');
+            let shortestWord = words_arr.reduce((a, b) => a.length <= b.length ? a : b, longestWord);
+            
+            // Calculate character frequency
+            let charFreq = {};
+            Array.from(text.replace(/\s/g, '')).forEach(char => {
+                charFreq[char] = (charFreq[char] || 0) + 1;
+            });
+            let mostFreqChar = Object.entries(charFreq)
+                .sort((a, b) => b[1] - a[1])[0] || ['none', 0];
+            
+            // Reading time and additional calculations
+            let readingTime = Math.ceil(words / 200);
+            let textDensity = (charactersNoSpaces / (lines || 1)).toFixed(2);
+            let wordsPerParagraph = (words / (paragraphs || 1)).toFixed(2);
+            
+            let advancedResults = `
+                <div class="stat-group">
+                    <div><span class="stat-label">Text Structure:</span></div>
+                    <div>Paragraphs: ${paragraphs}</div>
+                    <div>Sentences: ${sentences}</div>
+                    <div>Words per Paragraph: ${wordsPerParagraph}</div>
+                    <div>Words per Sentence: ${(words / (sentences || 1)).toFixed(2)}</div>
+                    <div>Characters per Line: ${(characters / (lines || 1)).toFixed(2)}</div>
+                </div>
+                
+                <div class="stat-group">
+                    <div><span class="stat-label">Word Analysis:</span></div>
+                    <div>Unique Words: ${uniqueWords}</div>
+                    <div>Average Word Length: ${avgWordLength.toFixed(2)} characters</div>
+                    <div>Longest Word: "${longestWord}" (${longestWord.length} characters)</div>
+                    <div>Shortest Word: "${shortestWord}" (${shortestWord.length} characters)</div>
+                    <div>Most Frequent Word: "${mostFreqWord[0]}" (${mostFreqWord[1]} times)</div>
+                </div>
+                
+                <div class="stat-group">
+                    <div><span class="stat-label">Additional Metrics:</span></div>
+                    <div>Most Frequent Character: "${mostFreqChar[0]}" (${mostFreqChar[1]} times)</div>
+                    <div>Text Density: ${textDensity} characters per line</div>
+                    <div>Vocabulary Diversity: ${((uniqueWords / words) * 100).toFixed(2)}%</div>
+                    <div>Estimated Reading Time: ${readingTime} minute${readingTime !== 1 ? 's' : ''}</div>
+                </div>
+            `;
+            document.getElementById('advancedStats').innerHTML = advancedResults;
+        }
+
+        function toggleAdvanced() {
+            const advancedStats = document.getElementById('advancedStats');
+            const toggleButton = document.querySelector('.advanced-toggle');
+            if (advancedStats.style.display === 'none' || !advancedStats.style.display) {
+                advancedStats.style.display = 'block';
+                toggleButton.textContent = 'Hide Advanced Statistics';
+            } else {
+                advancedStats.style.display = 'none';
+                toggleButton.textContent = 'Show Advanced Statistics';
+            }
+        }
+    </script>
+</body>
+</html>
