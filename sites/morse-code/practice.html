@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse Code Practice</title>
+    <style>
+        /* Inherit existing styles from index.html */
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .practice-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+            gap: 10px;
+        }
+
+        .sound-icon {
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .sound-icon.muted {
+            color: #999;
+        }
+
+        button {
+            padding: 12px 24px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #E3342F;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #b91d19;
+            transition: all 0.1s ease;
+        }
+
+        button:hover {
+            background-color: #d12f2a;
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #b91d19;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .info-card {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(230, 230, 230, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #E3342F;
+            box-shadow: none;
+            font-size: 0.8em;
+            max-width: 200px;
+        }
+
+        #score {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+
+        #challengeArea {
+            margin-top: 40px;
+        }
+
+        .challenge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .challenge-letter {
+            font-size: 72px;
+            font-weight: bold;
+        }
+
+        .challenge-morse {
+            font-size: 24px;
+            color: #666;
+            background-color: #ddd;
+            padding: 5px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .challenge-morse::before {
+            content: "";
+        }
+
+        .challenge-morse.revealed::before {
+            content: none;
+        }
+
+        .challenge.correct {
+            border-color: #4CAF50;
+            transform: translateX(100vw);
+        }
+
+        .challenge.wrong {
+            border-color: #E3342F;
+        }
+
+        .correct-answer {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .correct-answer.show {
+            opacity: 1;
+        }
+
+        /* Add new styles */
+        .flashcard {
+            width: 80vw;
+            height: 60vh;
+            perspective: 1000px;
+            margin: 20px auto;
+            cursor: pointer;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .flashcard-back {
+            transform: rotateY(180deg);
+            background-color: #f8f8f8;
+        }
+
+        /* Add touch feedback styles */
+        .flashcard-front.active {
+            background-color: #e0e0e0;
+        }
+
+        /* Add correct/wrong feedback styles */
+        .flashcard-front.correct {
+            background-color: #4CAF50 !important;
+            color: white;
+        }
+
+        .flashcard-front.wrong {
+            background-color: #E3342F !important;
+            color: white;
+        }
+
+        /* Update learned letters display */
+        .learned-letters {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 280px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1002;
+            display: none;
+        }
+
+        .learned-letter {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 4px;
+            color: white;
+            border-radius: 5px;
+            font-size: 1.2em;
+            width: 50px;
+            text-align: center;
+        }
+
+        .learned-letter.level-0 {
+            background-color: #808080;  /* Grey for not attempted */
+        }
+
+        .learned-letter.level-1 {
+            background-color: #FFD700;  /* Yellow for 1 correct */
+        }
+
+        .learned-letter.level-2 {
+            background-color: #9ACD32;  /* Yellow-green for 2 correct */
+        }
+
+        .learned-letter.level-3 {
+            background-color: #4CAF50;  /* Green for mastered (3 correct) */
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        #currentSequence {
+            font-size: 24px;
+            margin: 10px 0;
+            min-height: 30px;
+        }
+
+        #submitAnswer {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin: 10px 0;
+            cursor: pointer;
+            background-color: #E3342F;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #resetSequence {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin: 10px 0;
+            cursor: pointer;
+            background-color: white;
+            color: #E3342F;
+            border: 1px solid #E3342F;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+
+        /* Add sound toggle switch styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Add new style for subtle instructions */
+        .subtle-instructions {
+            color: #666;
+            font-size: 12px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+
+        /* Add these styles to the existing style section */
+        .challenge-feedback {
+            font-size: 48px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .challenge-feedback.show {
+            opacity: 1;
+        }
+
+        .challenge-feedback.correct {
+            color: #4CAF50;
+        }
+
+        .challenge-feedback.wrong {
+            color: #E3342F;
+        }
+
+        /* Add these styles to the style section */
+        @keyframes correctFlash {
+            0% { background-color: rgba(76, 175, 80, 0); }
+            50% { background-color: rgba(76, 175, 80, 0.3); }
+            100% { background-color: rgba(76, 175, 80, 0); }
+        }
+
+        @keyframes wrongFlash {
+            0% { background-color: rgba(227, 52, 47, 0); }
+            50% { background-color: rgba(227, 52, 47, 0.3); }
+            100% { background-color: rgba(227, 52, 47, 0); }
+        }
+
+        .flash-correct {
+            animation: correctFlash 1s ease;
+        }
+
+        .flash-wrong {
+            animation: wrongFlash 1s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="practice-container">
+        <button id="startPractice">Start Practice</button>
+
+        <div id="challengeArea" style="display: none;">
+            <div class="subtle-instructions">
+                Quick tap SPACE for dot (•) | Hold longer for dash (—)
+            </div>
+
+            <div class="challenge" id="challenge">
+                <div class="challenge-letter"></div>
+                <div class="challenge-morse"></div>
+            </div>
+            <div id="currentSequence"></div>
+            <button id="submitAnswer">Submit</button>
+            <button id="resetSequence">Reset</button>
+            
+            <div class="info-card">
+                <div class="accuracy-meter">
+                    <div id="accuracyBar" class="accuracy-bar"></div>
+                </div>
+                <p id="score">Accuracy: 0%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move the learned-letters div outside the practice-container -->
+    <div class="learned-letters">
+        <h3>Progress</h3>
+        <div id="learnedLetters"></div>
+        <button id="clearProgress" style="margin-top: 20px;">Clear Progress</button>
+    </div>
+
+    <script>
+        const morseMap = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.',
+            'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---',
+            'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---',
+            'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-',
+            'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--',
+            'Z': '--..'
+        };
+
+        let currentChallenge = '';
+        let currentAnswer = '';
+        let isSpaceDown = false;
+        let startTime = 0;
+        let currentSequence = '';
+        let totalAttempts = 0;
+        let correctAttempts = 0;
+        let letterProgress = {};
+
+        // Initialize letter progress
+        Object.keys(morseMap).forEach(letter => {
+            letterProgress[letter] = 0;
+        });
+
+        function playMorseSequence(sequence) {
+            // Create vibration pattern if supported
+            if ('vibrate' in navigator) {
+                const pattern = sequence.split('').map(char => char === '.' ? 100 : 300);
+                // Add 100ms gaps between vibrations
+                const vibrationPattern = pattern.flatMap(duration => [duration, 100]);
+                navigator.vibrate(vibrationPattern);
+            }
+        }
+
+        function generateChallenge() {
+            // Prioritize letters that aren't fully learned yet
+            const unmastered = Object.entries(letterProgress)
+                .filter(([_, progress]) => progress < 3)
+                .map(([letter, _]) => letter);
+            
+            if (unmastered.length === 0) {
+                alert("Congratulations! You've mastered all the letters!");
+                // Reset all progress
+                Object.keys(letterProgress).forEach(letter => {
+                    letterProgress[letter] = 0;
+                });
+                updateLearnedLetters();
+                return;
+            }
+            
+            const randomLetter = unmastered[Math.floor(Math.random() * unmastered.length)];
+            currentChallenge = randomLetter;
+            currentAnswer = morseMap[randomLetter];
+
+            const challengeDiv = document.getElementById('challenge');
+            challengeDiv.querySelector('.challenge-letter').textContent = currentChallenge;
+            
+            const morsePart = challengeDiv.querySelector('.challenge-morse');
+            morsePart.textContent = 'Click to reveal';
+            morsePart.classList.remove('revealed');
+            
+            // Remove any existing click listeners
+            morsePart.replaceWith(morsePart.cloneNode(true));
+            
+            // Get the fresh reference after cloning
+            const newMorsePart = challengeDiv.querySelector('.challenge-morse');
+            
+            // Function to reveal the morse code
+            const revealMorse = function(e) {
+                e.stopPropagation(); // Stop event from bubbling up
+                this.classList.add('revealed');
+                this.textContent = currentAnswer;
+            };
+
+            // Add both click and touch events
+            newMorsePart.addEventListener('click', revealMorse);
+            newMorsePart.addEventListener('touchend', revealMorse);
+            
+            currentSequence = '';
+            document.getElementById('currentSequence').textContent = '';
+        }
+
+        function updateAccuracy() {
+            const accuracy = (correctAttempts / totalAttempts) * 100 || 0;
+            document.getElementById('accuracyBar').style.width = `${accuracy}%`;
+            document.getElementById('score').textContent = `Accuracy: ${accuracy.toFixed(1)}%`;
+        }
+
+        function updateLearnedLetters() {
+            const container = document.getElementById('learnedLetters');
+            console.log(letterProgress);
+            container.innerHTML = Object.keys(morseMap)
+                .sort()
+                .map(letter => {
+                    const level = letterProgress[letter];
+                    return `<span class="learned-letter level-${level}">${letter}</span>`;
+                })
+                .join('');
+        }
+
+        function showFeedback(isCorrect) {
+            const challenge = document.getElementById('challenge');
+            const practiceContainer = document.querySelector('.practice-container');
+            
+            if (isCorrect) {
+                practiceContainer.classList.add('flash-correct');
+                setTimeout(() => {
+                    practiceContainer.classList.remove('flash-correct');
+                }, 1000);
+            } else {
+                practiceContainer.classList.add('flash-wrong');
+                setTimeout(() => {
+                    practiceContainer.classList.remove('flash-wrong');
+                }, 1000);
+            }
+            
+            // Create feedback element
+            const feedback = document.createElement('div');
+            feedback.className = `challenge-feedback ${isCorrect ? 'correct' : 'wrong'}`;
+            feedback.textContent = isCorrect ? '✓' : '✗';
+            challenge.appendChild(feedback);
+            
+            // Show the correct answer
+            const correctAnswer = document.createElement('div');
+            correctAnswer.className = 'correct-answer';
+            correctAnswer.textContent = `Correct answer: ${currentAnswer}`;
+            challenge.appendChild(correctAnswer);
+
+            // Animate feedback
+            setTimeout(() => {
+                feedback.classList.add('show');
+                correctAnswer.classList.add('show');
+            }, 100);
+
+            if (isCorrect) {
+                letterProgress[currentChallenge] = Math.min(3, letterProgress[currentChallenge] + 1);
+                updateLearnedLetters();
+                saveProgress();
+            } else {
+                letterProgress[currentChallenge] = Math.max(0, letterProgress[currentChallenge] - 1);
+                updateLearnedLetters();
+                saveProgress();
+            }
+
+            // Clear feedback after delay
+            setTimeout(() => {
+                feedback.remove();
+                correctAnswer.remove();
+            }, 2000);
+        }
+
+        function resetCurrentSequence() {
+            currentSequence = '';
+            document.getElementById('currentSequence').textContent = '';
+        }
+
+        document.getElementById('startPractice').addEventListener('click', () => {
+            document.getElementById('challengeArea').style.display = 'block';
+            document.getElementById('startPractice').style.display = 'none';
+            updateLearnedLetters();
+            generateChallenge();
+        });
+
+        // Update the touch event prevention to exclude the morse code element
+        document.querySelector('.practice-container').addEventListener('touchstart', (e) => {
+            // Don't prevent default for buttons or the morse code element
+            if (!e.target.matches('button') && !e.target.matches('.challenge-morse')) {
+                e.preventDefault();
+                isSpaceDown = true;
+                startTime = Date.now();
+            }
+        });
+
+        document.querySelector('.practice-container').addEventListener('touchend', (e) => {
+            if (!e.target.matches('button') && !e.target.matches('.challenge-morse')) {
+                e.preventDefault();
+                if (!isSpaceDown) return;
+                isSpaceDown = false;
+                
+                const duration = Date.now() - startTime;
+                const signal = duration < 200 ? '.' : '-';
+                currentSequence += signal;
+                
+                document.getElementById('currentSequence').textContent = currentSequence;
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !isSpaceDown) {
+                e.preventDefault();
+                isSpaceDown = true;
+                startTime = Date.now();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' && isSpaceDown) {
+                e.preventDefault();
+                isSpaceDown = false;
+                
+                const duration = Date.now() - startTime;
+                const signal = duration < 250 ? '.' : '-';
+                currentSequence += signal;
+                
+                document.getElementById('currentSequence').textContent = currentSequence;
+            }
+        });
+
+        // Update submit button handler
+        document.getElementById('submitAnswer').addEventListener('click', () => {
+            if (currentSequence === currentAnswer) {
+                correctAttempts++;
+                showFeedback(true);
+            } else {
+                showFeedback(false);
+            }
+            totalAttempts++;
+            updateAccuracy();
+            currentSequence = '';
+            document.getElementById('currentSequence').textContent = '';
+            setTimeout(generateChallenge, 2000);
+        });
+
+        // Add reset button handler
+        document.getElementById('resetSequence').addEventListener('click', resetCurrentSequence);
+
+        // Add modal functionality
+        const learnedLettersDiv = document.querySelector('.learned-letters');
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        document.body.appendChild(modalOverlay);
+
+        // Add a button to show progress
+        const progressButton = document.createElement('button');
+        progressButton.textContent = 'Show Progress';
+        progressButton.style.position = 'fixed';
+        progressButton.style.bottom = '20px';
+        progressButton.style.right = '20px';
+        progressButton.style.display = 'none'; // Hide initially
+        document.body.appendChild(progressButton);
+
+        // Show progress button only after practice starts
+        document.getElementById('startPractice').addEventListener('click', () => {
+            progressButton.style.display = 'block';
+        });
+
+        progressButton.addEventListener('click', () => {
+            learnedLettersDiv.style.display = 'block';
+            modalOverlay.style.display = 'block';
+        });
+
+        modalOverlay.addEventListener('click', () => {
+            learnedLettersDiv.style.display = 'none';
+            modalOverlay.style.display = 'none';
+        });
+
+        // Add these functions near the top of the script
+        function saveProgress() {
+            localStorage.setItem('morseProgress', JSON.stringify({
+                letterProgress,
+                totalAttempts,
+                correctAttempts
+            }));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('morseProgress');
+            if (saved) {
+                const data = JSON.parse(saved);
+                letterProgress = data.letterProgress || {};
+                // Ensure all letters exist in progress
+                Object.keys(morseMap).forEach(letter => {
+                    if (typeof letterProgress[letter] === 'undefined') {
+                        letterProgress[letter] = 0;
+                    }
+                });
+                totalAttempts = data.totalAttempts || 0;
+                correctAttempts = data.correctAttempts || 0;
+                updateAccuracy();
+                updateLearnedLetters();
+            } else {
+                // Initialize default progress for all letters
+                letterProgress = {};
+                Object.keys(morseMap).forEach(letter => {
+                    letterProgress[letter] = 0;
+                });
+            }
+        }
+
+        function clearProgress() {
+            letterProgress = {};
+            Object.keys(morseMap).forEach(letter => {
+                letterProgress[letter] = 0;
+            });
+            totalAttempts = 0;
+            correctAttempts = 0;
+            saveProgress();
+            updateAccuracy();
+            updateLearnedLetters();
+        }
+
+        // Add this near the start of your script execution
+        loadProgress();
+
+        // Add clear button handler
+        document.getElementById('clearProgress').addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent modal from closing
+            if (confirm('Are you sure you want to clear all progress?')) {
+                clearProgress();
+            }
+        });
+    </script>
+</body>
+</html>
