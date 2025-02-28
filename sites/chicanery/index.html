@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicanery</title>
+    <style>
+        body {
+            background-image: linear-gradient(rgba(26, 26, 26, 0.85), rgba(26, 26, 26, 0.85)), url('bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #ffffff;
+            font-family: "Georgia", serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        html {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        #courtroom-text {
+            font-size: 2rem;
+            text-align: center;
+            max-width: 800px;
+            padding: 20px;
+            opacity: 1;
+            animation: fadeInOut 5s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .dramatic {
+            font-size: 3.5rem;
+            text-transform: uppercase;
+            color: #ff3333;
+            text-shadow: 2px 2px 4px rgba(255, 0, 0, 0.3);
+        }
+
+        .super-dramatic {
+            font-size: 5rem;
+            animation: pulse 1s infinite;
+            display: inline-block;
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .word-highlight {
+            display: inline-block;
+            animation: inherit;
+        }
+
+        .shake-text {
+            display: inline-block;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        .pulsate-text {
+            display: inline-block;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .vibrate-text {
+            display: inline-block;
+            animation: vibrate 0.3s linear infinite;
+        }
+
+        @keyframes vibrate {
+            0% { transform: translate(0); }
+            25% { transform: translate(2px, -2px); }
+            50% { transform: translate(0); }
+            75% { transform: translate(-2px, 2px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes scaleDownOnly {
+            0% { transform: scale(3); opacity: 0; }
+            10% { transform: scale(3); opacity: 1; }
+            30% { transform: scale(1); opacity: 1; }
+            85% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        .scale-down {
+            display: inline-block;
+            animation: scaleDownOnly 3s ease-in-out forwards;
+        }
+
+        #magna-carta-overlay,
+        #jimmy-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            background-blend-mode: multiply;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+            z-index: -1;
+        }
+
+        #magna-carta-overlay {
+            background-image: url('magna-carta.jpg');
+        }
+
+        #jimmy-overlay {
+            background-image: url('jimmy.jpg');
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .glitch-text {
+            display: inline-block;
+            animation: glitch 0.3s ease-in-out infinite;
+            opacity: inherit;
+        }
+
+        @keyframes flashingBackground {
+            0% { background-color: rgba(255, 0, 0, 0.3); }
+            25% { background-color: rgba(0, 255, 0, 0.3); }
+            50% { background-color: rgba(0, 0, 255, 0.3); }
+            75% { background-color: rgba(255, 255, 0, 0.3); }
+            100% { background-color: rgba(255, 0, 0, 0.3); }
+        }
+
+        .flashing-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            animation: flashingBackground 0.5s linear infinite;
+            mix-blend-mode: overlay;
+            z-index: 1;
+        }
+
+        .copy-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: Georgia, serif;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .copy-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .falling-poop {
+            position: fixed;
+            font-size: 24px;
+            user-select: none;
+            pointer-events: none;
+            z-index: 2;
+            animation: fall 3s linear;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100vh);
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="copy-button" class="copy-button">Copy Text</button>
+    <div id="courtroom-text"></div>
+    <div id="magna-carta-overlay"></div>
+    <div id="jimmy-overlay"></div>
+
+    <script>
+        const speech = [
+            "I AM NOT CRAZY!",
+            "I am not crazy!",
+            "I know he swapped those numbers!",
+            "I knew it was 1216. One after Magna Carta.",
+            "As if I could ever make such a mistake.",
+            "Never.",
+            "Never!",
+            "I just – I just couldn't prove it.",
+            "He – he covered his tracks, he got that idiot at the copy shop to lie for him.",
+            "You think this is something?",
+            "You think this is bad?",
+            "This? This chicanery?",
+            "He's done worse.",
+            "That billboard! Are you telling me that a man just happens to fall like that? No!",
+            "He orchestrated it!",
+            "JIMMY!",
+            "He defecated through a sunroof!",
+            "And I saved him! And I shouldn't have.",
+            "I took him into my own firm! What was I thinking?",
+            "He'll never change. He'll NEVER change!",
+            "Ever since he was 9, always the same!",
+            "Couldn't keep his hands out of the cash drawer!",
+            "But not our Jimmy!",
+            "Couldn't be precious Jimmy!",
+            "Stealing them blind!",
+            "And he gets to be a lawyer!? What a sick joke!",
+            "I should've stopped him when I had the chance!",
+            "And you – you have to stop him! You-"
+        ];
+
+        // Add timing map for each line (in milliseconds)
+        const lineTiming = {
+            "I AM NOT CRAZY!": 3000,
+            "I am not crazy!": 4000,
+            "I know he swapped those numbers!": 3000,
+            "I knew it was 1216. One after Magna Carta.": 4500,
+            "As if I could ever make such a mistake.": 3000,
+            "Never.": 1000,
+            "Never!": 1000,
+            "I just – I just couldn't prove it.": 3000,
+            "He – he covered his tracks, he got that idiot at the copy shop to lie for him.": 5000,
+            "You think this is something?": 2000,
+            "You think this is bad?": 2000,
+            "This? This chicanery?": 2500,
+            "He's done worse.": 2500,
+            "That billboard! Are you telling me that a man just happens to fall like that? No!": 5000,
+            "He orchestrated it!": 2000,
+            "JIMMY!": 2000,
+            "He defecated through a sunroof!": 3500,
+            "And I saved him! And I shouldn't have.": 4000,
+            "I took him into my own firm! What was I thinking?": 4000,
+            "He'll never change. He'll NEVER change!": 4000,
+            "Ever since he was 9, always the same!": 3500,
+            "Couldn't keep his hands out of the cash drawer!": 3500,
+            "But not our Jimmy!": 2000,
+            "Couldn't be precious Jimmy!": 2000,
+            "Stealing them blind!": 2500,
+            "And he gets to be a lawyer!? What a sick joke!": 4500,
+            "I should've stopped him when I had the chance!": 4000,
+            "And you – you have to stop him! You-": 4000
+        };
+
+        const textElement = document.getElementById('courtroom-text');
+        let currentIndex = 0;
+
+        function createFallingPoop() {
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const poop = document.createElement('div');
+                    poop.className = 'falling-poop';
+                    poop.textContent = '💩';
+                    poop.style.left = Math.random() * 100 + 'vw';
+                    document.body.appendChild(poop);
+                    
+                    // Remove the element after animation
+                    setTimeout(() => {
+                        poop.remove();
+                    }, 3000);
+                }, Math.random() * 2000); // Stagger the creation over 2 seconds
+            }
+        }
+
+        function formatDramaticText(text) {
+            // Replace specific words with dramatic styling
+            text = text.replace(/\bJIMMY\b/g, '<span class="dramatic vibrate-text">JIMMY</span>');
+            text = text.replace(/\bchicanery\b/gi, '<span class="dramatic pulsate-text">CHICANERY</span>');
+            
+            // Add animations to specific phrases
+            if (text === "I AM NOT CRAZY!") {
+                return '<span class="dramatic scale-down">' + text + '</span>';
+            }
+            if (text === "I am not crazy!") {
+                return text;
+            }
+            if (text === "I know he swapped those numbers!") {
+                return '<span class="glitch-text" style="animation: glitch 0.3s ease-in-out infinite, fadeInOut 3s ease-in-out">' + text + '</span>';
+            }
+            if (text === "I knew it was 1216. One after Magna Carta.") {
+                showMagnaCarta();
+                return text;
+            }
+            if (text === "JIMMY!") {
+                showJimmy();
+                return '<span class="dramatic vibrate-text">' + text + '</span>';
+            }
+            if (text === "As if I could ever make such a mistake. Never. Never!") {
+                return '<span class="dramatic vibrate-text">' + text + '</span>';
+            }
+            if (text === "He'll NEVER change!") {
+                return text.replace('NEVER', '<span class="word-highlight super-dramatic shake-text">NEVER</span>');
+            }
+            if (text === "Never.") {
+                return '<span class="dramatic vibrate-text">' + text + '</span>';
+            }
+            if (text === "Never!") {
+                return '<span class="dramatic super-dramatic vibrate-text">' + text + '</span>';
+            }
+            if (text === "What a sick joke!") {
+                return '<span class="dramatic vibrate-text">' + text + '</span>';
+            }
+            if (text === "He defecated through a sunroof!") {
+                createFallingPoop();
+                return '<span class="dramatic pulsate-text">' + text + '</span>';
+            }
+            if (text === "This? This chicanery?") {
+                document.body.insertAdjacentHTML('beforeend', '<div class="flashing-background"></div>');
+                setTimeout(() => {
+                    const flashingElement = document.querySelector('.flashing-background');
+                    if (flashingElement) flashingElement.remove();
+                }, 2500);
+                return '<span class="dramatic super-dramatic pulsate-text">THIS? THIS CHICANERY?</span>';
+            }
+            if (text === "Couldn't be precious Jimmy!") {
+                return text.replace('precious Jimmy', '<span class="dramatic super-dramatic vibrate-text">PRECIOUS JIMMY</span>');
+            }
+            return text;
+        }
+
+        function displayNextLine() {
+            if (currentIndex < speech.length) {
+                const text = speech[currentIndex];
+                const readingTime = lineTiming[text] || 4000; // Default to 4000ms if not specified
+                
+                textElement.style.opacity = '1';
+                
+                // Custom timing for specific lines
+                if (text === "I AM NOT CRAZY!") {
+                    textElement.style.animation = 'none';
+                    setTimeout(() => {
+                        currentIndex++;
+                        displayNextLine();
+                    }, readingTime + 200);
+                } else {
+                    textElement.style.animation = 'none';
+                    textElement.offsetHeight; // Trigger reflow
+                    textElement.style.animation = `fadeInOut ${readingTime}ms ease-in-out`;
+                    setTimeout(() => {
+                        currentIndex++;
+                        displayNextLine();
+                    }, readingTime);
+                }
+                
+                textElement.innerHTML = formatDramaticText(text);
+            } else {
+                textElement.style.opacity = '0';
+                setTimeout(() => {
+                    currentIndex = 0;
+                    displayNextLine();
+                }, 5000);
+            }
+        }
+
+        function showMagnaCarta() {
+            const overlay = document.getElementById('magna-carta-overlay');
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                overlay.style.transform = 'scale(1)';
+            }, 1000);
+            
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                overlay.style.transform = 'scale(0.8)';
+            }, 4000);
+        }
+
+        function showJimmy() {
+            console.log("showJimmy called");
+            const overlay = document.getElementById('jimmy-overlay');
+            overlay.style.zIndex = "1";  // Bring overlay to front
+            
+            overlay.style.opacity = '1';
+            overlay.style.transform = 'scale(1)';
+            
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                overlay.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    overlay.style.zIndex = "-1";  // Move back after fade out
+                }, 1000);
+            }, 4000);
+        }
+
+        displayNextLine();
+
+        document.getElementById('copy-button').addEventListener('click', function() {
+            const fullSpeech = speech.join('\n') + '\n\nhttps://randomsitesontheweb.com/sites/chicanery';
+            navigator.clipboard.writeText(fullSpeech).then(() => {
+                const originalText = this.textContent;
+                this.textContent = 'Copied!';
+                setTimeout(() => {
+                    this.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        });
+    </script>
+</body>
+</html>
