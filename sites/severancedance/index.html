@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dancing Man Loop</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: black;
+            cursor: pointer;
+        }
+        video {
+            max-width: 100%;
+            height: auto;
+        }
+        .info-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .info-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            color: #5CC5EF;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            font-family: "Courier New", monospace;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .info-content {
+            font-size: 24px;
+            max-width: 800px;
+            padding: 60px;
+            line-height: 1.8;
+            text-shadow: 0 0 10px rgba(92, 197, 239, 0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s ease-in-out;
+            border: 2px solid #5CC5EF;
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 20px rgba(92, 197, 239, 0.3),
+                        inset 0 0 20px rgba(92, 197, 239, 0.2);
+            margin: 20px;
+        }
+
+        .info-overlay.visible {
+            opacity: 1;
+            display: flex;
+        }
+
+        .info-overlay.visible .info-content {
+            transform: scale(1);
+        }
+
+        .info-content h2 {
+            font-family: "Courier New", monospace;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+
+        .info-content p {
+            opacity: 0.9;
+            letter-spacing: 1px;
+            margin: 24px 0;
+        }
+
+        /* Add new download button styles */
+        .download-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(92, 197, 239, 0.2);
+            border: 2px solid #5CC5EF;
+            color: #5CC5EF;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: "Courier New", monospace;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-button:hover {
+            background: rgba(92, 197, 239, 0.3);
+            transform: scale(1.05);
+        }
+
+        .countdown-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: #5CC5EF;
+            justify-content: center;
+            align-items: center;
+            font-size: 120px;
+            font-family: "Courier New", monospace;
+            text-shadow: 0 0 20px rgba(92, 197, 239, 0.8);
+            z-index: 2000;
+        }
+
+        .video-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .control-button {
+            background: rgba(92, 197, 239, 0.2);
+            border: 2px solid #5CC5EF;
+            color: #5CC5EF;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: "Courier New", monospace;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .control-button:hover {
+            background: rgba(92, 197, 239, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* Add media query for mobile devices */
+        @media (max-width: 768px) {
+            .info-content {
+                font-size: 18px;
+                padding: 30px;
+                line-height: 1.5;
+            }
+
+            .info-content h2 {
+                font-size: 24px !important;
+                margin-bottom: 20px;
+            }
+
+            .info-content p {
+                margin: 16px 0;
+            }
+
+            .video-controls {
+                flex-direction: column;
+            }
+
+            .speed-control {
+                position: static;
+                margin: 10px 0;
+            }
+        }
+
+        iframe {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        * {
+            cursor: pointer !important;
+        }
+
+        /* Add styles to hide video until ready */
+        #videoIframe {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #videoIframe.ready {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <iframe 
+        width="100%" 
+        height="100%" 
+        src="https://www.youtube.com/embed/XjcaRkNWjsw?autoplay=1&mute=1&volume=0&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1" 
+        title="Severance Dance Scene"
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen
+        style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;"
+        id="videoIframe"
+        tabindex="-1"
+    ></iframe>
+    <div class="countdown-overlay"></div>
+    <div class="info-overlay">
+        <div class="info-content">
+            <h2 style="margin-bottom: 20px; font-size: 32px;">Time to Dance! 🕺💃</h2>
+            <p>Welcome to the Severance S1E7 dance scene</p>
+            <p>Open Spotify, Apple Music, or your favorite music app and play something funky!</p>
+            <p>Watch them dance to your tunes and join the MDR Department!</p>
+            <p style="margin-top: 20px; font-size: 18px;">Pro tip: Share your screen to record your dance party</p>
+            <div class="video-controls">
+                <button class="control-button" id="startWithCountdown">Start with Countdown</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const infoOverlay = document.querySelector('.info-overlay');
+        const countdownOverlay = document.querySelector('.countdown-overlay');
+        const startWithCountdownBtn = document.getElementById('startWithCountdown');
+        const videoIframe = document.getElementById('videoIframe');
+
+        // Info overlay toggle
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.control-button')) return; // Prevent closing when clicking controls
+            
+            if (e.target === infoOverlay) { // Only close if clicking directly on the overlay
+                infoOverlay.classList.remove('visible');
+                setTimeout(() => {
+                    infoOverlay.style.display = 'none';
+                }, 300);
+            } else if (!infoOverlay.classList.contains('visible')) {
+                infoOverlay.style.display = 'flex';
+                void infoOverlay.offsetWidth;
+                infoOverlay.classList.add('visible');
+            }
+        });
+
+        // Load YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        let player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('videoIframe', {
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // Initial play
+            player.playVideo();
+            // Hide the video until it's actually playing
+            player.addEventListener('onStateChange', function(event) {
+                if (event.data === YT.PlayerState.PLAYING) {
+                    document.getElementById('videoIframe').classList.add('ready');
+                }
+            });
+        }
+
+        // Update countdown function
+        function startCountdown() {
+            countdownOverlay.style.display = 'flex';
+            let count = 3;
+            
+            return new Promise((resolve) => {
+                // Pause the video without reloading
+                if (player && player.pauseVideo) {
+                    player.pauseVideo();
+                }
+
+                const countInterval = setInterval(() => {
+                    if (count > 0) {
+                        countdownOverlay.textContent = count;
+                        count--;
+                    } else {
+                        clearInterval(countInterval);
+                        countdownOverlay.style.display = 'none';
+                        // Resume video without reloading
+                        if (player && player.playVideo) {
+                            player.seekTo(0);
+                            player.playVideo();
+                        }
+                        resolve();
+                    }
+                }, 1000);
+            });
+        }
+
+        // Start with countdown button
+        startWithCountdownBtn.addEventListener('click', async () => {
+            infoOverlay.classList.remove('visible');
+            setTimeout(() => {
+                infoOverlay.style.display = 'none';
+            }, 300);
+            
+            await startCountdown();
+            videoIframe.currentTime = 0;
+            videoIframe.play();
+        });
+    </script>
+</body>
+</html>
