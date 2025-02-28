@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyrics to Songs Without Lyrics</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 1.5em;
+            font-weight: 300;
+        }
+        .lyrics-container {
+            margin: 40px auto;
+            padding: 40px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            position: relative;
+        }
+        .lyrics-container h2 {
+            color: #2c3e50;
+            font-size: 1.8em;
+            margin-bottom: 1em;
+            font-weight: 500;
+        }
+        #lyrics {
+            font-size: 1.2em;
+            line-height: 1.8;
+            color: #555;
+            white-space: pre-line;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 28px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .song-info {
+            margin-bottom: 30px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lyrics to Songs Without Lyrics</h1>
+    <p style="color: #666; margin-bottom: 2em;">See the lyrics of famous songs throughout history, however they all have no lyrics</p>
+    <div class="lyrics-container">
+        <h2 id="songTitle">Loading song...</h2>
+        <div class="song-info">
+            <span id="artist">Loading artist...</span> • Instrumental
+        </div>
+        <strong>Lyrics:</strong>
+        <p id="lyrics">...</p>
+    </div>
+    <button onclick="nextSong()">Next Song</button>
+
+    <script>
+        const instrumentalSongs = [
+            { 
+                title: "Rush E",
+                artist: "Sheet Music Boss",
+                lyrics: ""
+            },
+            { 
+                title: "Flight of the Bumblebee",
+                artist: "Nikolai Rimsky-Korsakov",
+                lyrics: ""
+            },
+            { 
+                title: "Axel F",
+                artist: "Harold Faltermeyer",
+                lyrics: "" 
+            },
+            { 
+                title: "Classical Gas",
+                artist: "Mason Williams",
+                lyrics: "" 
+            },
+            { 
+                title: "Moonlight Sonata",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Clair de Lune",
+                artist: "Claude Debussy",
+                lyrics: ""
+            },
+            { 
+                title: "The Four Seasons",
+                artist: "Antonio Vivaldi",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 9",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 21",
+                artist: "Wolfgang Amadeus Mozart",
+                lyrics: ""
+            },
+            { 
+                title: "The Blue Danube",
+                artist: "Johann Strauss II",
+                lyrics: ""
+            },
+            { 
+                title: "Rhapsody in Blue",
+                artist: "George Gershwin",
+                lyrics: ""
+            },
+            { 
+                title: "Bolero",
+                artist: "Maurice Ravel",
+                lyrics: ""
+            },
+            { 
+                title: "The Nutcracker",
+                artist: "Pyotr Ilyich Tchaikovsky",
+                lyrics: ""
+            },
+            { 
+                title: "Swan Lake",
+                artist: "Pyotr Ilyich Tchaikovsky",
+                lyrics: ""
+            },
+            { 
+                title: "Für Elise",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Habanera",
+                artist: "Georges Bizet",
+                lyrics: ""
+            },
+            { 
+                title: "The Entertainer",
+                artist: "Scott Joplin",
+                lyrics: ""
+            },
+            { 
+                title: "Take Five",
+                artist: "The Dave Brubeck Quartet",
+                lyrics: ""
+            },
+            { 
+                title: "Moon River",
+                artist: "Henry Mancini",
+                lyrics: ""
+            },
+            { 
+                title: "The Pink Panther Theme",
+                artist: "Henry Mancini",
+                lyrics: ""
+            },
+            { 
+                title: "Jesu, Joy of Man's Desiring",
+                artist: "Johann Sebastian Bach",
+                lyrics: ""
+            },
+            { 
+                title: "Air on the G String",
+                artist: "Johann Sebastian Bach",
+                lyrics: ""
+            },
+            { 
+                title: "The Four Seasons: Winter",
+                artist: "Antonio Vivaldi",
+                lyrics: ""
+            },
+            { 
+                title: "The Four Seasons: Spring",
+                artist: "Antonio Vivaldi",
+                lyrics: ""
+            },
+            { 
+                title: "The Four Seasons: Summer",
+                artist: "Antonio Vivaldi",
+                lyrics: ""
+            },
+            { 
+                title: "The Four Seasons: Autumn",
+                artist: "Antonio Vivaldi",
+                lyrics: ""
+            },
+            { 
+                title: "Pomp and Circumstance",
+                artist: "Edward Elgar",
+                lyrics: ""
+            },
+            { 
+                title: "The William Tell Overture",
+                artist: "Gioachino Rossini",
+                lyrics: ""
+            },
+            { 
+                title: "The Barber of Seville Overture",
+                artist: "Gioachino Rossini",
+                lyrics: ""
+            },
+            { 
+                title: "The Magic Flute Overture",
+                artist: "Wolfgang Amadeus Mozart",
+                lyrics: ""
+            },
+            { 
+                title: "Eine Kleine Nachtmusik",
+                artist: "Wolfgang Amadeus Mozart",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 40",
+                artist: "Wolfgang Amadeus Mozart",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 5",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 6",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 7",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 8",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 9",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 20",
+                artist: "Wolfgang Amadeus Mozart",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 23",
+                artist: "Wolfgang Amadeus Mozart",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 8",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 14",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 23",
+                artist: "Ludwig van Beethoven",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 8",
+                artist: "Franz Schubert",
+                lyrics: ""
+            },
+            { 
+                title: "Impromptus",
+                artist: "Franz Schubert",
+                lyrics: ""
+            },
+            { 
+                title: "Unfinished Symphony",
+                artist: "Franz Schubert",
+                lyrics: ""
+            },
+            { 
+                title: "The Great Gate of Kiev",
+                artist: "Modest Mussorgsky",
+                lyrics: ""
+            },
+            { 
+                title: "Night on Bald Mountain",
+                artist: "Modest Mussorgsky",
+                lyrics: ""
+            },
+            { 
+                title: "Pictures at an Exhibition",
+                artist: "Modest Mussorgsky",
+                lyrics: ""
+            },
+            { 
+                title: "The Sorcerer's Apprentice",
+                artist: "Paul Dukas",
+                lyrics: ""
+            },
+            { 
+                title: "The Dance of the Sugar Plum Fairy",
+                artist: "Pyotr Ilyich Tchaikovsky",
+                lyrics: ""
+            },
+            { 
+                title: "The Waltz of the Flowers",
+                artist: "Pyotr Ilyich Tchaikovsky",
+                lyrics: ""
+            },
+            { 
+                title: "1812 Overture",
+                artist: "Pyotr Ilyich Tchaikovsky",
+                lyrics: ""
+            },
+            { 
+                title: "Romeo and Juliet Fantasy Overture",
+                artist: "Pyotr Ilyich Tchaikovsky",
+                lyrics: ""
+            },
+            { 
+                title: "Capriccio Italien",
+                artist: "Pyotr Ilyich Tchaikovsky",
+                lyrics: ""
+            },
+            { 
+                title: "Marche Slave",
+                artist: "Pyotr Ilyich Tchaikovsky",
+                lyrics: ""
+            },
+            { 
+                title: "Polonaise in A-flat major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Nocturne in E-flat major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 1",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 2",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Fantaisie-Impromptu",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Waltz in D-flat major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Waltz in C-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in D-flat major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in C minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in G minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E-flat major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in B minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A-flat major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in F-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in C-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in G-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in D-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in B-flat major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in F major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in C major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in G major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in D major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in B major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in F-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in C-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in G-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in D-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in B-flat minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in F minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in C minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in G minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in D minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in B minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A-flat minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in F-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in C-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in G-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in D-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E-sharp minor",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in B-flat major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in F major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in C major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in G major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in D major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in B major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in F-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in C-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in G-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in D-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in A-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Prelude in E-sharp major",
+                artist: "Frédéric Chopin",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 1",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 2",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 3",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "Hungarian Rhapsodies",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "Les Préludes",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "La Campanella",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "Mephisto Waltz",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 1",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 2",
+                artist: "Franz Liszt",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 3",
+                artist: "Sergei Rachmaninoff",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Concerto No. 4",
+                artist: "Sergei Rachmaninoff",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 2",
+                artist: "Sergei Rachmaninoff",
+                lyrics: ""
+            },
+            { 
+                title: "Symphony No. 3",
+                artist: "Sergei Rachmaninoff",
+                lyrics: ""
+            },
+            { 
+                title: "Vocalise",
+                artist: "Sergei Rachmaninoff",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 2",
+                artist: "Sergei Rachmaninoff",
+                lyrics: ""
+            },
+            { 
+                title: "Piano Sonata No. 3",
+                artist: "Sergei Rachmaninoff",
+                lyrics: ""
+            },
+            { 
+                title: "Nuvole Bianche",
+                artist: "Max Richter",
+                lyrics: ""
+            },
+            { 
+                title: "Sleep",
+                artist: "Max Richter",
+                lyrics: ""
+            },
+            { 
+                title: "The Blue Danube",
+                artist: "Johann Strauss II",
+                lyrics: ""
+            },
+            { 
+                title: "Also sprach Zarathustra",
+                artist: "Richard Strauss",
+                lyrics: ""
+            },
+            { 
+                title: "Boléro",
+                artist: "Maurice Ravel",
+                lyrics: ""
+            },
+            { 
+                title: "Daphnis et Chloé",
+                artist: "Maurice Ravel",
+                lyrics: ""
+            },
+            { 
+                title: "Pavane pour une infante défunte",
+                artist: "Maurice Ravel",
+                lyrics: ""
+            },
+            { 
+                title: "Rhapsody in Blue",
+                artist: "George Gershwin",
+                lyrics: ""
+            },
+            { 
+                title: "An American in Paris",
+                artist: "George Gershwin",
+                lyrics: ""
+            },
+            { 
+                title: "Concierto de Aranjuez",
+                artist: "Joaquín Rodrigo",
+                lyrics: ""
+            },
+            { 
+                title: "Fantasia on a Theme by Thomas Tallis",
+                artist: "Ralph Vaughan Williams",
+                lyrics: ""
+            },
+            { 
+                title: "The Planets",
+                artist: "Gustav Holst",
+                lyrics: ""
+            },
+            { 
+                title: "The Planets",
+                artist: "Gustav Holst",
+                lyrics: ""
+            },
+            
+        ];
+
+        let currentSongIndex = -1;
+
+        function nextSong() {
+            currentSongIndex = (currentSongIndex + 1) % instrumentalSongs.length;
+            const song = instrumentalSongs[currentSongIndex];
+            document.getElementById('songTitle').textContent = song.title;
+            document.getElementById('artist').textContent = song.artist;
+            document.getElementById('lyrics').textContent = song.lyrics;
+        }
+
+        // Load first song when page loads
+        nextSong();
+    </script>
+</body>
+</html>
