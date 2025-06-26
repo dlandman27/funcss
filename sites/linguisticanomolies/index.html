@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linguistic Anomalies</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .sentence-box {
+                padding: 1rem;
+                font-size: 1.2rem;
+            }
+            .explanation-box {
+                padding: 1rem;
+            }
+            button {
+                width: 100%;
+                padding: 0.8rem;
+            }
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .sentence-box {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+            font-size: 1.5rem;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .explanation-box {
+            background-color: #e9ecef;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        .explanation-box::before {
+            content: "This means:";
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        button {
+            display: block;
+            margin: 2rem auto;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Linguistic Anomalies</h1>
+        <div class="sentence-box" id="sentence">
+            Loading...
+        </div>
+        <div class="explanation-box" id="explanation">
+            Loading...
+        </div>
+        <button onclick="generateAnomaly()">Generate New Anomaly</button>
+    </div>
+
+    <script>
+        const anomalies = [
+            {
+                sentence: "Buffalo buffalo Buffalo buffalo buffalo buffalo Buffalo buffalo",
+                explanation: "This is a grammatically correct sentence meaning: Buffalo (the city) bison that other Buffalo bison bully, themselves bully Buffalo bison."
+            },
+            {
+                sentence: "Police police Police police police police Police police",
+                explanation: "This means: Police officers from Poland who are policed by other Polish police, themselves police Polish police officers."
+            },
+            {
+                sentence: "James James James James James",
+                explanation: "This means: James, who is known by James, knows James."
+            },
+            {
+                sentence: "Can can can can can can can can",
+                explanation: "This demonstrates how the word 'can' can be used to explain how 'can' can function as a verb."
+            },
+            {
+                sentence: "That that that that that that that that",
+                explanation: "This means: The word 'that' that the word 'that' refers to is the word 'that' that 'that' refers to."
+            },
+            {
+                sentence: "Rose rose rose rose rose rose rose",
+                explanation: "This means: A woman named Rose, who got up, elevated another Rose, who also rose."
+            },
+            {
+                sentence: "Race race race race race race race",
+                explanation: "This means: People from one race racing others from the same race who race others."
+            },
+            {
+                sentence: "Lie lie lie lie lie",
+                explanation: "This means: Lies about lies lie."
+            },
+            {
+                sentence: "Duck duck duck duck duck",
+                explanation: "This means: Commanding a duck to duck another duck while ducks duck."
+            },
+            {
+                sentence: "Fish fish fish fish fish fish",
+                explanation: "This means: Fish that fish for other fish are fished by other fish."
+            },
+            {
+                sentence: "Watch watch watch watch watch",
+                explanation: "This means: A watch (object) watches another watch being watched by a watch."
+            },
+            {
+                sentence: "Cry cry cry cry",
+                explanation: "This means: A cry that cries another cry cries."
+            },
+            {
+                sentence: "Run run run run run run",
+                explanation: "This means: Run while others who run make others run."
+            },
+            {
+                sentence: "Bang bang bang bang bang bang",
+                explanation: "This means: Gunshots that cause other bangs which bang more bangs."
+            },
+            {
+                sentence: "Row row row row row",
+                explanation: "This means: To row in a row with others rowing."
+            },
+            {
+                sentence: "Rock rock rock rock rock",
+                explanation: "This means: Rocking rocks that rock more rocks."
+            },
+            {
+                sentence: "Fall fall fall fall fall",
+                explanation: "This means: Fall down as others fall in the fall while causing more to fall."
+            },
+            {
+                sentence: "Set set set set set",
+                explanation: "This means: A set of things that set another set which was set."
+            },
+            {
+                sentence: "Like like like like like like",
+                explanation: "This means: Things like other things that are liked like things."
+            },
+            {
+                sentence: "James while John had had had had had had had had had had had a better effect on the teacher",
+                explanation: "With proper punctuation: James, while John had had 'had,' had had 'had had'; 'had had' had had a better effect on the teacher. This compares the word choice of 'had' vs 'had had' in an English test."
+            },
+            {
+                sentence: "That that that that that refers to is confusing",
+                explanation: "This demonstrates how 'that' can be used multiple times consecutively in English, meaning: The 'that' that refers to that specific thing is confusing."
+            },
+            {
+                sentence: "Will Will will Will's will to Will?",
+                explanation: "This uses 'Will' as both a name and the verb 'will' (to bequeath), meaning: Will (person 1) will bequeath Will's (person 2's) will to Will (person 3)?"
+            }
+        ];
+
+        function generateAnomaly() {
+            const randomIndex = Math.floor(Math.random() * anomalies.length);
+            const anomaly = anomalies[randomIndex];
+            
+            // Remove "This means: " from the explanation since we're showing it in CSS
+            let explanation = anomaly.explanation;
+            if (explanation.startsWith("This means: ")) {
+                explanation = explanation.substring("This means: ".length);
+            }
+            
+            document.getElementById('sentence').textContent = anomaly.sentence;
+            document.getElementById('explanation').textContent = explanation;
+        }
+
+        // Generate an anomaly when the page loads
+        document.addEventListener('DOMContentLoaded', generateAnomaly);
+    </script>
+</body>
+</html>
