@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Idea Slot Machine</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #f8f9fa;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        text-align: center;
+        max-width: 800px;
+        width: 100%;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #333;
+        font-weight: 300;
+      }
+
+      .idea-container {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin: 2rem 0;
+      }
+
+      .idea-part {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.2rem;
+      }
+
+      .idea-label {
+        color: #666;
+        font-weight: 400;
+      }
+
+      .idea-value {
+        background: #fff;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 20px;
+        min-width: 180px;
+        text-align: center;
+        font-weight: 500;
+        color: #333;
+        transition: all 0.3s ease;
+      }
+
+      .idea-value.spinning {
+        background: #f8f9fa;
+        border-color: #007bff;
+        color: #007bff;
+      }
+
+      .idea-value .text-content {
+        transition: opacity 0.3s ease;
+      }
+
+      .idea-value.spinning .text-content {
+        opacity: 0.5;
+      }
+
+      .spin-button {
+        background: #007bff;
+        border: none;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 500;
+        padding: 16px 32px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 2rem 0;
+        transition: all 0.2s ease;
+      }
+
+      .spin-button:hover {
+        background: #0056b3;
+      }
+
+      .spin-button:active {
+        transform: translateY(1px);
+      }
+
+      .spin-button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .result {
+        background: #fff;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 30px;
+        margin: 2rem 0;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .result-text {
+        font-size: 1.2rem;
+        font-weight: 400;
+        text-align: center;
+        line-height: 1.6;
+        color: #333;
+      }
+
+      @media (max-width: 768px) {
+        .idea-container {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .idea-value {
+          min-width: 250px;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Project Idea Slot Machine</h1>
+
+      <div class="idea-container">
+        <div class="idea-part">
+          <span class="idea-label">Create a</span>
+          <div class="idea-value" id="projectType">
+            <span class="text-content">App</span>
+          </div>
+        </div>
+
+        <div class="idea-part">
+          <span class="idea-label">about</span>
+          <div class="idea-value" id="topic">
+            <span class="text-content">Cats</span>
+          </div>
+        </div>
+
+        <div class="idea-part">
+          <span class="idea-label">in the style of</span>
+          <div class="idea-value" id="style">
+            <span class="text-content">Minimalism</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="spin-button" id="spinButton" onclick="spin()">
+        Generate New Idea
+      </button>
+
+      <div class="result" id="result">
+        <div class="result-text" id="resultText">
+          Ready to generate your next project idea! 🚀
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Massive arrays of project ideas
+      const projectTypes = [
+        "App",
+        "Website",
+        "Game",
+        "Tool",
+        "Puzzle",
+        "Generator",
+      ];
+
+      const categories = [
+        // Animals & Creatures
+        "Cats",
+        "Dogs",
+        "Owls",
+        "Penguins",
+        "Sharks",
+        "Dinosaurs",
+        "Dragons",
+        "Unicorns",
+        "Ghosts",
+        "Monsters",
+        "Aliens",
+        "Robots",
+        "Vampires",
+        "Zombies",
+        "Werewolves",
+        "Fairies",
+        "Mermaids",
+        "Insects",
+        "Butterflies",
+        "Bees",
+
+        // Food & Drinks
+        "Pizza",
+        "Tacos",
+        "Burgers",
+        "Ice Cream",
+        "Donuts",
+        "Cupcakes",
+        "Pancakes",
+        "Waffles",
+        "Sushi",
+        "Ramen",
+        "Pasta",
+        "Chocolate",
+        "Cake",
+        "Cookies",
+        "Coffee",
+        "Tea",
+        "Smoothies",
+        "Cocktails",
+        "Wine",
+        "Beer",
+
+        // Music & Art
+        "Guitars",
+        "Pianos",
+        "Drums",
+        "Violins",
+        "Saxophones",
+        "Trumpets",
+        "Microphones",
+        "DJs",
+        "Vinyl Records",
+        "Paintings",
+        "Sculptures",
+        "Drawings",
+        "Sketches",
+        "Street Art",
+        "Graffiti",
+        "Comics",
+        "Anime",
+        "Manga",
+
+        // Space & Science
+        "Planets",
+        "Stars",
+        "Moons",
+        "Black Holes",
+        "Galaxies",
+        "Comets",
+        "Asteroids",
+        "Rockets",
+        "Telescopes",
+        "Atoms",
+        "Molecules",
+        "DNA",
+        "Chemistry",
+        "Physics",
+        "Biology",
+        "Astronomy",
+        "Geology",
+        "AI",
+
+        // Fantasy & Adventure
+        "Wizards",
+        "Sorcerers",
+        "Superheroes",
+        "Ninjas",
+        "Pirates",
+        "Knights",
+        "Castles",
+        "Swords",
+        "Shields",
+        "Crowns",
+        "Rings",
+        "Potions",
+        "Spells",
+        "Magic Crystals",
+        "Treasure",
+        "Maps",
+        "Quests",
+        "Labyrinths",
+        "Mazes",
+
+        // Travel & Places
+        "Cars",
+        "Motorcycles",
+        "Bicycles",
+        "Trains",
+        "Planes",
+        "Helicopters",
+        "Ships",
+        "Submarines",
+        "Hot Air Balloons",
+        "Cities",
+        "Skyscrapers",
+        "Bridges",
+        "Towers",
+        "Volcanoes",
+        "Mountains",
+        "Oceans",
+        "Waterfalls",
+        "Caves",
+        "Forests",
+        "Deserts",
+
+        // Sports & Games
+        "Basketball",
+        "Soccer",
+        "Baseball",
+        "Hockey",
+        "Tennis",
+        "Golf",
+        "Swimming",
+        "Chess",
+        "Cards",
+        "Dice",
+        "Video Games",
+        "Esports",
+        "VR",
+        "Board Games",
+        "Arcade Machines",
+
+        // Tech & Internet
+        "Computers",
+        "Laptops",
+        "Phones",
+        "Tablets",
+        "Smartwatches",
+        "Headphones",
+        "Keyboards",
+        "Screens",
+        "Apps",
+        "Social Media",
+        "Emojis",
+        "Memes",
+        "GIFs",
+        "Crypto",
+        "Holograms",
+        "Drones",
+
+        // Nature & Seasons
+        "Spring",
+        "Summer",
+        "Fall",
+        "Winter",
+        "Rain",
+        "Snow",
+        "Thunder",
+        "Lightning",
+        "Tornadoes",
+        "Hurricanes",
+        "Flowers",
+        "Trees",
+        "Plants",
+        "Gardens",
+        "Wildlife",
+        "Birds",
+        "Fish",
+        "Reptiles",
+        "Amphibians",
+
+        // Abstract & Concepts
+        "Love",
+        "Fear",
+        "Joy",
+        "Dreams",
+        "Nightmares",
+        "Time",
+        "Clocks",
+        "Calendars",
+        "Memories",
+        "Goals",
+        "Challenges",
+        "Victory",
+        "Teamwork",
+        "Strategy",
+        "Knowledge",
+        "Wisdom",
+        "Education",
+        "Discovery",
+        "Adventure",
+
+        // Culture & Life
+        "Books",
+        "Movies",
+        "TV Shows",
+        "Festivals",
+        "Traditions",
+        "Languages",
+        "Flags",
+        "Fashion",
+        "Style",
+        "Makeup",
+        "Hair",
+        "Clothing",
+        "Furniture",
+        "Decor",
+        "Holidays",
+        "Birthdays",
+        "Anniversaries",
+        "Travel",
+        "Vacations",
+        "Road Trips",
+      ];
+
+      const styles = [
+        "Minimalism",
+        "Maximalism",
+        "Flat Design",
+        "Skeuomorphism",
+        "Neumorphism",
+        "Brutalism",
+        "Glassmorphism",
+        "Retro",
+        "Retro-Futurism",
+        "Y2K",
+        "Memphis Style",
+        "Geometric",
+        "Art Deco",
+        "Art Nouveau",
+        "Bauhaus",
+        "Modernism",
+        "Postmodernism",
+        "Swiss Style",
+        "Typographic",
+        "Psychedelic",
+        "Grunge",
+        "Glitch",
+        "Organic",
+        "Photorealism",
+        "Illustration Style",
+        "Corporate",
+        "Playful",
+        "3D Design",
+        "Motion UI",
+        "Dark Mode",
+        "Gradient-Heavy",
+        "Line Art",
+        "Hand-Drawn",
+        "Collage",
+        "Surrealism",
+        "Ethereal",
+        "Aurora",
+        "Filigree",
+        "Acanthus",
+        "Anthropomorphic",
+        "Decorative Ornaments",
+        "Gothic",
+        "Victorian",
+        "Baroque",
+        "Rococo",
+        "Classical",
+        "Steampunk",
+        "Cyberpunk",
+        "Vaporwave",
+        "Synthwave",
+        "Retro Pixel",
+        "Low Poly",
+        "Minimal Tech",
+        "Futuristic",
+        "Space Age",
+        "Organic Natural",
+        "Brutalist Monochrome",
+        "Bold Typography",
+        "Narrative Layouts",
+        "Brutalist Grid",
+        "Modular Grid",
+        "Experimental Typography",
+        "Minimal Brutalism",
+        "Split-Screen Design",
+        "Split Complementary Colors",
+        "Monochrome",
+        "Duotone",
+        "Duotone Gradient",
+        "Neon",
+        "Noir",
+        "Retro Sports",
+        "Vintage Print",
+        "Stamp Style",
+        "Poster Art",
+        "Circus",
+        "Retro 70s",
+        "Retro 80s",
+        "Retro 90s",
+        "Scandinavian",
+        "Japanese Minimalism",
+        "Wabi-Sabi",
+        "Brutalist Punk",
+        "Gothic Horror",
+        "Fantasy",
+        "Magical Realism",
+        "Stepped Layouts",
+        "Isometric Design",
+        "Flat 2.5D",
+        "Brutalist Color Blocking",
+        "Dimensional Shadows",
+        "Backdrop Textures",
+        "Organic Textures",
+        "Holographic",
+        "Glowing UI",
+        "Mixed Media",
+        "Responsive Layouts",
+      ];
+
+      let isSpinning = false;
+      let spinCount = 0;
+
+      // Initialize the generator
+      function initializeGenerator() {
+        // Set initial values
+        updateValue("projectType", projectTypes[0]);
+        updateValue("topic", topics[0]);
+        updateValue("style", styles[0]);
+      }
+
+      function updateValue(elementId, value) {
+        const textContent = document.querySelector(
+          `#${elementId} .text-content`
+        );
+        textContent.textContent = value;
+      }
+
+      function spin() {
+        if (isSpinning) return;
+
+        isSpinning = true;
+        const spinButton = document.getElementById("spinButton");
+        const resultText = document.getElementById("resultText");
+
+        spinButton.disabled = true;
+        spinButton.textContent = "Generating...";
+        resultText.textContent = "Generating new idea...";
+
+        // Add spinning animation to all values
+        const elements = ["projectType", "topic", "style"];
+        elements.forEach((elementId) => {
+          document.getElementById(elementId).classList.add("spinning");
+        });
+
+        // Update each value with a slight delay
+        setTimeout(() => {
+          updateValue(
+            "projectType",
+            projectTypes[Math.floor(Math.random() * projectTypes.length)]
+          );
+          document.getElementById("projectType").classList.remove("spinning");
+        }, 500);
+
+        setTimeout(() => {
+          updateValue(
+            "topic",
+            topics[Math.floor(Math.random() * topics.length)]
+          );
+          document.getElementById("topic").classList.remove("spinning");
+        }, 1000);
+
+        setTimeout(() => {
+          updateValue(
+            "style",
+            styles[Math.floor(Math.random() * styles.length)]
+          );
+          document.getElementById("style").classList.remove("spinning");
+
+          // Show final result
+          showResult();
+          isSpinning = false;
+          spinButton.disabled = false;
+          spinButton.textContent = "Generate New Idea";
+        }, 1500);
+      }
+
+      function showResult() {
+        const projectType = document.querySelector(
+          "#projectType .text-content"
+        ).textContent;
+        const topic = document.querySelector(
+          "#topic .text-content"
+        ).textContent;
+        const style = document.querySelector(
+          "#style .text-content"
+        ).textContent;
+
+        const resultText = document.getElementById("resultText");
+        resultText.innerHTML = `
+                <div style="font-size: 1.2rem; line-height: 1.6;">
+                    <strong>Make me a ${projectType}</strong><br>
+                    <strong>about ${topic}</strong><br>
+                    <strong>in the style of ${style}</strong>
+                </div>
+            `;
+      }
+
+      function playSound(soundType) {
+        // You can add actual sound effects here
+        // For now, we'll just use the Web Audio API for a simple beep
+        if (soundType === "spin") {
+          const audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(
+            0.01,
+            audioContext.currentTime + 0.1
+          );
+
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.1);
+        }
+      }
+
+      // Initialize the generator when page loads
+      window.addEventListener("load", initializeGenerator);
+
+      // Add keyboard support
+      document.addEventListener("keydown", (e) => {
+        if (e.code === "Space" && !isSpinning) {
+          e.preventDefault();
+          spin();
+        }
+      });
+    </script>
+  </body>
+</html>
