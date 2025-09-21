@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5 O'Clock Somewhere</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #FFF8DC;
+            padding: 20px;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 4px;
+            color: #000;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 4px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #FFF8DC66;
+            font-weight: normal;
+            text-decoration: underline;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 1.3em;
+            color: #FFF8DC;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            font-style: italic;
+        }
+
+
+        .timezone-display {
+            text-align: center;
+        }
+
+        .timezone-info {
+            font-size: 2.5em;
+            color: #FFF8DC;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+
+        .timezone-time {
+            color: #FFD700;
+        }
+
+        .timezone-location {
+            font-size: 1.8em;
+            color: #FFF8DC;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            margin-bottom: 10px;
+        }
+
+        .timezone-name {
+            font-size: 1.4em;
+            color: #FFF8DC;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            opacity: 0.8;
+        }
+
+
+
+
+        .no-matches {
+            text-align: center;
+            font-size: 1.5em;
+            opacity: 0.8;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            background: 
+                linear-gradient(145deg, rgba(139, 69, 19, 0.9), rgba(160, 82, 45, 0.7));
+            border: 3px solid #8B4513;
+            color: #FFF8DC;
+            padding: 12px 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            box-shadow: 
+                inset 0 0 10px rgba(0, 0, 0, 0.3),
+                0 0 15px rgba(139, 69, 19, 0.4);
+        }
+
+        button:hover {
+            background: 
+                linear-gradient(145deg, rgba(160, 82, 45, 0.9), rgba(139, 69, 19, 0.7));
+            transform: translateY(-3px);
+            box-shadow: 
+                inset 0 0 15px rgba(0, 0, 0, 0.4),
+                0 0 25px rgba(255, 215, 0, 0.3);
+            border-color: #FFD700;
+        }
+
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .timezone-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                position: relative;
+                bottom: auto;
+                left: auto;
+                transform: none;
+                margin-top: 30px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍺 It's 5 O'Clock Somewhere 🍺</h1>
+    </div>
+
+
+
+    <div class="timezone-display" id="timezoneDisplay">
+        <!-- Timezone information will be populated by JavaScript -->
+    </div>
+
+    <div class="controls">
+        <button id="toggleFormat">12/24 Hour</button>
+    </div>
+
+    <script>
+        class FiveOClockFinder {
+            constructor() {
+                this.is24Hour = false;
+                this.isDST = this.checkDST();
+                this.timezones = [
+                    { name: 'Pacific Standard Time', location: 'Los Angeles, USA', offset: -8 },
+                    { name: 'Pacific Daylight Time', location: 'Los Angeles, USA', offset: -7 },
+                    { name: 'Mountain Standard Time', location: 'Denver, USA', offset: -7 },
+                    { name: 'Mountain Daylight Time', location: 'Denver, USA', offset: -6 },
+                    { name: 'Central Standard Time', location: 'Chicago, USA', offset: -6 },
+                    { name: 'Central Daylight Time', location: 'Chicago, USA', offset: -5 },
+                    { name: 'Eastern Standard Time', location: 'New York, USA', offset: -5 },
+                    { name: 'Eastern Daylight Time', location: 'New York, USA', offset: -4 },
+                    { name: 'Atlantic Standard Time', location: 'Halifax, Canada', offset: -4 },
+                    { name: 'Greenwich Mean Time', location: 'London, UK', offset: 0 },
+                    { name: 'Central European Time', location: 'Paris, France', offset: 1 },
+                    { name: 'Eastern European Time', location: 'Athens, Greece', offset: 2 },
+                    { name: 'Moscow Time', location: 'Moscow, Russia', offset: 3 },
+                    { name: 'Gulf Standard Time', location: 'Dubai, UAE', offset: 4 },
+                    { name: 'Pakistan Standard Time', location: 'Karachi, Pakistan', offset: 5 },
+                    { name: 'India Standard Time', location: 'Mumbai, India', offset: 5.5 },
+                    { name: 'Bangladesh Standard Time', location: 'Dhaka, Bangladesh', offset: 6 },
+                    { name: 'Indochina Time', location: 'Bangkok, Thailand', offset: 7 },
+                    { name: 'China Standard Time', location: 'Beijing, China', offset: 8 },
+                    { name: 'Japan Standard Time', location: 'Tokyo, Japan', offset: 9 },
+                    { name: 'Australian Eastern Time', location: 'Sydney, Australia', offset: 10 },
+                    { name: 'New Zealand Standard Time', location: 'Auckland, New Zealand', offset: 12 },
+                    { name: 'Hawaii Standard Time', location: 'Honolulu, USA', offset: -10 },
+                    { name: 'Alaska Standard Time', location: 'Anchorage, USA', offset: -9 }
+                ];
+                
+                this.timezoneDisplay = document.getElementById('timezoneDisplay');
+                this.toggleFormat = document.getElementById('toggleFormat');
+                
+                this.setupEventListeners();
+                this.updateDisplay();
+                this.startAutoUpdate();
+            }
+            
+            checkDST() {
+                const now = new Date();
+                const year = now.getFullYear();
+                
+                // DST in the US typically runs from second Sunday in March to first Sunday in November
+                // March DST start: second Sunday
+                const marchFirst = new Date(year, 2, 1); // March 1st
+                const marchFirstSunday = marchFirst.getDay() === 0 ? 1 : 8 - marchFirst.getDay();
+                const dstStart = new Date(year, 2, marchFirstSunday + 7); // Second Sunday
+                
+                // November DST end: first Sunday
+                const novemberFirst = new Date(year, 10, 1); // November 1st
+                const novemberFirstSunday = novemberFirst.getDay() === 0 ? 1 : 8 - novemberFirst.getDay();
+                const dstEnd = new Date(year, 10, novemberFirstSunday);
+                
+                return now >= dstStart && now < dstEnd;
+            }
+            
+            setupEventListeners() {
+                this.toggleFormat.addEventListener('click', () => this.toggleTimeFormat());
+            }
+            
+            toggleTimeFormat() {
+                this.is24Hour = !this.is24Hour;
+                this.toggleFormat.textContent = this.is24Hour ? '12 Hour' : '24 Hour';
+                this.updateDisplay();
+            }
+            
+            startAutoUpdate() {
+                // Update every minute
+                setInterval(() => {
+                    this.updateDisplay();
+                }, 60000);
+            }
+            
+            updateDisplay() {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                
+                // Find timezones where it's 5 o'clock
+                const fiveOClockTimezones = this.findFiveOClockTimezones(currentHour, currentMinute);
+                
+                // Clear and populate display
+                this.timezoneDisplay.innerHTML = '';
+                
+                if (fiveOClockTimezones.length === 0) {
+                    this.timezoneDisplay.innerHTML = `
+                        <div class="no-matches fade-in">
+                            <h3>No timezones are in the 5 PM hour right now</h3>
+                            <p>Check back in a few minutes!</p>
+                        </div>
+                    `;
+                } else {
+                    // Show the first timezone found
+                    const timezone = fiveOClockTimezones[0];
+                    const time = this.formatTime(timezone.timezoneHour, timezone.timezoneMinute);
+                    
+                    this.timezoneDisplay.innerHTML = `
+                        <div class="timezone-info fade-in">
+                            It's <span class="timezone-time">${time}</span> in
+                        </div>
+                        <div class="timezone-location fade-in">
+                            ${timezone.location}
+                        </div>
+                        <div class="timezone-name fade-in">
+                            ${timezone.name}
+                        </div>
+                    `;
+                }
+            }
+            
+            findFiveOClockTimezones(currentHour, currentMinute) {
+                const fiveOClockTimezones = [];
+                
+                this.timezones.forEach(timezone => {
+                    // Skip standard time zones if we're in DST, and vice versa
+                    const isStandardTime = timezone.name.includes('Standard');
+                    if (this.isDST && isStandardTime) return;
+                    if (!this.isDST && !isStandardTime) return;
+                    
+                    // Calculate the time in this timezone
+                    // Get current UTC time and add the timezone offset
+                    const now = new Date();
+                    const utcHour = now.getUTCHours();
+                    const utcMinute = now.getMinutes();
+                    
+                    // Calculate timezone time: UTC + offset
+                    let timezoneHour = utcHour + timezone.offset;
+                    if (timezoneHour < 0) timezoneHour += 24;
+                    if (timezoneHour >= 24) timezoneHour -= 24;
+                    
+                    // Check if it's in the 5 PM hour (17:00 to 17:59)
+                    if (timezoneHour === 17) {
+                        fiveOClockTimezones.push({
+                            ...timezone,
+                            timezoneHour: 17,
+                            timezoneMinute: utcMinute
+                        });
+                    }
+                });
+                
+                return fiveOClockTimezones;
+            }
+            
+            
+            formatTime(hour, minute) {
+                let displayHour = hour;
+                let ampm = '';
+                
+                if (!this.is24Hour) {
+                    ampm = hour >= 12 ? ' PM' : ' AM';
+                    displayHour = hour % 12;
+                    if (displayHour === 0) displayHour = 12;
+                }
+                
+                const formattedMinute = minute.toString().padStart(2, '0');
+                const formattedHour = this.is24Hour ? 
+                    displayHour.toString().padStart(2, '0') : 
+                    displayHour.toString();
+                
+                return `${formattedHour}:${formattedMinute}${ampm}`;
+            }
+        }
+        
+        // Initialize the 5 o'clock finder when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new FiveOClockFinder();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPELL GRID</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Space Mono', monospace;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border: 8px solid #fff;
+            padding: 30px;
+            background: #000;
+        }
+        
+        .title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #ccc;
+        }
+        
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-box {
+            background: #fff;
+            color: #000;
+            padding: 20px;
+            text-align: center;
+            border: 4px solid #000;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .spell-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            margin-bottom: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .grid-cell {
+            aspect-ratio: 1;
+            background: #333;
+            border: 2px solid #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .grid-cell:hover {
+            background: #555;
+            border-color: #fff;
+            transform: scale(1.05);
+        }
+        
+        .grid-cell.active {
+            background: #fff;
+            color: #000;
+            border-color: #000;
+            animation: pulse 0.3s ease;
+        }
+        
+        .grid-cell.spell-cast {
+            background: #ff0000;
+            color: #fff;
+            animation: spell-blast 0.5s ease;
+        }
+        
+        .grid-cell.heal {
+            background: #00ff00;
+            color: #000;
+            animation: heal-glow 0.5s ease;
+        }
+        
+        .grid-cell.shield {
+            background: #0000ff;
+            color: #fff;
+            animation: shield-pulse 0.5s ease;
+        }
+        
+        .grid-cell.fire {
+            background: #ff4500;
+            color: #fff;
+            animation: fire-burst 0.5s ease;
+        }
+        
+        .grid-cell.ice {
+            background: #00ffff;
+            color: #000;
+            animation: ice-crystal 0.5s ease;
+        }
+        
+        .grid-cell.lightning {
+            background: #ffff00;
+            color: #000;
+            animation: lightning-strike 0.5s ease;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes spell-blast {
+            0% { transform: scale(1); background: #ff0000; }
+            50% { transform: scale(1.2); background: #ff6666; }
+            100% { transform: scale(1); background: #ff0000; }
+        }
+        
+        @keyframes heal-glow {
+            0% { transform: scale(1); background: #00ff00; }
+            50% { transform: scale(1.1); background: #66ff66; }
+            100% { transform: scale(1); background: #00ff00; }
+        }
+        
+        @keyframes shield-pulse {
+            0% { transform: scale(1); background: #0000ff; }
+            50% { transform: scale(1.1); background: #6666ff; }
+            100% { transform: scale(1); background: #0000ff; }
+        }
+        
+        @keyframes fire-burst {
+            0% { transform: scale(1); background: #ff4500; }
+            50% { transform: scale(1.2); background: #ff8844; }
+            100% { transform: scale(1); background: #ff4500; }
+        }
+        
+        @keyframes ice-crystal {
+            0% { transform: scale(1); background: #00ffff; }
+            50% { transform: scale(1.1); background: #66ffff; }
+            100% { transform: scale(1); background: #00ffff; }
+        }
+        
+        @keyframes lightning-strike {
+            0% { transform: scale(1); background: #ffff00; }
+            25% { transform: scale(1.3); background: #ffffff; }
+            50% { transform: scale(1.1); background: #ffff66; }
+            100% { transform: scale(1); background: #ffff00; }
+        }
+        
+        .spell-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .spell-button {
+            background: #fff;
+            color: #000;
+            border: 4px solid #000;
+            padding: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .spell-button:hover {
+            background: #000;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        
+        .spell-button:active {
+            transform: translateY(0);
+        }
+        
+        .spell-button.disabled {
+            background: #666;
+            color: #999;
+            cursor: not-allowed;
+        }
+        
+        .spell-button.disabled:hover {
+            background: #666;
+            color: #999;
+            transform: none;
+        }
+        
+        .spell-info {
+            background: #fff;
+            color: #000;
+            padding: 20px;
+            border: 4px solid #000;
+            margin-bottom: 20px;
+        }
+        
+        .spell-info h3 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+        }
+        
+        .spell-description {
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .control-button {
+            background: #000;
+            color: #fff;
+            border: 4px solid #fff;
+            padding: 15px 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .control-button:hover {
+            background: #fff;
+            color: #000;
+        }
+        
+        .game-log {
+            background: #000;
+            color: #fff;
+            border: 4px solid #fff;
+            padding: 20px;
+            margin-top: 40px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-entry.spell {
+            color: #ff0000;
+        }
+        
+        .log-entry.heal {
+            color: #00ff00;
+        }
+        
+        .log-entry.shield {
+            color: #0000ff;
+        }
+        
+        .log-entry.fire {
+            color: #ff4500;
+        }
+        
+        .log-entry.ice {
+            color: #00ffff;
+        }
+        
+        .log-entry.lightning {
+            color: #ffff00;
+        }
+        
+        .combo-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #fff;
+            color: #000;
+            padding: 15px;
+            border: 4px solid #000;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            z-index: 1000;
+        }
+        
+        .combo-count {
+            font-size: 2rem;
+        }
+        
+        .combo-label {
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .spell-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .grid-cell {
+                font-size: 1.2rem;
+            }
+            
+            .combo-display {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">SPELL GRID</h1>
+            <p class="subtitle">BRUTALIST MAGIC SYSTEM</p>
+        </header>
+        
+        <div class="combo-display">
+            <div class="combo-count" id="comboCount">0</div>
+            <div class="combo-label">COMBO</div>
+        </div>
+        
+        <div class="game-stats">
+            <div class="stat-box">
+                <div class="stat-label">Mana</div>
+                <div class="stat-value" id="mana">100</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Health</div>
+                <div class="stat-value" id="health">100</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+        </div>
+        
+        <div class="spell-info">
+            <h3 id="selectedSpell">SELECT A SPELL</h3>
+            <p class="spell-description" id="spellDescription">Click on a spell button to see its description and effects.</p>
+        </div>
+        
+        <div class="spell-panel">
+            <button class="spell-button" data-spell="fire" data-cost="20" data-damage="25">
+                FIRE BALL
+            </button>
+            <button class="spell-button" data-spell="ice" data-cost="15" data-damage="20">
+                ICE SHARD
+            </button>
+            <button class="spell-button" data-spell="lightning" data-cost="30" data-damage="35">
+                LIGHTNING
+            </button>
+            <button class="spell-button" data-spell="heal" data-cost="25" data-heal="30">
+                HEAL
+            </button>
+            <button class="spell-button" data-spell="shield" data-cost="20" data-shield="40">
+                SHIELD
+            </button>
+            <button class="spell-button" data-spell="blast" data-cost="40" data-damage="50">
+                MAGIC BLAST
+            </button>
+        </div>
+        
+        <div class="spell-grid" id="spellGrid">
+            <!-- Grid cells will be generated by JavaScript -->
+        </div>
+        
+        <div class="controls">
+            <button class="control-button" onclick="resetGame()">RESET GAME</button>
+            <button class="control-button" onclick="clearGrid()">CLEAR GRID</button>
+            <button class="control-button" onclick="autoCast()">AUTO CAST</button>
+        </div>
+        
+        <div class="game-log" id="gameLog">
+            <div class="log-entry">GAME INITIALIZED</div>
+            <div class="log-entry">SELECT A SPELL AND CLICK GRID CELLS</div>
+        </div>
+    </div>
+    
+    <script>
+        class SpellGame {
+            constructor() {
+                this.mana = 100;
+                this.health = 100;
+                this.score = 0;
+                this.level = 1;
+                this.combo = 0;
+                this.selectedSpell = null;
+                this.grid = [];
+                this.spellEffects = {
+                    fire: { name: 'FIRE BALL', description: 'Launches a fiery projectile that burns enemies. High damage, moderate mana cost.', color: 'fire' },
+                    ice: { name: 'ICE SHARD', description: 'Freezes enemies with sharp ice crystals. Moderate damage, low mana cost.', color: 'ice' },
+                    lightning: { name: 'LIGHTNING', description: 'Strikes with electric energy. Very high damage, high mana cost.', color: 'lightning' },
+                    heal: { name: 'HEAL', description: 'Restores health points. No damage, moderate mana cost.', color: 'heal' },
+                    shield: { name: 'SHIELD', description: 'Creates protective barrier. No damage, moderate mana cost.', color: 'shield' },
+                    blast: { name: 'MAGIC BLAST', description: 'Raw magical energy explosion. Extreme damage, very high mana cost.', color: 'spell-cast' }
+                };
+                
+                this.initializeGrid();
+                this.setupEventListeners();
+                this.updateDisplay();
+            }
+            
+            initializeGrid() {
+                const grid = document.getElementById('spellGrid');
+                grid.innerHTML = '';
+                
+                for (let i = 0; i < 64; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.index = i;
+                    cell.textContent = this.getRandomSymbol();
+                    cell.addEventListener('click', () => this.castSpell(i));
+                    grid.appendChild(cell);
+                }
+            }
+            
+            getRandomSymbol() {
+                const symbols = ['★', '◆', '▲', '●', '■', '♦', '▲', '★'];
+                return symbols[Math.floor(Math.random() * symbols.length)];
+            }
+            
+            setupEventListeners() {
+                const spellButtons = document.querySelectorAll('.spell-button');
+                spellButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        this.selectSpell(button.dataset.spell);
+                    });
+                });
+            }
+            
+            selectSpell(spellType) {
+                this.selectedSpell = spellType;
+                const effect = this.spellEffects[spellType];
+                
+                document.getElementById('selectedSpell').textContent = effect.name;
+                document.getElementById('spellDescription').textContent = effect.description;
+                
+                // Update button states
+                document.querySelectorAll('.spell-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-spell="${spellType}"]`).classList.add('active');
+                
+                this.updateSpellButtons();
+            }
+            
+            castSpell(cellIndex) {
+                if (!this.selectedSpell) {
+                    this.addLog('SELECT A SPELL FIRST', 'spell');
+                    return;
+                }
+                
+                const cell = document.querySelector(`[data-index="${cellIndex}"]`);
+                const button = document.querySelector(`[data-spell="${this.selectedSpell}"]`);
+                const cost = parseInt(button.dataset.cost);
+                
+                if (this.mana < cost) {
+                    this.addLog('NOT ENOUGH MANA', 'spell');
+                    return;
+                }
+                
+                this.mana -= cost;
+                this.combo++;
+                
+                // Apply spell effect
+                const effect = this.spellEffects[this.selectedSpell];
+                cell.classList.add(effect.color);
+                
+                // Calculate damage/healing
+                if (button.dataset.damage) {
+                    const damage = parseInt(button.dataset.damage);
+                    this.score += damage;
+                    this.addLog(`${effect.name} DEALT ${damage} DAMAGE`, effect.color);
+                } else if (button.dataset.heal) {
+                    const heal = parseInt(button.dataset.heal);
+                    this.health = Math.min(100, this.health + heal);
+                    this.addLog(`${effect.name} RESTORED ${heal} HEALTH`, effect.color);
+                } else if (button.dataset.shield) {
+                    const shield = parseInt(button.dataset.shield);
+                    this.addLog(`${effect.name} ABSORBED ${shield} DAMAGE`, effect.color);
+                }
+                
+                // Combo bonus
+                if (this.combo > 1) {
+                    this.score += this.combo * 5;
+                    this.addLog(`COMBO x${this.combo}! +${this.combo * 5} BONUS`, 'spell');
+                }
+                
+                // Change cell symbol
+                cell.textContent = this.getRandomSymbol();
+                
+                // Remove effect after animation
+                setTimeout(() => {
+                    cell.classList.remove(effect.color);
+                }, 500);
+                
+                // Level up check
+                if (this.score >= this.level * 1000) {
+                    this.levelUp();
+                }
+                
+                this.updateDisplay();
+                this.updateSpellButtons();
+            }
+            
+            levelUp() {
+                this.level++;
+                this.mana = Math.min(100, this.mana + 50);
+                this.health = Math.min(100, this.health + 25);
+                this.addLog(`LEVEL UP! NOW LEVEL ${this.level}`, 'spell');
+            }
+            
+            updateDisplay() {
+                document.getElementById('mana').textContent = this.mana;
+                document.getElementById('health').textContent = this.health;
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('level').textContent = this.level;
+                document.getElementById('comboCount').textContent = this.combo;
+            }
+            
+            updateSpellButtons() {
+                const spellButtons = document.querySelectorAll('.spell-button');
+                spellButtons.forEach(button => {
+                    const cost = parseInt(button.dataset.cost);
+                    if (this.mana < cost) {
+                        button.classList.add('disabled');
+                    } else {
+                        button.classList.remove('disabled');
+                    }
+                });
+            }
+            
+            addLog(message, type = '') {
+                const log = document.getElementById('gameLog');
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                log.appendChild(entry);
+                log.scrollTop = log.scrollHeight;
+            }
+            
+            resetGame() {
+                this.mana = 100;
+                this.health = 100;
+                this.score = 0;
+                this.level = 1;
+                this.combo = 0;
+                this.selectedSpell = null;
+                this.initializeGrid();
+                this.updateDisplay();
+                this.updateSpellButtons();
+                
+                document.getElementById('gameLog').innerHTML = `
+                    <div class="log-entry">GAME RESET</div>
+                    <div class="log-entry">SELECT A SPELL AND CLICK GRID CELLS</div>
+                `;
+                
+                document.getElementById('selectedSpell').textContent = 'SELECT A SPELL';
+                document.getElementById('spellDescription').textContent = 'Click on a spell button to see its description and effects.';
+                
+                document.querySelectorAll('.spell-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+            }
+            
+            clearGrid() {
+                this.initializeGrid();
+                this.addLog('GRID CLEARED', 'spell');
+            }
+            
+            autoCast() {
+                if (!this.selectedSpell) {
+                    this.addLog('SELECT A SPELL FIRST', 'spell');
+                    return;
+                }
+                
+                const availableCells = Array.from(document.querySelectorAll('.grid-cell'))
+                    .filter(cell => !cell.classList.contains('spell-cast') && 
+                                   !cell.classList.contains('heal') && 
+                                   !cell.classList.contains('shield') &&
+                                   !cell.classList.contains('fire') &&
+                                   !cell.classList.contains('ice') &&
+                                   !cell.classList.contains('lightning'));
+                
+                if (availableCells.length === 0) {
+                    this.addLog('NO AVAILABLE CELLS', 'spell');
+                    return;
+                }
+                
+                const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
+                const cellIndex = parseInt(randomCell.dataset.index);
+                this.castSpell(cellIndex);
+            }
+        }
+        
+        // Initialize game
+        const game = new SpellGame();
+        
+        // Global functions for buttons
+        function resetGame() {
+            game.resetGame();
+        }
+        
+        function clearGrid() {
+            game.clearGrid();
+        }
+        
+        function autoCast() {
+            game.autoCast();
+        }
+        
+        // Auto mana regeneration
+        setInterval(() => {
+            if (game.mana < 100) {
+                game.mana = Math.min(100, game.mana + 1);
+                game.updateDisplay();
+                game.updateSpellButtons();
+            }
+        }, 2000);
+        
+        // Combo decay
+        setInterval(() => {
+            if (game.combo > 0) {
+                game.combo = Math.max(0, game.combo - 1);
+                game.updateDisplay();
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
