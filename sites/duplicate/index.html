@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duplicate</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            overflow: auto;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        .text-display {
+            color: black;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            word-wrap: break-word;
+            max-width: 90vw;
+            line-height: 1;
+            white-space: pre-wrap;
+        }
+
+        .counter {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(0,0,0,0.7);
+            font-size: 18px;
+            font-weight: normal;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            background: rgba(0,0,0,0.1);
+            border: 2px solid rgba(0,0,0,0.2);
+            color: black;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .auto-mode {
+            background: rgba(0,0,0,0.3);
+            border-color: rgba(0,0,0,0.5);
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="counter" id="counter">Generation: 0</div>
+        <div class="text-display fade-in" id="textDisplay">a</div>
+    </div>
+
+    <div class="controls">
+        <button id="duplicateBtn">Duplicate</button>
+        <button id="resetBtn">Reset</button>
+        <button id="autoBtn">Auto Mode</button>
+    </div>
+
+    <script>
+        class DuplicateEngine {
+            constructor() {
+                this.text = 'a';
+                this.generation = 0;
+                this.isAutoMode = false;
+                this.autoInterval = null;
+                this.baseFontSize = 200;
+                this.minFontSize = 8;
+                
+                this.textDisplay = document.getElementById('textDisplay');
+                this.counter = document.getElementById('counter');
+                this.duplicateBtn = document.getElementById('duplicateBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.autoBtn = document.getElementById('autoBtn');
+                
+                this.setupEventListeners();
+                this.updateDisplay();
+            }
+            
+            setupEventListeners() {
+                this.duplicateBtn.addEventListener('click', () => this.duplicate());
+                this.resetBtn.addEventListener('click', () => this.reset());
+                this.autoBtn.addEventListener('click', () => this.toggleAutoMode());
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        this.duplicate();
+                    } else if (e.code === 'KeyR') {
+                        e.preventDefault();
+                        this.reset();
+                    } else if (e.code === 'KeyA') {
+                        e.preventDefault();
+                        this.toggleAutoMode();
+                    }
+                });
+            }
+            
+            duplicate() {
+                this.text = this.text + this.text; // Exponential duplication
+                this.generation++;
+                this.updateDisplay();
+                this.addPulseEffect();
+            }
+            
+            reset() {
+                this.text = 'a';
+                this.generation = 0;
+                this.updateDisplay();
+                this.addPulseEffect();
+            }
+            
+            toggleAutoMode() {
+                this.isAutoMode = !this.isAutoMode;
+                
+                if (this.isAutoMode) {
+                    this.autoBtn.textContent = 'Stop Auto';
+                    this.autoBtn.classList.add('auto-mode');
+                    this.startAutoMode();
+                } else {
+                    this.autoBtn.textContent = 'Auto Mode';
+                    this.autoBtn.classList.remove('auto-mode');
+                    this.stopAutoMode();
+                }
+            }
+            
+            startAutoMode() {
+                // Start with faster intervals, then slow down as text gets longer
+                const getInterval = () => {
+                    const baseInterval = 1000; // 1 second base
+                    const slowdownFactor = Math.min(this.generation * 0.1, 3); // Max 3x slower
+                    return baseInterval + (slowdownFactor * 500);
+                };
+                
+                const autoDuplicate = () => {
+                    if (this.isAutoMode) {
+                        this.duplicate();
+                        this.autoInterval = setTimeout(autoDuplicate, getInterval());
+                    }
+                };
+                
+                this.autoInterval = setTimeout(autoDuplicate, getInterval());
+            }
+            
+            stopAutoMode() {
+                if (this.autoInterval) {
+                    clearTimeout(this.autoInterval);
+                    this.autoInterval = null;
+                }
+            }
+            
+            updateDisplay() {
+                this.textDisplay.textContent = this.text;
+                this.counter.textContent = `Generation: ${this.generation}`;
+                
+                // Calculate font size based on text length
+                const textLength = this.text.length;
+                const fontSize = Math.max(
+                    this.minFontSize,
+                    this.baseFontSize / Math.pow(textLength, 0.3) // Gradual decrease
+                );
+                
+                this.textDisplay.style.fontSize = `${fontSize}px`;
+                
+                // Add some visual feedback for very large numbers
+                if (textLength > 1000) {
+                    this.textDisplay.style.opacity = '0.8';
+                } else if (textLength > 10000) {
+                    this.textDisplay.style.opacity = '0.6';
+                } else {
+                    this.textDisplay.style.opacity = '1';
+                }
+            }
+            
+            addPulseEffect() {
+                this.textDisplay.classList.remove('pulse');
+                setTimeout(() => {
+                    this.textDisplay.classList.add('pulse');
+                }, 10);
+            }
+        }
+        
+        // Initialize the duplicate engine when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new DuplicateEngine();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CASTLE.GLITCH</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Share Tech Mono', monospace;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Glitch background effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, transparent 30%, rgba(255, 0, 0, 0.1) 50%, transparent 70%),
+                linear-gradient(-45deg, transparent 30%, rgba(0, 255, 255, 0.1) 50%, transparent 70%);
+            animation: glitch-bg 0.3s infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        @keyframes glitch-bg {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+        
+        .glitch-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 4rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            color: #00ff00;
+            text-shadow: 
+                2px 0 #ff0000,
+                -2px 0 #00ffff,
+                0 2px #ff0000,
+                0 -2px #00ffff;
+            animation: glitch-text 2s infinite;
+        }
+        
+        @keyframes glitch-text {
+            0%, 100% { 
+                transform: translate(0);
+                filter: hue-rotate(0deg);
+            }
+            10% { 
+                transform: translate(-2px, 2px);
+                filter: hue-rotate(90deg);
+            }
+            20% { 
+                transform: translate(2px, -2px);
+                filter: hue-rotate(180deg);
+            }
+            30% { 
+                transform: translate(-2px, -2px);
+                filter: hue-rotate(270deg);
+            }
+            40% { 
+                transform: translate(2px, 2px);
+                filter: hue-rotate(360deg);
+            }
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            margin-top: 20px;
+            opacity: 0.8;
+            animation: flicker 3s infinite;
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.3; }
+        }
+        
+        .castle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .castle-card {
+            background: rgba(0, 255, 0, 0.05);
+            border: 2px solid #00ff00;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .castle-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .castle-card:hover::before {
+            left: 100%;
+        }
+        
+        .castle-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.3);
+            border-color: #ff0000;
+        }
+        
+        .castle-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #00ffff;
+            text-transform: uppercase;
+        }
+        
+        .castle-description {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #00ff00;
+        }
+        
+        .castle-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #ffff00;
+        }
+        
+        .glitch-button {
+            background: transparent;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 20px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .glitch-button:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 20px #00ff00;
+        }
+        
+        .glitch-button:active {
+            transform: scale(0.95);
+        }
+        
+        .terminal {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            padding: 20px;
+            margin: 30px 0;
+            font-family: 'Share Tech Mono', monospace;
+            position: relative;
+        }
+        
+        .terminal::before {
+            content: '> CASTLE.SYS v2.1.3';
+            position: absolute;
+            top: -15px;
+            left: 10px;
+            background: #000;
+            padding: 0 10px;
+            color: #00ff00;
+            font-size: 0.8rem;
+        }
+        
+        .terminal-text {
+            color: #00ff00;
+            line-height: 1.4;
+        }
+        
+        .cursor {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.03;
+            background-image: 
+                radial-gradient(circle at 20% 50%, white 1px, transparent 1px),
+                radial-gradient(circle at 80% 20%, white 1px, transparent 1px),
+                radial-gradient(circle at 40% 80%, white 1px, transparent 1px);
+            background-size: 50px 50px, 80px 80px, 30px 30px;
+            animation: noise 0.2s infinite;
+        }
+        
+        @keyframes noise {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-5px, -5px); }
+            20% { transform: translate(-10px, 5px); }
+            30% { transform: translate(5px, -10px); }
+            40% { transform: translate(-5px, 15px); }
+            50% { transform: translate(-10px, 5px); }
+            60% { transform: translate(15px, 0px); }
+            70% { transform: translate(0px, -15px); }
+            80% { transform: translate(-15px, 10px); }
+            90% { transform: translate(10px, 5px); }
+            100% { transform: translate(5px, 0px); }
+        }
+        
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 0, 0.03) 2px,
+                rgba(0, 255, 0, 0.03) 4px
+            );
+            animation: scanlines 0.1s linear infinite;
+        }
+        
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+        
+        @media (max-width: 768px) {
+            .glitch-title {
+                font-size: 2.5rem;
+            }
+            
+            .castle-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="noise"></div>
+    <div class="scanlines"></div>
+    
+    <div class="container">
+        <header class="header">
+            <h1 class="glitch-title">CASTLE.GLITCH</h1>
+            <p class="subtitle">MEDIEVAL FORTRESSES IN DIGITAL REALM</p>
+        </header>
+        
+        <div class="terminal">
+            <div class="terminal-text">
+                <div>INITIALIZING CASTLE DATABASE...</div>
+                <div>LOADING MEDIEVAL ARCHITECTURE MODULES...</div>
+                <div>SCANNING FORTIFICATION PATTERNS...</div>
+                <div>ACCESSING HISTORICAL RECORDS...</div>
+                <div>SYSTEM READY. ENTERING CASTLE MATRIX...<span class="cursor">_</span></div>
+            </div>
+        </div>
+        
+        <div class="castle-grid">
+            <div class="castle-card">
+                <h3 class="castle-name">Neuschwanstein</h3>
+                <p class="castle-description">
+                    A 19th-century Romanesque Revival palace built by King Ludwig II of Bavaria. 
+                    This fairy-tale castle inspired Disney's Sleeping Beauty Castle and stands 
+                    as a monument to romantic architecture.
+                </p>
+                <div class="castle-stats">
+                    <span>Built: 1869</span>
+                    <span>Height: 65m</span>
+                    <span>Status: Museum</span>
+                </div>
+            </div>
+            
+            <div class="castle-card">
+                <h3 class="castle-name">Edinburgh Castle</h3>
+                <p class="castle-description">
+                    Perched on Castle Rock, this ancient fortress has been a royal residence 
+                    for over 1000 years. It houses the Scottish Crown Jewels and the Stone 
+                    of Destiny.
+                </p>
+                <div class="castle-stats">
+                    <span>Built: 12th Century</span>
+                    <span>Height: 120m</span>
+                    <span>Status: Historic Site</span>
+                </div>
+            </div>
+            
+            <div class="castle-card">
+                <h3 class="castle-name">Bran Castle</h3>
+                <p class="castle-description">
+                    Known as "Dracula's Castle," this Gothic fortress in Romania is shrouded 
+                    in mystery and legend. While not directly connected to Vlad the Impaler, 
+                    it perfectly embodies the vampire mythos.
+                </p>
+                <div class="castle-stats">
+                    <span>Built: 1377</span>
+                    <span>Height: 50m</span>
+                    <span>Status: Museum</span>
+                </div>
+            </div>
+            
+            <div class="castle-card">
+                <h3 class="castle-name">Château de Chambord</h3>
+                <p class="castle-description">
+                    A masterpiece of French Renaissance architecture, this hunting lodge 
+                    turned palace features 440 rooms and a famous double-helix staircase 
+                    attributed to Leonardo da Vinci.
+                </p>
+                <div class="castle-stats">
+                    <span>Built: 1519</span>
+                    <span>Height: 56m</span>
+                    <span>Status: UNESCO Site</span>
+                </div>
+            </div>
+            
+            <div class="castle-card">
+                <h3 class="castle-name">Himeji Castle</h3>
+                <p class="castle-description">
+                    Japan's most spectacular castle, known as the "White Heron Castle" 
+                    for its elegant white exterior. This 17th-century fortress survived 
+                    earthquakes, wars, and time itself.
+                </p>
+                <div class="castle-stats">
+                    <span>Built: 1609</span>
+                    <span>Height: 46m</span>
+                    <span>Status: UNESCO Site</span>
+                </div>
+            </div>
+            
+            <div class="castle-card">
+                <h3 class="castle-name">Prague Castle</h3>
+                <p class="castle-description">
+                    The largest ancient castle complex in the world, spanning 70,000 square 
+                    meters. This Czech fortress has been the seat of power for over 1000 
+                    years and houses the Bohemian Crown Jewels.
+                </p>
+                <div class="castle-stats">
+                    <span>Built: 870</span>
+                    <span>Height: 100m</span>
+                    <span>Status: Presidential Residence</span>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 50px;">
+            <button class="glitch-button" onclick="glitchEffect()">INITIATE GLITCH PROTOCOL</button>
+        </div>
+    </div>
+    
+    <script>
+        // Glitch effect function
+        function glitchEffect() {
+            const title = document.querySelector('.glitch-title');
+            const cards = document.querySelectorAll('.castle-card');
+            
+            // Intensify glitch effect
+            title.style.animation = 'glitch-text 0.1s infinite';
+            title.style.filter = 'hue-rotate(180deg) saturate(2)';
+            
+            // Random glitch on cards
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.transform = 'translateY(-5px) rotate(' + (Math.random() * 4 - 2) + 'deg)';
+                    card.style.filter = 'hue-rotate(' + Math.random() * 360 + 'deg)';
+                    card.style.borderColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+                }, index * 100);
+            });
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                title.style.animation = 'glitch-text 2s infinite';
+                title.style.filter = 'hue-rotate(0deg) saturate(1)';
+                cards.forEach(card => {
+                    card.style.transform = '';
+                    card.style.filter = '';
+                    card.style.borderColor = '';
+                });
+            }, 2000);
+        }
+        
+        // Random glitch effects
+        setInterval(() => {
+            if (Math.random() < 0.1) { // 10% chance every interval
+                const elements = document.querySelectorAll('.castle-card, .terminal');
+                const randomElement = elements[Math.floor(Math.random() * elements.length)];
+                
+                randomElement.style.transform = 'translateX(' + (Math.random() * 4 - 2) + 'px)';
+                randomElement.style.filter = 'hue-rotate(' + (Math.random() * 60 - 30) + 'deg)';
+                
+                setTimeout(() => {
+                    randomElement.style.transform = '';
+                    randomElement.style.filter = '';
+                }, 200);
+            }
+        }, 3000);
+        
+        // Terminal typing effect
+        function typeTerminal() {
+            const terminal = document.querySelector('.terminal-text');
+            const lines = terminal.innerHTML.split('<br>');
+            terminal.innerHTML = '';
+            
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    terminal.innerHTML += line + '<br>';
+                }, index * 500);
+            });
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            setTimeout(typeTerminal, 1000);
+        });
+        
+        // Add random noise to cursor
+        setInterval(() => {
+            const cursor = document.querySelector('.cursor');
+            if (cursor && Math.random() < 0.3) {
+                cursor.style.opacity = Math.random() > 0.5 ? '1' : '0';
+            }
+        }, 100);
+    </script>
+</body>
+</html>
