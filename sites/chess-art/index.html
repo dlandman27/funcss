@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Piece Art Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #canvas {
+            display: block;
+            cursor: grab;
+        }
+        
+        #canvas:active {
+            cursor: grabbing;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            z-index: 100;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        input, button {
+            margin-right: 10px;
+            padding: 5px;
+        }
+        
+        button {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #444;
+        }
+        
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 12px;
+        }
+        
+        #title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 100;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        #glossary {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 200px;
+            z-index: 100;
+        }
+        
+        #glossary h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #fff;
+        }
+        
+        .piece-info {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .piece-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .piece-description {
+            flex: 1;
+            font-size: 11px;
+        }
+        
+        #pieceSelector {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 100;
+        }
+        
+        #pieceSelector h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #fff;
+        }
+        
+        .piece-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .piece-option {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #555;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .piece-option:hover {
+            border-color: #fff;
+            transform: scale(1.1);
+        }
+        
+        .piece-option.selected {
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .piece-option.pawn {
+            background: #ffffff;
+            color: #000;
+            border-radius: 50%;
+        }
+        
+        .piece-option.rook {
+            background: #ff0000;
+            color: #fff;
+        }
+        
+        .piece-option.knight {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .piece-option.bishop {
+            background: #0000ff;
+            color: #fff;
+        }
+        
+        .piece-option.queen {
+            background: #ffff00;
+            color: #000;
+        }
+        
+        .piece-option.king {
+            background: #ff00ff;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="title">Chess Art</div>
+    
+    <div id="controls">
+        <div class="control-group">
+            <label>Pieces: <span id="pieceCount">0</span></label>
+            <button onclick="clearAll()">Clear All</button>
+        </div>
+        
+        <div class="control-group">
+            <label>Speed: <span id="speedValue">1</span></label>
+            <input type="range" id="speedSlider" min="0.1" max="10" step="0.1" value="1" oninput="updateSpeed(this.value)">
+        </div>
+        
+        <div class="control-group">
+            <label>Zoom: <span id="zoomValue">1</span></label>
+            <input type="range" id="zoomSlider" min="0.1" max="5" step="0.1" value="1" oninput="updateZoom(this.value)">
+        </div>
+        
+        <div class="control-group">
+            <button onclick="resetCamera()">Reset View</button>
+            <button onclick="togglePause()">Pause</button>
+        </div>
+    </div>
+    
+    <div id="glossary">
+        <h3>Piece Guide</h3>
+        <div class="piece-info">
+            <div class="piece-icon" style="background: #ffffff; color: #000;">♙</div>
+            <div class="piece-description">Pawn: Forward & diagonals</div>
+        </div>
+        <div class="piece-info">
+            <div class="piece-icon" style="background: #ff0000; color: #fff;">♖</div>
+            <div class="piece-description">Rook: Straight lines</div>
+        </div>
+        <div class="piece-info">
+            <div class="piece-icon" style="background: #00ff00; color: #000;">♘</div>
+            <div class="piece-description">Knight: L-shaped jumps</div>
+        </div>
+        <div class="piece-info">
+            <div class="piece-icon" style="background: #0000ff; color: #fff;">♗</div>
+            <div class="piece-description">Bishop: Diagonals</div>
+        </div>
+        <div class="piece-info">
+            <div class="piece-icon" style="background: #ffff00; color: #000;">♕</div>
+            <div class="piece-description">Queen: All directions</div>
+        </div>
+        <div class="piece-info">
+            <div class="piece-icon" style="background: #ff00ff; color: #fff;">♔</div>
+            <div class="piece-description">King: All directions</div>
+        </div>
+    </div>
+    
+    <div id="pieceSelector">
+        <h3>Select Piece</h3>
+        <div class="piece-options">
+            <div class="piece-option pawn" onclick="selectPiece('pawn')" title="Pawn">♙</div>
+            <div class="piece-option rook" onclick="selectPiece('rook')" title="Rook">♖</div>
+            <div class="piece-option knight" onclick="selectPiece('knight')" title="Knight">♘</div>
+            <div class="piece-option bishop" onclick="selectPiece('bishop')" title="Bishop">♗</div>
+            <div class="piece-option queen" onclick="selectPiece('queen')" title="Queen">♕</div>
+            <div class="piece-option king" onclick="selectPiece('king')" title="King">♔</div>
+        </div>
+    </div>
+    
+    <div id="info">
+        <div>Mouse: Pan | Wheel: Zoom | Click: Add selected piece</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Camera system
+        let camera = {
+            x: 0,
+            y: 0,
+            zoom: 1
+        };
+        
+        // Grid settings
+        const GRID_SIZE = 20;
+        
+        // Game state
+        let pieces = [];
+        let dots = new Map(); // Store visited positions with colors
+        let isPaused = false;
+        let speed = 1;
+        let lastMoveTime = 0;
+        let selectedPieceType = null; // No piece selected by default
+        const MOVE_INTERVAL = 200; // Base milliseconds between moves
+        
+        // Chess piece types
+        const PIECE_TYPES = {
+            PAWN: 'pawn',
+            ROOK: 'rook', 
+            KNIGHT: 'knight',
+            BISHOP: 'bishop',
+            QUEEN: 'queen',
+            KING: 'king'
+        };
+        
+        // Chess piece class
+        class ChessPiece {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.direction = Math.random() * Math.PI * 2; // Random starting direction
+                this.moveCount = 0;
+                this.color = this.getPieceColor();
+            }
+            
+            getPieceColor() {
+                const colors = {
+                    [PIECE_TYPES.PAWN]: '#ffffff',      // White
+                    [PIECE_TYPES.ROOK]: '#ff0000',      // Bright Red
+                    [PIECE_TYPES.KNIGHT]: '#00ff00',    // Bright Green
+                    [PIECE_TYPES.BISHOP]: '#0000ff',    // Bright Blue
+                    [PIECE_TYPES.QUEEN]: '#ffff00',     // Bright Yellow
+                    [PIECE_TYPES.KING]: '#ff00ff'       // Bright Magenta
+                };
+                return colors[this.type] || '#ffffff';
+            }
+            
+            getIconColor() {
+                return '#ffffff';
+            }
+            
+            getPossibleMoves() {
+                const moves = [];
+                const directions = this.getMoveDirections();
+                
+                for (let dir of directions) {
+                    const newX = this.x + dir.x;
+                    const newY = this.y + dir.y;
+                    moves.push({ x: newX, y: newY, direction: dir.direction });
+                }
+                
+                return moves;
+            }
+            
+            getMoveDirections() {
+                switch (this.type) {
+                    case PIECE_TYPES.PAWN:
+                        return [
+                            { x: 0, y: -1, direction: -Math.PI/2 }, // Forward only
+                            { x: 1, y: -1, direction: -Math.PI/4 }, // Diagonal capture right
+                            { x: -1, y: -1, direction: -3*Math.PI/4 } // Diagonal capture left
+                        ];
+                    
+                    case PIECE_TYPES.ROOK:
+                        return [
+                            { x: 1, y: 0, direction: 0 },
+                            { x: -1, y: 0, direction: Math.PI },
+                            { x: 0, y: 1, direction: Math.PI/2 },
+                            { x: 0, y: -1, direction: -Math.PI/2 }
+                        ];
+                    
+                    case PIECE_TYPES.KNIGHT:
+                        return [
+                            { x: 2, y: 1, direction: Math.atan2(1, 2) },
+                            { x: 2, y: -1, direction: Math.atan2(-1, 2) },
+                            { x: -2, y: 1, direction: Math.atan2(1, -2) },
+                            { x: -2, y: -1, direction: Math.atan2(-1, -2) },
+                            { x: 1, y: 2, direction: Math.atan2(2, 1) },
+                            { x: 1, y: -2, direction: Math.atan2(-2, 1) },
+                            { x: -1, y: 2, direction: Math.atan2(2, -1) },
+                            { x: -1, y: -2, direction: Math.atan2(-2, -1) }
+                        ];
+                    
+                    case PIECE_TYPES.BISHOP:
+                        return [
+                            { x: 1, y: 1, direction: Math.PI/4 },
+                            { x: 1, y: -1, direction: -Math.PI/4 },
+                            { x: -1, y: 1, direction: 3*Math.PI/4 },
+                            { x: -1, y: -1, direction: -3*Math.PI/4 }
+                        ];
+                    
+                    case PIECE_TYPES.QUEEN:
+                        return [
+                            { x: 1, y: 0, direction: 0 },
+                            { x: -1, y: 0, direction: Math.PI },
+                            { x: 0, y: 1, direction: Math.PI/2 },
+                            { x: 0, y: -1, direction: -Math.PI/2 },
+                            { x: 1, y: 1, direction: Math.PI/4 },
+                            { x: 1, y: -1, direction: -Math.PI/4 },
+                            { x: -1, y: 1, direction: 3*Math.PI/4 },
+                            { x: -1, y: -1, direction: -3*Math.PI/4 }
+                        ];
+                    
+                    case PIECE_TYPES.KING:
+                        return [
+                            { x: 1, y: 0, direction: 0 },
+                            { x: -1, y: 0, direction: Math.PI },
+                            { x: 0, y: 1, direction: Math.PI/2 },
+                            { x: 0, y: -1, direction: -Math.PI/2 },
+                            { x: 1, y: 1, direction: Math.PI/4 },
+                            { x: 1, y: -1, direction: -Math.PI/4 },
+                            { x: -1, y: 1, direction: 3*Math.PI/4 },
+                            { x: -1, y: -1, direction: -3*Math.PI/4 }
+                        ];
+                    
+                    default:
+                        return [{ x: 1, y: 0, direction: 0 }];
+                }
+            }
+            
+            move() {
+                const possibleMoves = this.getPossibleMoves();
+                if (possibleMoves.length === 0) return;
+                
+                // Filter out moves that would go to already filled squares
+                const validMoves = possibleMoves.filter(move => {
+                    const position = `${move.x},${move.y}`;
+                    return !dots.has(position);
+                });
+                
+                // If no valid moves (all squares are filled), use all possible moves
+                const movesToChooseFrom = validMoves.length > 0 ? validMoves : possibleMoves;
+                
+                // Randomly choose from available moves
+                const move = movesToChooseFrom[Math.floor(Math.random() * movesToChooseFrom.length)];
+                
+                this.x = move.x;
+                this.y = move.y;
+                this.direction = move.direction;
+                this.moveCount++;
+                
+                // Add colored dot at new position
+                dots.set(`${this.x},${this.y}`, this.color);
+            }
+            
+            draw() {
+                const screenX = (this.x * GRID_SIZE - camera.x) * camera.zoom + canvas.width / 2;
+                const screenY = (this.y * GRID_SIZE - camera.y) * camera.zoom + canvas.height / 2;
+                
+                if (screenX < -GRID_SIZE || screenX > canvas.width + GRID_SIZE || 
+                    screenY < -GRID_SIZE || screenY > canvas.height + GRID_SIZE) {
+                    return; // Don't draw if off screen
+                }
+                
+                ctx.save();
+                ctx.translate(screenX, screenY);
+                ctx.scale(camera.zoom, camera.zoom);
+                
+                // Draw piece
+                ctx.fillStyle = this.getIconColor();
+                ctx.beginPath();
+                
+                switch (this.type) {
+                    case PIECE_TYPES.PAWN:
+                        ctx.font = 'bold 18px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('♙', 0, 0);
+                        break;
+                    case PIECE_TYPES.ROOK:
+                        ctx.font = 'bold 18px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('♖', 0, 0);
+                        break;
+                    case PIECE_TYPES.KNIGHT:
+                        ctx.font = 'bold 18px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('♘', 0, 0);
+                        break;
+                    case PIECE_TYPES.BISHOP:
+                        ctx.font = 'bold 18px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('♗', 0, 0);
+                        break;
+                    case PIECE_TYPES.QUEEN:
+                        ctx.font = 'bold 18px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('♕', 0, 0);
+                        break;
+                    case PIECE_TYPES.KING:
+                        ctx.font = 'bold 18px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('♔', 0, 0);
+                        break;
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        // Add a random piece
+        function addRandomPiece() {
+            const types = Object.values(PIECE_TYPES);
+            const type = types[Math.floor(Math.random() * types.length)];
+            const piece = new ChessPiece(0, 0, type);
+            pieces.push(piece);
+            updatePieceCount();
+        }
+        
+        // Select piece type
+        function selectPiece(type) {
+            selectedPieceType = type;
+            
+            // Update visual selection
+            document.querySelectorAll('.piece-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.querySelector(`.piece-option.${type}`).classList.add('selected');
+        }
+        
+        // Add selected piece type
+        function addSelectedPiece() {
+            if (!selectedPieceType) return; // No piece selected
+            
+            const piece = new ChessPiece(0, 0, selectedPieceType);
+            pieces.push(piece);
+            updatePieceCount();
+        }
+        
+        // Add piece at mouse position
+        function addPieceAtMouse(event) {
+            if (!selectedPieceType) return; // No piece selected
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+            
+            // Convert screen coordinates to world coordinates and snap to grid
+            const worldX = Math.round(((mouseX - canvas.width / 2) / camera.zoom + camera.x) / GRID_SIZE);
+            const worldY = Math.round(((mouseY - canvas.height / 2) / camera.zoom + camera.y) / GRID_SIZE);
+            
+            const piece = new ChessPiece(worldX, worldY, selectedPieceType);
+            pieces.push(piece);
+            updatePieceCount();
+        }
+        
+        // Clear all pieces and dots
+        function clearAll() {
+            pieces = [];
+            dots.clear();
+            updatePieceCount();
+        }
+        
+        // Update piece count display
+        function updatePieceCount() {
+            document.getElementById('pieceCount').textContent = pieces.length;
+        }
+        
+        // Update speed
+        function updateSpeed(value) {
+            speed = parseFloat(value);
+            document.getElementById('speedValue').textContent = speed.toFixed(1);
+        }
+        
+        // Update zoom
+        function updateZoom(value) {
+            camera.zoom = parseFloat(value);
+            document.getElementById('zoomValue').textContent = camera.zoom.toFixed(1);
+        }
+        
+        // Reset camera
+        function resetCamera() {
+            camera.x = 0;
+            camera.y = 0;
+            camera.zoom = 1;
+            document.getElementById('zoomSlider').value = 1;
+            document.getElementById('zoomValue').textContent = '1';
+        }
+        
+        // Toggle pause
+        function togglePause() {
+            isPaused = !isPaused;
+            document.querySelector('button[onclick="togglePause()"]').textContent = isPaused ? 'Resume' : 'Pause';
+        }
+        
+        // Mouse controls
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Left click
+                isDragging = true;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            } else if (e.button === 2) { // Right click
+                addPieceAtMouse(e);
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                
+                camera.x -= deltaX / camera.zoom;
+                camera.y -= deltaY / camera.zoom;
+                
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        // Zoom with mouse wheel
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            camera.zoom *= zoomFactor;
+            camera.zoom = Math.max(0.1, Math.min(5, camera.zoom));
+            
+            document.getElementById('zoomSlider').value = camera.zoom;
+            document.getElementById('zoomValue').textContent = camera.zoom.toFixed(1);
+        });
+        
+        // Draw dots
+        function drawDots() {
+            for (let [position, color] of dots) {
+                const [x, y] = position.split(',').map(Number);
+                const screenX = (x * GRID_SIZE - camera.x) * camera.zoom + canvas.width / 2;
+                const screenY = (y * GRID_SIZE - camera.y) * camera.zoom + canvas.height / 2;
+                
+                if (screenX >= -GRID_SIZE && screenX <= canvas.width + GRID_SIZE && 
+                    screenY >= -GRID_SIZE && screenY <= canvas.height + GRID_SIZE) {
+                    // Draw filled square with piece's color
+                    ctx.fillStyle = color;
+                    const squareSize = GRID_SIZE * camera.zoom;
+                    ctx.fillRect(screenX - squareSize/2, screenY - squareSize/2, squareSize, squareSize);
+                }
+            }
+        }
+        
+        // Main game loop
+        function gameLoop(currentTime) {
+            if (!isPaused) {
+                // Move pieces based on time and speed
+                const timeSinceLastMove = currentTime - lastMoveTime;
+                const moveInterval = MOVE_INTERVAL / speed; // Higher speed = shorter interval
+                
+                if (timeSinceLastMove >= moveInterval) {
+                    for (let piece of pieces) {
+                        piece.move();
+                    }
+                    lastMoveTime = currentTime;
+                }
+            }
+            
+            // Clear canvas
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw dots first (background)
+            drawDots();
+            
+            // Draw pieces
+            for (let piece of pieces) {
+                piece.draw();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start with no pieces - clean slate
+        
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>
