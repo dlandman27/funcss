@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Last Survivors</title>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --panel: #12121a;
+      --border: #1e1e2e;
+      --text: #c0c0d0;
+      --text-dim: #606080;
+      --red:    #e74c3c;
+      --blue:   #3498db;
+      --green:  #2ecc71;
+      --yellow: #f1c40f;
+      --purple: #9b59b6;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* ── TOOLBAR ── */
+    #toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      z-index: 100;
+      user-select: none;
+    }
+
+    #toolbar .title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    .tribe-btn {
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      background: transparent;
+      position: relative;
+      transition: transform 0.1s, box-shadow 0.15s;
+      flex-shrink: 0;
+    }
+    .tribe-btn::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 3px;
+      background: currentColor;
+    }
+    .tribe-btn[data-tribe="1"] { color: var(--red);    border-color: var(--red); }
+    .tribe-btn[data-tribe="2"] { color: var(--blue);   border-color: var(--blue); }
+    .tribe-btn[data-tribe="3"] { color: var(--green);  border-color: var(--green); }
+    .tribe-btn[data-tribe="4"] { color: var(--yellow); border-color: var(--yellow); }
+    .tribe-btn[data-tribe="5"] { color: var(--purple); border-color: var(--purple); }
+    .tribe-btn[data-tribe="0"] {
+      color: #333;
+      border-color: #444;
+      background: #1a1a28;
+    }
+    .tribe-btn[data-tribe="0"]::after { background: #444; }
+
+    .tribe-btn.active {
+      transform: scale(1.18);
+    }
+    .tribe-btn[data-tribe="1"].active { box-shadow: 0 0 10px var(--red); }
+    .tribe-btn[data-tribe="2"].active { box-shadow: 0 0 10px var(--blue); }
+    .tribe-btn[data-tribe="3"].active { box-shadow: 0 0 10px var(--green); }
+    .tribe-btn[data-tribe="4"].active { box-shadow: 0 0 10px var(--yellow); }
+    .tribe-btn[data-tribe="5"].active { box-shadow: 0 0 10px var(--purple); }
+    .tribe-btn[data-tribe="0"].active { box-shadow: 0 0 8px #555; }
+
+    .sep { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; margin: 0 4px; }
+
+    #btn-start, #btn-clear, #btn-again {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 7px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+    #btn-start {
+      background: #2ecc71;
+      color: #0a0a0f;
+    }
+    #btn-start:disabled { opacity: 0.3; cursor: not-allowed; }
+    #btn-start:not(:disabled):hover { box-shadow: 0 0 12px #2ecc71aa; transform: scale(1.04); }
+
+    #btn-clear {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    #btn-clear:hover { color: var(--text); border-color: #555; }
+
+    #btn-again {
+      background: #3498db;
+      color: #fff;
+      display: none;
+    }
+    #btn-again:hover { box-shadow: 0 0 12px #3498dbaa; transform: scale(1.04); }
+
+    #gen-counter {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+    #gen-counter span { color: var(--text); font-weight: 700; }
+
+    /* ── CANVAS ── */
+    #canvas-wrap {
+      position: fixed;
+      top: 52px; left: 0; right: 0; bottom: 80px;
+    }
+    #grid-canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* ── POPULATION BAR ── */
+    #pop-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+    }
+    .tribe-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      flex: 1;
+      min-width: 0;
+    }
+    .tribe-stat-label {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .tribe-stat-bar-wrap {
+      width: 100%;
+      height: 14px;
+      background: #1a1a28;
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    .tribe-stat-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.1s;
+      width: 0%;
+    }
+    .tribe-stat[data-tribe="1"] .tribe-stat-bar { background: var(--red);    box-shadow: 0 0 6px var(--red); }
+    .tribe-stat[data-tribe="2"] .tribe-stat-bar { background: var(--blue);   box-shadow: 0 0 6px var(--blue); }
+    .tribe-stat[data-tribe="3"] .tribe-stat-bar { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+    .tribe-stat[data-tribe="4"] .tribe-stat-bar { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+    .tribe-stat[data-tribe="5"] .tribe-stat-bar { background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+    .tribe-stat-count {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .tribe-stat.eliminated .tribe-stat-bar-wrap { opacity: 0.2; }
+    .tribe-stat.eliminated .tribe-stat-label { opacity: 0.3; }
+    .tribe-stat.eliminated .tribe-stat-count  { opacity: 0.3; }
+
+    /* ── BET MODAL ── */
+    #bet-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      display: none;
+    }
+    #bet-modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 44px;
+      text-align: center;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 0 60px #0008;
+    }
+    #bet-modal h2 {
+      font-size: 15px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    #bet-modal p {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 28px;
+      line-height: 1.7;
+    }
+    #bet-options {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .bet-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: #1a1a28;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      font-family: 'Space Mono', monospace;
+    }
+    .bet-btn .swatch {
+      width: 28px; height: 28px;
+      border-radius: 5px;
+    }
+    .bet-btn .count { font-size: 10px; color: var(--text-dim); }
+    .bet-btn .name  { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+    .bet-btn[data-tribe="1"] { border-color: var(--red);    color: var(--red); }
+    .bet-btn[data-tribe="2"] { border-color: var(--blue);   color: var(--blue); }
+    .bet-btn[data-tribe="3"] { border-color: var(--green);  color: var(--green); }
+    .bet-btn[data-tribe="4"] { border-color: var(--yellow); color: var(--yellow); }
+    .bet-btn[data-tribe="5"] { border-color: var(--purple); color: var(--purple); }
+    .bet-btn[data-tribe="1"] .swatch { background: var(--red); }
+    .bet-btn[data-tribe="2"] .swatch { background: var(--blue); }
+    .bet-btn[data-tribe="3"] .swatch { background: var(--green); }
+    .bet-btn[data-tribe="4"] .swatch { background: var(--yellow); }
+    .bet-btn[data-tribe="5"] .swatch { background: var(--purple); }
+
+    .bet-btn:hover { transform: scale(1.06); }
+    .bet-btn[data-tribe="1"]:hover { box-shadow: 0 0 16px var(--red)88; }
+    .bet-btn[data-tribe="2"]:hover { box-shadow: 0 0 16px var(--blue)88; }
+    .bet-btn[data-tribe="3"]:hover { box-shadow: 0 0 16px var(--green)88; }
+    .bet-btn[data-tribe="4"]:hover { box-shadow: 0 0 16px var(--yellow)88; }
+    .bet-btn[data-tribe="5"]:hover { box-shadow: 0 0 16px var(--purple)88; }
+
+    #bet-skip {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    #bet-skip:hover { color: var(--text); }
+
+    /* ── RESULT OVERLAY ── */
+    #result-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    #result-modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 44px 52px;
+      text-align: center;
+      max-width: 440px;
+      width: 90%;
+      box-shadow: 0 0 80px #0009;
+    }
+    #result-modal .result-icon {
+      font-size: 48px;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    #result-modal h2 {
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    #result-modal p {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.8;
+      margin-bottom: 28px;
+    }
+    #result-modal .winner-swatch {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 5px;
+      position: relative;
+      top: -1px;
+    }
+
+    /* ── CONFETTI ── */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 199;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOOLBAR -->
+<div id="toolbar">
+  <span class="title">The Last Survivors</span>
+
+  <button class="tribe-btn active" data-tribe="1" title="Red"></button>
+  <button class="tribe-btn" data-tribe="2" title="Blue"></button>
+  <button class="tribe-btn" data-tribe="3" title="Green"></button>
+  <button class="tribe-btn" data-tribe="4" title="Yellow"></button>
+  <button class="tribe-btn" data-tribe="5" title="Purple"></button>
+  <button class="tribe-btn" data-tribe="0" title="Eraser"></button>
+
+  <div class="sep"></div>
+
+  <button id="btn-start" disabled>Start</button>
+  <button id="btn-clear">Clear</button>
+  <button id="btn-again">Play Again</button>
+
+  <div id="gen-counter">Gen <span id="gen-num">0</span></div>
+</div>
+
+<!-- CANVAS -->
+<div id="canvas-wrap">
+  <canvas id="grid-canvas"></canvas>
+</div>
+
+<!-- POPULATION BAR -->
+<div id="pop-bar">
+  <div class="tribe-stat" data-tribe="1">
+    <div class="tribe-stat-label">Red</div>
+    <div class="tribe-stat-bar-wrap"><div class="tribe-stat-bar"></div></div>
+    <div class="tribe-stat-count">0</div>
+  </div>
+  <div class="tribe-stat" data-tribe="2">
+    <div class="tribe-stat-label">Blue</div>
+    <div class="tribe-stat-bar-wrap"><div class="tribe-stat-bar"></div></div>
+    <div class="tribe-stat-count">0</div>
+  </div>
+  <div class="tribe-stat" data-tribe="3">
+    <div class="tribe-stat-label">Green</div>
+    <div class="tribe-stat-bar-wrap"><div class="tribe-stat-bar"></div></div>
+    <div class="tribe-stat-count">0</div>
+  </div>
+  <div class="tribe-stat" data-tribe="4">
+    <div class="tribe-stat-label">Yellow</div>
+    <div class="tribe-stat-bar-wrap"><div class="tribe-stat-bar"></div></div>
+    <div class="tribe-stat-count">0</div>
+  </div>
+  <div class="tribe-stat" data-tribe="5">
+    <div class="tribe-stat-label">Purple</div>
+    <div class="tribe-stat-bar-wrap"><div class="tribe-stat-bar"></div></div>
+    <div class="tribe-stat-count">0</div>
+  </div>
+</div>
+
+<!-- BET MODAL -->
+<div id="bet-overlay">
+  <div id="bet-modal">
+    <h2>Place Your Bet</h2>
+    <p>Which tribe will be<br>the last survivor?</p>
+    <div id="bet-options"></div>
+    <button id="bet-skip">Skip — just watch</button>
+  </div>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div id="result-overlay">
+  <div id="result-modal">
+    <div class="result-icon" id="result-icon"></div>
+    <h2 id="result-title"></h2>
+    <p id="result-body"></p>
+    <button id="btn-again-modal" style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:10px 24px;border-radius:6px;border:none;background:#3498db;color:#fff;cursor:pointer;">Play Again</button>
+  </div>
+</div>
+
+<!-- CONFETTI -->
+<canvas id="confetti-canvas"></canvas>
+
+<script>
+(() => {
+  // ── CONSTANTS ──
+  const CELL  = 12;
+  const TRIBE_COLORS = ['', '#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6'];
+  const TRIBE_NAMES  = ['', 'Red','Blue','Green','Yellow','Purple'];
+  const GLOW_COLORS  = ['', 'rgba(231,76,60,0.35)','rgba(52,152,219,0.35)','rgba(46,204,113,0.35)','rgba(241,196,15,0.35)','rgba(155,89,182,0.35)'];
+
+  // ── STATE ──
+  let cols, rows;
+  let gridA, gridB;           // Uint8Array double buffer
+  let prevGrid;               // track what was drawn
+  let generation = 0;
+  let phase = 'place';        // place | sim | done
+  let selectedTribe = 1;
+  let betTribe = 0;           // 0 = no bet
+  let simTimer = null;
+  let isMouseDown = false;
+  let lastPaintCell = -1;
+
+  // ── DOM ──
+  const canvas        = document.getElementById('grid-canvas');
+  const ctx           = canvas.getContext('2d');
+  const wrap          = document.getElementById('canvas-wrap');
+  const btnStart      = document.getElementById('btn-start');
+  const btnClear      = document.getElementById('btn-clear');
+  const btnAgain      = document.getElementById('btn-again');
+  const btnAgainModal = document.getElementById('btn-again-modal');
+  const genNum        = document.getElementById('gen-num');
+  const betOverlay    = document.getElementById('bet-overlay');
+  const betOptions    = document.getElementById('bet-options');
+  const betSkip       = document.getElementById('bet-skip');
+  const resultOverlay = document.getElementById('result-overlay');
+  const resultIcon    = document.getElementById('result-icon');
+  const resultTitle   = document.getElementById('result-title');
+  const resultBody    = document.getElementById('result-body');
+  const confettiCanvas= document.getElementById('confetti-canvas');
+  const confCtx       = confettiCanvas.getContext('2d');
+  const tribeBtns     = document.querySelectorAll('.tribe-btn');
+  const tribeStats    = document.querySelectorAll('.tribe-stat');
+
+  // ── INIT / RESIZE ──
+  function init() {
+    const W = wrap.clientWidth;
+    const H = wrap.clientHeight;
+    cols = Math.floor(W / CELL);
+    rows = Math.floor(H / CELL);
+    canvas.width  = cols * CELL;
+    canvas.height = rows * CELL;
+    canvas.style.width  = canvas.width  + 'px';
+    canvas.style.height = canvas.height + 'px';
+
+    gridA   = new Uint8Array(cols * rows);
+    gridB   = new Uint8Array(cols * rows);
+    prevGrid= new Uint8Array(cols * rows).fill(255); // force full redraw on first render
+    generation = 0;
+    genNum.textContent = '0';
+    drawGrid(gridA);
+    updatePopBars(gridA);
+  }
+
+  window.addEventListener('resize', () => {
+    if (phase !== 'place') return;
+    const old = gridA.slice();
+    const oldCols = cols, oldRows = rows;
+    init();
+    // try to restore painted cells that still fit
+    for (let r = 0; r < Math.min(rows, oldRows); r++) {
+      for (let c = 0; c < Math.min(cols, oldCols); c++) {
+        gridA[r * cols + c] = old[r * oldCols + c];
+      }
+    }
+    prevGrid.fill(255);
+    drawGrid(gridA);
+    updatePopBars(gridA);
+    checkStartBtn();
+  });
+
+  // ── DRAWING ──
+  function drawGrid(grid) {
+    for (let i = 0; i < grid.length; i++) {
+      if (grid[i] === prevGrid[i]) continue;
+      const c = i % cols;
+      const r = Math.floor(i / cols);
+      drawCell(c, r, grid[i]);
+      prevGrid[i] = grid[i];
+    }
+  }
+
+  function drawCell(c, r, tribe) {
+    const x = c * CELL;
+    const y = r * CELL;
+    // background
+    ctx.fillStyle = '#0a0a0f';
+    ctx.fillRect(x, y, CELL, CELL);
+    // grid line
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(x + 0.25, y + 0.25, CELL - 0.5, CELL - 0.5);
+    if (tribe === 0) return;
+    // glow
+    ctx.shadowColor  = TRIBE_COLORS[tribe];
+    ctx.shadowBlur   = 6;
+    // cell body
+    ctx.fillStyle = TRIBE_COLORS[tribe];
+    ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+    ctx.shadowBlur = 0;
+  }
+
+  function fullRedraw(grid) {
+    prevGrid.fill(255);
+    drawGrid(grid);
+  }
+
+  // ── POPULATION ──
+  function countTribes(grid) {
+    const counts = [0,0,0,0,0,0];
+    for (let i = 0; i < grid.length; i++) counts[grid[i]]++;
+    return counts;
+  }
+
+  function updatePopBars(grid) {
+    const counts = countTribes(grid);
+    const total  = counts[1]+counts[2]+counts[3]+counts[4]+counts[5] || 1;
+    tribeStats.forEach(stat => {
+      const t   = +stat.dataset.tribe;
+      const pct = (counts[t] / total) * 100;
+      stat.querySelector('.tribe-stat-bar').style.width = pct + '%';
+      stat.querySelector('.tribe-stat-count').textContent = counts[t];
+      stat.classList.toggle('eliminated', counts[t] === 0 && phase === 'sim');
+    });
+  }
+
+  // ── TRIBE BUTTONS ──
+  tribeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (phase !== 'place') return;
+      tribeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedTribe = +btn.dataset.tribe;
+    });
+  });
+
+  // ── PAINTING ──
+  function cellFromEvent(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = Math.floor((e.clientX - rect.left) / CELL);
+    const cy = Math.floor((e.clientY - rect.top)  / CELL);
+    if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) return -1;
+    return cy * cols + cx;
+  }
+
+  function paint(idx) {
+    if (idx < 0 || idx === lastPaintCell) return;
+    lastPaintCell = idx;
+    gridA[idx] = selectedTribe;
+    const c = idx % cols;
+    const r = Math.floor(idx / cols);
+    drawCell(c, r, selectedTribe);
+    prevGrid[idx] = selectedTribe;
+    updatePopBars(gridA);
+    checkStartBtn();
+  }
+
+  canvas.addEventListener('mousedown', e => {
+    if (phase !== 'place') return;
+    isMouseDown = true;
+    lastPaintCell = -1;
+    paint(cellFromEvent(e));
+  });
+  canvas.addEventListener('mousemove', e => {
+    if (!isMouseDown || phase !== 'place') return;
+    paint(cellFromEvent(e));
+  });
+  window.addEventListener('mouseup', () => { isMouseDown = false; lastPaintCell = -1; });
+
+  canvas.addEventListener('touchstart', e => {
+    if (phase !== 'place') return;
+    e.preventDefault();
+    lastPaintCell = -1;
+    paint(cellFromEvent(e.touches[0]));
+  }, {passive: false});
+  canvas.addEventListener('touchmove', e => {
+    if (phase !== 'place') return;
+    e.preventDefault();
+    paint(cellFromEvent(e.touches[0]));
+  }, {passive: false});
+
+  // ── START ──
+  function checkStartBtn() {
+    const counts = countTribes(gridA);
+    let tribes = 0;
+    for (let t = 1; t <= 5; t++) if (counts[t] > 0) tribes++;
+    btnStart.disabled = tribes < 2;
+  }
+
+  btnStart.addEventListener('click', () => {
+    if (phase !== 'place') return;
+    showBetModal();
+  });
+
+  // ── CLEAR ──
+  btnClear.addEventListener('click', () => {
+    stopSim();
+    phase = 'place';
+    betTribe = 0;
+    generation = 0;
+    genNum.textContent = '0';
+    gridA.fill(0);
+    gridB.fill(0);
+    fullRedraw(gridA);
+    updatePopBars(gridA);
+    checkStartBtn();
+    btnAgain.style.display = 'none';
+    btnStart.style.display = '';
+    btnClear.style.display = '';
+    tribeStats.forEach(s => s.classList.remove('eliminated'));
+    stopConfetti();
+    resultOverlay.style.display = 'none';
+    betOverlay.style.display = 'none';
+  });
+
+  btnAgain.addEventListener('click', () => btnClear.click());
+  btnAgainModal.addEventListener('click', () => { resultOverlay.style.display='none'; btnClear.click(); });
+
+  // ── BET MODAL ──
+  function showBetModal() {
+    const counts = countTribes(gridA);
+    betOptions.innerHTML = '';
+    for (let t = 1; t <= 5; t++) {
+      if (counts[t] === 0) continue;
+      const btn = document.createElement('button');
+      btn.className = 'bet-btn';
+      btn.dataset.tribe = t;
+      btn.innerHTML = `<div class="swatch"></div><div class="name">${TRIBE_NAMES[t]}</div><div class="count">${counts[t]} cells</div>`;
+      btn.addEventListener('click', () => {
+        betTribe = t;
+        hideBetModal();
+        startSim();
+      });
+      betOptions.appendChild(btn);
+    }
+    betOverlay.style.display = 'flex';
+  }
+
+  function hideBetModal() {
+    betOverlay.style.display = 'none';
+  }
+
+  betSkip.addEventListener('click', () => {
+    betTribe = 0;
+    hideBetModal();
+    startSim();
+  });
+
+  // ── SIMULATION ──
+  function startSim() {
+    phase = 'sim';
+    recentHashes = [];
+    btnStart.style.display = 'none';
+    btnClear.style.display = 'none';
+    tribeBtns.forEach(b => b.style.pointerEvents = 'none');
+    fullRedraw(gridA);
+    tick();
+  }
+
+  function stopSim() {
+    if (simTimer) { cancelAnimationFrame(simTimer); simTimer = null; }
+    tribeBtns.forEach(b => b.style.pointerEvents = '');
+  }
+
+  let lastTickTime = 0;
+  const TICK_INTERVAL = 1000 / 15; // 15 gen/s
+  const MAX_GENERATIONS = 8000;
+  let recentHashes = [];
+
+  function gridHash(grid) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < grid.length; i++) {
+      h ^= grid[i];
+      h = (h * 0x01000193) >>> 0;
+    }
+    return h;
+  }
+
+  function tick(ts = 0) {
+    if (phase !== 'sim') return;
+    const delta = ts - lastTickTime;
+    if (delta >= TICK_INTERVAL) {
+      lastTickTime = ts;
+      step();
+      const counts = countTribes(gridA);
+      const alive = [1,2,3,4,5].filter(t => counts[t] > 0);
+
+      updatePopBars(gridA);
+      genNum.textContent = generation;
+
+      if (alive.length <= 1) {
+        phase = 'done';
+        stopSim();
+        showResult(alive.length === 1 ? alive[0] : 0, counts, false);
+        return;
+      }
+
+      // Detect stuck simulation: oscillators / still lifes / stalemates
+      const h = gridHash(gridA);
+      if (recentHashes.includes(h) || generation >= MAX_GENERATIONS) {
+        phase = 'done';
+        stopSim();
+        showResult(0, counts, true, alive);
+        return;
+      }
+      recentHashes.push(h);
+      if (recentHashes.length > 30) recentHashes.shift();
+    }
+    simTimer = requestAnimationFrame(tick);
+  }
+
+  // ── CONWAY STEP ──
+  function step() {
+    // neighbor count per tribe: pack into small array
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        // collect living neighbors
+        const neighbors = [];
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = r + dr, nc = c + dc;
+            if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+            const v = gridA[nr * cols + nc];
+            if (v > 0) neighbors.push(v);
+          }
+        }
+        const n = neighbors.length;
+        const self = gridA[idx];
+
+        if (self > 0) {
+          // survival: 2 or 3 neighbors
+          gridB[idx] = (n === 2 || n === 3) ? self : 0;
+        } else {
+          // birth: exactly 3 neighbors
+          if (n === 3) {
+            gridB[idx] = birthColor(neighbors);
+          } else {
+            gridB[idx] = 0;
+          }
+        }
+      }
+    }
+    // swap
+    const tmp = gridA;
+    gridA = gridB;
+    gridB = tmp;
+    generation++;
+    drawGrid(gridA);
+  }
+
+  function birthColor(neighbors) {
+    // count each tribe among 3 neighbors
+    const cnt = [0,0,0,0,0,0];
+    for (const t of neighbors) cnt[t]++;
+    // find max
+    let max = 0;
+    for (let t = 1; t <= 5; t++) if (cnt[t] > max) max = cnt[t];
+    // tribes with majority
+    const candidates = [];
+    for (let t = 1; t <= 5; t++) if (cnt[t] === max) candidates.push(t);
+    // if tie, pick random among candidates
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  // ── RESULT ──
+  function showResult(winner, counts, stalemate = false, survivors = []) {
+    btnAgain.style.display = '';
+    resultOverlay.style.display = 'flex';
+
+    if (stalemate) {
+      resultIcon.textContent = '⚖️';
+      resultTitle.style.color = '#f1c40f';
+      resultTitle.textContent = 'Stalemate';
+      const names = survivors.map(t => `<span style="color:${TRIBE_COLORS[t]}">${TRIBE_NAMES[t]}</span>`).join(', ');
+      resultBody.innerHTML = `No one could finish off the others.<br>${names} reached an uneasy equilibrium.`;
+    } else if (winner === 0) {
+      resultIcon.textContent = '💀';
+      resultTitle.style.color = '#fff';
+      resultTitle.textContent = 'Mutual Annihilation';
+      resultBody.textContent = 'All tribes perished. No one survives.';
+    } else {
+      const color = TRIBE_COLORS[winner];
+      const name  = TRIBE_NAMES[winner];
+      if (betTribe === 0) {
+        resultIcon.textContent = '👁';
+        resultTitle.style.color = color;
+        resultTitle.textContent = name + ' Survives';
+        resultBody.innerHTML = `<span class="winner-swatch" style="background:${color};box-shadow:0 0 8px ${color}"></span>${name} is the last survivor with ${counts[winner]} cells remaining.`;
+      } else if (betTribe === winner) {
+        resultIcon.textContent = '★';
+        resultTitle.style.color = color;
+        resultTitle.textContent = 'You called it!';
+        resultBody.innerHTML = `<span class="winner-swatch" style="background:${color};box-shadow:0 0 8px ${color}"></span>${name} is the last survivor. Your instincts were right.`;
+        launchConfetti(color);
+      } else {
+        resultIcon.textContent = '✗';
+        resultTitle.style.color = '#e74c3c';
+        resultTitle.textContent = 'Wrong.';
+        resultBody.innerHTML = `You bet on ${TRIBE_NAMES[betTribe]}. <span style="color:${color}">${name}</span> is the last survivor.`;
+      }
+    }
+  }
+
+  // ── CONFETTI ──
+  let confParticles = [];
+  let confTimer = null;
+
+  function launchConfetti(baseColor) {
+    confettiCanvas.width  = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+    confettiCanvas.style.display = 'block';
+
+    confParticles = [];
+    const colors = [baseColor, '#fff', '#f1c40f', '#e8e8ff', baseColor];
+    for (let i = 0; i < 180; i++) {
+      confParticles.push({
+        x: Math.random() * confettiCanvas.width,
+        y: -10 - Math.random() * 200,
+        vx: (Math.random() - 0.5) * 3,
+        vy: 2 + Math.random() * 4,
+        rot: Math.random() * Math.PI * 2,
+        vrot: (Math.random() - 0.5) * 0.2,
+        w: 6 + Math.random() * 8,
+        h: 4 + Math.random() * 5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        alpha: 1,
+      });
+    }
+    animateConfetti();
+  }
+
+  function animateConfetti() {
+    confCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    let alive = false;
+    for (const p of confParticles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.06;
+      p.rot += p.vrot;
+      if (p.y > confettiCanvas.height) {
+        p.alpha -= 0.05;
+      }
+      if (p.alpha <= 0) continue;
+      alive = true;
+      confCtx.save();
+      confCtx.globalAlpha = p.alpha;
+      confCtx.translate(p.x, p.y);
+      confCtx.rotate(p.rot);
+      confCtx.fillStyle = p.color;
+      confCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      confCtx.restore();
+    }
+    if (alive) confTimer = requestAnimationFrame(animateConfetti);
+    else stopConfetti();
+  }
+
+  function stopConfetti() {
+    if (confTimer) { cancelAnimationFrame(confTimer); confTimer = null; }
+    confCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    confettiCanvas.style.display = 'none';
+    confParticles = [];
+  }
+
+  // ── BOOT ──
+  init();
+  checkStartBtn();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>static</title>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      cursor: none;
+    }
+
+    #wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #screen {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      filter: hue-rotate(100deg) saturate(0.35) brightness(0.95);
+    }
+
+    #scanlines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0, 0, 0, 0.18) 3px,
+        rgba(0, 0, 0, 0.18) 4px
+      );
+      z-index: 10;
+    }
+
+    #vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse at center,
+        transparent 55%,
+        rgba(0, 0, 0, 0.55) 85%,
+        rgba(0, 0, 0, 0.85) 100%
+      );
+      z-index: 11;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrapper">
+    <canvas id="screen"></canvas>
+    <div id="scanlines"></div>
+    <div id="vignette"></div>
+  </div>
+
+  <script>
+    const CANVAS_W = 320;
+    const CANVAS_H = 180;
+    const REVEAL_DURATION = 40000;
+
+    const MESSAGES = [
+      "HELLO",
+      "WE SEE YOU",
+      "GO OUTSIDE",
+      "STILL WATCHING?",
+      "THIS IS ONLY A TEST",
+      "YOU FOUND IT",
+      "TURN BACK",
+      "GOODNIGHT",
+      "ARE YOU ALONE?",
+      "SORRY FOR THE\nINTERRUPTION",
+    ];
+
+    const canvas = document.getElementById("screen");
+    const ctx = canvas.getContext("2d");
+    canvas.width = CANVAS_W;
+    canvas.height = CANVAS_H;
+
+    // Offscreen canvas for the target message
+    const offscreen = document.createElement("canvas");
+    offscreen.width = CANVAS_W;
+    offscreen.height = CANVAS_H;
+    const offCtx = offscreen.getContext("2d");
+
+    let targetPixels = null;
+    let startTime = null;
+    let animFrame = null;
+    let fontsReady = false;
+
+    function pickMessage() {
+      return MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+    }
+
+    function renderTarget(message) {
+      offCtx.fillStyle = "#000";
+      offCtx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+      const lines = message.split("\n");
+
+      // Find the right font size so text fills ~85% of canvas width
+      let fontSize = 28;
+      offCtx.font = `bold ${fontSize}px "Press Start 2P", monospace`;
+
+      // Binary search for a good font size
+      let lo = 4, hi = 36;
+      for (let i = 0; i < 12; i++) {
+        const mid = (lo + hi) / 2;
+        offCtx.font = `bold ${mid}px "Press Start 2P", monospace`;
+        const maxLineWidth = Math.max(...lines.map(l => offCtx.measureText(l).width));
+        if (maxLineWidth < CANVAS_W * 0.88) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+      fontSize = lo;
+
+      offCtx.font = `bold ${fontSize}px "Press Start 2P", monospace`;
+      offCtx.fillStyle = "#fff";
+      offCtx.textAlign = "center";
+      offCtx.textBaseline = "middle";
+
+      const lineHeight = fontSize * 1.6;
+      const totalHeight = lines.length * lineHeight;
+      const startY = (CANVAS_H - totalHeight) / 2 + lineHeight / 2;
+
+      lines.forEach((line, i) => {
+        offCtx.fillText(line, CANVAS_W / 2, startY + i * lineHeight);
+      });
+
+      // "click to reset" hint — rendered at smallest size, placed near bottom
+      const hintSize = 5;
+      offCtx.font = `${hintSize}px "Press Start 2P", monospace`;
+      offCtx.fillStyle = "rgba(255,255,255,0.45)";
+      offCtx.fillText("[ click to reset ]", CANVAS_W / 2, CANVAS_H - 10);
+
+      const imageData = offCtx.getImageData(0, 0, CANVAS_W, CANVAS_H);
+      targetPixels = imageData.data; // Uint8ClampedArray, RGBA
+    }
+
+    function reset() {
+      if (animFrame) {
+        cancelAnimationFrame(animFrame);
+        animFrame = null;
+      }
+      const msg = pickMessage();
+      renderTarget(msg);
+      startTime = null;
+      loop();
+    }
+
+    function loop() {
+      const now = Date.now();
+      if (startTime === null) startTime = now;
+
+      const elapsed = now - startTime;
+      const rawProgress = Math.min(elapsed / REVEAL_DURATION, 1);
+      const progress = rawProgress * rawProgress; // quadratic ease
+
+      const imageData = ctx.createImageData(CANVAS_W, CANVAS_H);
+      const data = imageData.data;
+      const total = CANVAS_W * CANVAS_H;
+
+      for (let i = 0; i < total; i++) {
+        const idx = i * 4;
+        if (Math.random() < progress) {
+          // Show target pixel
+          data[idx]     = targetPixels[idx];
+          data[idx + 1] = targetPixels[idx + 1];
+          data[idx + 2] = targetPixels[idx + 2];
+          data[idx + 3] = 255;
+        } else {
+          // Static: random grayscale
+          const v = (Math.random() * 255) | 0;
+          data[idx]     = v;
+          data[idx + 1] = v;
+          data[idx + 2] = v;
+          data[idx + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      if (rawProgress < 1) {
+        animFrame = requestAnimationFrame(loop);
+      } else {
+        // Fully revealed — draw clean final frame (no static)
+        ctx.putImageData(ctx.createImageData(CANVAS_W, CANVAS_H), 0, 0);
+        ctx.drawImage(offscreen, 0, 0);
+        animFrame = null;
+      }
+    }
+
+    // Wait for fonts before first render so text sizing is accurate
+    document.fonts.ready.then(() => {
+      fontsReady = true;
+      reset();
+    });
+
+    // Fallback in case fonts.ready never fires cleanly
+    setTimeout(() => {
+      if (!fontsReady) {
+        fontsReady = true;
+        reset();
+      }
+    }, 2000);
+
+    // Click / tap to reset
+    document.addEventListener("click", reset);
+    document.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      reset();
+    }, { passive: false });
+  </script>
+</body>
+</html>

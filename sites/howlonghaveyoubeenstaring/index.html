@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Long Have You Been Staring?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #f5f2eb;
+            --text: #1a1814;
+            --muted: #9a9488;
+            --dim: #ccc8be;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* subtle grain */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.4;
+        }
+
+        #center {
+            text-align: center;
+            position: relative;
+        }
+
+        #question {
+            font-family: 'Instrument Serif', serif;
+            font-style: italic;
+            font-size: clamp(14px, 2vw, 18px);
+            color: var(--muted);
+            letter-spacing: 0.01em;
+            margin-bottom: 32px;
+        }
+
+        #timer {
+            font-family: 'DM Mono', monospace;
+            font-weight: 300;
+            font-size: clamp(64px, 18vw, 200px);
+            line-height: 1;
+            letter-spacing: -0.04em;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            transition: color 1s;
+        }
+
+        #unit {
+            font-size: clamp(10px, 1.2vw, 13px);
+            letter-spacing: 0.3em;
+            color: var(--dim);
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+
+        #comment {
+            font-family: 'Instrument Serif', serif;
+            font-size: clamp(14px, 1.8vw, 17px);
+            color: var(--muted);
+            margin-top: 40px;
+            min-height: 1.5em;
+            font-style: italic;
+            opacity: 0;
+            transition: opacity 1.5s;
+        }
+
+        #comment.visible { opacity: 1; }
+
+        /* The dot that blinks slowly */
+        #dot {
+            position: fixed;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--dim);
+            animation: blink 3s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="center">
+    <div id="question">how long have you been staring at this?</div>
+    <div id="timer">0:00</div>
+    <div id="unit">minutes : seconds</div>
+    <div id="comment" id="comment"></div>
+</div>
+
+<div id="dot"></div>
+
+<script>
+    const timerEl  = document.getElementById('timer');
+    const comment  = document.getElementById('comment');
+    const start    = Date.now();
+
+    const COMMENTS = [
+        [10,   "okay."],
+        [30,   "still here."],
+        [60,   "a whole minute."],
+        [90,   "that's fine."],
+        [120,  "two minutes. no judgment."],
+        [180,  "you could have done something else by now."],
+        [240,  "four minutes of your one life."],
+        [300,  "five minutes. are you okay?"],
+        [360,  "this is becoming a commitment."],
+        [480,  "you've been very patient with this page."],
+        [600,  "ten minutes. i'm flattered, honestly."],
+        [900,  "fifteen minutes. we should talk."],
+        [1200, "twenty minutes. i didn't think you'd still be here."],
+        [1800, "half an hour. i'm worried about you."],
+        [2700, "forty-five minutes. please eat something."],
+        [3600, "an hour. i don't know what to say."],
+        [7200, "two hours. we've been through something together now."],
+    ];
+
+    let lastCommentIdx = -1;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function formatTime(ms) {
+        const total = Math.floor(ms / 1000);
+        const h = Math.floor(total / 3600);
+        const m = Math.floor((total % 3600) / 60);
+        const s = total % 60;
+        if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+        return `${m}:${pad(s)}`;
+    }
+
+    function tick() {
+        const elapsed = Date.now() - start;
+        const seconds = Math.floor(elapsed / 1000);
+
+        timerEl.textContent = formatTime(elapsed);
+
+        // find applicable comment
+        for (let i = COMMENTS.length - 1; i >= 0; i--) {
+            if (seconds >= COMMENTS[i][0]) {
+                if (i !== lastCommentIdx) {
+                    lastCommentIdx = i;
+                    comment.classList.remove('visible');
+                    setTimeout(() => {
+                        comment.textContent = COMMENTS[i][1];
+                        comment.classList.add('visible');
+                    }, 300);
+                }
+                break;
+            }
+        }
+
+        // Color shift over time — very slowly gets warmer
+        const warmth = Math.min(seconds / 3600, 1);
+        const hue = Math.round(40 - warmth * 20);
+        timerEl.style.color = `hsl(${hue}, ${Math.round(warmth * 15)}%, ${Math.round(10 + warmth * 5)}%)`;
+
+        requestAnimationFrame(tick);
+    }
+
+    tick();
+</script>
+</body>
+</html>

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Map</title>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:ital,wght@0,400;1,400;1,600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #1a1208;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 120px rgba(0,0,0,0.4);
+    }
+    .map-btn {
+      position: fixed;
+      bottom: 24px;
+      padding: 8px 18px;
+      background: #c8b898;
+      border: 2px solid #8a7858;
+      color: #3a2a1a;
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border-radius: 2px;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+      transition: background 0.15s, transform 0.1s;
+      z-index: 10;
+    }
+    .map-btn:hover { background: #d8c8a8; transform: translateY(-1px); }
+    .map-btn:active { transform: translateY(0); }
+    #regenerate { left: 24px; }
+    #save       { left: 140px; }
+  </style>
+</head>
+<body>
+  <canvas id="map"></canvas>
+  <button id="regenerate" class="map-btn">New Map</button>
+  <button id="save" class="map-btn">Save Map</button>
+
+  <script>
+  (function() {
+    'use strict';
+
+    const canvas = document.getElementById('map');
+    const ctx = canvas.getContext('2d');
+
+    let seed = Math.random() * 99999 | 0;
+
+    // ─── Seeded RNG ───────────────────────────────────────────────────────────
+    function makeRng(s) {
+      let state = s;
+      return function() {
+        state = (state * 1664525 + 1013904223) & 0xffffffff;
+        return (state >>> 0) / 0xffffffff;
+      };
+    }
+
+    // ─── Noise ────────────────────────────────────────────────────────────────
+    function hash(x, y, s) {
+      const n = Math.sin(x * 127.1 + y * 311.7 + s * 74.3) * 43758.5453;
+      return n - Math.floor(n);
+    }
+    function smoothstep(t) { return t * t * (3 - 2 * t); }
+    function valueNoise(x, y, s) {
+      const xi = Math.floor(x), yi = Math.floor(y);
+      const xf = smoothstep(x - xi), yf = smoothstep(y - yi);
+      const v00 = hash(xi,   yi,   s);
+      const v10 = hash(xi+1, yi,   s);
+      const v01 = hash(xi,   yi+1, s);
+      const v11 = hash(xi+1, yi+1, s);
+      return (v00*(1-xf) + v10*xf) * (1-yf) + (v01*(1-xf) + v11*xf) * yf;
+    }
+    function fbm(x, y, s, octaves=7) {
+      let val=0, amp=0.5, freq=1, max=0;
+      for(let i=0; i<octaves; i++) {
+        val += valueNoise(x*freq, y*freq, s+i*17) * amp;
+        max += amp; amp *= 0.5; freq *= 2.0;
+      }
+      return val / max;
+    }
+
+    // ─── Biome ────────────────────────────────────────────────────────────────
+    function biomeColor(h) {
+      let r, g, b;
+      if      (h < 0.30) { r=0x4a; g=0x6e; b=0x8a; }
+      else if (h < 0.42) { r=0x6a; g=0x9a; b=0xaa; }
+      else if (h < 0.47) { r=0xd4; g=0xc4; b=0x98; }
+      else if (h < 0.60) { r=0xa8; g=0xb8; b=0x78; }
+      else if (h < 0.70) { r=0x6a; g=0x88; b=0x58; }
+      else if (h < 0.80) { r=0xa0; g=0x90; b=0x70; }
+      else if (h < 0.90) { r=0x88; g=0x78; b=0x68; }
+      else               { r=0xd0; g=0xc8; b=0xc0; }
+
+      // slight variation by sub-threshold
+      const pr = 0xd4, pg = 0xc4, pb = 0xa0, t = 0.30;
+      r = Math.round(r + (pr - r) * t);
+      g = Math.round(g + (pg - g) * t);
+      b = Math.round(b + (pb - b) * t);
+      return [r, g, b];
+    }
+
+    function biomeType(h) {
+      if (h < 0.30) return 'deep';
+      if (h < 0.42) return 'sea';
+      if (h < 0.47) return 'beach';
+      if (h < 0.60) return 'lowland';
+      if (h < 0.70) return 'forest';
+      if (h < 0.80) return 'highland';
+      if (h < 0.90) return 'mountain';
+      return 'peak';
+    }
+
+    // ─── Name generation ─────────────────────────────────────────────────────
+    const PREFIXES = ['Ash','Black','Dark','Elder','Far','Grey','High','Iron','Last','Lost','North','Old','Red','Shadow','Stone','Storm','White','Wind','Amber','Bright','Cold','Deep','Dry','Frost','Grim','Hollow','Misty','Silver','Tall','Raven'];
+    const MIDDLES  = ['en','ar','or','ath','um','el','in'];
+    const TOWN_SFX = ['heim','fell','vale','haven','ford','gate','keep','ridge','hold','mere','bridge','port','crossing','watch','wick'];
+    const REGION_SFX = ['moor','wood','lands','reach','wastes','wilds','depths','peaks','coast','shore','march','realm'];
+    const SEA_ADJ  = ['Ashen','Sunken','Grey','Dark','Shining','Bitter','Forgotten','Endless','Silver','Iron'];
+    const SEA_NOUNS = ['Sea','Waters','Deep','Gulf'];
+
+    function makeName(rng, type) {
+      const pre = PREFIXES[Math.floor(rng() * PREFIXES.length)];
+      if (type === 'town') {
+        const sfx = TOWN_SFX[Math.floor(rng() * TOWN_SFX.length)];
+        if (rng() < 0.35) {
+          const mid = MIDDLES[Math.floor(rng() * MIDDLES.length)];
+          return pre + mid + sfx;
+        }
+        return pre + sfx;
+      }
+      if (type === 'region') {
+        const sfx = REGION_SFX[Math.floor(rng() * REGION_SFX.length)];
+        return 'The ' + pre + ' ' + sfx.charAt(0).toUpperCase() + sfx.slice(1);
+      }
+      if (type === 'sea') {
+        const adj = SEA_ADJ[Math.floor(rng() * SEA_ADJ.length)];
+        const noun = SEA_NOUNS[Math.floor(rng() * SEA_NOUNS.length)];
+        const r2 = rng();
+        if (r2 < 0.33) return 'The ' + adj + ' ' + noun;
+        if (r2 < 0.66) {
+          const np = PREFIXES[Math.floor(rng() * PREFIXES.length)];
+          return 'Bay of ' + np;
+        }
+        return 'The ' + adj + ' Deep';
+      }
+      if (type === 'title') {
+        const adj = SEA_ADJ[Math.floor(rng() * SEA_ADJ.length)];
+        const sfx = REGION_SFX[Math.floor(rng() * REGION_SFX.length)];
+        const namePre = PREFIXES[Math.floor(rng() * PREFIXES.length)];
+        return 'The ' + adj + ' Realm of ' + namePre + sfx.charAt(0).toUpperCase() + sfx.slice(1);
+      }
+      return pre;
+    }
+
+    // ─── Compass Rose ─────────────────────────────────────────────────────────
+    function drawCompass(cx, cy, size) {
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      // outer ring
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.85, 0, Math.PI * 2);
+      ctx.strokeStyle = '#8a7858';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2);
+      ctx.strokeStyle = '#8a7858';
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+
+      // draw 8 tick marks
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const inner = (i % 2 === 0) ? size * 0.7 : size * 0.75;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+        ctx.lineTo(Math.cos(a) * size * 0.85, Math.sin(a) * size * 0.85);
+        ctx.strokeStyle = '#6a5838';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // 4 cardinal points — diamond arrows
+      const dirs = [
+        { a: -Math.PI/2, lbl: 'N' },
+        { a:  Math.PI/2, lbl: 'S' },
+        { a:  0,         lbl: 'E' },
+        { a:  Math.PI,   lbl: 'W' },
+      ];
+      dirs.forEach(({ a, lbl }) => {
+        ctx.save();
+        ctx.rotate(a);
+        const tip = size * 0.62;
+        const base = size * 0.18;
+        const w = size * 0.10;
+
+        // filled arrow
+        ctx.beginPath();
+        ctx.moveTo(0, -tip);
+        ctx.lineTo(w, -base);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fillStyle = lbl === 'N' ? '#5a3010' : '#c8b898';
+        ctx.fill();
+        ctx.strokeStyle = '#6a5838';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, -tip);
+        ctx.lineTo(-w, -base);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fillStyle = lbl === 'N' ? '#9a6030' : '#a89878';
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // center dot
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.08, 0, Math.PI * 2);
+      ctx.fillStyle = '#6a5838';
+      ctx.fill();
+
+      // N/S/E/W labels
+      ctx.font = `bold ${size * 0.28}px Cinzel, serif`;
+      ctx.fillStyle = '#3a2a1a';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const lblR = size * 1.05;
+      ctx.fillText('N', 0, -lblR);
+      ctx.fillText('S', 0,  lblR);
+      ctx.fillText('E', lblR, 0);
+      ctx.fillText('W', -lblR, 0);
+
+      ctx.restore();
+    }
+
+    // ─── Border ───────────────────────────────────────────────────────────────
+    function drawBorder(W, H) {
+      const inset1 = 8, inset2 = 14;
+      ctx.strokeStyle = '#8a7858';
+      ctx.lineWidth = 2;
+
+      // outer rect
+      ctx.strokeRect(inset1, inset1, W - inset1*2, H - inset1*2);
+      // inner rect
+      ctx.lineWidth = 1;
+      ctx.strokeRect(inset2, inset2, W - inset2*2, H - inset2*2);
+
+      // corner ornaments
+      const corners = [
+        [inset1, inset1],
+        [W - inset1, inset1],
+        [inset1, H - inset1],
+        [W - inset1, H - inset1],
+      ];
+      ctx.fillStyle = '#6a5838';
+      corners.forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // mid-edge small marks
+      const mids = [
+        [W/2, inset1], [W/2, H - inset1],
+        [inset1, H/2], [W - inset1, H/2],
+      ];
+      mids.forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // ─── Main draw ────────────────────────────────────────────────────────────
+    function draw(s) {
+      const W = canvas.width;
+      const H = canvas.height;
+      const rng = makeRng(s);
+
+      // ── Background parchment fill
+      ctx.fillStyle = '#e8dcc0';
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Height map at half resolution
+      const STEP = 2;
+      const cols = Math.ceil(W / STEP) + 1;
+      const rows = Math.ceil(H / STEP) + 1;
+      const hmap = new Float32Array(cols * rows);
+
+      // noise scale: tune so continents form nicely
+      const scaleX = 3.5 / cols;
+      const scaleY = 3.5 / rows;
+
+      // island mask: push edges toward sea
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const nx = col * scaleX;
+          const ny = row * scaleY;
+          let h = fbm(nx, ny, s);
+
+          // ellipse island mask
+          const dx = (col / cols - 0.5) * 2;
+          const dy = (row / rows - 0.5) * 2;
+          const dist = Math.sqrt(dx*dx*1.1 + dy*dy*0.9);
+          const mask = Math.max(0, 1 - Math.pow(dist * 1.05, 2.2));
+          h = h * 0.6 + h * mask * 0.4;
+          h = Math.pow(h, 0.95);
+
+          hmap[row * cols + col] = Math.max(0, Math.min(1, h));
+        }
+      }
+
+      // ── Draw terrain using ImageData
+      const imgData = ctx.createImageData(W, H);
+      const data = imgData.data;
+
+      for (let py = 0; py < H; py++) {
+        for (let px = 0; px < W; px++) {
+          // bilinear sample from hmap
+          const fx = px / STEP;
+          const fy = py / STEP;
+          const c0 = Math.floor(fx), r0 = Math.floor(fy);
+          const c1 = Math.min(c0 + 1, cols - 1);
+          const r1 = Math.min(r0 + 1, rows - 1);
+          const tx = fx - c0, ty = fy - r0;
+          const h00 = hmap[r0*cols+c0], h10 = hmap[r0*cols+c1];
+          const h01 = hmap[r1*cols+c0], h11 = hmap[r1*cols+c1];
+          const h = (h00*(1-tx)+h10*tx)*(1-ty) + (h01*(1-tx)+h11*tx)*ty;
+
+          const [r, g, b] = biomeColor(h);
+          const idx = (py * W + px) * 4;
+          data[idx]   = r;
+          data[idx+1] = g;
+          data[idx+2] = b;
+          data[idx+3] = 255;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // ── Parchment radial vignette overlay
+      const vignette = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.1, W/2, H/2, Math.max(W,H)*0.78);
+      vignette.addColorStop(0, 'rgba(200,176,130,0)');
+      vignette.addColorStop(0.6, 'rgba(160,130,80,0.08)');
+      vignette.addColorStop(1, 'rgba(80,50,20,0.45)');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Coordinate grid (very faint)
+      ctx.strokeStyle = 'rgba(100,80,50,0.10)';
+      ctx.lineWidth = 0.8;
+      for (let gx = 100; gx < W; gx += 100) {
+        ctx.beginPath();
+        ctx.moveTo(gx, 0);
+        ctx.lineTo(gx, H);
+        ctx.stroke();
+      }
+      for (let gy = 100; gy < H; gy += 100) {
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(W, gy);
+        ctx.stroke();
+      }
+
+      // ── Build pixel biome lookup (sampled at 4px for speed)
+      const LSAMP = 4;
+      const lcols = Math.ceil(W / LSAMP);
+      const lrows = Math.ceil(H / LSAMP);
+      const biomeGrid = new Uint8Array(lcols * lrows); // 0=water,1=beach,2=lowland,3=forest,4=highland,5=mountain
+
+      const biomeIdx = (type) => {
+        if (type === 'deep' || type === 'sea') return 0;
+        if (type === 'beach') return 1;
+        if (type === 'lowland') return 2;
+        if (type === 'forest') return 3;
+        if (type === 'highland') return 4;
+        if (type === 'mountain' || type === 'peak') return 5;
+        return 0;
+      };
+
+      function getH(px, py) {
+        const fx = px / STEP;
+        const fy = py / STEP;
+        const c0 = Math.max(0,Math.min(cols-1,Math.floor(fx)));
+        const r0 = Math.max(0,Math.min(rows-1,Math.floor(fy)));
+        const c1 = Math.min(c0+1, cols-1);
+        const r1 = Math.min(r0+1, rows-1);
+        const tx = fx-c0, ty = fy-r0;
+        const h00=hmap[r0*cols+c0],h10=hmap[r0*cols+c1];
+        const h01=hmap[r1*cols+c0],h11=hmap[r1*cols+c1];
+        return (h00*(1-tx)+h10*tx)*(1-ty)+(h01*(1-tx)+h11*tx)*ty;
+      }
+
+      for (let lr = 0; lr < lrows; lr++) {
+        for (let lc = 0; lc < lcols; lc++) {
+          const px = lc * LSAMP + LSAMP/2;
+          const py = lr * LSAMP + LSAMP/2;
+          biomeGrid[lr*lcols+lc] = biomeIdx(biomeType(getH(px,py)));
+        }
+      }
+
+      function getBiomeAt(px, py) {
+        const lc = Math.max(0,Math.min(lcols-1,Math.floor(px/LSAMP)));
+        const lr = Math.max(0,Math.min(lrows-1,Math.floor(py/LSAMP)));
+        return biomeGrid[lr*lcols+lc];
+      }
+
+      // ── Place names
+      const labels = [];
+      const MIN_DIST = 90;
+
+      function tooClose(x, y) {
+        for (const lb of labels) {
+          const dx = lb.x - x, dy = lb.y - y;
+          if (Math.sqrt(dx*dx+dy*dy) < MIN_DIST) return true;
+        }
+        return false;
+      }
+
+      function findSpot(biomeCheck, tries=300) {
+        for (let t = 0; t < tries; t++) {
+          const px = 60 + rng() * (W - 120);
+          const py = 60 + rng() * (H - 120);
+          if (biomeCheck(getBiomeAt(px, py)) && !tooClose(px, py)) {
+            return { x: px, y: py };
+          }
+        }
+        return null;
+      }
+
+      // Title — top center
+      const titleName = makeName(rng, 'title');
+      labels.push({ x: W/2, y: 38, text: titleName, type: 'title' });
+
+      // Ocean labels
+      const nOcean = 3 + Math.floor(rng() * 2);
+      for (let i = 0; i < nOcean; i++) {
+        const spot = findSpot(b => b === 0);
+        if (spot) {
+          labels.push({ ...spot, text: makeName(rng, 'sea'), type: 'sea' });
+        }
+      }
+
+      // Town labels (beach / lowland / forest)
+      const nTown = 4 + Math.floor(rng() * 3);
+      for (let i = 0; i < nTown; i++) {
+        const spot = findSpot(b => b >= 1 && b <= 3);
+        if (spot) {
+          labels.push({ ...spot, text: makeName(rng, 'town'), type: 'town' });
+        }
+      }
+
+      // Region labels (highland / mountain)
+      const nRegion = 2 + Math.floor(rng() * 2);
+      for (let i = 0; i < nRegion; i++) {
+        const spot = findSpot(b => b >= 4);
+        if (spot) {
+          labels.push({ ...spot, text: makeName(rng, 'region'), type: 'region' });
+        }
+      }
+
+      // ── Draw labels
+      labels.forEach(lb => {
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (lb.type === 'title') {
+          ctx.font = `bold ${Math.min(22, W/50)}px Cinzel, serif`;
+          ctx.fillStyle = 'rgba(40,20,5,0.85)';
+          ctx.shadowColor = 'rgba(200,180,130,0.9)';
+          ctx.shadowBlur = 8;
+          ctx.fillText(lb.text, lb.x, lb.y);
+          // decorative underline
+          const tw = ctx.measureText(lb.text).width;
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = 'rgba(100,70,30,0.5)';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(lb.x - tw/2 - 10, lb.y + 14);
+          ctx.lineTo(lb.x + tw/2 + 10, lb.y + 14);
+          ctx.stroke();
+
+        } else if (lb.type === 'sea') {
+          ctx.font = `italic ${Math.min(13, W/85)}px Crimson Text, Georgia, serif`;
+          ctx.fillStyle = 'rgba(30,50,80,0.65)';
+          ctx.letterSpacing = '0.18em';
+          ctx.shadowColor = 'rgba(255,240,200,0.6)';
+          ctx.shadowBlur = 4;
+          ctx.fillText(lb.text.toUpperCase(), lb.x, lb.y);
+
+        } else if (lb.type === 'town') {
+          // small dot marker
+          ctx.fillStyle = 'rgba(60,35,10,0.9)';
+          ctx.shadowColor = 'rgba(220,200,160,0.8)';
+          ctx.shadowBlur = 3;
+          ctx.beginPath();
+          ctx.arc(lb.x, lb.y, 2.5, 0, Math.PI*2);
+          ctx.fill();
+          ctx.font = `${Math.min(11, W/100)}px Cinzel, serif`;
+          ctx.fillText(lb.text, lb.x, lb.y + 11);
+
+        } else if (lb.type === 'region') {
+          ctx.font = `italic bold ${Math.min(14, W/80)}px Crimson Text, Georgia, serif`;
+          ctx.fillStyle = 'rgba(45,28,8,0.80)';
+          ctx.shadowColor = 'rgba(220,200,155,0.7)';
+          ctx.shadowBlur = 5;
+          // letter spacing via manual draw
+          const txt = lb.text.toUpperCase();
+          const spacing = 3;
+          const totalW = ctx.measureText(txt).width + (txt.length-1)*spacing;
+          let drawX = lb.x - totalW/2;
+          for (const ch of txt) {
+            ctx.fillText(ch, drawX + ctx.measureText(ch).width/2, lb.y);
+            drawX += ctx.measureText(ch).width + spacing;
+          }
+        }
+
+        ctx.restore();
+      });
+
+      // ── Compass rose
+      drawCompass(W - 72, H - 72, 44);
+
+      // ── Border (drawn last so it sits on top)
+      drawBorder(W, H);
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+    function init() {
+      const W = Math.min(window.innerWidth,  1200);
+      const H = Math.min(window.innerHeight, 800);
+      canvas.width  = W;
+      canvas.height = H;
+      draw(seed);
+    }
+
+    document.getElementById('regenerate').addEventListener('click', () => {
+      seed = Math.random() * 99999 | 0;
+      init();
+    });
+
+    document.getElementById('save').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'map.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+
+    // Wait for fonts then draw
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(init);
+    } else {
+      window.addEventListener('load', init);
+    }
+
+  }());
+  </script>
+</body>
+</html>

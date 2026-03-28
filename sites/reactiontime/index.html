@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Time</title>
+    <meta name="description" content="Test your reaction time. Click when the screen turns green. How fast are you?">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0e0e0f;
+            --surface: #161618;
+            --text: #f0ede8;
+            --muted: #5a5a62;
+            --accent-wait: #c0392b;
+            --accent-go: #b8ff57;
+            --accent-early: #e67e22;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', monospace;
+            overflow: hidden;
+            cursor: crosshair;
+            user-select: none;
+        }
+
+        #arena {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.12s ease;
+        }
+
+        #arena.state-idle     { background: var(--bg); }
+        #arena.state-waiting  { background: #1a0808; }
+        #arena.state-go       { background: #0d1f00; }
+        #arena.state-early    { background: #1f0e00; }
+        #arena.state-result   { background: var(--bg); }
+
+        /* Vignette overlay */
+        #arena::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none;
+        }
+
+        /* ── CENTER CONTENT ── */
+        #center {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Label above the big number */
+        #label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(14px, 2vw, 20px);
+            letter-spacing: 0.35em;
+            color: var(--muted);
+            margin-bottom: 12px;
+            min-height: 1.4em;
+            transition: color 0.15s;
+        }
+
+        /* The big display number */
+        #display {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(100px, 22vw, 280px);
+            line-height: 0.85;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            transition: color 0.12s, text-shadow 0.12s;
+            min-height: 1em;
+        }
+
+        #display.dim { color: #2a2a2e; }
+
+        /* Unit / subtext */
+        #unit {
+            font-size: clamp(11px, 1.4vw, 15px);
+            letter-spacing: 0.3em;
+            color: var(--muted);
+            margin-top: 16px;
+            min-height: 1.4em;
+            transition: color 0.15s;
+        }
+
+        /* Rating badge */
+        #rating {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(28px, 5vw, 56px);
+            letter-spacing: 0.12em;
+            margin-top: 24px;
+            min-height: 1.2em;
+            transition: color 0.2s, opacity 0.2s;
+            opacity: 0;
+        }
+
+        #rating.visible { opacity: 1; }
+
+        /* ── STATE COLORS ── */
+        .state-waiting #display { color: #ff4d4d; text-shadow: 0 0 80px rgba(255,77,77,0.3); }
+        .state-waiting #label   { color: #6b2222; }
+        .state-waiting #unit    { color: #6b2222; }
+
+        .state-go #display { color: var(--accent-go); text-shadow: 0 0 100px rgba(184,255,87,0.35); }
+        .state-go #label   { color: #4a6620; }
+        .state-go #unit    { color: #4a6620; }
+
+        .state-early #display { color: var(--accent-early); text-shadow: 0 0 80px rgba(230,126,34,0.3); }
+        .state-early #label  { color: #6b4010; }
+
+        /* ── HISTORY BAR ── */
+        #history {
+            position: fixed;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            z-index: 2;
+        }
+
+        .hist-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .hist-val {
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            transition: color 0.3s;
+        }
+
+        .hist-bar {
+            width: 28px;
+            border-radius: 3px 3px 0 0;
+            background: #2a2a2e;
+            transition: height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s;
+            min-height: 4px;
+        }
+
+        /* ── STATS ROW ── */
+        #stats {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: clamp(24px, 6vw, 80px);
+            padding: 10px 0 14px;
+            border-top: 1px solid #1e1e22;
+            z-index: 2;
+            background: rgba(14,14,15,0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            letter-spacing: 0.35em;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #3a3a42;
+            transition: color 0.4s;
+        }
+
+        .stat-value.active { color: var(--text); }
+
+        /* ── INSTRUCTION HINT ── */
+        #hint {
+            position: fixed;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            letter-spacing: 0.25em;
+            color: #2e2e36;
+            z-index: 2;
+            white-space: nowrap;
+            transition: color 0.4s, opacity 0.4s;
+        }
+
+        #hint.visible { color: #3a3a46; }
+
+        /* ── PULSE on GO ── */
+        @keyframes pulse-ring {
+            0%   { transform: scale(0.9); opacity: 0.6; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        #pulse-ring {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #pulse-ring::before {
+            content: '';
+            width: min(60vw, 60vh);
+            height: min(60vw, 60vh);
+            border-radius: 50%;
+            border: 2px solid var(--accent-go);
+            opacity: 0;
+        }
+
+        .state-go #pulse-ring::before {
+            animation: pulse-ring 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+        }
+
+        /* ── FLASH on click ── */
+        @keyframes flash-in {
+            0%   { opacity: 0.25; }
+            100% { opacity: 0; }
+        }
+
+        #flash {
+            position: fixed;
+            inset: 0;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #flash.active {
+            animation: flash-in 0.25s ease-out forwards;
+        }
+
+        /* ── SCAN LINES ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.04) 2px,
+                rgba(0,0,0,0.04) 4px
+            );
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* ── KEYBOARD hint ── */
+        #key-hint {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            letter-spacing: 0.25em;
+            color: #28282e;
+            z-index: 2;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+<div id="flash"></div>
+<div id="pulse-ring"></div>
+
+<div id="arena" class="state-idle">
+    <div id="center">
+        <div id="label">REACTION TIME</div>
+        <div id="display" class="dim">CLICK</div>
+        <div id="unit">ANYWHERE TO BEGIN</div>
+        <div id="rating"></div>
+    </div>
+</div>
+
+<div id="history">
+    <!-- slots injected by JS -->
+</div>
+
+<div id="stats">
+    <div class="stat">
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="stat-best">—</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Average</div>
+        <div class="stat-value" id="stat-avg">—</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Attempts</div>
+        <div class="stat-value" id="stat-count">0</div>
+    </div>
+</div>
+
+<div id="hint">CLICK · TAP · SPACEBAR</div>
+<div id="key-hint">CLICK · SPACEBAR · TAP</div>
+
+<script>
+    const arena    = document.getElementById('arena');
+    const display  = document.getElementById('display');
+    const label    = document.getElementById('label');
+    const unit     = document.getElementById('unit');
+    const rating   = document.getElementById('rating');
+    const hint     = document.getElementById('hint');
+    const flash    = document.getElementById('flash');
+    const histEl   = document.getElementById('history');
+    const statBest  = document.getElementById('stat-best');
+    const statAvg   = document.getElementById('stat-avg');
+    const statCount = document.getElementById('stat-count');
+
+    // ── STATE MACHINE ──
+    // idle → waiting → go → result → waiting (loop)
+    // idle → waiting → early → waiting (loop)
+
+    let state      = 'idle';
+    let startTime  = 0;
+    let waitTimer  = null;
+    let results    = [];
+    const MAX_HIST = 8;
+
+    // ── RATINGS ──
+    function getRating(ms) {
+        if (ms < 150) return { text: 'IMPOSSIBLE',   color: '#ff4d4d' };
+        if (ms < 180) return { text: 'SUPERHUMAN',   color: '#b8ff57' };
+        if (ms < 220) return { text: 'ELITE',         color: '#b8ff57' };
+        if (ms < 260) return { text: 'SHARP',         color: '#7ddfff' };
+        if (ms < 300) return { text: 'SOLID',         color: '#7ddfff' };
+        if (ms < 350) return { text: 'AVERAGE',       color: '#f0ede8' };
+        if (ms < 420) return { text: 'SLUGGISH',      color: '#e67e22' };
+        if (ms < 550) return { text: 'YOU OKAY?',     color: '#e67e22' };
+        return               { text: 'WERE YOU ASLEEP?', color: '#ff4d4d' };
+    }
+
+    // ── TRANSITIONS ──
+    function setState(s) {
+        arena.className = 'state-' + s;
+        state = s;
+    }
+
+    function doFlash() {
+        flash.classList.remove('active');
+        void flash.offsetWidth; // reflow
+        flash.classList.add('active');
+    }
+
+    function goIdle() {
+        setState('idle');
+        display.textContent = 'CLICK';
+        display.className = 'dim';
+        label.textContent = 'REACTION TIME';
+        unit.textContent = 'ANYWHERE TO BEGIN';
+        rating.textContent = '';
+        rating.classList.remove('visible');
+        hint.classList.remove('visible');
+    }
+
+    function goWaiting() {
+        setState('waiting');
+        display.textContent = '...';
+        display.className = '';
+        label.textContent = 'WAIT FOR IT';
+        unit.textContent = '';
+        rating.textContent = '';
+        rating.classList.remove('visible');
+        hint.classList.remove('visible');
+
+        const delay = 2000 + Math.random() * 4000;
+        waitTimer = setTimeout(goGo, delay);
+    }
+
+    function goGo() {
+        setState('go');
+        display.textContent = 'NOW';
+        label.textContent = 'CLICK!';
+        unit.textContent = '';
+        startTime = performance.now();
+    }
+
+    function goEarly() {
+        clearTimeout(waitTimer);
+        setState('early');
+        display.textContent = 'EARLY';
+        display.className = '';
+        label.textContent = 'TOO SOON';
+        unit.textContent = 'WAIT FOR GREEN';
+        rating.textContent = '';
+        rating.classList.remove('visible');
+        doFlash();
+        setTimeout(goWaiting, 1400);
+    }
+
+    function goResult(ms) {
+        setState('result');
+        doFlash();
+
+        const r = getRating(ms);
+
+        display.textContent = ms;
+        display.className = '';
+        display.style.color = r.color;
+        display.style.textShadow = `0 0 80px ${r.color}55`;
+        label.textContent = 'MILLISECONDS';
+        unit.textContent = 'CLICK TO GO AGAIN';
+
+        rating.textContent = r.text;
+        rating.style.color = r.color;
+        rating.classList.add('visible');
+        hint.classList.add('visible');
+
+        // Store result
+        results.push(ms);
+        if (results.length > MAX_HIST) results.shift();
+        updateStats();
+        updateHistory();
+    }
+
+    // ── STATS ──
+    function updateStats() {
+        if (!results.length) return;
+
+        const best = Math.min(...results);
+        const avg  = Math.round(results.reduce((a,b) => a+b, 0) / results.length);
+
+        statBest.textContent  = best + 'ms';
+        statAvg.textContent   = avg + 'ms';
+        statCount.textContent = results.length;
+
+        [statBest, statAvg, statCount].forEach(el => el.classList.add('active'));
+    }
+
+    // ── HISTORY BARS ──
+    function updateHistory() {
+        histEl.innerHTML = '';
+        if (!results.length) return;
+
+        const max = Math.max(...results);
+        const min = Math.min(...results);
+        const range = max - min || 1;
+        const MAX_H = 48;
+        const MIN_H = 6;
+
+        results.forEach((ms, i) => {
+            const pct  = (ms - min) / range;
+            const h    = MIN_H + (MAX_H - MIN_H) * pct;
+            const r    = getRating(ms);
+            const isLast = i === results.length - 1;
+
+            const slot = document.createElement('div');
+            slot.className = 'hist-slot';
+
+            const val = document.createElement('div');
+            val.className = 'hist-val';
+            val.textContent = ms;
+            if (isLast) val.style.color = r.color;
+
+            const bar = document.createElement('div');
+            bar.className = 'hist-bar';
+            bar.style.height = h + 'px';
+            if (isLast) bar.style.background = r.color;
+
+            slot.appendChild(val);
+            slot.appendChild(bar);
+            histEl.appendChild(slot);
+        });
+    }
+
+    // ── INPUT HANDLER ──
+    function handleInput() {
+        if (state === 'idle') {
+            goWaiting();
+        } else if (state === 'waiting') {
+            goEarly();
+        } else if (state === 'go') {
+            const ms = Math.round(performance.now() - startTime);
+            goResult(ms);
+        } else if (state === 'result') {
+            // Reset display style before next round
+            display.style.color = '';
+            display.style.textShadow = '';
+            goWaiting();
+        } else if (state === 'early') {
+            // ignore clicks during early penalty
+        }
+    }
+
+    arena.addEventListener('click', handleInput);
+    document.addEventListener('keydown', e => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+            e.preventDefault();
+            handleInput();
+        }
+    });
+
+    // Touch support
+    arena.addEventListener('touchstart', e => {
+        e.preventDefault();
+        handleInput();
+    }, { passive: false });
+</script>
+</body>
+</html>

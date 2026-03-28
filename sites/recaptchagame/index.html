@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>reCAPTCHA: The Game</title>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #e8e8e8;
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 13px;
+      color: #555;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ───── reCAPTCHA WIDGET ───── */
+    .rc-widget {
+      width: 300px;
+      background: #f9f9f9;
+      border: 1px solid #d3d3d3;
+      border-radius: 3px;
+      box-shadow: 0 0 4px rgba(0,0,0,.08);
+      padding: 12px 12px 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .rc-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .rc-checkbox-wrap {
+      width: 28px;
+      height: 28px;
+      border: 2px solid #c1c1c1;
+      border-radius: 2px;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .rc-checkbox-wrap:hover { border-color: #4a90d9; }
+    .rc-checkbox-wrap.loading {
+      border-color: #4a90d9;
+      cursor: default;
+    }
+    .rc-checkbox-wrap.checked {
+      border-color: #4a90d9;
+      background: #fff;
+    }
+    .rc-checkmark {
+      display: none;
+      width: 18px;
+      height: 18px;
+    }
+    .rc-checkbox-wrap.checked .rc-checkmark { display: block; }
+    .rc-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #4a90d9;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .rc-checkbox-wrap.loading .rc-spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .rc-label {
+      font-size: 14px;
+      color: #000;
+      user-select: none;
+    }
+
+    .rc-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 8px;
+      color: #555;
+      flex-shrink: 0;
+    }
+    .rc-brand-logo {
+      display: flex;
+      gap: 2px;
+    }
+    .rc-brand-logo span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .rc-brand-logo .r { background: #4285f4; }
+    .rc-brand-logo .e { background: #ea4335; }
+    .rc-brand-logo .c { background: #fbbc05; }
+    .rc-brand-logo .a { background: #34a853; }
+    .rc-brand-text { font-size: 7px; color: #999; text-align: center; }
+    .rc-brand-sub { font-size: 6px; color: #bbb; }
+
+    /* ───── CHALLENGE POPUP ───── */
+    .challenge-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .challenge-box {
+      width: 320px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      overflow: hidden;
+      pointer-events: all;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .challenge-box.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .challenge-header {
+      background: #4a90d9;
+      color: #fff;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      line-height: 1.4;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+    }
+
+    .challenge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      padding: 2px;
+      background: #ccc;
+    }
+
+    .cell {
+      position: relative;
+      cursor: pointer;
+      background: #fff;
+    }
+    .cell canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+    }
+    .cell.selected::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 3px solid #4a90d9;
+      background: rgba(74,144,217,0.18);
+      pointer-events: none;
+    }
+    .cell.selected .cell-check {
+      display: flex;
+    }
+    .cell-check {
+      display: none;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px; height: 20px;
+      background: #4a90d9;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .cell-check svg { width: 12px; height: 12px; }
+
+    .challenge-footer {
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #f0f0f0;
+    }
+    .challenge-skip {
+      font-size: 11px;
+      color: #4a90d9;
+      cursor: pointer;
+      text-decoration: none;
+      user-select: none;
+    }
+    .challenge-skip:hover { text-decoration: underline; }
+
+    .challenge-verify {
+      background: #4a90d9;
+      color: #fff;
+      border: none;
+      border-radius: 2px;
+      padding: 7px 18px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .challenge-verify:disabled {
+      background: #ccc;
+      color: #999;
+      cursor: default;
+    }
+    .challenge-verify:not(:disabled):hover { background: #357abd; }
+
+    .challenge-status {
+      font-size: 11px;
+      color: #e74c3c;
+      padding: 4px 10px 0;
+      min-height: 18px;
+      text-align: center;
+    }
+
+    /* progress dots */
+    .progress-dots {
+      display: flex;
+      gap: 6px;
+      padding: 6px 10px 8px;
+      justify-content: center;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #ddd;
+      transition: background 0.2s;
+    }
+    .dot.done { background: #4a90d9; }
+    .dot.current { background: #4a90d9; box-shadow: 0 0 0 2px #b8d4f0; }
+
+    /* final verified */
+    .verified-msg {
+      display: none;
+      font-size: 13px;
+      color: #3a7d44;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
+    /* confetti */
+    .confetti-piece {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      top: -10px;
+      border-radius: 1px;
+      animation: confettiFall linear forwards;
+      pointer-events: none;
+      z-index: 999;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    .try-again-btn {
+      display: none;
+      margin-top: 10px;
+      background: none;
+      border: 1px solid #4a90d9;
+      color: #4a90d9;
+      padding: 6px 16px;
+      border-radius: 3px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .try-again-btn:hover { background: #f0f6ff; }
+
+    /* timeout bar */
+    .timeout-bar {
+      height: 3px;
+      background: #4a90d9;
+      width: 100%;
+      transform-origin: left;
+      transform: scaleX(1);
+      transition: transform linear;
+    }
+
+    .challenge-note {
+      font-size: 10px;
+      color: #999;
+      text-align: center;
+      padding: 2px 10px 0;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<h1>reCAPTCHA: The Game</h1>
+
+<!-- reCAPTCHA Widget -->
+<div class="rc-widget" id="rcWidget">
+  <div class="rc-left">
+    <div class="rc-checkbox-wrap" id="rcCheckbox" onclick="onCheckboxClick()">
+      <div class="rc-spinner" id="rcSpinner"></div>
+      <svg class="rc-checkmark" id="rcCheckmark" viewBox="0 0 24 24" fill="none">
+        <path d="M5 13l4 4L19 7" stroke="#4a90d9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="rc-label">I'm not a robot</span>
+    <span class="verified-msg" id="verifiedMsg">✓ You are human. Probably.</span>
+  </div>
+  <div class="rc-brand">
+    <div class="rc-brand-logo">
+      <span class="r"></span><span class="e"></span><span class="c"></span><span class="a"></span>
+    </div>
+    <div class="rc-brand-text">reCAPTCHA</div>
+    <div class="rc-brand-sub">Privacy - Terms</div>
+  </div>
+</div>
+<button class="try-again-btn" id="tryAgainBtn" onclick="resetGame()">Try Again</button>
+
+<!-- Challenge Overlay -->
+<div class="challenge-overlay" id="challengeOverlay">
+  <div class="challenge-box" id="challengeBox">
+    <div class="challenge-header" id="challengeHeader">Select all images with traffic lights</div>
+    <div id="timeoutBarWrap" style="height:3px;background:#e0e0e0;display:none">
+      <div class="timeout-bar" id="timeoutBar"></div>
+    </div>
+    <div class="challenge-grid" id="challengeGrid"></div>
+    <div class="challenge-status" id="challengeStatus"></div>
+    <div class="challenge-note" id="challengeNote"></div>
+    <div class="progress-dots" id="progressDots"></div>
+    <div class="challenge-footer">
+      <span class="challenge-skip" onclick="onSkip()">Skip</span>
+      <button class="challenge-verify" id="verifyBtn" disabled onclick="onVerify()">VERIFY</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────
+let currentChallenge = 0;
+let selectedCells = new Set();
+let gameActive = false;
+let timeoutTimer = null;
+let absurdTimerRunning = false;
+let absurdTimerDone = false;
+let firstAttemptChallenge3 = true;
+
+const TOTAL = 8;
+
+// ── Challenge definitions ────────────────────────────────────────
+const challenges = [
+  {
+    title: "Select all squares with traffic lights",
+    correct: [1, 4, 7],            // cell indices 0-8
+    draw: drawChallenge1,
+    mode: "normal"
+  },
+  {
+    title: "Select all squares with bicycles",
+    correct: [0, 3, 6],
+    draw: drawChallenge2,
+    mode: "normal"
+  },
+  {
+    title: "Select all images with the concept of loneliness",
+    correct: null,                  // handled specially
+    draw: drawChallenge3,
+    mode: "feelings"
+  },
+  {
+    title: "Select all squares with traffic lights",
+    correct: [0, 2, 5, 8],         // #8 has a hidden one
+    draw: drawChallenge4,
+    mode: "normal"
+  },
+  {
+    title: 'Select all images that contain MORE squares than this sentence has words',
+    correct: null,                  // computed
+    draw: drawChallenge5,
+    mode: "count"
+  },
+  {
+    title: "Select all images with a horse",
+    correct: null,                  // accepts any after timer
+    draw: drawChallenge6,
+    mode: "timed",
+    timerMs: 8000
+  },
+  {
+    title: "Please solve: if a train leaves Chicago at 3pm going 60mph and another leaves Denver at 5pm going 80mph — select the images that feel right to you",
+    correct: null,                  // accepts any
+    draw: drawChallenge7,
+    mode: "any"
+  },
+  {
+    title: "Select all images with traffic lights",
+    correct: [0,1,2,3,4,5,6,7,8],
+    draw: drawChallenge8,
+    mode: "mosaic"
+  }
+];
+
+// ── Entry point ──────────────────────────────────────────────────
+function onCheckboxClick() {
+  if (gameActive) return;
+  const cb = document.getElementById('rcCheckbox');
+  if (cb.classList.contains('checked')) return;
+  cb.classList.add('loading');
+  setTimeout(() => {
+    cb.classList.remove('loading');
+    startChallenge(0);
+  }, 900);
+}
+
+function startChallenge(idx) {
+  currentChallenge = idx;
+  selectedCells.clear();
+  absurdTimerRunning = false;
+  absurdTimerDone = false;
+  gameActive = true;
+  clearTimeout(timeoutTimer);
+
+  const c = challenges[idx];
+  document.getElementById('challengeHeader').textContent = c.title;
+  document.getElementById('challengeStatus').textContent = '';
+  document.getElementById('challengeNote').textContent = '';
+  document.getElementById('verifyBtn').disabled = true;
+
+  // hide/show timeout bar
+  const tbWrap = document.getElementById('timeoutBarWrap');
+  const tb = document.getElementById('timeoutBar');
+  if (c.mode === 'timed') {
+    tbWrap.style.display = 'block';
+    tb.style.transition = 'none';
+    tb.style.transform = 'scaleX(1)';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      tb.style.transition = `transform ${c.timerMs}ms linear`;
+      tb.style.transform = 'scaleX(0)';
+    }));
+    absurdTimerRunning = true;
+    timeoutTimer = setTimeout(() => {
+      absurdTimerDone = true;
+      absurdTimerRunning = false;
+      document.getElementById('challengeNote').textContent = "Time's up! Any selection accepted.";
+      document.getElementById('verifyBtn').disabled = (selectedCells.size === 0);
+    }, c.timerMs);
+  } else {
+    tbWrap.style.display = 'none';
+  }
+
+  buildGrid(idx);
+  buildDots(idx);
+
+  const box = document.getElementById('challengeBox');
+  box.classList.remove('visible');
+  document.getElementById('challengeOverlay').style.pointerEvents = 'all';
+  requestAnimationFrame(() => requestAnimationFrame(() => box.classList.add('visible')));
+}
+
+function buildGrid(idx) {
+  const grid = document.getElementById('challengeGrid');
+  grid.innerHTML = '';
+  const SIZE = 96; // canvas px
+
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.idx = i;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+    cell.appendChild(canvas);
+
+    const check = document.createElement('div');
+    check.className = 'cell-check';
+    check.innerHTML = `<svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    cell.appendChild(check);
+
+    cell.addEventListener('click', () => onCellClick(i));
+    grid.appendChild(cell);
+
+    challenges[idx].draw(canvas, i);
+  }
+}
+
+function buildDots(idx) {
+  const wrap = document.getElementById('progressDots');
+  wrap.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < idx ? ' done' : i === idx ? ' current' : '');
+    wrap.appendChild(d);
+  }
+}
+
+function onCellClick(i) {
+  if (selectedCells.has(i)) {
+    selectedCells.delete(i);
+  } else {
+    selectedCells.add(i);
+  }
+  const cells = document.getElementById('challengeGrid').children;
+  for (let j = 0; j < 9; j++) {
+    cells[j].classList.toggle('selected', selectedCells.has(j));
+  }
+  const c = challenges[currentChallenge];
+  const canVerify = selectedCells.size > 0 && (c.mode !== 'timed' || absurdTimerDone || absurdTimerRunning);
+  // for timed: enable if something selected, even before timeout
+  document.getElementById('verifyBtn').disabled = (selectedCells.size === 0);
+}
+
+function onVerify() {
+  const c = challenges[currentChallenge];
+  document.getElementById('challengeStatus').textContent = '';
+
+  if (c.mode === 'feelings') {
+    if (firstAttemptChallenge3) {
+      firstAttemptChallenge3 = false;
+      flashStatus("Hmm. Please try again.");
+      reshuffleAndRebuild();
+      return;
+    }
+    proceed();
+    return;
+  }
+
+  if (c.mode === 'timed') {
+    proceed();
+    return;
+  }
+
+  if (c.mode === 'any') {
+    proceed();
+    return;
+  }
+
+  if (c.mode === 'count') {
+    // sentence: "Select all images that contain MORE squares than this sentence has words"
+    // count words: 14 words
+    const wordCount = 14;
+    const correct = [];
+    for (let i = 0; i < 9; i++) {
+      if (challenge5SquareCounts[i] > wordCount) correct.push(i);
+    }
+    const sel = [...selectedCells].sort().join(',');
+    const exp = correct.sort().join(',');
+    if (sel === exp) { proceed(); return; }
+    flashStatus("Please try again.");
+    reshuffleAndRebuild();
+    return;
+  }
+
+  if (c.mode === 'normal' || c.mode === 'mosaic') {
+    const sel = [...selectedCells].sort().join(',');
+    const exp = [...c.correct].sort().join(',');
+    if (sel === exp) { proceed(); return; }
+    flashStatus("Please try again.");
+    reshuffleAndRebuild();
+    return;
+  }
+}
+
+function onSkip() {
+  clearTimeout(timeoutTimer);
+  const next = currentChallenge + 1;
+  if (next < TOTAL) {
+    document.getElementById('challengeStatus').textContent = 'Please complete a new challenge.';
+    setTimeout(() => startChallenge(next), 700);
+  } else {
+    closeChallenge();
+  }
+}
+
+function proceed() {
+  clearTimeout(timeoutTimer);
+  const next = currentChallenge + 1;
+  if (next < TOTAL) {
+    document.getElementById('challengeStatus').textContent = '✓ Please complete the new challenge.';
+    setTimeout(() => startChallenge(next), 700);
+  } else {
+    closeChallenge();
+    celebrate();
+  }
+}
+
+function reshuffleAndRebuild() {
+  selectedCells.clear();
+  buildGrid(currentChallenge);
+  document.getElementById('verifyBtn').disabled = true;
+}
+
+function flashStatus(msg) {
+  const el = document.getElementById('challengeStatus');
+  el.textContent = msg;
+  el.style.color = '#e74c3c';
+}
+
+function closeChallenge() {
+  gameActive = false;
+  const box = document.getElementById('challengeBox');
+  box.classList.remove('visible');
+  document.getElementById('challengeOverlay').style.pointerEvents = 'none';
+}
+
+function celebrate() {
+  const cb = document.getElementById('rcCheckbox');
+  cb.classList.add('checked');
+  document.getElementById('verifiedMsg').style.display = 'inline';
+  document.getElementById('tryAgainBtn').style.display = 'inline-block';
+  spawnConfetti();
+}
+
+function spawnConfetti() {
+  const colors = ['#4285f4','#ea4335','#fbbc05','#34a853','#ff6b9d','#a855f7'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+      el.style.animationDelay = '0s';
+      el.style.transform = `rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }, i * 30);
+  }
+}
+
+function resetGame() {
+  firstAttemptChallenge3 = true;
+  currentChallenge = 0;
+  selectedCells.clear();
+  gameActive = false;
+  clearTimeout(timeoutTimer);
+
+  const cb = document.getElementById('rcCheckbox');
+  cb.classList.remove('checked', 'loading');
+  document.getElementById('verifiedMsg').style.display = 'none';
+  document.getElementById('tryAgainBtn').style.display = 'none';
+  closeChallenge();
+}
+
+// ── Drawing functions ────────────────────────────────────────────
+
+// Helpers
+function rng(seed) {
+  // simple seeded pseudo-random
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+function drawUrbanScene(ctx, seed, w, h) {
+  const r = rng(seed);
+  // sky
+  ctx.fillStyle = '#b8d4e8';
+  ctx.fillRect(0, 0, w, h);
+  // ground
+  ctx.fillStyle = '#888';
+  ctx.fillRect(0, h*0.65, w, h*0.35);
+  // buildings
+  for (let i = 0; i < 3; i++) {
+    const bw = w*0.15 + r()*w*0.15;
+    const bh = h*0.2 + r()*h*0.3;
+    const bx = i*(w*0.3) + r()*w*0.1;
+    ctx.fillStyle = `hsl(${200+r()*40},${10+r()*20}%,${40+r()*30}%)`;
+    ctx.fillRect(bx, h*0.65 - bh, bw, bh);
+    // windows
+    ctx.fillStyle = 'rgba(255,255,180,0.7)';
+    for (let wy = 0; wy < 3; wy++) {
+      for (let wx = 0; wx < 2; wx++) {
+        if (r() > 0.3)
+          ctx.fillRect(bx+4+wx*10, h*0.65-bh+6+wy*10, 6, 6);
+      }
+    }
+  }
+  // road line
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 4; i++) {
+    ctx.fillRect(w*0.1 + i*w*0.22, h*0.78, w*0.12, 3);
+  }
+}
+
+function drawTrafficLight(ctx, x, y, size) {
+  const w = size * 0.4, h = size;
+  // pole
+  ctx.fillStyle = '#555';
+  ctx.fillRect(x + size*0.18, y + h*0.8, size*0.04, size*0.25);
+  // box
+  ctx.fillStyle = '#222';
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 3);
+  ctx.fill();
+  // lights
+  const colors = ['#ff3b30','#ffcc00','#34c759'];
+  for (let i = 0; i < 3; i++) {
+    ctx.fillStyle = colors[i];
+    ctx.beginPath();
+    ctx.arc(x + w/2, y + h*0.18 + i*(h*0.28), w*0.35, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawBicycle(ctx, cx, cy, size) {
+  const r = size * 0.28;
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 2;
+  // wheels
+  ctx.beginPath(); ctx.arc(cx - r*1.1, cy, r, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx + r*1.1, cy, r, 0, Math.PI*2); ctx.stroke();
+  // frame
+  ctx.beginPath();
+  ctx.moveTo(cx - r*1.1, cy);
+  ctx.lineTo(cx, cy - r*0.7);
+  ctx.lineTo(cx + r*1.1, cy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - r*0.1, cy - r*0.7);
+  ctx.lineTo(cx - r*0.9, cy);
+  ctx.stroke();
+  // handlebars
+  ctx.beginPath();
+  ctx.moveTo(cx + r*0.8, cy - r*0.7);
+  ctx.lineTo(cx + r*1.2, cy - r*0.7);
+  ctx.stroke();
+  // seat
+  ctx.beginPath();
+  ctx.moveTo(cx - r*0.3, cy - r*0.7);
+  ctx.lineTo(cx + r*0.1, cy - r*0.7);
+  ctx.stroke();
+}
+
+// ── Challenge 1: Traffic lights ──────────────────────────────────
+function drawChallenge1(canvas, idx) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const hasLight = [1, 4, 7].includes(idx);
+  drawUrbanScene(ctx, idx * 77 + 1, w, h);
+  if (hasLight) {
+    drawTrafficLight(ctx, w*0.35, h*0.2, h*0.45);
+  }
+}
+
+// ── Challenge 2: Bicycles ────────────────────────────────────────
+function drawChallenge2(canvas, idx) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const hasBike = [0, 3, 6].includes(idx);
+  drawUrbanScene(ctx, idx * 53 + 2, w, h);
+  if (hasBike) {
+    drawBicycle(ctx, w*0.5, h*0.72, w*0.55);
+  } else {
+    // draw a car instead
+    const r = rng(idx * 31 + 99);
+    const carX = w*0.15 + r()*w*0.1;
+    const carY = h*0.62;
+    ctx.fillStyle = `hsl(${r()*360},60%,50%)`;
+    ctx.fillRect(carX, carY + h*0.1, w*0.6, h*0.15);
+    ctx.fillRect(carX + w*0.1, carY, w*0.4, h*0.12);
+    ctx.fillStyle = '#222';
+    ctx.beginPath(); ctx.arc(carX + w*0.15, carY+h*0.27, h*0.06, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(carX + w*0.5, carY+h*0.27, h*0.06, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+// ── Challenge 3: Concept of loneliness ──────────────────────────
+function drawChallenge3(canvas, idx) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const r = rng(idx * 113 + firstAttemptChallenge3 ? 7 : 200);
+  // abstract colored squares
+  const palettes = [
+    ['#1a1a2e','#16213e','#0f3460'],
+    ['#c9ada7','#f2e9e4','#9a8c98'],
+    ['#e63946','#f1faee','#a8dadc'],
+    ['#264653','#2a9d8f','#e9c46a'],
+    ['#6d6875','#b5838d','#e5989b'],
+  ];
+  const pal = palettes[idx % palettes.length];
+  ctx.fillStyle = pal[0];
+  ctx.fillRect(0, 0, w, h);
+  // scattered shapes
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = pal[1 + (i % (pal.length-1))];
+    const sx = r() * w*0.7;
+    const sy = r() * h*0.7;
+    const sw = w*0.1 + r()*w*0.2;
+    const sh = h*0.1 + r()*h*0.2;
+    ctx.globalAlpha = 0.4 + r()*0.5;
+    ctx.fillRect(sx, sy, sw, sh);
+  }
+  ctx.globalAlpha = 1;
+  // lone dot
+  ctx.fillStyle = '#fff';
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.arc(w*0.5, h*0.55, 3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+// ── Challenge 4: Hidden traffic light ───────────────────────────
+function drawChallenge4(canvas, idx) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  // correct cells: [0, 2, 5, 8]
+  const hasLight = [0, 2, 5].includes(idx);
+  const hasHidden = idx === 8;
+  drawUrbanScene(ctx, idx * 91 + 4, w, h);
+  if (hasLight) {
+    drawTrafficLight(ctx, w*0.3, h*0.15, h*0.5);
+  }
+  if (hasHidden) {
+    // tiny traffic light hidden in the corner, blended
+    ctx.globalAlpha = 0.55;
+    drawTrafficLight(ctx, w*0.02, h*0.02, h*0.18);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ── Challenge 5: Count squares ───────────────────────────────────
+// "this sentence has words" — count: "Select all images that contain MORE squares than this sentence has words" = 14 words
+const challenge5SquareCounts = [];
+
+function drawChallenge5(canvas, idx) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const r = rng(idx * 67 + 5);
+  ctx.fillStyle = '#f5f5f0';
+  ctx.fillRect(0, 0, w, h);
+
+  // place a random number of squares (8-20)
+  const counts = [8, 11, 15, 13, 17, 9, 16, 12, 19];
+  const count = counts[idx];
+  challenge5SquareCounts[idx] = count;
+
+  ctx.strokeStyle = '#888';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < count; i++) {
+    const sx = 4 + r() * (w - 16);
+    const sy = 4 + r() * (h - 16);
+    const ss = 6 + r() * 10;
+    ctx.fillStyle = `hsl(${r()*360},40%,70%)`;
+    ctx.fillRect(sx, sy, ss, ss);
+    ctx.strokeRect(sx, sy, ss, ss);
+  }
+
+  // label count in corner (small, subtle)
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.font = '8px Arial';
+  ctx.fillText(count + ' sq', 2, h - 2);
+}
+
+// ── Challenge 6: Horse blobs ─────────────────────────────────────
+function drawChallenge6(canvas, idx) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const r = rng(idx * 43 + 6);
+  // muted earthy backgrounds
+  const bgs = ['#d4c5a9','#c8b89a','#b8a88a','#cfc0a0','#d8c8b0','#bfb098','#d0c0a8','#c5b595','#ddd0bc'];
+  ctx.fillStyle = bgs[idx % bgs.length];
+  ctx.fillRect(0, 0, w, h);
+
+  // abstract blob shapes
+  if (idx === 3) {
+    // "maybe a horse" — vaguely horse-shaped blob
+    ctx.fillStyle = '#7a5c3a';
+    ctx.beginPath();
+    ctx.ellipse(w*0.45, h*0.55, w*0.22, h*0.18, -0.2, 0, Math.PI*2);
+    ctx.fill();
+    // head
+    ctx.beginPath();
+    ctx.ellipse(w*0.65, h*0.38, w*0.1, h*0.13, 0.4, 0, Math.PI*2);
+    ctx.fill();
+    // legs
+    for (let i = 0; i < 4; i++) {
+      ctx.fillRect(w*0.25 + i*w*0.12, h*0.65, w*0.05, h*0.18);
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.font = '8px Arial';
+    ctx.fillText('??', w*0.5, h*0.92);
+  } else {
+    // random blobs
+    const numBlobs = 2 + Math.floor(r() * 4);
+    for (let i = 0; i < numBlobs; i++) {
+      ctx.fillStyle = `hsl(${30+r()*40},${30+r()*30}%,${30+r()*30}%)`;
+      ctx.globalAlpha = 0.5 + r()*0.4;
+      ctx.beginPath();
+      ctx.ellipse(
+        w*0.2 + r()*w*0.6, h*0.2 + r()*h*0.6,
+        w*0.05+r()*w*0.15, h*0.05+r()*h*0.15,
+        r()*Math.PI, 0, Math.PI*2
+      );
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ── Challenge 7: Train puzzle / feel right ────────────────────────
+function drawChallenge7(canvas, idx) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const r = rng(idx * 29 + 7);
+  // random colorful abstract
+  ctx.fillStyle = `hsl(${r()*360},${40+r()*30}%,${60+r()*20}%)`;
+  ctx.fillRect(0, 0, w, h);
+  const shapes = 3 + Math.floor(r() * 5);
+  for (let i = 0; i < shapes; i++) {
+    ctx.fillStyle = `hsla(${r()*360},60%,50%,0.6)`;
+    const type = Math.floor(r() * 3);
+    if (type === 0) {
+      ctx.fillRect(r()*w*0.7, r()*h*0.7, w*0.1+r()*w*0.2, h*0.1+r()*h*0.2);
+    } else if (type === 1) {
+      ctx.beginPath();
+      ctx.arc(r()*w*0.8+w*0.1, r()*h*0.8+h*0.1, w*0.05+r()*w*0.12, 0, Math.PI*2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(r()*w, r()*h);
+      ctx.lineTo(r()*w, r()*h);
+      ctx.lineTo(r()*w, r()*h);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  // small label
+  const words = ['vibes','??','trust','feel','yes?','no?','mph','3pm','hmm'];
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.font = 'bold 9px Arial';
+  ctx.fillText(words[idx], 3, 10);
+}
+
+// ── Challenge 8: Mosaic traffic light ────────────────────────────
+function drawChallenge8(canvas, idx) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  // treat the 3x3 grid as a 3×3 mosaic of one large traffic light
+  const col = idx % 3;
+  const row = Math.floor(idx / 3);
+
+  // total virtual canvas: 3 cells wide, 3 cells tall
+  const TW = w * 3, TH = h * 3;
+  ctx.save();
+  ctx.translate(-col * w, -row * h);
+
+  // background (dark)
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, TW, TH);
+
+  // giant traffic light box
+  const bx = TW*0.2, by = TH*0.05, bw = TW*0.6, bh = TH*0.75;
+  ctx.fillStyle = '#333';
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, 12);
+  ctx.fill();
+
+  // border
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, 12);
+  ctx.stroke();
+
+  // three lights (red, yellow, green)
+  const lightColors = ['#ff3b30','#ffcc00','#34c759'];
+  const lightGlow = ['rgba(255,59,48,0.4)','rgba(255,204,0,0.4)','rgba(52,199,89,0.4)'];
+  for (let i = 0; i < 3; i++) {
+    const cx = TW * 0.5;
+    const cy = TH * (0.17 + i * 0.25);
+    const rad = TW * 0.18;
+    // glow
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad*1.3);
+    g.addColorStop(0, lightGlow[i]);
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad*1.3, 0, Math.PI*2);
+    ctx.fill();
+    // main light
+    ctx.fillStyle = lightColors[i];
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI*2);
+    ctx.fill();
+    // shine
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.beginPath();
+    ctx.arc(cx - rad*0.2, cy - rad*0.25, rad*0.35, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // pole
+  ctx.fillStyle = '#555';
+  ctx.fillRect(TW*0.46, by + bh, TW*0.08, TH*0.22);
+
+  ctx.restore();
+
+  // subtle cell border hint
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0, 0, w, h);
+}
+
+// Init: make sure canvas draws are set up on load
+window.addEventListener('load', () => {
+  // pre-build challenge 5 counts
+  for (let i = 0; i < 9; i++) {
+    challenge5SquareCounts[i] = [8, 11, 15, 13, 17, 9, 16, 12, 19][i];
+  }
+});
+</script>
+</body>
+</html>

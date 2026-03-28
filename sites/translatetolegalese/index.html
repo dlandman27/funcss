@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Translate to Legalese</title>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #1a1a1a;
+      color: #e8e8e8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #111;
+      border-bottom: 1px solid #333;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    header .subtitle {
+      font-size: 0.82rem;
+      color: #888;
+      font-weight: 400;
+    }
+
+    header .stamp {
+      margin-left: auto;
+      background: #2a1f0a;
+      border: 2px solid #8b6914;
+      color: #c49a1e;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 4px 10px;
+      text-transform: uppercase;
+      transform: rotate(-2deg);
+      font-family: 'Libre Baskerville', serif;
+    }
+
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      padding: 0;
+      min-height: 0;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      padding: 28px 32px;
+    }
+
+    .panel-left {
+      background: #1e1e1e;
+      border-right: 1px solid #333;
+    }
+
+    .panel-right {
+      background: #fdf8f0;
+    }
+
+    .panel-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      color: #888;
+    }
+
+    .panel-right .panel-label {
+      color: #999;
+    }
+
+    textarea#input {
+      flex: 1;
+      width: 100%;
+      min-height: 420px;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      color: #e8e8e8;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      line-height: 1.65;
+      padding: 16px 18px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea#input::placeholder {
+      color: #555;
+    }
+
+    textarea#input:focus {
+      border-color: #555;
+    }
+
+    .input-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      align-items: center;
+    }
+
+    .btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 9px 18px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: #c49a1e;
+      color: #111;
+    }
+
+    .btn-primary:hover {
+      background: #d4a820;
+    }
+
+    .btn-secondary {
+      background: #333;
+      color: #ccc;
+    }
+
+    .btn-secondary:hover {
+      background: #3d3d3d;
+    }
+
+    .realtime-hint {
+      font-size: 0.72rem;
+      color: #555;
+      margin-left: auto;
+    }
+
+    /* Legal document output */
+    .legal-doc-wrap {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 420px;
+      position: relative;
+    }
+
+    .legal-doc {
+      background: #fdf8f0;
+      font-family: 'Libre Baskerville', serif;
+      font-size: 0.88rem;
+      line-height: 1.85;
+      color: #1a1208;
+      text-align: justify;
+      hyphens: auto;
+      padding: 32px 36px;
+      min-height: 100%;
+      border: 1px solid #d6c9a8;
+      border-radius: 2px;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.04);
+    }
+
+    .legal-doc .doc-header {
+      text-align: center;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #1a1208;
+    }
+
+    .legal-doc .doc-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #1a1208;
+      line-height: 1.6;
+    }
+
+    .legal-doc .doc-number {
+      font-size: 0.72rem;
+      color: #7a6a4a;
+      margin-top: 6px;
+      letter-spacing: 0.08em;
+    }
+
+    .legal-doc .doc-body {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .legal-doc .doc-body .whereas {
+      font-variant: small-caps;
+      font-weight: 700;
+    }
+
+    .legal-doc .doc-footer {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #c4b48a;
+      font-size: 0.78rem;
+      color: #7a6a4a;
+    }
+
+    .legal-doc .sig-line {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+      gap: 40px;
+    }
+
+    .legal-doc .sig-block {
+      flex: 1;
+      border-top: 1px solid #1a1208;
+      padding-top: 6px;
+      font-size: 0.72rem;
+      color: #555;
+      letter-spacing: 0.04em;
+    }
+
+    .legal-doc-empty {
+      color: #b8a87a;
+      font-style: italic;
+      font-size: 0.82rem;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .output-controls {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+      gap: 10px;
+    }
+
+    .btn-copy {
+      background: #2c2010;
+      color: #c49a1e;
+      border: 1px solid #8b6914;
+      font-size: 0.78rem;
+    }
+
+    .btn-copy:hover {
+      background: #3a2a14;
+    }
+
+    .btn-copy.copied {
+      background: #1a3020;
+      color: #4caf80;
+      border-color: #2e6b48;
+    }
+
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 4rem;
+      font-weight: 700;
+      font-family: 'Libre Baskerville', serif;
+      color: rgba(180, 150, 80, 0.06);
+      pointer-events: none;
+      user-select: none;
+      letter-spacing: 0.2em;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 768px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+      .panel-left {
+        border-right: none;
+        border-bottom: 1px solid #333;
+      }
+      textarea#input {
+        min-height: 200px;
+      }
+      .legal-doc-wrap {
+        min-height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Translate to Legalese</h1>
+    <div class="subtitle">Type anything casual. Receive something completely unreadable.</div>
+  </div>
+  <div class="stamp">Legally Binding*</div>
+</header>
+
+<div class="main">
+  <div class="panel panel-left">
+    <div class="panel-label">Plain English Input</div>
+    <textarea id="input" placeholder="I want to eat a sandwich" spellcheck="false"></textarea>
+    <div class="input-controls">
+      <button class="btn btn-primary" onclick="translateNow()">Translate</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+      <span class="realtime-hint">Auto-translates as you type</span>
+    </div>
+  </div>
+
+  <div class="panel panel-right">
+    <div class="panel-label" style="color:#999">Legal Document Output</div>
+    <div class="legal-doc-wrap">
+      <div class="watermark">DRAFT</div>
+      <div class="legal-doc" id="output">
+        <div class="legal-doc-empty">Your legal document will appear here&hellip;</div>
+      </div>
+    </div>
+    <div class="output-controls">
+      <button class="btn btn-copy" id="copyBtn" onclick="copyOutput()">Copy to Clipboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─────────────────────────────────────────────
+  // SUBSTITUTION MAP (ordered longest-first to prevent partial matches)
+  // ─────────────────────────────────────────────
+  const substitutions = [
+    // Multi-word first
+    ["want to",    "hereby expresses intent to"],
+    ["a lot",      "a significant and material quantity of"],
+    ["can't",      "is legally unable and hereby prohibited from"],
+    ["cannot",     "is legally unable and hereby prohibited from"],
+    ["won't",      "shall not and hereby declines to"],
+    ["will not",   "shall not and hereby declines to"],
+    ["don't",      "does not and shall not"],
+    ["do not",     "does not and shall not"],
+    ["isn't",      "is not, and has never been, nor shall it be"],
+    ["aren't",     "are not, and have never been, nor shall they be"],
+    ["didn't",     "did not, and hereby asserts that no such action occurred"],
+    ["hasn't",     "has not, as of the date of execution hereof"],
+    ["haven't",    "have not, as of the date of execution hereof"],
+    ["i'm",        "the undersigned party (hereinafter 'Party A') is"],
+    ["i've",       "the undersigned party (hereinafter 'Party A') has"],
+    ["i'll",       "the undersigned party (hereinafter 'Party A') shall"],
+    ["i'd",        "the undersigned party (hereinafter 'Party A') would"],
+    ["you're",     "the aforementioned recipient (hereinafter 'Party B') is"],
+    ["you've",     "the aforementioned recipient (hereinafter 'Party B') has"],
+    ["you'll",     "the aforementioned recipient (hereinafter 'Party B') shall"],
+    ["they're",    "the referenced third parties are"],
+    ["we're",      "all undersigned parties are"],
+    ["let's",      "all parties hereby agree to"],
+    ["kind of",    "to a reasonably approximate degree"],
+    ["sort of",    "in a manner loosely consistent with"],
+    ["a bit",      "a marginally quantifiable degree of"],
+    ["right now",  "at the immediate time of execution"],
+    ["for sure",   "with reasonable certainty and no material doubt"],
+    ["of course",  "it is hereby affirmed without reservation that"],
+    ["by the way", "it is further noted, incidentally, that"],
+    ["okay",       "acknowledged and agreed"],
+    ["ok",         "acknowledged and agreed"],
+
+    // Single words (longest variants first where overlap exists)
+    ["sandwich",   "comestible foodstuff comprising layered provisions between two units of baked wheat substrate"],
+    ["pizza",      "circular comestible arrangement of baked dough substrate with applied toppings"],
+    ["coffee",     "caffeinated beverage derived from roasted botanical matter"],
+    ["breakfast",  "the first consumable intake of the calendar day"],
+    ["lunch",      "the midday consumable intake"],
+    ["dinner",     "the evening consumable intake"],
+    ["friend",     "affiliated third party"],
+    ["friends",    "affiliated third parties"],
+    ["family",     "legally recognized domestic unit members"],
+    ["house",      "residential dwelling unit"],
+    ["home",       "primary place of domicile"],
+    ["apartment",  "leased residential unit"],
+    ["car",        "motor vehicle"],
+    ["money",      "monetary consideration"],
+    ["cash",       "liquid monetary consideration"],
+    ["job",        "employment arrangement"],
+    ["work",       "occupational obligations and duties"],
+    ["boss",       "supervising party of authority"],
+    ["food",       "consumable goods and provisions"],
+    ["problem",    "material adverse condition"],
+    ["problems",   "material adverse conditions"],
+    ["issue",      "matter requiring formal resolution"],
+    ["mistake",    "inadvertent deviation from the agreed standard"],
+    ["stuff",      "items and articles of indeterminate classification"],
+    ["things",     "articles and matters subject to consideration"],
+    ["thing",      "article and matter subject to consideration"],
+    ["place",      "designated location or premises"],
+    ["time",       "temporal period under consideration"],
+    ["day",        "calendar day within the applicable period"],
+    ["week",       "period of seven consecutive calendar days"],
+    ["month",      "applicable calendar month"],
+    ["year",       "fiscal or calendar year, as applicable"],
+    ["phone",      "electronic communications device"],
+    ["computer",   "electronic data processing unit"],
+    ["internet",   "global electronic communications network"],
+    ["email",      "electronic written correspondence"],
+    ["meeting",    "formal convening of parties for purposes of discussion"],
+    ["party",      "the relevant contracting party"],
+    ["deal",       "binding transaction and agreement"],
+    ["plan",       "proposed course of action subject to approval"],
+    ["idea",       "conceptual proposal subject to further review"],
+    ["right",      "duly established entitlement"],
+    ["wrong",      "in material breach of the applicable standard"],
+    ["true",       "factually accurate and not misleading"],
+    ["false",      "materially inaccurate and potentially actionable"],
+    ["pretty",     "to a notable and material degree"],
+    ["basically",  "in summary and without material qualification"],
+    ["actually",   "as a matter of established fact"],
+    ["honestly",   "with full candor and without omission"],
+    ["literally",  "in the strict and unambiguous sense of the term"],
+    ["totally",    "in all material respects and without reservation"],
+    ["seriously",  "with the full gravity the matter legally demands"],
+    ["probably",   "with a preponderance of the available evidence suggesting"],
+    ["definitely", "with certainty beyond any reasonable legal doubt"],
+    ["obviously",  "as would be apparent to any reasonable party"],
+    ["whatever",   "any and all items or matters without limitation"],
+    ["anyway",     "notwithstanding the foregoing circumstances"],
+    ["anyway",     "notwithstanding the foregoing circumstances"],
+    ["also",       "in addition thereto"],
+    ["maybe",      "subject to further review and conditions precedent"],
+    ["soon",       "within a reasonable period as determined by applicable standards"],
+    ["later",      "at a subsequent date to be mutually agreed upon"],
+    ["today",      "on the date of execution hereof"],
+    ["tomorrow",   "on the next business day following execution"],
+    ["yesterday",  "on the calendar day immediately preceding execution hereof"],
+    ["always",     "at all times and without exception"],
+    ["never",      "under no circumstances whatsoever"],
+    ["really",     "to a substantial and material degree"],
+    ["very",       "in an extreme and material manner"],
+    ["some",       "certain quantities of"],
+    ["all",        "each and every"],
+    ["now",        "at the time of execution of this document"],
+    ["good",       "satisfactory and compliant"],
+    ["great",      "of superior and demonstrably compliant quality"],
+    ["bad",        "non-compliant and materially deficient"],
+    ["terrible",   "in egregious and actionable noncompliance"],
+    ["big",        "of substantial magnitude"],
+    ["large",      "of considerable and material scale"],
+    ["small",      "of negligible proportion"],
+    ["tiny",       "of de minimis and legally inconsequential proportion"],
+    ["happy",      "in a state of emotional satisfaction"],
+    ["excited",    "in a state of heightened anticipatory affect"],
+    ["sad",        "experiencing emotional distress"],
+    ["angry",      "experiencing material and documented dissatisfaction"],
+    ["tired",      "experiencing diminished capacity due to insufficient rest"],
+    ["hungry",     "experiencing a physiological deficit of consumable goods"],
+    ["sorry",      "hereby tenders formal apologies and acknowledges liability"],
+    ["please",     "the undersigned hereby respectfully requests"],
+    ["thanks",     "the undersigned acknowledges receipt with gratitude"],
+    ["thank",      "the undersigned formally acknowledges"],
+    ["yes",        "affirmative, the undersigned hereby agrees"],
+    ["no",         "negative, the undersigned hereby declines"],
+    ["want",       "hereby formally requests and demands"],
+    ["need",       "requires, pursuant to applicable standards"],
+    ["like",       "holds a favorable disposition toward"],
+    ["love",       "maintains a strong and enduring affection for"],
+    ["hate",       "bears a strong and documented aversion toward"],
+    ["get",        "obtain, acquire, and take possession of"],
+    ["got",        "has obtained and taken possession of"],
+    ["buy",        "execute a purchase transaction with respect to"],
+    ["bought",     "executed a purchase transaction with respect to"],
+    ["use",        "utilize, employ, and make use of"],
+    ["used",       "utilized, employed, and made use of"],
+    ["make",       "cause to be created, fabricated, or otherwise produced"],
+    ["made",       "caused to be created, fabricated, or otherwise produced"],
+    ["go",         "proceed forthwith"],
+    ["went",       "did proceed forthwith"],
+    ["come",       "attend and be present at"],
+    ["came",       "did attend and was present at"],
+    ["say",        "hereby declare and affirm"],
+    ["said",       "did hereby declare and affirm"],
+    ["said",       "did hereby declare and affirm"],
+    ["tell",       "formally communicate and notify"],
+    ["told",       "did formally communicate and notify"],
+    ["think",      "hold the reasonable belief"],
+    ["thought",    "did hold the reasonable belief"],
+    ["know",       "possess knowledge and awareness of the fact that"],
+    ["knew",       "did possess knowledge and awareness of the fact that"],
+    ["see",        "observe and take notice of"],
+    ["saw",        "did observe and take notice of"],
+    ["give",       "transfer, convey, and deliver"],
+    ["gave",       "did transfer, convey, and deliver"],
+    ["take",       "obtain and assume possession of"],
+    ["took",       "did obtain and assume possession of"],
+    ["help",       "provide assistance and material support to"],
+    ["try",        "make a good-faith effort to"],
+    ["tried",      "did make a good-faith effort to"],
+    ["show",       "demonstrate and provide evidence of"],
+    ["find",       "locate and identify for the purposes of"],
+    ["ask",        "formally submit a request to"],
+    ["asked",      "did formally submit a request to"],
+    ["put",        "cause to be placed and situated at"],
+    ["keep",       "maintain and preserve in accordance with obligations herein"],
+    ["leave",      "vacate and depart from the premises of"],
+    ["eat",        "consume and ingest"],
+    ["ate",        "did consume and ingest"],
+    ["drink",      "consume in liquid form"],
+    ["drank",      "did consume in liquid form"],
+    ["sleep",      "engage in a period of restorative biological cessation of consciousness"],
+    ["slept",      "did engage in a period of restorative biological cessation of consciousness"],
+    ["send",       "transmit and formally deliver"],
+    ["sent",       "did transmit and formally deliver"],
+    ["read",       "review, examine, and take notice of the contents of"],
+    ["write",      "prepare and execute in written form"],
+    ["wrote",      "did prepare and execute in written form"],
+    ["if",         "in the event that"],
+    ["because",    "for the reason that, and in consideration of the fact that"],
+    ["but",        "notwithstanding the foregoing"],
+    ["and",        "and furthermore"],
+    ["my",         "Party A's"],
+    ["your",       "Party B's"],
+    ["their",      "the referenced parties'"],
+    ["our",        "all parties'"],
+    ["its",        "the aforementioned entity's"],
+    ["i",          "the undersigned party (hereinafter 'Party A')"],
+    ["me",         "the undersigned party"],
+    ["we",         "all undersigned parties"],
+    ["you",        "the aforementioned recipient (hereinafter 'Party B')"],
+    ["they",       "the referenced third parties"],
+    ["it",         "the subject matter herein described"],
+    ["he",         "the aforementioned male party"],
+    ["she",        "the aforementioned female party"],
+  ];
+
+  const sprinkles = [
+    "pursuant to Section 4(b)(ii)",
+    "subject to the terms and conditions set forth herein",
+    "notwithstanding any contrary provisions",
+    "as more fully described in Exhibit A",
+    "in accordance with applicable law",
+    "for good and valuable consideration, the receipt of which is hereby acknowledged",
+    "as provided under the relevant statutory framework",
+    "without limiting the generality of the foregoing",
+    "to the extent permitted by law",
+    "subject to the limitations set forth in Schedule B",
+  ];
+
+  function getDocNumber() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `DOC-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${Math.floor(Math.random()*90000+10000)}`;
+  }
+
+  function getFormattedDate() {
+    const months = ["January","February","March","April","May","June",
+                    "July","August","September","October","November","December"];
+    const d = new Date();
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+
+  function applySubs(text) {
+    // Work token by token to avoid replacing inside already-replaced text.
+    // Strategy: use a placeholder approach with a single regex pass.
+    let result = text;
+
+    for (const [casual, legal] of substitutions) {
+      // Build a regex that matches the word/phrase as a whole word, case-insensitive
+      const escaped = casual.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(?<![a-zA-Z'])(${escaped})(?![a-zA-Z'])`, 'gi');
+      result = result.replace(regex, (match) => {
+        // Preserve rough casing: if match is ALL CAPS, uppercase the replacement
+        if (match === match.toUpperCase() && match.toLowerCase() !== match.toUpperCase()) {
+          return legal.toUpperCase();
+        }
+        // If match starts with uppercase, capitalize first letter of replacement
+        if (match[0] === match[0].toUpperCase() && match[0] !== match[0].toLowerCase()) {
+          return legal.charAt(0).toUpperCase() + legal.slice(1);
+        }
+        return legal;
+      });
+    }
+    return result;
+  }
+
+  function insertSprinkles(text) {
+    // Split on sentence-ending punctuation, insert sprinkles randomly
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    const result = [];
+    let counter = 0;
+    const nextThreshold = () => 2 + Math.floor(Math.random() * 2); // 2 or 3
+    let threshold = nextThreshold();
+
+    for (let i = 0; i < sentences.length; i++) {
+      result.push(sentences[i].trim());
+      counter++;
+      if (counter >= threshold && i < sentences.length - 1) {
+        const sprinkle = sprinkles[Math.floor(Math.random() * sprinkles.length)];
+        // Insert before the period of the previous sentence or just inline
+        result[result.length - 1] = result[result.length - 1].replace(
+          /([.!?])$/,
+          `, ${sprinkle}$1`
+        );
+        counter = 0;
+        threshold = nextThreshold();
+      }
+    }
+    return result.join(' ');
+  }
+
+  function translate(input) {
+    if (!input.trim()) return null;
+
+    const subbed = applySubs(input);
+    const sprinkled = insertSprinkles(subbed);
+
+    const date = getFormattedDate();
+    const docNum = getDocNumber();
+
+    const opening =
+`LEGAL INSTRUMENT AND BINDING DECLARATION
+
+Document No.: ${docNum}
+Date of Execution: ${date}
+
+WHEREAS, the following instrument has been duly prepared and executed on ${date}, and
+
+WHEREAS, all parties acknowledge the terms herein, and
+
+WHEREAS, the matters set forth below represent the complete and authoritative expression of the parties' intentions,
+
+NOW, THEREFORE, IN CONSIDERATION of the mutual covenants and agreements contained herein, the sufficiency of which is hereby acknowledged:
+
+`;
+
+    const closing =
+`
+
+IN WITNESS WHEREOF, the undersigned has executed this instrument as of the date first written above. This document constitutes the entire agreement between the parties and supersedes all prior negotiations, representations, warranties, or agreements, whether written or oral. Any modifications must be made in writing and signed by all parties. Void where prohibited by law. Subject to applicable federal, state, and local law. The undersigned hereby waives any and all rights to contest the enforceability of this instrument on grounds of incomprehensibility.`;
+
+    return { header: docNum, date, body: opening + sprinkled + closing };
+  }
+
+  function renderOutput(result) {
+    const output = document.getElementById('output');
+    if (!result) {
+      output.innerHTML = '<div class="legal-doc-empty">Your legal document will appear here&hellip;</div>';
+      return;
+    }
+
+    const bodyEscaped = result.body
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
+
+    output.innerHTML = `
+      <div class="doc-header">
+        <div class="doc-title">Legal Instrument and Binding Declaration</div>
+        <div class="doc-number">${result.header} &nbsp;&bull;&nbsp; ${result.date}</div>
+      </div>
+      <div class="doc-body">${bodyEscaped}</div>
+      <div class="doc-footer">
+        <div class="sig-line">
+          <div class="sig-block">PARTY A SIGNATURE &amp; DATE</div>
+          <div class="sig-block">PARTY B SIGNATURE &amp; DATE</div>
+          <div class="sig-block">WITNESS SIGNATURE &amp; DATE</div>
+        </div>
+      </div>
+    `;
+  }
+
+  let debounceTimer = null;
+  let lastResult = null;
+
+  function translateNow() {
+    const input = document.getElementById('input').value;
+    lastResult = translate(input);
+    renderOutput(lastResult);
+  }
+
+  document.getElementById('input').addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(translateNow, 300);
+  });
+
+  function clearAll() {
+    document.getElementById('input').value = '';
+    lastResult = null;
+    renderOutput(null);
+  }
+
+  function copyOutput() {
+    if (!lastResult) return;
+    const btn = document.getElementById('copyBtn');
+
+    // Build plain text version
+    const plain = lastResult.body;
+    navigator.clipboard.writeText(plain).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy to Clipboard';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(() => {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = plain;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy to Clipboard';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // Translate the placeholder on load as a demo
+  window.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('input');
+    // Don't auto-fill, just leave placeholder visible
+  });
+</script>
+
+</body>
+</html>

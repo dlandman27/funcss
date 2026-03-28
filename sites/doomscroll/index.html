@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doomscroll</title>
+    <meta name="description" content="An infinite feed of increasingly absurd headlines. You can't stop scrolling.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Source+Serif+4:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #15202b;
+            --surface: #1e2732;
+            --border: #2f3b47;
+            --text: #e7e9ea;
+            --muted: #71767b;
+            --blue: #1d9bf0;
+            --red: #f4212e;
+            --green: #00ba7c;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ── TICKER ── */
+        #ticker-wrap {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--red);
+            overflow: hidden;
+            height: 32px;
+            display: flex;
+            align-items: center;
+        }
+
+        #ticker-label {
+            flex-shrink: 0;
+            background: #c0000a;
+            padding: 0 14px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        #ticker-track {
+            display: flex;
+            gap: 60px;
+            white-space: nowrap;
+            animation: ticker 28s linear infinite;
+            font-size: 12px;
+            font-weight: 500;
+            padding-left: 24px;
+        }
+
+        @keyframes ticker {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* ── LAYOUT ── */
+        #layout {
+            max-width: 620px;
+            margin: 0 auto;
+            padding-bottom: 80px;
+        }
+
+        /* ── NAV ── */
+        #nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px 0;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 32px;
+            background: rgba(21,32,43,0.92);
+            backdrop-filter: blur(12px);
+            z-index: 50;
+        }
+
+        #nav-logo {
+            font-family: 'Source Serif 4', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        #nav-tabs {
+            display: flex;
+            gap: 0;
+        }
+
+        .nav-tab {
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--muted);
+            border-bottom: 2px solid transparent;
+            cursor: default;
+        }
+
+        .nav-tab.active {
+            color: var(--text);
+            border-bottom-color: var(--blue);
+        }
+
+        #depth-pill {
+            font-size: 11px;
+            color: var(--muted);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 10px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #depth-pill.visible { opacity: 1; }
+
+        /* ── FEED ── */
+        #feed {
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        /* ── CARD ── */
+        .card {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            transition: background 0.15s;
+            cursor: default;
+            position: relative;
+        }
+
+        .card:hover { background: rgba(255,255,255,0.02); }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Source Serif 4', serif;
+        }
+
+        .card-body { flex: 1; min-width: 0; }
+
+        .card-header {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+
+        .source-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .source-handle {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .card-time {
+            font-size: 13px;
+            color: var(--muted);
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .card-headline {
+            font-family: 'Source Serif 4', serif;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.45;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 140px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 24px;
+        }
+
+        .action {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .action-icon { font-size: 16px; }
+
+        /* tier badges */
+        .tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        /* ── DEGRADATION TIERS ── */
+
+        /* tier 3 — subtle wrongness */
+        .card.tier-3 .card-headline {
+            color: #c8c5be;
+        }
+        .card.tier-3 .card-time {
+            opacity: 0.6;
+        }
+
+        /* tier 4 — things getting weird */
+        .card.tier-4 .card-headline {
+            color: #b8c4cc;
+            letter-spacing: 0.01em;
+        }
+        .card.tier-4 .source-handle {
+            font-style: italic;
+        }
+        .card.tier-4 {
+            border-bottom-color: #1a2830;
+        }
+
+        /* tier 5 — breaking down */
+        .card.tier-5 {
+            border-bottom-color: rgba(244,33,46,0.2);
+        }
+        .card.tier-5 .card-headline {
+            color: #a0aab0;
+            font-style: italic;
+        }
+        .card.tier-5 .source-name {
+            color: #8899a6;
+        }
+        .card.tier-5 .avatar {
+            opacity: 0.6;
+            filter: grayscale(0.5);
+        }
+
+        @keyframes glitch-text {
+            0%, 90%, 100% { clip-path: none; transform: none; }
+            92% { clip-path: inset(20% 0 60% 0); transform: translateX(-3px); }
+            94% { clip-path: inset(60% 0 10% 0); transform: translateX(3px); }
+            96% { clip-path: none; transform: none; }
+        }
+
+        .card.tier-5 .card-headline:hover {
+            animation: glitch-text 2s steps(1) infinite;
+        }
+
+        /* ── WARNING CARDS ── */
+        .warning-card {
+            margin: 8px 0;
+            padding: 14px 16px;
+            background: rgba(244,33,46,0.08);
+            border: 1px solid rgba(244,33,46,0.25);
+            border-radius: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #f4212e;
+            letter-spacing: 0.08em;
+            font-weight: 500;
+        }
+
+        /* ── AD CARDS ── */
+        .ad-card {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.01);
+        }
+
+        .ad-label {
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .ad-text {
+            font-size: 13px;
+            color: #8899a6;
+            font-style: italic;
+        }
+
+        /* ── LOADER ── */
+        #loader {
+            padding: 32px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── SCROLL TIMER ── */
+        #scroll-timer {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(30,39,50,0.95);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 14px;
+            font-size: 12px;
+            color: var(--muted);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+
+        #scroll-timer.visible { opacity: 1; }
+        #scroll-timer span { color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<!-- BREAKING NEWS TICKER -->
+<div id="ticker-wrap">
+    <div id="ticker-label">⚡ LIVE</div>
+    <div id="ticker-track"></div>
+</div>
+
+<div id="layout">
+    <div id="nav">
+        <div id="nav-logo">DoomFeed</div>
+        <div id="nav-tabs">
+            <div class="nav-tab active">For You</div>
+            <div class="nav-tab">Following</div>
+        </div>
+        <div id="depth-pill">depth: <span id="depth-count">0</span></div>
+    </div>
+
+    <div id="feed"></div>
+    <div id="loader"><div class="spinner"></div></div>
+</div>
+
+<div id="scroll-timer">scrolling for <span id="timer-val">0:00</span></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const SOURCES = [
+    // tier 1-2
+    { name: 'Reuters',         handle: '@reuters',         color: '#ff8000', bg: '#2a1a00', emoji: '📰' },
+    { name: 'AP News',         handle: '@apnews',          color: '#cc0000', bg: '#220000', emoji: '🗞️' },
+    { name: 'Daily Update',    handle: '@dailyupdate',     color: '#1d9bf0', bg: '#001a2e', emoji: '📡' },
+    { name: 'The Dispatch',    handle: '@dispatch',        color: '#00ba7c', bg: '#001a10', emoji: '📢' },
+    { name: 'Local News 7',    handle: '@localnews7',      color: '#9b59b6', bg: '#1a0a22', emoji: '📺' },
+    // tier 3
+    { name: 'Uncertain Press', handle: '@uncertainpress',  color: '#71767b', bg: '#1a1a1a', emoji: '❓' },
+    { name: 'The Chronicle',   handle: '@thechronicle',    color: '#e67e22', bg: '#1f0e00', emoji: '📜' },
+    { name: 'Events Occurred', handle: '@eventsoccurred',  color: '#8899a6', bg: '#111820', emoji: '🔔' },
+    // tier 4-5
+    { name: 'The Void Report', handle: '@voidreport',      color: '#4a4a5a', bg: '#0a0a10', emoji: '🕳️' },
+    { name: '??? News',        handle: '@???',             color: '#f4212e', bg: '#1a0005', emoji: '⚠️' },
+    { name: 'BROADCAST',       handle: '@fromSomewhere',   color: '#ffffff', bg: '#050505', emoji: '📻' },
+    { name: 'End Times Gazette',handle: '@endtimes',       color: '#c0392b', bg: '#150000', emoji: '🔴' },
+];
+
+const HEADLINES = {
+    1: [
+        { text: "Local Man Finds Parking Spot On First Try", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "Scientists Confirm Coffee Still Good For You, Probably", tag: "HEALTH", tagColor: "#00ba7c" },
+        { text: "Study: Most People Don't Read Past The Headline", tag: "RESEARCH", tagColor: "#9b59b6" },
+        { text: "Town Council Votes On New Stop Sign", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "Weather Expected To Continue Being Weather", tag: "WEATHER", tagColor: "#71767b" },
+        { text: "Company Promises This Update Will Fix Everything", tag: "TECH", tagColor: "#1d9bf0" },
+        { text: "Expert Says You Should Drink More Water", tag: "HEALTH", tagColor: "#00ba7c" },
+        { text: "Survey: Most People Unsure What They Want For Dinner", tag: "LIFESTYLE", tagColor: "#e67e22" },
+        { text: "New Study Reverses Findings Of Previous Study", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Gym Reports Surge Of New Members In January", tag: "HEALTH", tagColor: "#00ba7c" },
+        { text: "Dog Described As 'Good Boy' By Owner", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "Airline Loses Bag, Then Finds Bag", tag: "TRAVEL", tagColor: "#e67e22" },
+        { text: "Man Purchases Item He Did Not Need", tag: "ECONOMY", tagColor: "#f4212e" },
+        { text: "Report: Mondays Still Least Popular Day Of The Week", tag: "LIFESTYLE", tagColor: "#71767b" },
+        { text: "Area Restaurant Opens, Also Closes", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "Scientists Identify New Species, Name It After Intern", tag: "SCIENCE", tagColor: "#9b59b6" },
+    ],
+    2: [
+        { text: "Man Wins Argument On Internet, Unsure What To Do Next", tag: "TECH", tagColor: "#1d9bf0" },
+        { text: "Scientists Discover New Shade Of Beige", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Local Ghost Politely Asks To Be Included In Census", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "Economists Warn Of Possible Economy", tag: "ECONOMY", tagColor: "#f4212e" },
+        { text: "New App Lets You Feel Bad About Yourself Faster", tag: "TECH", tagColor: "#1d9bf0" },
+        { text: "CEO Discovers Employees Are Also People", tag: "BUSINESS", tagColor: "#00ba7c" },
+        { text: "Fish Elected Mayor Of Small Coastal Town For Third Consecutive Term", tag: "POLITICS", tagColor: "#f4212e" },
+        { text: "Man Claims To Fully Understand Terms And Conditions", tag: "TECH", tagColor: "#1d9bf0" },
+        { text: "NASA Confirms Moon Still There", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Raccoon Completes Online Degree In Business Administration", tag: "EDUCATION", tagColor: "#00ba7c" },
+        { text: "Millennials Blamed For Decline Of This Article", tag: "CULTURE", tagColor: "#e67e22" },
+        { text: "Clock Falls Back, Nation Unsure Where It Went", tag: "BREAKING", tagColor: "#f4212e" },
+        { text: "Area Bird Has Been Sitting There For A While Now", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "Researchers Find Definitive Link Between Sleeping And Being Tired", tag: "HEALTH", tagColor: "#00ba7c" },
+        { text: "Man Learns Lesson, Forgets It By Wednesday", tag: "LIFESTYLE", tagColor: "#71767b" },
+        { text: "Inbox Reaches Zero, Man Unsure What He Is Now", tag: "TECH", tagColor: "#1d9bf0" },
+    ],
+    3: [
+        { text: "Sun Apologizes For Monday", tag: "BREAKING", tagColor: "#f4212e" },
+        { text: "Skeletons Found To Be Hiding Inside Every Human On Earth", tag: "HEALTH", tagColor: "#f4212e" },
+        { text: "Man Reaches End Of Internet, Sends Postcard", tag: "TECH", tagColor: "#1d9bf0" },
+        { text: "Government Confirms It Has Been A Government This Whole Time", tag: "POLITICS", tagColor: "#f4212e" },
+        { text: "Area Cloud Spotted Following Local Man For Third Week", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "Time Found To Be Moving In Only One Direction, Scientists Disappointed", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Horse Wearing Tie Refuses To Comment", tag: "POLITICS", tagColor: "#f4212e" },
+        { text: "Furniture Found Watching Television When Nobody Home", tag: "INVESTIGATION", tagColor: "#e67e22" },
+        { text: "New Study Confirms You Have Been Perceived", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Local Man Finishes Sentence He Started In 1987", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "Numbers Now Going Directly To 11, Bypassing 10 Entirely", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Clouds Unionize, Demand Better Distribution Across Globe", tag: "LABOR", tagColor: "#00ba7c" },
+        { text: "Area Tree Has Been Thinking", tag: "LOCAL", tagColor: "#1d9bf0" },
+        { text: "The Past Quietly Refuses To Stay There", tag: "DEVELOPING", tagColor: "#e67e22" },
+        { text: "Shadows Confirmed To Be Significantly Darker At Night", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Concept Of 'Elsewhere' Under Review", tag: "DEVELOPING", tagColor: "#e67e22" },
+    ],
+    4: [
+        { text: "God Logs Back In After 2,000-Year Absence, Finds 47 Notifications", tag: "BREAKING", tagColor: "#f4212e" },
+        { text: "Concept Of Thursday Placed Under Federal Investigation", tag: "POLITICS", tagColor: "#f4212e" },
+        { text: "Man's Reflection Seen Waving First", tag: "DEVELOPING", tagColor: "#e67e22" },
+        { text: "Ocean Decides To Stop Being Salty, Apologizes For Behavior", tag: "ENVIRONMENT", tagColor: "#00ba7c" },
+        { text: "Dreams Found To Be Legally Binding In 12 States", tag: "LAW", tagColor: "#9b59b6" },
+        { text: "Area Void Offers Competitive Benefits Package, Dental Included", tag: "JOBS", tagColor: "#00ba7c" },
+        { text: "Local Stairs Refuse To Be Taken Two At A Time", tag: "INFRASTRUCTURE", tagColor: "#e67e22" },
+        { text: "Gravity Rates Still Historically Low, Fed Reports", tag: "ECONOMY", tagColor: "#f4212e" },
+        { text: "All Mirrors In Town Showing Slightly Different Version Of Events", tag: "INVESTIGATION", tagColor: "#e67e22" },
+        { text: "New Study: Everything You Touch Becomes Slightly More You", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Colors Agree To Keep Their Current Names For Now", tag: "DEVELOPING", tagColor: "#e67e22" },
+        { text: "The Concept Of Tuesday Files For Divorce", tag: "BREAKING", tagColor: "#f4212e" },
+        { text: "Researchers Discover Third Side Of Coin", tag: "SCIENCE", tagColor: "#9b59b6" },
+        { text: "Silence Described As 'Louder Than Expected' By Those Who Found It", tag: "CULTURE", tagColor: "#71767b" },
+        { text: "Man Successfully Maintains Eye Contact During Handshake, Nation Celebrates", tag: "LIFESTYLE", tagColor: "#e67e22" },
+        { text: "Your Search History Has Requested An Apology", tag: "TECH", tagColor: "#1d9bf0" },
+    ],
+    5: [
+        { text: "WORDS NO LONGER DOING WHAT THEY'RE TOLD", tag: "⚠️ URGENT", tagColor: "#f4212e" },
+        { text: "Local Man Is All Of Us, Experts Warn", tag: "⚠️ URGENT", tagColor: "#f4212e" },
+        { text: "The Ceiling Has Been Watching You Sleep This Whole Time", tag: "⚠️ DEVELOPING", tagColor: "#f4212e" },
+        { text: "Scientists Find Second Sun Hidden Behind The First Sun", tag: "⚠️ BREAKING", tagColor: "#f4212e" },
+        { text: "You Are Currently Being Perceived By Multiple Futures Simultaneously", tag: "⚠️ SCIENCE", tagColor: "#9b59b6" },
+        { text: "The Noise Your Fridge Makes At Night Is Getting Louder", tag: "⚠️ INVESTIGATION", tagColor: "#e67e22" },
+        { text: "All Clocks In Nation Simultaneously Stop, Resume, Look Away", tag: "⚠️ BREAKING", tagColor: "#f4212e" },
+        { text: "Report: You Have Already Scrolled Too Far", tag: "⚠️ URGENT", tagColor: "#f4212e" },
+        { text: "The Headlines Are Running Out Of Words To Use", tag: "⚠️ META", tagColor: "#71767b" },
+        { text: "This Article Does Not Exist But You Are Reading It Anyway", tag: "⚠️ URGENT", tagColor: "#f4212e" },
+        { text: "Man Reads Entire Article. Ascends.", tag: "⚠️ LOCAL", tagColor: "#f4212e" },
+        { text: "PLEASE. GO OUTSIDE. WE ARE BEGGING YOU.", tag: "⚠️ PSA", tagColor: "#f4212e" },
+        { text: "The Feed Goes Deeper Than It Should. Turn Back.", tag: "⚠️ WARNING", tagColor: "#f4212e" },
+        { text: "Something Is Watching You Read This And It Is Also You", tag: "⚠️ SCIENCE", tagColor: "#9b59b6" },
+        { text: "You Have Been Scrolling For Long Enough. You Know What You Did.", tag: "⚠️ URGENT", tagColor: "#f4212e" },
+        { text: "Breaking: The Breaking News Is Also Breaking", tag: "⚠️ BREAKING", tagColor: "#f4212e" },
+    ]
+};
+
+const ADS = [
+    "Tired of reality? Try our premium unreality subscription — first month free.",
+    "BrainFog™ — finally an app that matches your natural state.",
+    "Invest in Nothing. Returns guaranteed to match expectations.",
+    "DoomScroll Pro: 40% more doom, same great scroll.",
+    "Is your attention span getting shorter? Our new app— wait, are you still reading this?",
+    "SleepCorp™ — 'The only thing you're missing right now.'",
+    "You deserve a break. (This is not a break.)",
+    "EscapeRoom.exe — 'We couldn't figure out how to close the tab either.'",
+];
+
+const TICKER_ITEMS = [
+    "Breaking: Things Continue To Happen",
+    "Markets fluctuate in both directions",
+    "Local man describes situation as 'fine'",
+    "Scientists confirm sun rose again this morning",
+    "Weather occurring in multiple locations",
+    "Officials describe the situation as 'a situation'",
+    "Experts divided on everything, as usual",
+    "Sources close to the source say things",
+    "UPDATE: previous update updated",
+    "Man seen walking quickly with no explanation",
+    "Economy does something",
+    "New development in ongoing thing",
+];
+
+const EMOJIS_BY_TIER = {
+    1: ['🏙️','🌤️','📊','🗳️','💊','🐕','✈️','🏋️','☕'],
+    2: ['🐟','👻','🦝','🌑','📱','📉','🕐','☁️','🌍'],
+    3: ['🌲','☁️','🪞','🦷','🧠','⏱️','🔢','⚡','🎭'],
+    4: ['🕳️','🔮','🌊','🪙','📐','🪞','🌅','🧲','🎲'],
+    5: ['⚠️','🔴','📡','🕳️','👁️','📻','🚨','❓','⬛'],
+};
+
+const TIMES = ['just now','1m','2m','4m','7m','12m','18m','23m','31m','45m','1h','2h'];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+
+let totalLoaded  = 0;
+let isLoading    = false;
+let startTime    = Date.now();
+let timerShown   = false;
+
+// ── TICKER ────────────────────────────────────────────────────────────────────
+
+function buildTicker() {
+    const track = document.getElementById('ticker-track');
+    const doubled = [...TICKER_ITEMS, ...TICKER_ITEMS];
+    track.textContent = doubled.join('   •   ');
+}
+
+// ── CARD BUILDER ─────────────────────────────────────────────────────────────
+
+function getTier(index) {
+    if (index < 8)  return 1;
+    if (index < 20) return 2;
+    if (index < 36) return 3;
+    if (index < 56) return 4;
+    return 5;
+}
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function fakeCount(min, max) {
+    return (Math.floor(Math.random() * (max - min)) + min).toLocaleString();
+}
+
+function buildCard(index) {
+    const tier = getTier(index);
+    const headlines = HEADLINES[tier];
+    const headline  = headlines[index % headlines.length];
+
+    // Occasionally reuse across tiers for variety
+    const sourcePool = tier <= 2 ? SOURCES.slice(0,5) :
+                       tier === 3 ? SOURCES.slice(3,8) :
+                       SOURCES.slice(6);
+    const source = pick(sourcePool);
+
+    const emojis = EMOJIS_BY_TIER[tier];
+    const emoji  = pick(emojis);
+
+    const time   = TIMES[Math.min(Math.floor(index / 2), TIMES.length-1)];
+    const hasImg = tier <= 3 && index % 3 === 0;
+
+    const card = document.createElement('div');
+    card.className = `card tier-${tier}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.style.background = source.bg;
+    avatar.style.color = source.color;
+    avatar.textContent = source.emoji;
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    header.innerHTML = `
+        <span class="source-name">${source.name}</span>
+        <span class="source-handle">${source.handle}</span>
+        <span class="card-time">${time}</span>
+    `;
+
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.style.background = headline.tagColor + '22';
+    tag.style.color = headline.tagColor;
+    tag.textContent = headline.tag;
+
+    const hl = document.createElement('div');
+    hl.className = 'card-headline';
+    hl.textContent = headline.text;
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    actions.innerHTML = `
+        <span class="action"><span class="action-icon">💬</span>${fakeCount(0,500)}</span>
+        <span class="action"><span class="action-icon">🔁</span>${fakeCount(0,2000)}</span>
+        <span class="action"><span class="action-icon">❤️</span>${fakeCount(0,8000)}</span>
+    `;
+
+    if (hasImg) {
+        const img = document.createElement('div');
+        img.className = 'card-image';
+        img.style.background = source.bg;
+        img.textContent = emoji;
+        body.appendChild(header);
+        body.appendChild(tag);
+        body.appendChild(hl);
+        body.appendChild(img);
+        body.appendChild(actions);
+    } else {
+        body.appendChild(header);
+        body.appendChild(tag);
+        body.appendChild(hl);
+        body.appendChild(actions);
+    }
+
+    card.appendChild(avatar);
+    card.appendChild(body);
+    return card;
+}
+
+function buildWarning(index) {
+    const div = document.createElement('div');
+    div.className = 'warning-card';
+    if (index === 36) div.textContent = '⚠ You have been scrolling for a while. This is a normal amount of scrolling.';
+    else if (index === 56) div.textContent = '⚠⚠ Content below this point has not been verified. It has also not been unverified.';
+    else div.textContent = '⚠⚠⚠ You are now in the deep feed. What you read here stays with you.';
+    return div;
+}
+
+function buildAd(index) {
+    const div = document.createElement('div');
+    div.className = 'ad-card';
+    div.innerHTML = `<div class="ad-label">Sponsored</div><div class="ad-text">${ADS[index % ADS.length]}</div>`;
+    return div;
+}
+
+// ── LOAD BATCH ────────────────────────────────────────────────────────────────
+
+function loadBatch() {
+    if (isLoading) return;
+    isLoading = true;
+
+    const delay = totalLoaded === 0 ? 0 : 600 + Math.random() * 400;
+
+    setTimeout(() => {
+        const feed  = document.getElementById('feed');
+        const batch = 6;
+
+        for (let i = 0; i < batch; i++) {
+            const idx = totalLoaded + i;
+
+            // Warning cards at tier transitions
+            if (idx === 36 || idx === 56 || idx === 80) {
+                feed.appendChild(buildWarning(idx));
+            }
+
+            // Ad every 10 items
+            if (idx > 0 && idx % 10 === 0) {
+                feed.appendChild(buildAd(idx));
+            }
+
+            feed.appendChild(buildCard(idx));
+        }
+
+        totalLoaded += batch;
+
+        // Update depth pill
+        const pill = document.getElementById('depth-pill');
+        document.getElementById('depth-count').textContent = totalLoaded;
+        if (totalLoaded > 8) pill.classList.add('visible');
+
+        isLoading = false;
+    }, delay);
+}
+
+// ── INFINITE SCROLL ───────────────────────────────────────────────────────────
+
+const loader = document.getElementById('loader');
+const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) loadBatch();
+}, { rootMargin: '200px' });
+
+observer.observe(loader);
+
+// ── SCROLL TIMER ──────────────────────────────────────────────────────────────
+
+const scrollTimer  = document.getElementById('scroll-timer');
+const timerVal     = document.getElementById('timer-val');
+
+function formatTime(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    return `${m}:${String(s % 60).padStart(2,'0')}`;
+}
+
+setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    if (elapsed > 20000 && !timerShown) {
+        timerShown = true;
+        scrollTimer.classList.add('visible');
+    }
+    if (timerShown) {
+        timerVal.textContent = formatTime(elapsed);
+    }
+}, 1000);
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+buildTicker();
+</script>
+</body>
+</html>

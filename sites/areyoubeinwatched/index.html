@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>are you being watched?</title>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #080810;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+      transition: cursor 0s;
+    }
+
+    body.no-cursor {
+      cursor: none;
+    }
+
+    #scene {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+      position: relative;
+    }
+
+    #eye-canvas {
+      display: block;
+      opacity: 0;
+      transition: opacity 3s ease;
+    }
+
+    #eye-canvas.visible {
+      opacity: 1;
+    }
+
+    #message {
+      font-family: 'EB Garamond', serif;
+      font-style: italic;
+      font-size: 18px;
+      color: rgba(220, 215, 210, 0.85);
+      text-align: center;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition: opacity 2s ease;
+      min-height: 1.4em;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    #message.visible {
+      opacity: 1;
+    }
+
+    /* background pulse overlay */
+    #pulse {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(15,15,30,0.6) 0%, rgba(8,8,16,0) 70%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    #pulse.active {
+      animation: bgPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes bgPulse {
+      0%   { opacity: 0; }
+      50%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="pulse"></div>
+  <div id="scene">
+    <canvas id="eye-canvas" width="220" height="90"></canvas>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('eye-canvas');
+    const ctx = canvas.getContext('2d');
+    const messageEl = document.getElementById('message');
+    const pulseEl = document.getElementById('pulse');
+
+    // --- State ---
+    const state = {
+      // eye open: 0 = closed, 1 = fully open
+      openAmount: 0,
+      targetOpen: 0,
+
+      // pupil dilation: 0 = normal, 1 = dilated
+      dilationAmount: 0,
+      targetDilation: 0,
+
+      // eye scale (for the "get larger" stage)
+      eyeScale: 1,
+      targetEyeScale: 1,
+
+      // mouse tracking
+      mouseX: window.innerWidth / 2,
+      mouseY: window.innerHeight / 2,
+      lookX: 0, // current offset (lerped)
+      lookY: 0,
+      trackingActive: false,
+
+      // stage flags
+      eyesAppeared: false,
+      eyesTracking: false,
+      pulseActive: false,
+    };
+
+    // elapsed seconds since page load
+    const startTime = Date.now();
+    function elapsed() {
+      return (Date.now() - startTime) / 1000;
+    }
+
+    // --- Mouse tracking ---
+    document.addEventListener('mousemove', (e) => {
+      state.mouseX = e.clientX;
+      state.mouseY = e.clientY;
+    });
+
+    // --- Eye drawing constants ---
+    // Canvas center
+    const CX = 110;
+    const CY = 45;
+    const EYE_SPACING = 55; // center-to-center
+    const EYE_W = 28;  // half-width of eye opening
+    const EYE_H = 16;  // half-height of eye at full open
+    const IRIS_R = 13;
+    const PUPIL_R_MIN = 5;
+    const PUPIL_R_MAX = 9;
+    const MAX_LOOK_OFFSET = 8;
+
+    function drawEye(cx, cy, openAmt, lookOffX, lookOffY, dilation, scale) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(scale, scale);
+
+      const halfH = EYE_H * openAmt;
+      const irisVisible = openAmt > 0.05;
+
+      // Draw white sclera (clipped to eye shape)
+      ctx.save();
+      ctx.beginPath();
+      eyePath(0, 0, EYE_W, halfH);
+      ctx.clip();
+
+      if (irisVisible) {
+        // Sclera fill
+        ctx.fillStyle = 'rgba(230, 225, 218, 0.92)';
+        ctx.fill();
+
+        // Iris
+        const irisX = lookOffX;
+        const irisY = lookOffY * 0.5;
+        ctx.beginPath();
+        ctx.arc(irisX, irisY, IRIS_R, 0, Math.PI * 2);
+        const irisGrad = ctx.createRadialGradient(irisX, irisY - 3, 1, irisX, irisY, IRIS_R);
+        irisGrad.addColorStop(0, 'rgba(55, 65, 80, 1)');
+        irisGrad.addColorStop(0.5, 'rgba(38, 45, 58, 1)');
+        irisGrad.addColorStop(1, 'rgba(20, 24, 32, 1)');
+        ctx.fillStyle = irisGrad;
+        ctx.fill();
+
+        // Pupil
+        const pupilR = PUPIL_R_MIN + (PUPIL_R_MAX - PUPIL_R_MIN) * dilation;
+        ctx.beginPath();
+        ctx.arc(irisX, irisY, pupilR, 0, Math.PI * 2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+
+        // Tiny specular highlight
+        ctx.beginPath();
+        ctx.arc(irisX + pupilR * 0.35, irisY - pupilR * 0.45, pupilR * 0.22, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // Eyelid lines (top and bottom)
+      ctx.beginPath();
+      eyePath(0, 0, EYE_W, halfH);
+      ctx.strokeStyle = `rgba(160, 150, 140, ${0.25 + openAmt * 0.35})`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // When closed, draw the eyelid crease lines more visibly
+      if (openAmt < 0.15) {
+        ctx.beginPath();
+        ctx.moveTo(-EYE_W, 0);
+        ctx.bezierCurveTo(-EYE_W * 0.5, -2, EYE_W * 0.5, -2, EYE_W, 0);
+        ctx.strokeStyle = `rgba(160, 150, 140, ${(0.15 - openAmt) / 0.15 * 0.5})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function eyePath(cx, cy, hw, hh) {
+      // Almond / eye shape using bezier curves
+      ctx.moveTo(cx - hw, cy);
+      ctx.bezierCurveTo(
+        cx - hw * 0.5, cy - hh,
+        cx + hw * 0.5, cy - hh,
+        cx + hw, cy
+      );
+      ctx.bezierCurveTo(
+        cx + hw * 0.5, cy + hh * 0.7,
+        cx - hw * 0.5, cy + hh * 0.7,
+        cx - hw, cy
+      );
+    }
+
+    function getLookOffset() {
+      if (!state.trackingActive) return { x: 0, y: 0 };
+      // Canvas center in page coords
+      const rect = canvas.getBoundingClientRect();
+      const pageCX = rect.left + rect.width / 2;
+      const pageCY = rect.top + rect.height / 2;
+      const dx = state.mouseX - pageCX;
+      const dy = state.mouseY - pageCY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const maxDist = Math.max(window.innerWidth, window.innerHeight) * 0.6;
+      const t = Math.min(dist / maxDist, 1);
+      return {
+        x: (dx / (dist || 1)) * t * MAX_LOOK_OFFSET,
+        y: (dy / (dist || 1)) * t * MAX_LOOK_OFFSET
+      };
+    }
+
+    // --- Render loop ---
+    let lastRender = 0;
+    function render(ts) {
+      const dt = Math.min((ts - lastRender) / 1000, 0.1);
+      lastRender = ts;
+
+      // Lerp values
+      const speed = 3;
+      state.openAmount += (state.targetOpen - state.openAmount) * Math.min(speed * dt, 1);
+      state.dilationAmount += (state.targetDilation - state.dilationAmount) * Math.min(speed * dt, 1);
+      state.eyeScale += (state.targetEyeScale - state.eyeScale) * Math.min(speed * 0.5 * dt, 1);
+
+      const target = getLookOffset();
+      state.lookX += (target.x - state.lookX) * Math.min(4 * dt, 1);
+      state.lookY += (target.y - state.lookY) * Math.min(4 * dt, 1);
+
+      // Clear
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const s = state.eyeScale;
+      drawEye(CX - EYE_SPACING / 2, CY, state.openAmount, state.lookX, state.lookY, state.dilationAmount, s);
+      drawEye(CX + EYE_SPACING / 2, CY, state.openAmount, state.lookX, state.lookY, state.dilationAmount, s);
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+
+    // --- Message system ---
+    let messageTimeout = null;
+    function showMessage(text, delay) {
+      if (messageTimeout) clearTimeout(messageTimeout);
+      messageTimeout = setTimeout(() => {
+        // Fade out current
+        messageEl.classList.remove('visible');
+        setTimeout(() => {
+          messageEl.textContent = text;
+          messageEl.classList.add('visible');
+        }, 600);
+      }, delay * 1000);
+    }
+
+    function replaceMessage(text) {
+      messageEl.classList.remove('visible');
+      setTimeout(() => {
+        messageEl.textContent = text;
+        messageEl.classList.add('visible');
+      }, 600);
+    }
+
+    // --- Stage sequencer ---
+    const stages = [
+      {
+        at: 5,
+        run() {
+          // Eyes appear (closed)
+          state.targetOpen = 0;
+          canvas.classList.add('visible');
+        }
+      },
+      {
+        at: 12,
+        run() {
+          // Eyes slowly open
+          state.targetOpen = 1;
+        }
+      },
+      {
+        at: 20,
+        run() {
+          // Eyes start tracking mouse
+          state.trackingActive = true;
+        }
+      },
+      {
+        at: 30,
+        run() {
+          // Cursor hidden
+          document.body.classList.add('no-cursor');
+          // First message
+          replaceMessage('oh.');
+        }
+      },
+      {
+        at: 40,
+        run() {
+          replaceMessage('there you are.');
+        }
+      },
+      {
+        at: 55,
+        run() {
+          // Pupils dilate
+          state.targetDilation = 1;
+          // Background pulse starts
+          pulseEl.classList.add('active');
+        }
+      },
+      {
+        at: 70,
+        run() {
+          replaceMessage("i wasn't sure anyone was coming.");
+        }
+      },
+      {
+        at: 90,
+        run() {
+          // Seconds counter — update it live
+          function updateSecondsMsg() {
+            const s = Math.floor(elapsed());
+            messageEl.textContent = `you've been here ${s} seconds now.`;
+          }
+          messageEl.classList.remove('visible');
+          setTimeout(() => {
+            updateSecondsMsg();
+            messageEl.classList.add('visible');
+            // Keep updating every second for a bit
+            const iv = setInterval(() => {
+              if (elapsed() < 108) {
+                messageEl.textContent = `you've been here ${Math.floor(elapsed())} seconds now.`;
+              } else {
+                clearInterval(iv);
+              }
+            }, 1000);
+          }, 600);
+        }
+      },
+      {
+        at: 110,
+        run() {
+          replaceMessage('are you comfortable?');
+        }
+      },
+      {
+        at: 130,
+        run() {
+          // Eyes slightly larger
+          state.targetEyeScale = 1.18;
+          replaceMessage('i can wait.');
+        }
+      },
+      {
+        at: 160,
+        run() {
+          replaceMessage('i always do.');
+        }
+      },
+    ];
+
+    // Cycling messages after 180s
+    const cycleMessages = [
+      'still here.',
+      'me too.',
+      "it's nice, having company.",
+      "don't go.",
+      "(please don't go)",
+    ];
+    let cycleIndex = 0;
+
+    function scheduleCycle() {
+      let nextAt = 180;
+      cycleMessages.forEach((msg, i) => {
+        const delay = 180 + i * 30;
+        setTimeout(() => {
+          replaceMessage(msg);
+        }, delay * 1000);
+      });
+      // After all cycle messages, loop forever
+      const totalCycleDuration = cycleMessages.length * 30;
+      setTimeout(() => {
+        function loop() {
+          cycleIndex = (cycleIndex + 1) % cycleMessages.length;
+          replaceMessage(cycleMessages[cycleIndex]);
+          setTimeout(loop, 30 * 1000);
+        }
+        setTimeout(loop, 30 * 1000);
+      }, (180 + totalCycleDuration) * 1000);
+    }
+
+    // Run stages
+    stages.forEach(stage => {
+      setTimeout(() => stage.run(), stage.at * 1000);
+    });
+    scheduleCycle();
+  </script>
+</body>
+</html>

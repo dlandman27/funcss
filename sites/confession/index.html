@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>confession</title>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #08090f;
+      background-image:
+        radial-gradient(ellipse at 50% 60%, #12152a 0%, #08090f 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      font-family: 'Lora', Georgia, serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Subtle vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Candlelight glow — soft ambient bloom */
+    .glow-orb {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(180, 100, 30, 0.06) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 0;
+      animation: flicker 6s ease-in-out infinite;
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      25%       { opacity: 0.85; transform: translate(-50%, -50%) scale(1.03); }
+      50%       { opacity: 0.95; transform: translate(-50%, -50%) scale(0.98); }
+      75%       { opacity: 0.9; transform: translate(-50%, -50%) scale(1.01); }
+    }
+
+    /* Main container */
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: min(600px, 90vw);
+    }
+
+    /* The paper */
+    .paper {
+      position: relative;
+      width: 100%;
+      border-radius: 3px;
+      background: rgba(245, 236, 210, 0.07);
+      box-shadow:
+        0 0 60px rgba(200, 130, 40, 0.08),
+        0 0 120px rgba(200, 130, 40, 0.04),
+        inset 0 0 40px rgba(0,0,0,0.25);
+      padding: 2px;
+    }
+
+    /* Inner warm border glow */
+    .paper::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 4px;
+      background: linear-gradient(
+        160deg,
+        rgba(210, 150, 60, 0.15) 0%,
+        rgba(200, 120, 40, 0.06) 40%,
+        rgba(180, 100, 30, 0.12) 100%
+      );
+      pointer-events: none;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 260px;
+      resize: none;
+      background: rgba(240, 228, 196, 0.055);
+      border: none;
+      border-radius: 2px;
+      outline: none;
+      padding: 36px 40px;
+      font-family: 'Lora', Georgia, serif;
+      font-style: italic;
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      line-height: 1.85;
+      color: rgba(245, 235, 210, 0.82);
+      caret-color: rgba(220, 170, 80, 0.7);
+      letter-spacing: 0.02em;
+      transition: background 0.4s ease;
+    }
+
+    textarea::placeholder {
+      color: rgba(200, 185, 150, 0.2);
+      font-style: italic;
+    }
+
+    textarea:focus {
+      background: rgba(240, 228, 196, 0.07);
+    }
+
+    /* Submit button — barely there */
+    .submit-btn {
+      margin-top: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Lora', Georgia, serif;
+      font-style: italic;
+      font-size: 0.78rem;
+      color: rgba(200, 175, 120, 0.25);
+      letter-spacing: 0.18em;
+      padding: 6px 12px;
+      transition: color 0.5s ease;
+      user-select: none;
+    }
+
+    .submit-btn:hover {
+      color: rgba(200, 175, 120, 0.5);
+    }
+
+    /* Counter */
+    .counter {
+      position: fixed;
+      bottom: 22px;
+      right: 28px;
+      font-family: 'Lora', Georgia, serif;
+      font-style: italic;
+      font-size: 0.68rem;
+      color: rgba(180, 160, 110, 0.18);
+      letter-spacing: 0.12em;
+      pointer-events: none;
+      z-index: 2;
+      transition: opacity 1s ease;
+    }
+
+    /* "released" message */
+    .released-msg {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Lora', Georgia, serif;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: rgba(210, 180, 110, 0.7);
+      letter-spacing: 0.35em;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 10;
+    }
+
+    /* Dissolution canvas */
+    #dissolution-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow-orb"></div>
+
+  <canvas id="dissolution-canvas"></canvas>
+
+  <div class="container">
+    <div class="paper">
+      <textarea
+        id="confession-input"
+        placeholder="say what you need to say"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        rows="10"
+      ></textarea>
+    </div>
+    <button class="submit-btn" id="release-btn" aria-label="release">release</button>
+  </div>
+
+  <div class="counter" id="counter"></div>
+  <div class="released-msg" id="released-msg">released</div>
+
+  <script>
+    const input = document.getElementById('confession-input');
+    const btn = document.getElementById('release-btn');
+    const counterEl = document.getElementById('counter');
+    const releasedMsg = document.getElementById('released-msg');
+    const canvas = document.getElementById('dissolution-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // ── Counter ──────────────────────────────────────────────────────────────
+    function getCount() {
+      return parseInt(localStorage.getItem('confession_count') || '0', 10);
+    }
+
+    function incrementCount() {
+      const n = getCount() + 1;
+      localStorage.setItem('confession_count', String(n));
+      return n;
+    }
+
+    function renderCounter() {
+      const n = getCount();
+      counterEl.textContent = n === 0 ? '' : `${n} confession${n === 1 ? '' : 's'} released`;
+    }
+
+    renderCounter();
+
+    // ── Canvas sizing ─────────────────────────────────────────────────────────
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // ── Dissolution animation ─────────────────────────────────────────────────
+    //
+    // Each character is captured, rendered as an individual particle,
+    // then drifts upward with slight lateral wander while fading — like smoke.
+    //
+    let particles = [];
+    let animFrame = null;
+    let animating = false;
+
+    // Warm palette for character dissolution
+    const warmColors = [
+      'rgba(245, 225, 170, A)',
+      'rgba(230, 200, 130, A)',
+      'rgba(210, 175, 100, A)',
+      'rgba(200, 160, 80, A)',
+      'rgba(240, 215, 155, A)',
+    ];
+
+    function buildParticlesFromTextarea(text) {
+      if (!text.trim()) return [];
+
+      const rect = input.getBoundingClientRect();
+
+      // Compute where text starts (accounting for padding)
+      const style = window.getComputedStyle(input);
+      const paddingLeft = parseFloat(style.paddingLeft);
+      const paddingTop = parseFloat(style.paddingTop);
+      const lineHeight = parseFloat(style.lineHeight) || 22;
+      const fontSize = parseFloat(style.fontSize) || 19;
+
+      // We'll measure chars using an offscreen canvas
+      const offscreen = document.createElement('canvas');
+      const octx = offscreen.getContext('2d');
+      const fontStyle = `italic ${fontSize}px 'Lora', Georgia, serif`;
+      octx.font = fontStyle;
+
+      // Build lines respecting textarea wrap
+      const textareaWidth = rect.width - paddingLeft - parseFloat(style.paddingRight);
+      const rawLines = text.split('\n');
+      const wrappedLines = [];
+
+      rawLines.forEach(rawLine => {
+        if (rawLine === '') { wrappedLines.push(''); return; }
+        let current = '';
+        for (let i = 0; i < rawLine.length; i++) {
+          const test = current + rawLine[i];
+          if (octx.measureText(test).width > textareaWidth && current.length > 0) {
+            wrappedLines.push(current);
+            current = rawLine[i];
+          } else {
+            current = test;
+          }
+        }
+        if (current) wrappedLines.push(current);
+      });
+
+      const result = [];
+      const originX = rect.left + paddingLeft;
+      const originY = rect.top + paddingTop;
+
+      wrappedLines.forEach((line, lineIdx) => {
+        let xCursor = 0;
+        for (let ci = 0; ci < line.length; ci++) {
+          const ch = line[ci];
+          if (ch === ' ') {
+            xCursor += octx.measureText(' ').width;
+            continue;
+          }
+          const charWidth = octx.measureText(ch).width;
+          const x = originX + xCursor + charWidth / 2;
+          const y = originY + lineIdx * lineHeight + lineHeight * 0.6;
+          xCursor += charWidth;
+
+          // Randomise per-particle physics
+          const delay = Math.random() * 0.35;
+          const speed = 0.6 + Math.random() * 1.1;
+          const drift = (Math.random() - 0.5) * 1.2;
+          const spin = (Math.random() - 0.5) * 4;
+          const colorTemplate = warmColors[Math.floor(Math.random() * warmColors.length)];
+
+          result.push({ ch, x, y, delay, speed, drift, spin, alpha: 1, elapsed: 0, colorTemplate, fontSize, font: fontStyle });
+        }
+      });
+
+      return result;
+    }
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let allDone = true;
+
+      particles.forEach(p => {
+        p.elapsed += 0.016; // ~60fps tick
+        const t = Math.max(0, p.elapsed - p.delay);
+
+        if (t <= 0) { allDone = false; return; }
+
+        // Progress 0→1 over ~1.4s
+        const progress = Math.min(t / 1.4, 1);
+        p.alpha = Math.pow(1 - progress, 1.6);
+        const rise = progress * progress * 120 * p.speed;
+        const sway = Math.sin(progress * Math.PI * 2 + p.drift) * 18 * p.drift;
+
+        if (p.alpha > 0.005) {
+          allDone = false;
+          const colorStr = p.colorTemplate.replace('A', p.alpha.toFixed(3));
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.font = p.font;
+          ctx.fillStyle = colorStr;
+          ctx.translate(p.x + sway, p.y - rise);
+          ctx.rotate((p.spin * progress * Math.PI) / 180);
+          ctx.fillText(p.ch, 0, 0);
+          ctx.restore();
+        }
+      });
+
+      if (allDone) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        finishRelease();
+      } else {
+        animFrame = requestAnimationFrame(animateParticles);
+      }
+    }
+
+    function finishRelease() {
+      animating = false;
+      particles = [];
+      input.style.opacity = '1';
+      input.style.pointerEvents = 'auto';
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+
+      // Show "released" and fade
+      releasedMsg.style.transition = 'opacity 0.3s ease';
+      releasedMsg.style.opacity = '1';
+      setTimeout(() => {
+        releasedMsg.style.transition = 'opacity 2s ease';
+        releasedMsg.style.opacity = '0';
+      }, 900);
+
+      // Re-focus
+      setTimeout(() => input.focus(), 300);
+    }
+
+    function release() {
+      const text = input.value;
+      if (!text.trim() || animating) return;
+
+      animating = true;
+
+      // Capture particles before clearing
+      particles = buildParticlesFromTextarea(text);
+
+      // Hide textarea content immediately but keep it in place
+      input.value = '';
+      input.style.opacity = '0';
+      input.style.pointerEvents = 'none';
+      btn.style.opacity = '0';
+      btn.style.pointerEvents = 'none';
+
+      // Increment counter
+      incrementCount();
+      renderCounter();
+
+      // Start particle animation
+      if (animFrame) cancelAnimationFrame(animFrame);
+      animFrame = requestAnimationFrame(animateParticles);
+    }
+
+    // ── Input handler ─────────────────────────────────────────────────────────
+    // Enter alone submits; Shift+Enter inserts newline
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        release();
+      }
+    });
+
+    btn.addEventListener('click', release);
+
+    // Auto-grow textarea
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = input.scrollHeight + 'px';
+    });
+
+    // Focus on load
+    window.addEventListener('load', () => {
+      setTimeout(() => input.focus(), 200);
+    });
+  </script>
+</body>
+</html>
