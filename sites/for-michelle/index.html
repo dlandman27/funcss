@@ -1,0 +1,2821 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script
+      defer
+      src="https://randomsitesontheweb.com/globals/global.js"
+    ></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>For Michelle</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        overflow: hidden;
+        background: #000;
+      }
+      canvas {
+        display: block;
+      }
+
+      #intro-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      #intro-title {
+        font-family: "Georgia", serif;
+        font-size: clamp(3rem, 10vw, 7rem);
+        color: #fff;
+        text-shadow:
+          0 0 40px rgba(255, 45, 122, 0.9),
+          0 0 80px rgba(255, 45, 122, 0.5);
+        letter-spacing: 0.08em;
+        opacity: 0;
+        transform: translateY(-60px);
+        transition:
+          opacity 1.4s ease,
+          transform 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+        white-space: nowrap;
+      }
+      #intro-title.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      #intro-subtitle {
+        font-family: "Georgia", serif;
+        font-size: clamp(1rem, 3vw, 1.5rem);
+        color: rgba(255, 180, 210, 0.85);
+        letter-spacing: 0.25em;
+        margin-top: 1rem;
+        opacity: 0;
+        transition: opacity 1.2s ease 0.6s;
+      }
+      #intro-subtitle.show {
+        opacity: 1;
+      }
+
+      #intro-overlay.fade-out {
+        opacity: 0;
+        transition: opacity 1.5s ease;
+      }
+
+      #enter-btn {
+        margin-top: 2.8rem;
+        padding: 0.75rem 2.4rem;
+        font-family: "Georgia", serif;
+        font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+        letter-spacing: 0.18em;
+        color: #fff;
+        background: transparent;
+        border: 1.5px solid rgba(255, 160, 200, 0.6);
+        border-radius: 2rem;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 1s ease 2s, transform 1s ease 2s,
+                    background 0.3s, border-color 0.3s;
+        pointer-events: none;
+        text-shadow: 0 0 16px rgba(255, 45, 122, 0.7);
+      }
+      #enter-btn.show {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: all;
+      }
+      #enter-btn:hover {
+        background: rgba(255, 45, 122, 0.18);
+        border-color: rgba(255, 160, 200, 1);
+      }
+
+      /* ── Proposal UI ── */
+      #proposal-ui {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        opacity: 0;
+        z-index: 20;
+        transition:
+          opacity 1.4s ease,
+          background 1.4s ease;
+        background: rgba(8, 2, 18, 0);
+      }
+      #proposal-ui.show {
+        opacity: 1;
+        pointer-events: all;
+        background: rgba(8, 2, 18, 0.78);
+      }
+
+      #petal-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      #proposal-sections {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 700px;
+        padding: 0 2.5rem;
+        text-align: center;
+      }
+
+      .prop-section {
+        font-family: "Georgia", serif;
+        font-size: clamp(1rem, 2.5vw, 1.55rem);
+        color: #fff;
+        text-shadow:
+          0 0 28px rgba(255, 45, 122, 0.85),
+          0 2px 10px rgba(0, 0, 0, 0.5);
+        line-height: 1.85;
+        margin-bottom: 1rem;
+        opacity: 0;
+        transform: translateY(22px);
+        transition:
+          opacity 1.3s ease,
+          transform 1.3s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .prop-section.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .prop-section.accent {
+        font-size: clamp(1.3rem, 3.5vw, 2rem);
+        margin-top: 0.4rem;
+        color: #ffb3d1;
+      }
+      .prop-section.question {
+        font-size: clamp(1.5rem, 4.5vw, 2.6rem);
+        margin-top: 0.2rem;
+        color: #fff;
+        font-style: italic;
+      }
+
+      #proposal-buttons {
+        display: flex;
+        gap: 2rem;
+        position: relative;
+        z-index: 2;
+        display: none;
+        margin-top: 1.8rem;
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+          opacity 1.2s ease,
+          transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      #proposal-buttons.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .prop-btn {
+        font-family: "Georgia", serif;
+        font-size: 1.3rem;
+        padding: 0.8rem 2.4rem;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+        font-weight: bold;
+        letter-spacing: 0.05em;
+      }
+      #btn-yes {
+        background: linear-gradient(135deg, #ff2d7a, #e91e8c);
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(255, 45, 122, 0.5);
+      }
+      #btn-yes:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 28px rgba(255, 45, 122, 0.7);
+      }
+
+      #btn-no {
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        position: absolute;
+      }
+
+      #celebration {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Georgia", serif;
+        font-size: clamp(2rem, 7vw, 5rem);
+        color: #fff;
+        text-shadow:
+          0 0 40px rgba(255, 45, 122, 1),
+          0 0 80px rgba(255, 100, 150, 0.8);
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 30;
+        transition: opacity 1.5s ease;
+        padding: 1rem;
+      }
+      #celebration.show {
+        opacity: 1;
+      }
+
+      /* ── Memory spots ── */
+      #memory-ui {
+        position: fixed;
+        top: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 1.2s ease;
+        pointer-events: none;
+        z-index: 15;
+      }
+      #memory-ui.show { opacity: 1; }
+      .mem-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 180, 210, 0.7);
+        background: transparent;
+        transition: background 0.6s ease, box-shadow 0.6s ease;
+      }
+      .mem-dot.found {
+        background: #ff69b4;
+        box-shadow: 0 0 8px rgba(255, 105, 180, 0.9);
+      }
+      #memory-hint {
+        position: fixed;
+        bottom: 48px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "Georgia", serif;
+        font-size: 13px;
+        color: rgba(255, 200, 220, 0.8);
+        letter-spacing: 1px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 1.5s ease;
+        z-index: 15;
+      }
+      #memory-hint.show { opacity: 1; }
+
+      /* ── Dialog ── */
+      #dialog-box {
+        position: fixed;
+        bottom: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(8, 2, 18, 0.78);
+        border: 1px solid rgba(255, 150, 200, 0.35);
+        border-radius: 16px;
+        padding: 1.1rem 2rem;
+        max-width: 520px;
+        width: 90%;
+        font-family: "Georgia", serif;
+        font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+        color: #fff;
+        text-shadow: 0 0 12px rgba(255, 100, 160, 0.6);
+        line-height: 1.7;
+        text-align: center;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.7s ease;
+        z-index: 25;
+      }
+      #dialog-box.show { opacity: 1; }
+    </style>
+  </head>
+  <body>
+    <div id="dialog-box"></div>
+
+    <div id="memory-ui">
+      <div class="mem-dot" id="mem-0"></div>
+      <div class="mem-dot" id="mem-1"></div>
+      <div class="mem-dot" id="mem-2"></div>
+    </div>
+    <div id="memory-hint">follow the light ✦</div>
+
+    <div id="intro-overlay">
+      <div id="intro-title">For Michelle</div>
+      <div id="intro-subtitle">a world, just for you</div>
+      <button id="enter-btn">enter the world</button>
+    </div>
+
+    <div id="proposal-ui">
+      <canvas id="petal-canvas"></canvas>
+      <div id="proposal-sections">
+        <div class="prop-section" id="ps-1">
+          Michelle, I know we haven't known each other for too long...
+        </div>
+        <div class="prop-section" id="ps-2">
+          but every single day I talk to you I feel closer and closer to you.
+        </div>
+        <div class="prop-section" id="ps-3">
+          You make my heart so happy, and your smile always can brighten up even
+          the cloudiest days.
+        </div>
+        <div class="prop-section" id="ps-4">
+          I truly want to be with you and never have you doubt for a second that
+          I want you and only you.
+        </div>
+        <div class="prop-section accent" id="ps-5">
+          I reallllly wanna know Michelle...
+        </div>
+        <div class="prop-section question" id="ps-6">
+          Will you be my girlfriend? :))
+        </div>
+      </div>
+      <div id="proposal-buttons">
+        <button class="prop-btn" id="btn-yes">Yes! 💕</button>
+        <button class="prop-btn" id="btn-no">No</button>
+      </div>
+    </div>
+
+    <div id="celebration">she said yes!! 🌸💕🌸</div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+      // ─── SCENE SETUP ─────────────────────────────────────────────────────────────
+      const scene = new THREE.Scene();
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      document.body.appendChild(renderer.domElement);
+
+      const camera = new THREE.PerspectiveCamera(
+        70,
+        innerWidth / innerHeight,
+        0.1,
+        500,
+      );
+      camera.position.set(0, 3, 8);
+
+      // ─── POST-PROCESSING ──────────────────────────────────────────────────────────
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(innerWidth, innerHeight),
+        0.6,   // strength
+        0.45,  // radius
+        0.35,  // threshold — only bright areas bloom
+      );
+      composer.addPass(bloomPass);
+      composer.addPass(new OutputPass());
+
+      window.addEventListener("resize", () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+        composer.setSize(innerWidth, innerHeight);
+      });
+
+      // ─── SKY ─────────────────────────────────────────────────────────────────────
+      const skyGeo = new THREE.SphereGeometry(400, 32, 16);
+      const skyMat = new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        uniforms: {
+          topColor: { value: new THREE.Color(0x1a0a2e) },
+          horizonColor: { value: new THREE.Color(0x8b1a4a) },
+          groundColor: { value: new THREE.Color(0x3d0d1f) },
+        },
+        vertexShader: `
+    varying vec3 vWorldPos;
+    void main() {
+      vec4 wp = modelMatrix * vec4(position, 1.0);
+      vWorldPos = wp.xyz;
+      gl_Position = projectionMatrix * viewMatrix * wp;
+    }
+  `,
+        fragmentShader: `
+    uniform vec3 topColor;
+    uniform vec3 horizonColor;
+    uniform vec3 groundColor;
+    varying vec3 vWorldPos;
+    void main() {
+      float h = normalize(vWorldPos).y;
+      vec3 col;
+      if (h > 0.0) {
+        col = mix(horizonColor, topColor, pow(max(h, 0.0), 0.4));
+      } else {
+        col = mix(horizonColor, groundColor, pow(max(-h, 0.0), 0.4));
+      }
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `,
+      });
+      scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+      // ─── STARS ───────────────────────────────────────────────────────────────────
+      const STAR_COUNT = 2200;
+      const starPos = new Float32Array(STAR_COUNT * 3);
+      const starPhase = new Float32Array(STAR_COUNT);
+      const starBright = new Float32Array(STAR_COUNT);
+      for (let i = 0; i < STAR_COUNT; i++) {
+        // Distribute across the upper sky dome
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(0.15 + Math.random() * 0.85); // avoid near-horizon
+        const r = 370;
+        starPos[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+        starPos[i * 3 + 1] = r * Math.cos(phi);
+        starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+        starPhase[i]  = Math.random() * Math.PI * 2;
+        starBright[i] = 0.5 + Math.random() * 0.5;
+      }
+      const starGeo = new THREE.BufferGeometry();
+      starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3));
+      starGeo.setAttribute("aPhase",   new THREE.Float32BufferAttribute(starPhase, 1));
+      starGeo.setAttribute("aBright",  new THREE.Float32BufferAttribute(starBright, 1));
+
+      const starMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `
+    attribute float aPhase;
+    attribute float aBright;
+    varying float vPhase;
+    varying float vBright;
+    void main() {
+      vPhase  = aPhase;
+      vBright = aBright;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = 1.8 + aBright * 1.4;
+    }
+  `,
+        fragmentShader: `
+    uniform float uTime;
+    varying float vPhase;
+    varying float vBright;
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float d = length(uv);
+      if (d > 0.5) discard;
+      float twinkle = 0.55 + 0.45 * sin(uTime * 1.4 + vPhase);
+      float alpha = twinkle * vBright * smoothstep(0.5, 0.05, d);
+      gl_FragColor = vec4(1.0, 0.95, 0.88, alpha);
+    }
+  `,
+      });
+      const starField = new THREE.Points(starGeo, starMat);
+      scene.add(starField);
+
+      // ─── MOON ────────────────────────────────────────────────────────────────────
+      const moonMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(9, 24, 24),
+        new THREE.MeshStandardMaterial({
+          color: 0xfff8e7,
+          emissive: 0xfff0cc,
+          emissiveIntensity: 1.2,
+          roughness: 0.95,
+        }),
+      );
+      moonMesh.position.set(-140, 170, -290);
+      scene.add(moonMesh);
+
+      // Soft halo sprite behind the moon
+      const moonHaloTex = (() => {
+        const c = document.createElement("canvas");
+        c.width = 128; c.height = 128;
+        const ctx = c.getContext("2d");
+        const grd = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+        grd.addColorStop(0,   "rgba(255,240,180,0.45)");
+        grd.addColorStop(0.35,"rgba(255,220,140,0.18)");
+        grd.addColorStop(1,   "rgba(255,200,100,0)");
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, 128, 128);
+        return new THREE.CanvasTexture(c);
+      })();
+      const moonHalo = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: moonHaloTex,
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        }),
+      );
+      moonHalo.scale.set(90, 90, 1);
+      moonHalo.position.copy(moonMesh.position);
+      scene.add(moonHalo);
+
+      // Dim moonlight
+      const moonLight = new THREE.PointLight(0xfff0cc, 0.35, 600);
+      moonLight.position.copy(moonMesh.position);
+      scene.add(moonLight);
+
+      // Fog — coastal haze blending island into the ocean horizon
+      scene.fog = new THREE.Fog(0x1a1a3a, 42, 90);
+
+      // ─── LIGHTING ────────────────────────────────────────────────────────────────
+      scene.add(new THREE.AmbientLight(0xffd6e8, 0.6));
+
+      const sun = new THREE.DirectionalLight(0xffb347, 1.4);
+      sun.position.set(30, 60, -20);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.near = 0.5;
+      sun.shadow.camera.far = 200;
+      sun.shadow.camera.left = -80;
+      sun.shadow.camera.right = 80;
+      sun.shadow.camera.top = 80;
+      sun.shadow.camera.bottom = -80;
+      scene.add(sun);
+
+      const fillLight = new THREE.PointLight(0xff69b4, 0.8, 60);
+      fillLight.position.set(-10, 8, 5);
+      scene.add(fillLight);
+
+      // ─── GROUND ──────────────────────────────────────────────────────────────────
+      // Procedural ground texture — tiled grass with variation
+      const groundTex = (() => {
+        const c = document.createElement("canvas");
+        c.width = 512;
+        c.height = 512;
+        const ctx = c.getContext("2d");
+
+        // Base soil
+        ctx.fillStyle = "#2a4a12";
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Random grass tufts
+        const rng = (a, b) => a + Math.random() * (b - a);
+        const greens = [
+          "#3a5e1a",
+          "#476e20",
+          "#2e5010",
+          "#3d6018",
+          "#294810",
+          "#415818",
+        ];
+        for (let i = 0; i < 6000; i++) {
+          const x = rng(0, 512),
+            y = rng(0, 512);
+          const len = rng(4, 14);
+          ctx.strokeStyle = greens[Math.floor(Math.random() * greens.length)];
+          ctx.lineWidth = rng(0.5, 1.5);
+          ctx.globalAlpha = rng(0.4, 0.9);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.quadraticCurveTo(
+            x + rng(-3, 3),
+            y - len * 0.5,
+            x + rng(-5, 5),
+            y - len,
+          );
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(40, 40);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      })();
+
+      const groundGeo = new THREE.PlaneGeometry(300, 300, 1, 1);
+      const groundMat = new THREE.MeshStandardMaterial({
+        map: groundTex,
+        roughness: 0.95,
+        metalness: 0.0,
+      });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // ─── SHADER GRASS BLADES ─────────────────────────────────────────────────────
+      const GRASS_COUNT = 12000;
+
+      // Blade geometry: tapered quad, 3 segments tall so shader can bend the tip
+      const BLADE_SEGS = 3;
+      const bladeVerts = [];
+      const bladeIdx = [];
+      for (let s = 0; s <= BLADE_SEGS; s++) {
+        const t = s / BLADE_SEGS;
+        const w = (1 - t) * 0.04; // taper toward tip
+        bladeVerts.push(-w, t * 0.55, 0, w, t * 0.55, 0);
+        if (s < BLADE_SEGS) {
+          const b = s * 2;
+          bladeIdx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+        }
+      }
+      const bladeGeo = new THREE.BufferGeometry();
+      bladeGeo.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(bladeVerts, 3),
+      );
+      bladeGeo.setIndex(bladeIdx);
+      bladeGeo.computeVertexNormals();
+
+      const grassMat = new THREE.ShaderMaterial({
+        side: THREE.DoubleSide,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `
+    uniform float uTime;
+    attribute vec3  aOffset;   // blade world position
+    attribute float aRot;      // random y-rotation per blade
+    attribute float aScale;    // random height scale
+    attribute float aPhase;    // wind phase offset
+
+    varying float vHeight;
+
+    void main() {
+      float t = position.y / 0.55;   // 0 at root, 1 at tip
+
+      // Wind sway — only affects upper portion
+      float sway = sin(uTime * 1.8 + aPhase) * 0.18 * t * t;
+      float swayZ = cos(uTime * 1.3 + aPhase * 0.7) * 0.08 * t * t;
+
+      // Rotate blade around Y
+      float c = cos(aRot), s = sin(aRot);
+      vec3 p = position * vec3(1.0, aScale, 1.0);
+      vec3 rotated = vec3(c*p.x - s*p.z, p.y, s*p.x + c*p.z);
+
+      // Apply sway at tip
+      rotated.x += sway * c;
+      rotated.z += swayZ;
+
+      vec3 world = rotated + aOffset;
+      vHeight = t;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(world, 1.0);
+    }
+  `,
+        fragmentShader: `
+    varying float vHeight;
+    void main() {
+      // Root: dark soil green → tip: muted green
+      vec3 root = vec3(0.04, 0.10, 0.02);
+      vec3 tip  = vec3(0.10, 0.21, 0.05);
+      vec3 col  = mix(root, tip, vHeight);
+      // slight magenta tint at tips from the dahlia field ambience
+      col = mix(col, vec3(0.38, 0.28, 0.18), vHeight * 0.08);
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `,
+      });
+
+      // Fill per-instance attributes
+      const offsets = new Float32Array(GRASS_COUNT * 3);
+      const rots = new Float32Array(GRASS_COUNT);
+      const scales = new Float32Array(GRASS_COUNT);
+      const phases = new Float32Array(GRASS_COUNT);
+
+      // ── Path clearance helpers ──────────────────────────────────────────────────
+      function ptSegDist2(px, pz, ax, az, bx, bz) {
+        const dx = bx - ax, dz = bz - az;
+        const lenSq = dx * dx + dz * dz;
+        if (lenSq === 0) return (px - ax) ** 2 + (pz - az) ** 2;
+        const t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / lenSq));
+        const nx = ax + t * dx - px, nz = az + t * dz - pz;
+        return nx * nx + nz * nz;
+      }
+      const BRANCH_SEGS = [
+        [[-1.7,6],[-10,13]],    // left → swing
+        [[1.7,5],[6.5,5]],      // right → campfire
+        [[6.5,5],[9,15]],       // campfire → wishing well
+        [[1.7,-1],[18,-3]],     // beach right → rowboat
+        [[-1.7,1],[-17,0]],     // beach left → telescope
+      ];
+      const PATH_CLEAR_SQ = 1.2 * 1.2;
+      function nearBranchPath(px, pz) {
+        for (const [[ax,az],[bx,bz]] of BRANCH_SEGS) {
+          if (ptSegDist2(px, pz, ax, az, bx, bz) < PATH_CLEAR_SQ) return true;
+        }
+        return false;
+      }
+
+      for (let i = 0; i < GRASS_COUNT; i++) {
+        let gx, gz;
+        // Reject positions that land on the dirt path (X: ±1.7, Z: -3 to 22)
+        do {
+          const a = Math.random() * Math.PI * 2;
+          const r = Math.sqrt(Math.random()) * 50;
+          gx = Math.cos(a) * r;
+          gz = Math.sin(a) * r;
+        } while (
+          (Math.abs(gx) < 1.9 && gz > -25 && gz < 22.5) ||   // main dirt path + dock corridor
+          nearBranchPath(gx, gz) ||                            // branch paths
+          (gx * gx + gz * gz) > 25 * 25                        // river + beyond
+        );
+
+        offsets[i * 3] = gx;
+        offsets[i * 3 + 1] = 0;
+        offsets[i * 3 + 2] = gz;
+        rots[i] = Math.random() * Math.PI * 2;
+        scales[i] = 0.6 + Math.random() * 0.8;
+        phases[i] = Math.random() * Math.PI * 2;
+      }
+
+      bladeGeo.setAttribute(
+        "aOffset",
+        new THREE.InstancedBufferAttribute(offsets, 3),
+      );
+      bladeGeo.setAttribute(
+        "aRot",
+        new THREE.InstancedBufferAttribute(rots, 1),
+      );
+      bladeGeo.setAttribute(
+        "aScale",
+        new THREE.InstancedBufferAttribute(scales, 1),
+      );
+      bladeGeo.setAttribute(
+        "aPhase",
+        new THREE.InstancedBufferAttribute(phases, 1),
+      );
+
+      const grassMesh = new THREE.InstancedMesh(
+        bladeGeo,
+        grassMat,
+        GRASS_COUNT,
+      );
+      grassMesh.frustumCulled = false;
+      scene.add(grassMesh);
+
+      // ─── DIRT PATH ───────────────────────────────────────────────────────────────
+      const dirtTex = (() => {
+        const size = 512;
+        const c = document.createElement("canvas");
+        c.width = size;
+        c.height = size;
+        const ctx = c.getContext("2d");
+
+        // Base packed earth
+        ctx.fillStyle = "#6b4c2a";
+        ctx.fillRect(0, 0, size, size);
+
+        // Worn lighter centre strip
+        const g = ctx.createLinearGradient(0, 0, size, 0);
+        g.addColorStop(0, "rgba(90,60,30,0.0)");
+        g.addColorStop(0.25, "rgba(130,95,55,0.35)");
+        g.addColorStop(0.5, "rgba(150,110,65,0.5)");
+        g.addColorStop(0.75, "rgba(130,95,55,0.35)");
+        g.addColorStop(1, "rgba(90,60,30,0.0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, size, size);
+
+        // Pebbles / clods
+        for (let i = 0; i < 320; i++) {
+          const px = Math.random() * size;
+          const py = Math.random() * size;
+          const r = 2 + Math.random() * 7;
+          const light = Math.random() > 0.5;
+          ctx.beginPath();
+          ctx.ellipse(
+            px,
+            py,
+            r,
+            r * (0.5 + Math.random() * 0.5),
+            Math.random() * Math.PI,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fillStyle = light
+            ? `rgba(170,130,80,0.4)`
+            : `rgba(50,30,10,0.35)`;
+          ctx.fill();
+        }
+
+        // Fine cracks / ruts along the path direction (vertical = along Z)
+        ctx.strokeStyle = "rgba(40,22,8,0.18)";
+        for (let i = 0; i < 12; i++) {
+          const x = Math.random() * size;
+          ctx.lineWidth = 0.5 + Math.random() * 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x + (Math.random() - 0.5) * 10, 0);
+          for (let y = 0; y < size; y += 20) {
+            ctx.lineTo(x + (Math.random() - 0.5) * 8, y);
+          }
+          ctx.stroke();
+        }
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1, 6); // tile 6× along path length so it doesn't look stretched
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      })();
+
+      // Path runs from Z=-24 (dock entrance) to Z=22 (clearing), width 3.4, centred on X=0
+      const PATH_Z_START = -24;
+      const PATH_Z_END   = 22;
+      const pathLength = PATH_Z_END - PATH_Z_START; // 46
+      const pathWidth = 3.4;
+      const pathGeo = new THREE.PlaneGeometry(pathWidth, pathLength, 1, 1);
+      const pathMesh = new THREE.Mesh(
+        pathGeo,
+        new THREE.MeshStandardMaterial({
+          map: dirtTex,
+          roughness: 0.97,
+          metalness: 0.0,
+        }),
+      );
+      pathMesh.rotation.x = -Math.PI / 2;
+      pathMesh.position.set(0, 0.022, (PATH_Z_START + PATH_Z_END) / 2);
+      pathMesh.receiveShadow = true;
+      scene.add(pathMesh);
+
+      // Edging — two thin darker strips along the sides of the path
+      for (const sx of [-1, 1]) {
+        const edgeGeo = new THREE.PlaneGeometry(0.35, pathLength);
+        const edge = new THREE.Mesh(
+          edgeGeo,
+          new THREE.MeshStandardMaterial({ color: 0x3a2510, roughness: 1 }),
+        );
+        edge.rotation.x = -Math.PI / 2;
+        edge.position.set(sx * (pathWidth / 2 + 0.17), 0.021, (PATH_Z_START + PATH_Z_END) / 2);
+        scene.add(edge);
+      }
+
+      // ─── DOCK ────────────────────────────────────────────────────────────────────
+      // Dock anchors at the path start (Z=-24, near island edge) and extends offshore
+      const DOCK_Z_START = -24;
+      const DOCK_Z_END   = -42; // matches boat arrival Z
+      const DOCK_W = 2.8;
+      const dockWoodMat = new THREE.MeshStandardMaterial({ color: 0x8b6340, roughness: 0.9 });
+      const dockDarkMat = new THREE.MeshStandardMaterial({ color: 0x5a3e20, roughness: 1.0 });
+
+      // Main deck planks
+      const deckGeo = new THREE.BoxGeometry(DOCK_W, 0.12, Math.abs(DOCK_Z_END - DOCK_Z_START));
+      const deck = new THREE.Mesh(deckGeo, dockWoodMat);
+      deck.position.set(0, 0.06, (DOCK_Z_START + DOCK_Z_END) / 2);
+      deck.receiveShadow = true;
+      scene.add(deck);
+
+      // Plank lines
+      const plankCount = 14;
+      for (let i = 0; i < plankCount; i++) {
+        const pz = DOCK_Z_END + (i / (plankCount - 1)) * (DOCK_Z_START - DOCK_Z_END);
+        const line = new THREE.Mesh(
+          new THREE.BoxGeometry(DOCK_W + 0.05, 0.14, 0.06),
+          dockDarkMat,
+        );
+        line.position.set(0, 0.07, pz);
+        scene.add(line);
+      }
+
+      // Support posts along sides
+      for (let i = 0; i <= 5; i++) {
+        const pz = DOCK_Z_END + (i / 5) * (DOCK_Z_START - DOCK_Z_END);
+        for (const sx of [-1, 1]) {
+          const post = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.12, 1.8, 7),
+            dockDarkMat,
+          );
+          post.position.set(sx * (DOCK_W / 2), -0.8, pz);
+          post.castShadow = true;
+          scene.add(post);
+        }
+      }
+
+      // ─── BOAT (GLTF) ─────────────────────────────────────────────────────────────
+      const boatGroup = new THREE.Group();
+      boatGroup.position.set(0, 0, -60); // starts off-screen
+      scene.add(boatGroup);
+
+      // ─── BRANCH PATHS ────────────────────────────────────────────────────────────
+      function makeBranchPath(pts, width = 1.3) {
+        for (let i = 0; i < pts.length - 1; i++) {
+          const [ax, az] = pts[i], [bx, bz] = pts[i + 1];
+          const dx = bx - ax, dz = bz - az;
+          const len = Math.sqrt(dx * dx + dz * dz);
+          const seg = new THREE.Mesh(
+            new THREE.BoxGeometry(width, 0.04, len),
+            new THREE.MeshStandardMaterial({ map: dirtTex, roughness: 0.97 }),
+          );
+          seg.position.set((ax + bx) / 2, 0.024, (az + bz) / 2);
+          seg.rotation.y = Math.atan2(dx, dz);
+          seg.receiveShadow = true;
+          scene.add(seg);
+        }
+      }
+
+      // Left branch: straight shot to swing
+      makeBranchPath([[-1.7, 6], [-10, 13]]);
+      // Right branch: straight to campfire, then straight to wishing well
+      makeBranchPath([[1.7, 5], [6.5, 5]]);
+      makeBranchPath([[6.5, 5], [9, 15]]);
+      // Beach trails: straight to rowboat / telescope
+      makeBranchPath([[1.7, -1], [18, -3]]);
+      makeBranchPath([[-1.7, 1], [-17, 0]]);
+
+      // ─── DAHLIA FIELD ─────────────────────────────────────────────────────────────
+      const dahlias = [];
+
+      function inClearZone(x, z) {
+        if (Math.abs(x) < 10 && z > -25 && z < 24) return true;  // full center corridor to dock
+        if (nearBranchPath(x, z)) return true;  // keep paths clear of flowers
+        const dx = x,
+          dz = z - 22;
+        return Math.sqrt(dx * dx + dz * dz) < 7;
+      }
+
+      const flowerTints = [
+        0xff2d7a, 0xe91e8c, 0xff4081, 0xf06292, 0xff80ab, 0xffa0c8,
+      ];
+      const loader = new GLTFLoader();
+
+      // ── Load Boat.glb into boatGroup ──────────────────────────────────────────
+      loader.load("./Boat.glb", (gltf) => {
+        const boatModel = gltf.scene;
+        // Auto-scale so the longest dimension ≈ 6 world units
+        boatModel.updateMatrixWorld(true);
+        const bb = new THREE.Box3().setFromObject(boatModel);
+        const bs = bb.getSize(new THREE.Vector3());
+        const maxDim = Math.max(bs.x, bs.y, bs.z);
+        boatModel.scale.setScalar(maxDim > 0 ? 3.2 / maxDim : 1);
+        // Sit base at Y=0
+        boatModel.updateMatrixWorld(true);
+        const bb2 = new THREE.Box3().setFromObject(boatModel);
+        boatModel.position.y = -bb2.min.y;
+        boatModel.traverse(c => { if (c.isMesh) c.castShadow = true; });
+        boatGroup.add(boatModel);
+      });
+
+      // Field flowers — Flowers.glb
+      loader.load(
+        "./Flowers.glb",
+        (gltf) => {
+          // Add to scene so matrices compute correctly, measure, then remove
+          scene.add(gltf.scene);
+          gltf.scene.updateMatrixWorld(true);
+          const fullBox = new THREE.Box3().setFromObject(gltf.scene);
+          const fullSize = fullBox.getSize(new THREE.Vector3());
+          scene.remove(gltf.scene);
+
+          // Scale each cluster so its widest dim = ~5 world units
+          const maxDim = Math.max(fullSize.x, fullSize.y, fullSize.z);
+          const baseScale = maxDim > 0 ? 10 / maxDim : 1;
+          // Pre-build one tinted material per tint to avoid per-clone material.clone()
+          const tintMats = flowerTints.map(t => {
+            const m = gltf.scene.children[0]?.children[0]?.material?.clone?.() ??
+              new THREE.MeshStandardMaterial();
+            m.color.set(t);
+            return m;
+          });
+
+          for (let i = 0; i < 70; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const r = 4 + Math.random() * 10;
+            const x = Math.cos(a) * r;
+            const z = Math.sin(a) * r;
+            if (inClearZone(x, z)) continue;
+
+            const clone = gltf.scene.clone(true);
+            const s = baseScale * (0.5 + Math.random() * 1.0);
+            clone.scale.setScalar(s);
+            clone.position.set(x, 0, z);
+            clone.rotation.y = Math.random() * Math.PI * 2;
+            const sharedMat = tintMats[Math.floor(Math.random() * tintMats.length)];
+
+            clone.traverse((child) => {
+              if (child.isMesh) {
+                child.material = sharedMat;
+                child.castShadow = false;
+                child.receiveShadow = false;
+              }
+            });
+
+            // Add to scene first so world matrices are valid, then ground it
+            scene.add(clone);
+            clone.updateMatrixWorld(true);
+            const cb = new THREE.Box3().setFromObject(clone);
+            if (isFinite(cb.min.y)) clone.position.y = -cb.min.y;
+
+            clone.userData.swayPhase = Math.random() * Math.PI * 2;
+            clone.userData.swaySpeed = 0.4 + Math.random() * 0.6;
+            dahlias.push(clone);
+          }
+        },
+        undefined,
+        (err) => console.error("Flowers.glb failed:", err),
+      );
+
+      // ─── PROCEDURAL DAHLIAS ───────────────────────────────────────────────────────
+      const petalShape = (() => {
+        const s = new THREE.Shape();
+        s.moveTo(0, 0);
+        s.bezierCurveTo(-0.12, 0.15, -0.1, 0.55, 0, 0.8);
+        s.bezierCurveTo(0.1, 0.55, 0.12, 0.15, 0, 0);
+        return s;
+      })();
+      const petalGeo = new THREE.ShapeGeometry(petalShape, 6);
+
+      function buildDahliaGroup(scale = 1, color = 0xff2d7a) {
+        const group = new THREE.Group();
+        const petalMat = new THREE.MeshStandardMaterial({
+          color,
+          emissive: new THREE.Color(color).multiplyScalar(0.15),
+          side: THREE.DoubleSide,
+          roughness: 0.55,
+        });
+        const rings = [
+          { count: 8, radius: 0.0, tiltDeg: 60, ps: 1.0, yOff: 0.0 },
+          { count: 12, radius: 0.18, tiltDeg: 45, ps: 0.88, yOff: 0.04 },
+          { count: 16, radius: 0.3, tiltDeg: 30, ps: 0.75, yOff: 0.08 },
+          { count: 20, radius: 0.4, tiltDeg: 15, ps: 0.6, yOff: 0.12 },
+        ];
+        for (const ring of rings) {
+          for (let i = 0; i < ring.count; i++) {
+            const a = (i / ring.count) * Math.PI * 2;
+            const petal = new THREE.Mesh(petalGeo, petalMat);
+            petal.scale.setScalar(ring.ps * scale);
+            petal.position.set(
+              Math.cos(a) * ring.radius * scale,
+              ring.yOff * scale,
+              Math.sin(a) * ring.radius * scale,
+            );
+            petal.rotation.y = a;
+            petal.rotation.x = THREE.MathUtils.degToRad(ring.tiltDeg);
+            group.add(petal);
+          }
+        }
+        const btn = new THREE.Mesh(
+          new THREE.SphereGeometry(0.13 * scale, 8, 8),
+          new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.4 }),
+        );
+        btn.position.y = 0.05 * scale;
+        group.add(btn);
+        const stem = new THREE.Mesh(
+          new THREE.CylinderGeometry(
+            0.025 * scale,
+            0.04 * scale,
+            1.2 * scale,
+            8,
+          ),
+          new THREE.MeshStandardMaterial({ color: 0x2d5a1b, roughness: 0.8 }),
+        );
+        stem.position.y = -0.6 * scale;
+        stem.castShadow = true;
+        group.add(stem);
+        return group;
+      }
+
+      // Scatter procedural dahlias across the field
+      for (let i = 0; i < 90; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = 3 + Math.random() * 10;
+        const x = Math.cos(a) * r;
+        const z = Math.sin(a) * r;
+        if (inClearZone(x, z)) continue;
+        const color =
+          flowerTints[Math.floor(Math.random() * flowerTints.length)];
+        const scale = 0.5 + Math.random() * 0.8;
+        const d = buildDahliaGroup(scale, color);
+        d.position.set(x, 0, z);
+        d.rotation.y = Math.random() * Math.PI * 2;
+        scene.add(d);
+        d.userData.swayPhase = Math.random() * Math.PI * 2;
+        d.userData.swaySpeed = 0.3 + Math.random() * 0.5;
+        dahlias.push(d);
+      }
+
+      // ─── PATH LANTERNS ───────────────────────────────────────────────────────────
+      const lanternZPositions = [-20, -14, -8, -2, 4, 8, 12, 16, 20];
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0x3a2510, roughness: 0.9 });
+      const lanternMat = new THREE.MeshStandardMaterial({
+        color: 0xffdd99,
+        emissive: 0xffaa44,
+        emissiveIntensity: 2.0,
+        transparent: true,
+        opacity: 0.88,
+      });
+      for (const lz of lanternZPositions) {
+        for (const sx of [-1, 1]) {
+          const lx = sx * (pathWidth / 2 + 1.0);
+          const grp = new THREE.Group();
+
+          // Pole
+          const pole = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.04, 0.07, 2.4, 7),
+            poleMat,
+          );
+          pole.position.y = 1.2;
+          pole.castShadow = true;
+          grp.add(pole);
+
+          // Small cross-arm
+          const arm = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6),
+            poleMat,
+          );
+          arm.rotation.z = Math.PI / 2;
+          arm.position.set(sx * -0.18, 2.35, 0);
+          grp.add(arm);
+
+          // Lantern box
+          const box = new THREE.Mesh(
+            new THREE.BoxGeometry(0.26, 0.34, 0.26),
+            lanternMat,
+          );
+          box.position.set(sx * -0.32, 2.35, 0);
+          grp.add(box);
+
+          // Warm point light
+          const pt = new THREE.PointLight(0xffaa44, 0.9, 7);
+          pt.position.copy(box.position);
+          grp.add(pt);
+
+          grp.position.set(lx, 0, lz);
+          scene.add(grp);
+        }
+      }
+
+      // ─── SCATTERED INTERIOR TREES ─────────────────────────────────────────────────
+      // A handful of cherry trees dotted inside the field to break up the open space
+      // Trees placed intentionally: flanking props and path destinations
+      const interiorTreeData = [
+        // Flanking the swing / left path end
+        { x: -13, z: 11, r: 1.3 }, { x: -9,  z: 15, r: 1.1 },
+        // Flanking the wishing well / right path end
+        { x: 11,  z: 14, r: 1.2 }, { x: 7,   z: 16, r: 1.0 },
+        // Behind the campfire (frame it)
+        { x: 8,   z: 6,  r: 1.1 }, { x: 5,   z: 7,  r: 0.9 },
+        // Far left grove (gives depth)
+        { x: -17, z: 5,  r: 1.4 }, { x: -15, z: 1,  r: 1.2 },
+        // Far right grove
+        { x: 16,  z: 4,  r: 1.1 }, { x: 14,  z: 8,  r: 1.0 },
+      ];
+      const interiorTrunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3515, roughness: 0.95 });
+      for (const { x, z, r } of interiorTreeData) {
+        const treeGrp = new THREE.Group();
+        const trunkH = 2.0 + Math.random() * 1.2;
+        const trunk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.09, 0.15, trunkH, 7),
+          interiorTrunkMat,
+        );
+        trunk.position.y = trunkH / 2;
+        trunk.rotation.z = (Math.random() - 0.5) * 0.1;
+        trunk.castShadow = true;
+        treeGrp.add(trunk);
+
+        const interiorBlossomColors = [0xff6eb4, 0xff9ec8, 0xffb3d9, 0xe75480, 0xffc0cb];
+        const bColor = interiorBlossomColors[Math.floor(Math.random() * interiorBlossomColors.length)];
+        const canopyMat2 = new THREE.MeshStandardMaterial({
+          color: bColor,
+          roughness: 0.85,
+          emissive: new THREE.Color(bColor).multiplyScalar(0.06),
+        });
+        const sphereCount = 2 + Math.floor(Math.random() * 2);
+        for (let c = 0; c < sphereCount; c++) {
+          const cr = r * (0.7 + Math.random() * 0.4);
+          const canopy = new THREE.Mesh(new THREE.SphereGeometry(cr, 9, 7), canopyMat2);
+          canopy.position.set(
+            (Math.random() - 0.5) * r * 0.7,
+            trunkH + cr * 0.5 + (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * r * 0.7,
+          );
+          canopy.castShadow = true;
+          treeGrp.add(canopy);
+        }
+        treeGrp.position.set(x, 0, z);
+        treeGrp.rotation.y = Math.random() * Math.PI * 2;
+        scene.add(treeGrp);
+      }
+
+      // ─── FLORAL ARCH AT CLEARING ─────────────────────────────────────────────────
+      // Two curved arch arms meeting at the top, covered in small flowers
+      const archMat = new THREE.MeshStandardMaterial({ color: 0x4a2e0e, roughness: 0.9 });
+      const archFlowerMat = new THREE.MeshStandardMaterial({
+        color: 0xff69b4,
+        emissive: 0xff2d7a,
+        emissiveIntensity: 0.3,
+        roughness: 0.6,
+      });
+
+      function buildArch() {
+        const archGrp = new THREE.Group();
+        for (const sx of [-1, 1]) {
+          // CatmullRom curve for each arm: base → mid → apex
+          const curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(sx * 1.8, 0,    0),
+            new THREE.Vector3(sx * 1.6, 1.8,  0),
+            new THREE.Vector3(sx * 0.9, 3.2,  0),
+            new THREE.Vector3(0,         3.8,  0),
+          ]);
+          const tube = new THREE.Mesh(
+            new THREE.TubeGeometry(curve, 20, 0.1, 8, false),
+            archMat,
+          );
+          tube.castShadow = true;
+          archGrp.add(tube);
+
+          // Flower clusters hugging the tube — very small random offset so they sit on the vine
+          const pts = curve.getPoints(18);
+          for (let i = 3; i < pts.length; i++) {
+            const count = 2 + Math.floor(Math.random() * 2);
+            for (let f = 0; f < count; f++) {
+              const flower = new THREE.Mesh(
+                new THREE.SphereGeometry(0.08 + Math.random() * 0.07, 6, 5),
+                archFlowerMat,
+              );
+              // Offset only in Z (depth) so flowers stay flush against the tube face
+              flower.position.set(
+                pts[i].x + (Math.random() - 0.5) * 0.12,
+                pts[i].y + (Math.random() - 0.5) * 0.12,
+                pts[i].z + (Math.random() - 0.5) * 0.22,
+              );
+              archGrp.add(flower);
+            }
+          }
+        }
+        return archGrp;
+      }
+
+      const arch = buildArch();
+      arch.position.set(0, 0, 17.5); // just before the clearing
+      scene.add(arch);
+
+      // ─── STONE BENCH IN CLEARING ─────────────────────────────────────────────────
+      const stoneMat = new THREE.MeshStandardMaterial({ color: 0x8a8078, roughness: 0.95 });
+      const bench = new THREE.Group();
+      // Seat slab
+      const benchSeat = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.55), stoneMat);
+      benchSeat.position.y = 0.55;
+      bench.add(benchSeat);
+      // Legs
+      for (const bx of [-0.6, 0.6]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.55, 0.5), stoneMat);
+        leg.position.set(bx, 0.275, 0);
+        leg.castShadow = true;
+        bench.add(leg);
+      }
+      bench.position.set(2.5, 0, 22);
+      bench.rotation.y = -0.4;
+      scene.add(bench);
+
+      // ─── MEMORY SPOTS ────────────────────────────────────────────────────────────
+      // Three glowing orbs scattered around the island — must visit all before clearing unlocks
+      const MEMORY_POSITIONS = [
+        new THREE.Vector3(-16, 0, 8),   // left side near treeline
+        new THREE.Vector3(13,  0, 14),  // right side mid-field
+        new THREE.Vector3(-4,  0, -10), // behind start, near shore
+      ];
+
+      const memoryOrbTex = (() => {
+        const c = document.createElement("canvas");
+        c.width = 64; c.height = 64;
+        const ctx = c.getContext("2d");
+        const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0,    "rgba(255,180,220,1)");
+        g.addColorStop(0.35, "rgba(255,100,180,0.7)");
+        g.addColorStop(1,    "rgba(255,60,140,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(c);
+      })();
+
+      const memoryOrbs = MEMORY_POSITIONS.map((pos, i) => {
+        const orb = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: memoryOrbTex,
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          opacity: 0.9,
+        }));
+        orb.scale.set(1.2, 1.2, 1);
+        orb.position.copy(pos).setY(1.2);
+        orb.userData = { baseY: 1.2, phase: i * Math.PI * 0.66, collected: false };
+
+        // Warm point light at each orb
+        const orbLight = new THREE.PointLight(0xff80b0, 0.7, 8);
+        orbLight.position.copy(pos).setY(1.2);
+        orbLight.userData.orbIndex = i;
+        scene.add(orbLight);
+        orb.userData.light = orbLight;
+
+        scene.add(orb);
+        return orb;
+      });
+
+      let memoriesFound = 0;
+      const memoryUI = document.getElementById("memory-ui");
+      const memoryHint = document.getElementById("memory-hint");
+      const memDots = [0, 1, 2].map(i => document.getElementById(`mem-${i}`));
+
+      // ─── ISLAND PROPS ────────────────────────────────────────────────────────────
+      const propWoodMat  = new THREE.MeshStandardMaterial({ color: 0x9b7040, roughness: 0.9 });
+      const propDarkMat  = new THREE.MeshStandardMaterial({ color: 0x5a3e20, roughness: 0.95 });
+      const propStoneMat = new THREE.MeshStandardMaterial({ color: 0x9a8878, roughness: 0.95 });
+      const propMetalMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.4 });
+
+      // ── Compliment boards ────────────────────────────────────────────────────────
+      function buildSignBoard(x, z, rotY, lines) {
+        const grp = new THREE.Group();
+        // Post
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 2.4, 7), propDarkMat);
+        post.position.y = 1.2; post.castShadow = true; grp.add(post);
+        // Board backing
+        const back = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.82, 0.09), propWoodMat);
+        back.position.y = 2.2; grp.add(back);
+        // Canvas texture with text
+        const bc = document.createElement("canvas");
+        bc.width = 320; bc.height = 176;
+        const bx2 = bc.getContext("2d");
+        bx2.fillStyle = "#5a3e20"; bx2.fillRect(0, 0, 320, 176);
+        bx2.fillStyle = "#f5deb3"; bx2.fillRect(8, 8, 304, 160);
+        bx2.fillStyle = "#3a1c08";
+        bx2.textAlign = "center"; bx2.textBaseline = "middle";
+        const lineH = 36;
+        lines.forEach((l, i) => {
+          bx2.font = i === 0 ? "bold 26px Georgia" : "22px Georgia";
+          bx2.fillText(l, 160, 88 + (i - (lines.length - 1) / 2) * lineH);
+        });
+        const face = new THREE.Mesh(
+          new THREE.BoxGeometry(1.46, 0.78, 0.05),
+          new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(bc), roughness: 0.8 })
+        );
+        face.position.set(0, 2.2, 0.07); grp.add(face);
+        // Heart topper
+        const topper = new THREE.Mesh(
+          new THREE.SphereGeometry(0.13, 7, 6),
+          new THREE.MeshStandardMaterial({ color: 0xff2d7a, emissive: 0xff2d7a, emissiveIntensity: 0.4 })
+        );
+        topper.position.y = 2.68; grp.add(topper);
+        grp.position.set(x, 0, z); grp.rotation.y = rotY;
+        scene.add(grp);
+      }
+      // Signs line the main path, alternating sides, facing inward toward the player
+      const SX = 3.1; // distance from path center
+      buildSignBoard( SX, -16,  Math.PI / 2 + 0.35, ["hey beautiful :)"]);
+      buildSignBoard(-SX,  -7, -Math.PI / 2 - 0.35, ["i've been counting", "the days"]);
+      buildSignBoard( SX,   2,  Math.PI / 2 + 0.35, ["you make every", "room brighter ✦"]);
+      buildSignBoard(-SX,  10, -Math.PI / 2 - 0.35, ["your laugh is my", "favorite sound"]);
+      buildSignBoard( SX,  17,  Math.PI / 2 + 0.35, ["i love you so much,", "michelle \u2665"]);
+
+      // ── Seesaw ───────────────────────────────────────────────────────────────────
+      (() => {
+        const grp = new THREE.Group();
+        // Fulcrum wedge
+        const fulcrum = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.28, 0.65, 6), propStoneMat);
+        fulcrum.position.y = 0.32; grp.add(fulcrum);
+        // Plank (slightly tilted for life)
+        const plank = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.1, 0.3), propWoodMat);
+        plank.position.y = 0.7; plank.rotation.z = 0.18; grp.add(plank);
+        // Handles
+        for (const ex of [-1.55, 1.55]) {
+          const h = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.38, 6), propDarkMat);
+          h.position.set(ex, 0.7 + ex * 0.05, 0); grp.add(h);
+        }
+        // End seats
+        for (const [ex, col] of [[-1.55, 0xff80ab], [1.55, 0x80c8ff]]) {
+          const seat = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4, 0.08, 0.28),
+            new THREE.MeshStandardMaterial({ color: col, roughness: 0.7 })
+          );
+          seat.position.set(ex, 0.75 + ex * 0.05, 0); grp.add(seat);
+        }
+        grp.position.set(-7, 0, 9); grp.rotation.y = 0.6; scene.add(grp);
+      })();
+
+      // ── Wishing well ─────────────────────────────────────────────────────────────
+      (() => {
+        const grp = new THREE.Group();
+        // Stone base ring
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.78, 0.85, 14), propStoneMat);
+        base.position.y = 0.42; base.castShadow = true; grp.add(base);
+        // Dark interior
+        const inner = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.42, 0.42, 0.9, 14, 1, true),
+          new THREE.MeshStandardMaterial({ color: 0x100a04, side: THREE.BackSide })
+        );
+        inner.position.y = 0.45; grp.add(inner);
+        // Posts
+        for (const sx of [-1, 1]) {
+          const p = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.7, 6), propDarkMat);
+          p.position.set(sx * 0.58, 1.28, 0); p.castShadow = true; grp.add(p);
+        }
+        // Crossbeam with bucket handle
+        const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.28, 6), propDarkMat);
+        beam.rotation.z = Math.PI / 2; beam.position.y = 2.15; grp.add(beam);
+        // Rope (thin cylinder)
+        const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.55, 4), propDarkMat);
+        rope.position.set(0.1, 1.8, 0); grp.add(rope);
+        // Bucket
+        const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.2, 8), propMetalMat);
+        bucket.position.set(0.1, 1.42, 0); grp.add(bucket);
+        // Roof
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(1.05, 0.65, 12), propWoodMat);
+        roof.position.y = 2.52; roof.castShadow = true; grp.add(roof);
+        grp.position.set(9, 0, 15); scene.add(grp);
+      })();
+
+      // ── Swing set ────────────────────────────────────────────────────────────────
+      (() => {
+        const grp = new THREE.Group();
+        for (const sx of [-1, 1]) {
+          for (const sz of [-0.45, 0.45]) {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 3.4, 7), propDarkMat);
+            leg.position.set(sx * 1.15, 1.5, sz);
+            leg.rotation.z = sx * -0.18; leg.castShadow = true; grp.add(leg);
+          }
+        }
+        const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.55, 7), propDarkMat);
+        topBar.rotation.z = Math.PI / 2; topBar.position.y = 3.05; grp.add(topBar);
+        // Chains
+        for (const cx of [-0.45, 0.45]) {
+          for (let seg = 0; seg < 4; seg++) {
+            const ch = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 4), propMetalMat);
+            ch.position.set(cx, 2.8 - seg * 0.5, 0); grp.add(ch);
+          }
+        }
+        // Seat
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.08, 0.36), propWoodMat);
+        seat.position.y = 0.85; grp.add(seat);
+        grp.position.set(-10, 0, 13); grp.rotation.y = 0.4; scene.add(grp);
+      })();
+
+      // ── Campfire ─────────────────────────────────────────────────────────────────
+      const campfireGroup = new THREE.Group();
+      // Stone ring
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2;
+        const s = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(0.1 + Math.random() * 0.06, 0), propStoneMat
+        );
+        s.position.set(Math.cos(a) * 0.42, 0.07, Math.sin(a) * 0.42);
+        s.rotation.set(Math.random(), Math.random(), Math.random());
+        campfireGroup.add(s);
+      }
+      // Logs
+      for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2;
+        const log = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.72, 7), propDarkMat);
+        log.position.set(Math.cos(a) * 0.18, 0.07, Math.sin(a) * 0.18);
+        log.rotation.set(0, a, Math.PI / 2); log.castShadow = true;
+        campfireGroup.add(log);
+      }
+      // Flame sprite
+      const flameTex = (() => {
+        const fc = document.createElement("canvas"); fc.width = 32; fc.height = 48;
+        const fctx = fc.getContext("2d");
+        const fg = fctx.createRadialGradient(16, 38, 0, 16, 22, 20);
+        fg.addColorStop(0,   "rgba(255,210,60,1)");
+        fg.addColorStop(0.4, "rgba(255,90,10,0.85)");
+        fg.addColorStop(1,   "rgba(200,0,0,0)");
+        fctx.fillStyle = fg;
+        fctx.ellipse(16, 28, 11, 20, 0, 0, Math.PI * 2);
+        fctx.fill();
+        return new THREE.CanvasTexture(fc);
+      })();
+      const flameSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: flameTex, transparent: true,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      flameSprite.scale.set(0.55, 0.8, 1);
+      flameSprite.position.y = 0.45;
+      campfireGroup.add(flameSprite);
+      const campfireLight = new THREE.PointLight(0xff6010, 1.4, 9);
+      campfireLight.position.y = 0.6;
+      campfireGroup.add(campfireLight);
+      campfireGroup.position.set(6.5, 0, 5); // end of right branch path
+      scene.add(campfireGroup);
+
+      // ── Rowboat (end of right beach path) ────────────────────────────────────────
+      (() => {
+        const grp = new THREE.Group();
+        const hullMat = new THREE.MeshStandardMaterial({ color: 0x7a4a1e, roughness: 0.9 });
+        const rimMat  = new THREE.MeshStandardMaterial({ color: 0x5a3010, roughness: 0.95 });
+        // Hull — flattened half-ellipsoid via scaled sphere
+        const hull = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), hullMat);
+        hull.scale.set(1.0, 0.55, 2.4);
+        hull.rotation.y = Math.PI;
+        hull.position.y = 0.1;
+        hull.castShadow = true;
+        grp.add(hull);
+        // Rim planks (two side rails)
+        for (const sx of [-1, 1]) {
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 4.6), rimMat);
+          rail.position.set(sx * 0.92, 0.38, 0);
+          grp.add(rail);
+        }
+        // Seat planks
+        for (const sz of [-0.8, 0.1, 1.0]) {
+          const seat = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.08, 0.22), hullMat);
+          seat.position.set(0, 0.4, sz);
+          grp.add(seat);
+        }
+        // Oar (one lying across)
+        const oarShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.2, 6), rimMat);
+        oarShaft.rotation.z = Math.PI / 2;
+        oarShaft.position.set(0, 0.48, -0.5);
+        grp.add(oarShaft);
+        const oarBlade = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, 0.22), hullMat);
+        oarBlade.position.set(1.72, 0.48, -0.5);
+        grp.add(oarBlade);
+        grp.position.set(18, 0, -3);
+        grp.rotation.y = 0.4;
+        scene.add(grp);
+      })();
+
+      // ── Telescope (end of left beach path) ───────────────────────────────────────
+      (() => {
+        const grp = new THREE.Group();
+        const tubeMat = new THREE.MeshStandardMaterial({ color: 0x8b7536, metalness: 0.5, roughness: 0.5 });
+        const legMat  = new THREE.MeshStandardMaterial({ color: 0x5a4520, roughness: 0.9 });
+        // Tripod legs
+        for (let i = 0; i < 3; i++) {
+          const a = (i / 3) * Math.PI * 2;
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.6, 5), legMat);
+          leg.position.set(Math.cos(a) * 0.45, 0.75, Math.sin(a) * 0.45);
+          leg.rotation.z = Math.cos(a) * 0.28;
+          leg.rotation.x = -Math.sin(a) * 0.28;
+          leg.castShadow = true;
+          grp.add(leg);
+        }
+        // Tube body
+        const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 1.1, 10), tubeMat);
+        tube.rotation.z = Math.PI / 2 - 0.35;
+        tube.position.set(-0.15, 1.65, 0);
+        tube.castShadow = true;
+        grp.add(tube);
+        // Eyepiece end cap
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.12, 10), tubeMat);
+        cap.rotation.z = Math.PI / 2 - 0.35;
+        cap.position.set(-0.7, 1.88, 0);
+        grp.add(cap);
+        grp.position.set(-17, 0, 0);
+        grp.rotation.y = 1.2; // angled toward the horizon
+        scene.add(grp);
+      })();
+
+      // ── Picnic blanket (beside campfire, off the path) ───────────────────────────
+      (() => {
+        const grp = new THREE.Group();
+        // Blanket
+        const blanket = new THREE.Mesh(
+          new THREE.PlaneGeometry(2.0, 1.6, 1, 1),
+          new THREE.MeshStandardMaterial({ color: 0xd44a6a, roughness: 0.95, side: THREE.DoubleSide })
+        );
+        blanket.rotation.x = -Math.PI / 2;
+        blanket.position.y = 0.012;
+        grp.add(blanket);
+        // Checkerboard stripe suggestion — second plane slightly above
+        const stripe = new THREE.Mesh(
+          new THREE.PlaneGeometry(2.0, 0.32, 1, 1),
+          new THREE.MeshStandardMaterial({ color: 0xffd0dc, roughness: 0.95, side: THREE.DoubleSide })
+        );
+        stripe.rotation.x = -Math.PI / 2;
+        stripe.position.set(0, 0.014, 0);
+        grp.add(stripe);
+        // Wicker basket
+        const basketMat = new THREE.MeshStandardMaterial({ color: 0xb8860b, roughness: 0.9 });
+        const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.4, 8), basketMat);
+        basket.position.set(0.65, 0.2, -0.55);
+        basket.castShadow = true;
+        grp.add(basket);
+        const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.1, 8), basketMat);
+        lid.position.set(0.65, 0.42, -0.55);
+        grp.add(lid);
+        // Handle
+        const handle = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 6, 12, Math.PI), basketMat);
+        handle.rotation.x = -Math.PI / 2;
+        handle.position.set(0.65, 0.55, -0.55);
+        grp.add(handle);
+        grp.position.set(5, 0, 8);
+        grp.rotation.y = 0.5;
+        scene.add(grp);
+      })();
+
+      // ─── RIVER BOUNDARY ──────────────────────────────────────────────────────────
+      const BOUNDARY_R = 28; // inner edge of river (player wall)
+      const RIVER_W = 10; // river width
+
+      const riverMat = new THREE.ShaderMaterial({
+        transparent: true,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
+  `,
+        fragmentShader: `
+    uniform float uTime;
+    varying vec2 vUv;
+    void main() {
+      // polar-ish ripples along the ring
+      float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+      float radial = length(vUv - 0.5) * 2.0; // 0..1
+
+      float r1 = sin(angle * 18.0 - uTime * 2.2 + radial * 6.0) * 0.5 + 0.5;
+      float r2 = sin(angle * 11.0 + uTime * 1.7 - radial * 4.0) * 0.5 + 0.5;
+      float ripple = r1 * 0.6 + r2 * 0.4;
+
+      vec3 deep    = vec3(0.03, 0.12, 0.32);
+      vec3 shallow = vec3(0.08, 0.28, 0.52);
+      vec3 foam    = vec3(0.72, 0.88, 0.95);
+
+      vec3 col = mix(deep, shallow, ripple);
+      float foamMask = pow(max(r1 - 0.65, 0.0) * 2.9, 2.0);
+      col = mix(col, foam, foamMask * 0.55);
+
+      // fade at inner/outer edges
+      float fade = smoothstep(0.0, 0.12, radial) * smoothstep(1.0, 0.88, radial);
+      gl_FragColor = vec4(col, 0.82 * fade);
+    }
+  `,
+      });
+
+      const riverGeo = new THREE.RingGeometry(
+        BOUNDARY_R,
+        BOUNDARY_R + RIVER_W,
+        96,
+        4,
+      );
+      const river = new THREE.Mesh(riverGeo, riverMat);
+      river.rotation.x = -Math.PI / 2;
+      river.position.y = 0.02;
+      scene.add(river);
+
+      // Sandy bank just inside the river
+      const bankGeo = new THREE.RingGeometry(
+        BOUNDARY_R - 3,
+        BOUNDARY_R + 1,
+        96,
+        1,
+      );
+      const bank = new THREE.Mesh(
+        bankGeo,
+        new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 1 }),
+      );
+      bank.rotation.x = -Math.PI / 2;
+      bank.position.y = 0.015;
+      scene.add(bank);
+
+      // Scattered shoreline stones — skip dock corridor so dock entrance is clean
+      for (let i = 0; i < 55; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = BOUNDARY_R - 3 + Math.random() * 5;
+        const sx = Math.cos(a) * r, sz = Math.sin(a) * r;
+        if (Math.abs(sx) < 5 && sz < 0) continue;   // skip dock opening
+        const stone = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(0.15 + Math.random() * 0.3, 0),
+          new THREE.MeshStandardMaterial({ color: 0x6b6055, roughness: 0.95 }),
+        );
+        stone.position.set(sx, 0.08, sz);
+        stone.rotation.set(Math.random(), Math.random(), Math.random());
+        stone.castShadow = true;
+        scene.add(stone);
+      }
+
+      // ─── OPEN OCEAN (replaces outer bank — island feel) ──────────────────────────
+      const oceanMat = new THREE.ShaderMaterial({
+        transparent: true,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+  `,
+        fragmentShader: `
+    uniform float uTime;
+    varying vec2 vUv;
+    void main() {
+      // World-space ripple using uv offset from centre
+      vec2 c = vUv - 0.5;
+      float dist = length(c) * 2.0;
+      float angle = atan(c.y, c.x);
+
+      float w1 = sin(dist * 6.0 - uTime * 1.8 + angle * 3.0) * 0.5 + 0.5;
+      float w2 = sin(dist * 10.0 + uTime * 1.2 - angle * 2.0) * 0.5 + 0.5;
+      float ripple = w1 * 0.65 + w2 * 0.35;
+
+      vec3 deep    = vec3(0.01, 0.06, 0.18);
+      vec3 mid     = vec3(0.03, 0.13, 0.28);
+      vec3 shimmer = vec3(0.18, 0.32, 0.45);
+
+      vec3 col = mix(deep, mid, ripple * 0.6);
+      float foam = pow(max(w1 - 0.78, 0.0) * 2.5, 2.0);
+      col = mix(col, shimmer, foam * 0.18);
+
+      // Fade near shore (inner edge)
+      float shoreFade = smoothstep(0.0, 0.06, dist - 0.0);
+      gl_FragColor = vec4(col, 0.88 * shoreFade);
+    }
+  `,
+      });
+
+      // Large disc from just past the sandy bank all the way to horizon
+      const oceanGeo = new THREE.RingGeometry(BOUNDARY_R - 2, 180, 128, 6);
+      const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+      ocean.rotation.x = -Math.PI / 2;
+      ocean.position.y = 0.005;
+      scene.add(ocean);
+
+      // Enhance the sandy beach — wider, lighter sand
+      const beachGeo = new THREE.RingGeometry(BOUNDARY_R - 5, BOUNDARY_R + 2, 96, 1);
+      const beach = new THREE.Mesh(
+        beachGeo,
+        new THREE.MeshStandardMaterial({ color: 0xd4b483, roughness: 1.0 }),
+      );
+      beach.rotation.x = -Math.PI / 2;
+      beach.position.y = 0.012;
+      scene.add(beach);
+
+      // ─── CHERRY BLOSSOM TREELINE ─────────────────────────────────────────────────
+      const trunkMat = new THREE.MeshStandardMaterial({
+        color: 0x4a2e0e,
+        roughness: 0.95,
+      });
+      const blossomColors = [0xff6eb4, 0xff9ec8, 0xffb3d9, 0xe75480, 0xffc0cb];
+
+      const TREE_COUNT = 55;
+      for (let i = 0; i < TREE_COUNT; i++) {
+        const a = (i / TREE_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.18;
+        const r = 17 + Math.random() * 4; // inner island perimeter
+        const x = Math.cos(a) * r;
+        const z = Math.sin(a) * r;
+
+        // Skip trees in the center dock/path corridor (both front and back openings)
+        if (Math.abs(x) < 4.5 && z < -4) continue;   // dock corridor (south)
+        if (Math.abs(x) < 4.5 && z > 18) continue;    // clearing opening (north)
+
+        const treeGroup = new THREE.Group();
+
+        // Trunk — slightly curved feel via two stacked cylinders
+        const trunkH = 2.5 + Math.random() * 1.5;
+        const trunk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.18, trunkH, 7),
+          trunkMat,
+        );
+        trunk.position.y = trunkH / 2;
+        trunk.rotation.z = (Math.random() - 0.5) * 0.12;
+        trunk.castShadow = true;
+        treeGroup.add(trunk);
+
+        // Canopy — 2-3 overlapping blossom spheres for a fluffy cloud look
+        const bColor =
+          blossomColors[Math.floor(Math.random() * blossomColors.length)];
+        const canopyMat = new THREE.MeshStandardMaterial({
+          color: bColor,
+          roughness: 0.85,
+          emissive: new THREE.Color(bColor).multiplyScalar(0.08),
+        });
+        const canopyCount = 2 + Math.floor(Math.random() * 2);
+        const baseR = 1.1 + Math.random() * 0.7;
+        for (let c = 0; c < canopyCount; c++) {
+          const cr = baseR * (0.75 + Math.random() * 0.35);
+          const canopy = new THREE.Mesh(
+            new THREE.SphereGeometry(cr, 10, 8),
+            canopyMat,
+          );
+          canopy.position.set(
+            (Math.random() - 0.5) * baseR * 0.7,
+            trunkH + cr * 0.55 + (Math.random() - 0.5) * 0.6,
+            (Math.random() - 0.5) * baseR * 0.7,
+          );
+          canopy.castShadow = true;
+          treeGroup.add(canopy);
+        }
+
+        treeGroup.position.set(x, 0, z);
+        treeGroup.rotation.y = Math.random() * Math.PI * 2;
+        scene.add(treeGroup);
+      }
+
+      // ─── PERIMETER BUSHES ────────────────────────────────────────────────────────
+      // Rounded shrub clusters just inside the treeline, gaps at dock and clearing
+      (() => {
+        const BUSH_R = 21.5;
+        const BUSH_COUNT = 110;
+        const bushColors = [0x2d5a1b, 0x3a7a22, 0x4a9030, 0x255218, 0x356625];
+
+        for (let i = 0; i < BUSH_COUNT; i++) {
+          const a = (i / BUSH_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
+          const r = BUSH_R + (Math.random() - 0.5) * 2.5;
+          const x = Math.cos(a) * r;
+          const z = Math.sin(a) * r;
+
+          // Gap at dock corridor
+          if (Math.abs(x) < 5 && z < -4) continue;
+          // Gap at clearing entrance
+          if (Math.abs(x) < 5 && z > 17) continue;
+
+          const col = bushColors[Math.floor(Math.random() * bushColors.length)];
+          const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.9 });
+
+          // Each bush = 2-3 overlapping spheres of varying sizes
+          const grp = new THREE.Group();
+          const sphereCount = 2 + Math.floor(Math.random() * 2);
+          const baseR = 0.5 + Math.random() * 0.55;
+          for (let s = 0; s < sphereCount; s++) {
+            const sr = baseR * (0.65 + Math.random() * 0.5);
+            const sphere = new THREE.Mesh(new THREE.SphereGeometry(sr, 7, 6), mat);
+            sphere.position.set(
+              (Math.random() - 0.5) * baseR * 1.2,
+              sr * 0.55 + Math.random() * 0.2,
+              (Math.random() - 0.5) * baseR * 1.2,
+            );
+            sphere.castShadow = true;
+            grp.add(sphere);
+          }
+          grp.position.set(x, 0, z);
+          grp.rotation.y = Math.random() * Math.PI * 2;
+          scene.add(grp);
+        }
+      })();
+
+      // ─── PROPOSAL CLEARING ───────────────────────────────────────────────────────
+      // One giant dahlia in the center of the clearing (Z=22)
+      let proposalDahlia = null;
+      loader.load("./dahlia-inspired-flower-by-rose.glb", (gltf) => {
+        proposalDahlia = gltf.scene;
+
+        // Auto-scale to 3 world units tall
+        const box = new THREE.Box3().setFromObject(proposalDahlia);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        proposalDahlia.scale.setScalar(maxDim > 0 ? 3.0 / maxDim : 1);
+
+        // Sit base on ground at clearing
+        const box2 = new THREE.Box3().setFromObject(proposalDahlia);
+        proposalDahlia.position.set(0, -box2.min.y, 22);
+
+        proposalDahlia.traverse((child) => {
+          if (child.isMesh) {
+            child.material = child.material.clone();
+            child.material.color.set(0xff2d7a);
+            child.castShadow = true;
+          }
+        });
+
+        scene.add(proposalDahlia);
+      });
+
+      // Warm glow light at the clearing
+      const clearingLight = new THREE.PointLight(0xff80ab, 0, 14);
+      clearingLight.position.set(0, 5, 22);
+      scene.add(clearingLight);
+
+      // Proposal state
+      let proposalPhase = "idle"; // idle → cinematic → shown → answered
+      let proposalTimer = 0;
+      let noFleeTries = 0;
+
+      const proposalUI = document.getElementById("proposal-ui");
+      const celebrationEl = document.getElementById("celebration");
+      const btnNo = document.getElementById("btn-no");
+      const btnYes = document.getElementById("btn-yes");
+
+      // No button flees on mouseenter
+      btnNo.addEventListener("mouseenter", () => {
+        if (noFleeTries >= 5) {
+          btnNo.style.display = "none";
+          return;
+        }
+        noFleeTries++;
+        const wrap = document.getElementById("proposal-buttons");
+        const bw = wrap.offsetWidth,
+          bh = wrap.offsetHeight;
+        const nx = (Math.random() - 0.5) * (window.innerWidth * 0.6);
+        const ny = (Math.random() - 0.5) * (window.innerHeight * 0.4);
+        btnNo.style.transform = `translate(${nx}px, ${ny}px) scale(${1 - noFleeTries * 0.12})`;
+        btnNo.style.transition = "transform 0.25s ease";
+      });
+
+      btnYes.addEventListener("click", () => {
+        proposalUI.classList.remove("show");
+        celebrationEl.classList.add("show");
+        controlsEnabled = false;
+        // Explode petals — speed up drift
+        for (const p of driftPetals) {
+          p.userData.vy = -(0.06 + Math.random() * 0.08);
+          p.userData.vx = (Math.random() - 0.5) * 0.12;
+          p.userData.vz = (Math.random() - 0.5) * 0.12;
+          p.position.set(
+            (Math.random() - 0.5) * 20,
+            Math.random() * 5,
+            (Math.random() - 0.5) * 20 + 22,
+          );
+        }
+        clearingLight.intensity = 4;
+      });
+
+      // ─── DRIFTING PETALS ─────────────────────────────────────────────────────────
+      const petalTex = (() => {
+        const c = document.createElement("canvas");
+        c.width = 32;
+        c.height = 48;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#ff2d7a";
+        ctx.beginPath();
+        ctx.moveTo(16, 0);
+        ctx.bezierCurveTo(28, 8, 28, 36, 16, 48);
+        ctx.bezierCurveTo(4, 36, 4, 8, 16, 0);
+        ctx.fill();
+        return new THREE.CanvasTexture(c);
+      })();
+
+      const driftPetals = [];
+      const sharedPetalMat = new THREE.SpriteMaterial({
+        map: petalTex, color: 0xff4081, transparent: true, opacity: 0.75,
+      });
+      for (let i = 0; i < 80; i++) {
+        const s = new THREE.Sprite(sharedPetalMat);
+        const sz = 0.15 + Math.random() * 0.25;
+        s.scale.set(sz, sz * 1.5, 1);
+        s.position.set(
+          (Math.random() - 0.5) * 40,
+          Math.random() * 12,
+          (Math.random() - 0.5) * 40,
+        );
+        s.userData = {
+          vy: -(0.01 + Math.random() * 0.02),
+          vx: (Math.random() - 0.5) * 0.015,
+          vz: (Math.random() - 0.5) * 0.015,
+        };
+        scene.add(s);
+        driftPetals.push(s);
+      }
+
+      // ─── FIREFLIES ────────────────────────────────────────────────────────────────
+      const fireflyTex = (() => {
+        const c = document.createElement("canvas");
+        c.width = 32;
+        c.height = 32;
+        const ctx = c.getContext("2d");
+        const grd = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+        grd.addColorStop(0, "rgba(220,255,100,1)");
+        grd.addColorStop(0.3, "rgba(180,255,80,0.6)");
+        grd.addColorStop(1, "rgba(100,200,50,0)");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(16, 16, 16, 0, Math.PI * 2);
+        ctx.fill();
+        return new THREE.CanvasTexture(c);
+      })();
+
+      const FIREFLY_COUNT = 80;
+      const fireflies = [];
+      for (let i = 0; i < FIREFLY_COUNT; i++) {
+        const mat = new THREE.SpriteMaterial({
+          map: fireflyTex,
+          color: 0xccff66,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        const sprite = new THREE.Sprite(mat);
+        const sz = 0.12 + Math.random() * 0.12;
+        sprite.scale.set(sz, sz, 1);
+        const fa = Math.random() * Math.PI * 2;
+        const fr = Math.random() * 22;
+        const baseY = 0.3 + Math.random() * 2.5;
+        sprite.position.set(Math.cos(fa) * fr, baseY, Math.sin(fa) * fr);
+        sprite.userData = {
+          blinkPhase: Math.random() * Math.PI * 2,
+          blinkSpeed: 0.5 + Math.random() * 1.5,
+          driftX: (Math.random() - 0.5) * 0.3,
+          driftZ: (Math.random() - 0.5) * 0.3,
+          bobPhase: Math.random() * Math.PI * 2,
+          bobSpeed: 0.4 + Math.random() * 0.8,
+          bobAmp: 0.1 + Math.random() * 0.3,
+          baseY,
+        };
+        scene.add(sprite);
+        fireflies.push(sprite);
+      }
+
+      // ─── ROBOT CHARACTERS ────────────────────────────────────────────────────────
+      // Invisible anchor groups — position/rotation drives the visuals below
+      const furBumpTex = (() => {
+        const size = 256;
+        const c = document.createElement("canvas");
+        c.width = size;
+        c.height = size;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#808080";
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 5000; i++) {
+          const x = Math.random() * size;
+          const y = Math.random() * size;
+          const len = 3 + Math.random() * 7;
+          const angle = (Math.random() - 0.5) * 0.5;
+          const bright = Math.random() > 0.45 ? 220 : 50;
+          ctx.strokeStyle = `rgba(${bright},${bright},${bright},${0.12 + Math.random() * 0.2})`;
+          ctx.lineWidth = 0.4 + Math.random() * 1.2;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + Math.sin(angle) * len, y - len);
+          ctx.stroke();
+        }
+        return new THREE.CanvasTexture(c);
+      })();
+
+      // ─── PLAYER + COMPANION (anchor groups) ──────────────────────────────────────
+      const playerBear = new THREE.Group();
+      scene.add(playerBear);
+      const companionBear = new THREE.Group();
+      scene.add(companionBear);
+
+      // Animation mixer state
+      let playerMixer = null,
+        companionMixer = null;
+      let playerIdleAction = null,
+        playerRunAction = null;
+      let companionIdleAction = null,
+        companionRunAction = null;
+      let wasMoving = false;
+
+      loader.load(
+        "./cute_robots_-_low_poly_-_rigged_-_animated.glb",
+        (gltf) => {
+          gltf.scene.updateMatrixWorld(true);
+
+          // Log every mesh name so we know what pattern to use
+          // Scale to 1.4 world units tall
+          const box = new THREE.Box3().setFromObject(gltf.scene);
+          const h = box.getSize(new THREE.Vector3()).y;
+          const robotScale = h > 0 ? 1.4 / h : 1;
+
+          function makeRobot(keepFn) {
+            const clone = SkeletonUtils.clone(gltf.scene);
+            clone.scale.setScalar(robotScale);
+            clone.traverse((child) => {
+              if (child.isMesh) {
+                child.visible = keepFn(child.name);
+                child.castShadow = true;
+                child.receiveShadow = true;
+              }
+            });
+            clone.updateMatrixWorld(true);
+            const cb = new THREE.Box3().setFromObject(clone);
+            // Guard against empty box (all meshes hidden)
+            clone.position.y = isFinite(cb.min.y) ? -cb.min.y : 0;
+            return clone;
+          }
+
+          // Split by mesh index: meshes 0-2 = robot1, 3-5 = robot2, 6-8 = robot3
+          let idx = 0;
+          const meshIndexMap = new Map();
+          gltf.scene.traverse((c) => {
+            if (c.isMesh) meshIndexMap.set(c.uuid, idx++);
+          });
+
+          function makeRobotByIndex(clone, start, end) {
+            let i2 = 0;
+            clone.traverse((child) => {
+              if (child.isMesh) {
+                child.visible = i2 >= start && i2 < end;
+                child.castShadow = true;
+                child.receiveShadow = true;
+                i2++;
+              }
+            });
+            clone.updateMatrixWorld(true);
+            // Only include visible meshes so hidden robots don't skew the center
+            const cb = new THREE.Box3();
+            clone.traverse((child) => {
+              if (child.isMesh && child.visible) cb.expandByObject(child);
+            });
+            if (isFinite(cb.min.y)) {
+              const cx = (cb.min.x + cb.max.x) / 2;
+              const cz = (cb.min.z + cb.max.z) / 2;
+              clone.position.set(-cx, -cb.min.y, -cz);
+            }
+            return clone;
+          }
+
+          const playerRobot = SkeletonUtils.clone(gltf.scene);
+          const companionRobot = SkeletonUtils.clone(gltf.scene);
+          playerRobot.scale.setScalar(robotScale);
+          companionRobot.scale.setScalar(robotScale);
+
+          makeRobotByIndex(playerRobot, 6, 9);
+          makeRobotByIndex(companionRobot, 3, 6);
+
+          playerBear.add(playerRobot);
+          companionBear.add(companionRobot);
+
+          playerMixer = new THREE.AnimationMixer(playerRobot);
+          companionMixer = new THREE.AnimationMixer(companionRobot);
+
+          const clips = gltf.animations;
+          const pIdle = clips.find((c) => c.name === "Armature.002|Idle");
+          const pRun = clips.find((c) => c.name === "Armature.002|Run");
+          const cIdle = clips.find((c) => c.name === "Armature.001|Idle");
+          const cRun = clips.find((c) => c.name === "Armature.001|Run");
+
+          if (pIdle) {
+            playerIdleAction = playerMixer.clipAction(pIdle);
+            playerIdleAction.play();
+          }
+          if (pRun) {
+            playerRunAction = playerMixer.clipAction(pRun);
+          }
+          if (cIdle) {
+            companionIdleAction = companionMixer.clipAction(cIdle);
+            companionIdleAction.play();
+          }
+          if (cRun) {
+            companionRunAction = companionMixer.clipAction(cRun);
+          }
+        },
+        undefined,
+        (err) => console.error("Robot GLB failed:", err),
+      );
+
+      // Companion follows a trail of the player's past positions
+      const TRAIL_LEN = 40; // how many frames behind she lags
+      const trail = [];
+      for (let i = 0; i < TRAIL_LEN; i++) {
+        trail.push(new THREE.Vector3(1.2, 0, 0)); // start just beside player
+      }
+
+      // Small heart above companion's head
+      const heartTex = (() => {
+        const c = document.createElement("canvas");
+        c.width = 64;
+        c.height = 64;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#ff2d7a";
+        ctx.font = "48px serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("♥", 32, 34);
+        return new THREE.CanvasTexture(c);
+      })();
+      const heartSprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: heartTex,
+          transparent: true,
+          opacity: 0.9,
+        }),
+      );
+      heartSprite.scale.set(0.45, 0.45, 1);
+      heartSprite.position.set(0, 0, 0); // updated each frame
+      scene.add(heartSprite);
+
+      // Big hug heart
+      const hugHeartTex = (() => {
+        const c = document.createElement("canvas");
+        c.width = 128;
+        c.height = 128;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#ff2d7a";
+        ctx.font = "100px serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("♥", 64, 72);
+        return new THREE.CanvasTexture(c);
+      })();
+      const hugHeart = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: hugHeartTex,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+        }),
+      );
+      hugHeart.scale.set(0, 0, 1);
+      scene.add(hugHeart);
+      let isHugging = false;
+      let hugTimer = 0;
+      const HUG_DURATION = 2.5;
+
+      // ─── INTRO SEQUENCE ──────────────────────────────────────────────────────────
+      // Phases: 'title' → 'arrive' → 'dialog' → 'play'
+      let introPhase = "title";
+      let introTimer = 0;
+
+      // Companion (you) waits at the island edge of the dock, facing the water
+      companionBear.position.set(0, 0, -18);
+      companionBear.rotation.y = Math.PI; // facing -Z toward water
+      companionBear.visible = false;
+      heartSprite.visible = false;
+
+      // Player (her) starts on the boat, off-screen
+      playerBear.position.set(0, 0.55, -60);
+      playerBear.visible = false;
+
+      let controlsEnabled = false;
+
+      const introOverlay = document.getElementById("intro-overlay");
+      const introTitleEl = document.getElementById("intro-title");
+      const introSubtitleEl = document.getElementById("intro-subtitle");
+      const enterBtn = document.getElementById("enter-btn");
+      const dialogBox = document.getElementById("dialog-box");
+
+      // Dialog sequence helper
+      const DIALOGS = [
+        { text: "Hey beautiful 🙂", duration: 2800 },
+        { text: "I made this little island just for you — explore around and find all the glowing lights ✦", duration: 4200 },
+        { text: "I'll be right behind you 🌸", duration: 2400 },
+      ];
+      function runDialogs(onDone) {
+        let i = 0;
+        function next() {
+          if (i >= DIALOGS.length) { dialogBox.classList.remove("show"); setTimeout(onDone, 800); return; }
+          dialogBox.textContent = DIALOGS[i].text;
+          dialogBox.classList.add("show");
+          setTimeout(() => {
+            dialogBox.classList.remove("show");
+            setTimeout(() => { i++; next(); }, 500);
+          }, DIALOGS[i++].duration);
+        }
+        next();
+      }
+
+      setTimeout(() => {
+        introTitleEl.classList.add("show");
+        introSubtitleEl.classList.add("show");
+        // Button fades in after title settles (CSS delay handles the timing)
+        enterBtn.classList.add("show");
+      }, 400);
+
+      enterBtn.addEventListener("click", () => {
+        enterBtn.style.pointerEvents = "none";
+        enterBtn.style.opacity = "0";
+        introOverlay.classList.add("fade-out");
+        introPhase = "arrive";
+        introTimer = 0;
+        companionBear.visible = true;
+        playerBear.visible = true;
+      });
+
+      // ─── INPUT ───────────────────────────────────────────────────────────────────
+      const keys = {};
+      window.addEventListener("keydown", (e) => {
+        keys[e.code] = true;
+      });
+      window.addEventListener("keyup", (e) => {
+        keys[e.code] = false;
+      });
+
+      // Camera yaw — driven by movement direction, not mouse
+      let yaw = Math.PI; // starts facing into the field (+Z)
+
+      // ─── CAMERA STATE ─────────────────────────────────────────────────────────────
+      const CAM_DIST = 4.5;
+      const CAM_HEIGHT = 2.5;
+      const camTarget = new THREE.Vector3();
+
+      // ─── CONTROLS HINT ───────────────────────────────────────────────────────────
+      const hint = document.createElement("div");
+      hint.style.cssText = `
+  position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+  color:rgba(255,200,220,0.75); font-family:Georgia,serif; font-size:13px;
+  letter-spacing:1px; pointer-events:none; user-select:none;
+`;
+      hint.textContent = "WASD or arrow keys to explore";
+      document.body.appendChild(hint);
+      // fade hint after 6s
+      setTimeout(() => {
+        hint.style.transition = "opacity 2s";
+        hint.style.opacity = "0";
+      }, 6000);
+
+      // ─── RENDER LOOP ─────────────────────────────────────────────────────────────
+      function tickFireflies(t, dt) {
+        for (const f of fireflies) {
+          const blink = Math.sin(
+            t * f.userData.blinkSpeed + f.userData.blinkPhase,
+          );
+          f.material.opacity = Math.max(0, blink) * 0.85;
+          f.position.x += f.userData.driftX * dt;
+          f.position.z += f.userData.driftZ * dt;
+          f.position.y =
+            f.userData.baseY +
+            Math.sin(t * f.userData.bobSpeed + f.userData.bobPhase) *
+              f.userData.bobAmp;
+          const fd = Math.sqrt(f.position.x ** 2 + f.position.z ** 2);
+          if (fd > 26) {
+            const fa = Math.random() * Math.PI * 2;
+            const fr = Math.random() * 20;
+            f.position.set(
+              Math.cos(fa) * fr,
+              f.userData.baseY,
+              Math.sin(fa) * fr,
+            );
+          }
+          if (Math.random() < 0.005) {
+            f.userData.driftX = (Math.random() - 0.5) * 0.3;
+            f.userData.driftZ = (Math.random() - 0.5) * 0.3;
+          }
+        }
+      }
+
+      const clock = new THREE.Clock();
+      const moveDir = new THREE.Vector3();
+      const SPEED = 4.5;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = clock.getDelta();
+        const t = clock.elapsedTime;
+
+        // ── Intro state machine ──
+        if (introPhase !== "play") {
+          introTimer += dt;
+
+          // arrive — boat glides from Z=-60 to Z=-42 over 4 seconds
+          if (introPhase === "arrive") {
+            const arriveT = Math.min(introTimer / 4.0, 1);
+            const ease = 1 - Math.pow(1 - arriveT, 3);
+            boatGroup.position.z = -60 + ease * 18; // arrives at Z=-42, ties up at dock end
+            playerBear.position.set(0, 0.55, boatGroup.position.z - 0.5);
+            playerBear.rotation.y = 0;
+
+            if (introTimer > 4.4) {
+              introPhase = "dialog";
+              introTimer = 0;
+              // Player hops off boat further back on the dock
+              playerBear.position.set(0, 0, -32);
+              playerBear.rotation.set(0, 0, 0); // faces north (toward Dylan)
+              for (let i = 0; i < trail.length; i++) trail[i].set(0, 0, -26);
+              heartSprite.visible = true;
+              // Companion turns to face her (south = Math.PI)
+              companionBear.rotation.y = Math.PI;
+              runDialogs(() => {
+                introPhase = "play";
+                controlsEnabled = true;
+                yaw = Math.PI;
+                setTimeout(() => {
+                  memoryUI.classList.add("show");
+                  memoryHint.classList.add("show");
+                  setTimeout(() => { memoryHint.style.opacity = "0"; }, 5000);
+                }, 600);
+              });
+            }
+          }
+
+          // dialog — gentle bounce for player after stepping off boat
+          if (introPhase === "dialog") {
+            const bounce = Math.max(0, Math.sin(introTimer * 10) * Math.exp(-introTimer * 4));
+            playerBear.scale.set(1 + bounce * 0.15, 1 - bounce * 0.1, 1 + bounce * 0.15);
+          }
+
+          // Cinematic camera
+          if (introPhase === "title") {
+            const cAngle = t * 0.06;
+            camera.position.set(Math.sin(cAngle) * 8, 5, -14 + Math.cos(cAngle) * 4);
+            camera.lookAt(0, 1, -14);
+          }
+          if (introPhase === "arrive" || introPhase === "dialog") {
+            // Follow player from behind (same logic as gameplay camera)
+            const targetCamX = playerBear.position.x + Math.sin(yaw) * CAM_DIST;
+            const targetCamZ = playerBear.position.z + Math.cos(yaw) * CAM_DIST;
+            const targetCamY = playerBear.position.y + CAM_HEIGHT;
+            camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), 0.06);
+            camTarget.copy(playerBear.position);
+            camTarget.y += 1.0;
+            camera.lookAt(camTarget);
+          }
+
+          starMat.uniforms.uTime.value = t;
+          riverMat.uniforms.uTime.value = t;
+          oceanMat.uniforms.uTime.value = t;
+          composer.render();
+          // Skip player controls during intro
+          // (still animate dahlias and petals below)
+          // use a reduced path through the loop
+          for (const d of dahlias) {
+            d.rotation.z =
+              Math.sin(t * d.userData.swaySpeed + d.userData.swayPhase) * 0.018;
+          }
+          for (const p of driftPetals) {
+            p.position.x +=
+              p.userData.vx + Math.sin(t * 0.3 + p.position.z * 0.1) * 0.003;
+            p.position.y += p.userData.vy;
+            p.position.z += p.userData.vz;
+            p.material.rotation += 0.01;
+            if (p.position.y < -1)
+              p.position.set(
+                (Math.random() - 0.5) * 40,
+                12 + Math.random() * 3,
+                (Math.random() - 0.5) * 40,
+              );
+          }
+          // Heart follows companion during intro too
+          heartSprite.position.set(
+            companionBear.position.x,
+            companionBear.position.y + 1.8 + Math.sin(t * 2) * 0.08,
+            companionBear.position.z,
+          );
+          tickFireflies(t, dt);
+          return;
+        }
+
+        // ── Movement ──
+        const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+        const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+
+        moveDir.set(0, 0, 0);
+        if (controlsEnabled) {
+          if (keys["KeyW"] || keys["ArrowUp"])
+            moveDir.addScaledVector(forward, 1);
+          if (keys["KeyS"] || keys["ArrowDown"])
+            moveDir.addScaledVector(forward, -1);
+          if (keys["KeyA"] || keys["ArrowLeft"])
+            moveDir.addScaledVector(right, -1);
+          if (keys["KeyD"] || keys["ArrowRight"])
+            moveDir.addScaledVector(right, 1);
+        }
+
+        const moving = moveDir.lengthSq() > 0;
+        if (moving) {
+          moveDir.normalize();
+          playerBear.position.addScaledVector(moveDir, SPEED * dt);
+          playerBear.rotation.y = Math.atan2(moveDir.x, moveDir.z);
+          // Camera yaw smoothly chases behind the movement direction
+          const targetYaw = Math.atan2(-moveDir.x, -moveDir.z);
+          const dyaw = ((targetYaw - yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+          yaw += dyaw * 0.06;
+        }
+
+        // ── Boundary collision — push back from river ──
+        const distFromCenter = Math.sqrt(
+          playerBear.position.x ** 2 + playerBear.position.z ** 2,
+        );
+        if (distFromCenter > BOUNDARY_R - 1.5) {
+          const nx = playerBear.position.x / distFromCenter;
+          const nz = playerBear.position.z / distFromCenter;
+          playerBear.position.x = nx * (BOUNDARY_R - 1.5);
+          playerBear.position.z = nz * (BOUNDARY_R - 1.5);
+        }
+
+        // ── Animation switching ──
+        if (playerMixer) playerMixer.update(dt);
+        if (companionMixer) companionMixer.update(dt);
+
+        if (playerRunAction && playerIdleAction && moving !== wasMoving) {
+          wasMoving = moving;
+          if (moving) {
+            playerIdleAction.fadeOut(0.2);
+            playerRunAction.reset().fadeIn(0.2).play();
+          } else {
+            playerRunAction.fadeOut(0.2);
+            playerIdleAction.reset().fadeIn(0.2).play();
+          }
+        }
+
+        // ── Companion bear ──
+        // Push current player position into trail
+        trail.push(playerBear.position.clone());
+        if (trail.length > TRAIL_LEN) trail.shift();
+
+        // Companion sits at the start of the trail, offset slightly to the right
+        const trailPos = trail[0].clone();
+        // Offset companion to the right of the direction of travel
+        const toDest = trail[trail.length - 1].clone().sub(trail[0]);
+        const rightOffset = new THREE.Vector3(-toDest.z, 0, toDest.x)
+          .normalize()
+          .multiplyScalar(0.85);
+        if (rightOffset.lengthSq() < 0.01) rightOffset.set(0.85, 0, 0); // fallback when still
+        trailPos.add(rightOffset);
+
+        companionBear.position.lerp(trailPos, 0.08);
+
+        // Face toward player
+        const toPlayer = playerBear.position
+          .clone()
+          .sub(companionBear.position);
+        if (toPlayer.lengthSq() > 0.01) {
+          const targetYaw = Math.atan2(toPlayer.x, toPlayer.z);
+          const dy =
+            ((targetYaw - companionBear.rotation.y + Math.PI * 3) %
+              (Math.PI * 2)) -
+            Math.PI;
+          companionBear.rotation.y += dy * 0.1;
+        }
+
+        // Companion animation — switch to run when moving toward player
+        const compMoving = toPlayer.lengthSq() > 0.06;
+        if (companionRunAction && companionIdleAction) {
+          if (compMoving && !companionRunAction.isRunning()) {
+            companionIdleAction.fadeOut(0.2);
+            companionRunAction.reset().fadeIn(0.2).play();
+          } else if (!compMoving && companionRunAction.isRunning()) {
+            companionRunAction.fadeOut(0.2);
+            companionIdleAction.reset().fadeIn(0.2).play();
+          }
+        }
+
+        // Floating heart bobs above companion's head
+        heartSprite.position.set(
+          companionBear.position.x,
+          companionBear.position.y + 1.8 + Math.sin(t * 2) * 0.08,
+          companionBear.position.z,
+        );
+        heartSprite.material.opacity = 0.55 + Math.sin(t * 2) * 0.25;
+
+        // ── Camera ──
+        if (proposalPhase === "idle") {
+          const camX = playerBear.position.x + Math.sin(yaw) * CAM_DIST;
+          const camZ = playerBear.position.z + Math.cos(yaw) * CAM_DIST;
+          const camY = playerBear.position.y + CAM_HEIGHT;
+          camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.08);
+          camTarget.copy(playerBear.position).y += 1.0;
+          camera.lookAt(camTarget);
+        }
+
+        // ── River / ocean / sky animation ──
+        riverMat.uniforms.uTime.value = t;
+        oceanMat.uniforms.uTime.value = t;
+        starMat.uniforms.uTime.value = t;
+
+        // ── Memory orb collection ──
+        if (memoriesFound < 3) {
+          for (const orb of memoryOrbs) {
+            if (orb.userData.collected) continue;
+            const dx = playerBear.position.x - orb.position.x;
+            const dz = playerBear.position.z - orb.position.z;
+            if (Math.sqrt(dx * dx + dz * dz) < 2.8) {
+              orb.userData.collected = true;
+              const idx = memoryOrbs.indexOf(orb);
+              memDots[idx].classList.add("found");
+              orb.userData.light.intensity = 0;
+              // Burst: scale up then fade out
+              let bt = 0;
+              const burstInterval = setInterval(() => {
+                bt += 0.05;
+                orb.scale.setScalar(1.2 + bt * 3);
+                orb.material.opacity = Math.max(0, 0.9 - bt * 2);
+                if (bt >= 0.5) { clearInterval(burstInterval); scene.remove(orb); }
+              }, 16);
+              memoriesFound++;
+              if (memoriesFound === 3) {
+                // All found — show path hint and fully light the arch
+                archFlowerMat.emissiveIntensity = 0.8;
+                memoryHint.textContent = "something is calling you forward ✦";
+                memoryHint.style.opacity = "1";
+                setTimeout(() => { memoryHint.style.opacity = "0"; }, 4000);
+              }
+            }
+          }
+          // Animate uncollected orbs
+          for (const orb of memoryOrbs) {
+            if (!orb.userData.collected) {
+              orb.position.y = orb.userData.baseY + Math.sin(t * 1.6 + orb.userData.phase) * 0.22;
+              orb.userData.light.position.y = orb.position.y;
+              const pulse = 0.5 + 0.5 * Math.sin(t * 2.2 + orb.userData.phase);
+              orb.userData.light.intensity = 0.4 + pulse * 0.5;
+            }
+          }
+        }
+
+        // ── Proposal trigger — only fires once all memories collected ──
+        const toClearingX = playerBear.position.x;
+        const toClearingZ = playerBear.position.z - 22;
+        const distToClearing = Math.sqrt(
+          toClearingX * toClearingX + toClearingZ * toClearingZ,
+        );
+
+        if (proposalPhase === "idle" && distToClearing < 5 && memoriesFound >= 3) {
+          proposalPhase = "cinematic";
+          proposalTimer = 0;
+          controlsEnabled = false;
+        }
+
+        if (proposalPhase === "cinematic") {
+          proposalTimer += dt;
+          // Glow ramps up
+          clearingLight.intensity = Math.min(2.5, proposalTimer * 1.2);
+          // Big dahlia slowly rotates
+          if (proposalDahlia) proposalDahlia.rotation.y = proposalTimer * 0.4;
+          // Camera dollies in toward the clearing
+          const cineT = Math.min(proposalTimer / 3.5, 1);
+          const cineX = 0;
+          const cineZ = 22 + 6 * (1 - cineT);
+          const cineY = 4 - cineT * 1.5;
+          camera.position.lerp(new THREE.Vector3(cineX, cineY, cineZ), 0.04);
+          camera.lookAt(0, 2, 22);
+
+          if (proposalTimer > 3.5) {
+            proposalPhase = "shown";
+            proposalUI.classList.add("show");
+            controlsEnabled = false;
+            startProposalCinematic();
+          }
+        }
+
+        if (proposalPhase === "shown") {
+          if (proposalDahlia) proposalDahlia.rotation.y = t * 0.3;
+          clearingLight.intensity = 2.0 + Math.sin(t * 1.5) * 0.4;
+        }
+
+        // ── Grass wind ──
+        grassMat.uniforms.uTime.value = t;
+
+        // ── Dahlia sway ──
+        for (const d of dahlias) {
+          d.rotation.z =
+            Math.sin(t * d.userData.swaySpeed + d.userData.swayPhase) * 0.018;
+        }
+
+        // ── Drift petals ──
+        for (const p of driftPetals) {
+          p.position.x +=
+            p.userData.vx + Math.sin(t * 0.3 + p.position.z * 0.1) * 0.003;
+          p.position.y += p.userData.vy;
+          p.position.z += p.userData.vz;
+          p.material.rotation += 0.01;
+          if (p.position.y < -1) {
+            p.position.set(
+              playerBear.position.x + (Math.random() - 0.5) * 40,
+              12 + Math.random() * 3,
+              playerBear.position.z + (Math.random() - 0.5) * 40,
+            );
+          }
+        }
+
+        // ── Campfire flicker ──
+        const flicker = 0.8 + 0.6 * Math.sin(t * 7.3) * Math.sin(t * 11.1);
+        campfireLight.intensity = 1.2 * flicker;
+        flameSprite.scale.set(0.45 + flicker * 0.15, 0.7 + flicker * 0.18, 1);
+        flameSprite.material.opacity = 0.75 + flicker * 0.25;
+
+        // ── Fireflies ──
+        tickFireflies(t, dt);
+
+        composer.render();
+      }
+
+      animate();
+
+      // ─── PROPOSAL CINEMATIC SEQUENCER ────────────────────────────────────────────
+      const propBtns = document.getElementById("proposal-buttons");
+
+      function startProposalCinematic() {
+        // Section delays (ms after overlay shows)
+        const sections = [
+          { id: "ps-1", delay: 600 },
+          { id: "ps-2", delay: 2400 },
+          { id: "ps-3", delay: 4400 },
+          { id: "ps-4", delay: 6500 },
+          { id: "ps-5", delay: 8900 },
+          { id: "ps-6", delay: 10800 },
+        ];
+
+        for (const { id, delay } of sections) {
+          setTimeout(() => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add("show");
+          }, delay);
+        }
+
+        // Buttons appear after the last line
+        setTimeout(() => propBtns.classList.add("show"), 12600);
+
+        startPetalCanvas();
+      }
+
+      // ─── 2-D PETAL CANVAS ────────────────────────────────────────────────────────
+      function startPetalCanvas() {
+        const canvas = document.getElementById("petal-canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext("2d");
+
+        window.addEventListener("resize", () => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        });
+
+        // Build a tiny petal shape on an offscreen canvas
+        const petalOff = document.createElement("canvas");
+        petalOff.width = 24;
+        petalOff.height = 38;
+        const pCtx = petalOff.getContext("2d");
+
+        const PETAL_COLORS = [
+          "#ff2d7a",
+          "#ff69b4",
+          "#e91e8c",
+          "#ff80ab",
+          "#f48fb1",
+          "#ffb3d1",
+          "#c2185b",
+        ];
+
+        const petals = Array.from({ length: 90 }, () => ({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight - window.innerHeight,
+          size: 10 + Math.random() * 18,
+          color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+          angle: Math.random() * Math.PI * 2,
+          spin: (Math.random() - 0.5) * 0.04,
+          vy: 0.6 + Math.random() * 1.1,
+          vx: (Math.random() - 0.5) * 0.7,
+          wave: Math.random() * Math.PI * 2,
+          waveSpeed: 0.6 + Math.random() * 0.8,
+          alpha: 0.55 + Math.random() * 0.45,
+        }));
+
+        function drawPetal(ctx, size, color, alpha) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.moveTo(0, -size / 2);
+          ctx.bezierCurveTo(
+            size * 0.55,
+            -size * 0.5,
+            size * 0.55,
+            size * 0.5,
+            0,
+            size / 2,
+          );
+          ctx.bezierCurveTo(
+            -size * 0.55,
+            size * 0.5,
+            -size * 0.55,
+            -size * 0.5,
+            0,
+            -size / 2,
+          );
+          ctx.fill();
+          // subtle highlight
+          ctx.globalAlpha = alpha * 0.25;
+          ctx.fillStyle = "#fff";
+          ctx.beginPath();
+          ctx.ellipse(
+            -size * 0.12,
+            -size * 0.1,
+            size * 0.15,
+            size * 0.28,
+            -0.3,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+          ctx.restore();
+        }
+
+        let rafId;
+        function loop() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const now = performance.now() / 1000;
+
+          for (const p of petals) {
+            p.y += p.vy;
+            p.x += p.vx + Math.sin(now * p.waveSpeed + p.wave) * 0.45;
+            p.angle += p.spin;
+
+            if (p.y > canvas.height + 40) {
+              p.y = -40;
+              p.x = Math.random() * canvas.width;
+            }
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            drawPetal(ctx, p.size, p.color, p.alpha);
+            ctx.restore();
+          }
+
+          rafId = requestAnimationFrame(loop);
+        }
+        loop();
+      }
+    </script>
+  </body>
+</html>
