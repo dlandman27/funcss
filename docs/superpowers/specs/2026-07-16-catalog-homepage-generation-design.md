@@ -84,7 +84,7 @@ templates/home.html ─┘
 
 | Field | Type | Rules |
 |---|---|---|
-| `slug` | string | Unique, matches `^[a-z0-9-]+$` (case-insensitive). Card `href` is `{slug}/` (homepage JS prefixes `/sites/` at runtime). Future counts key. |
+| `slug` | string | Unique, matches `^[a-z0-9_-]+$` (case-insensitive). Card `href` is `{slug}/` (homepage JS prefixes `/sites/` at runtime). Future counts key. |
 | `name` | string | Required. Card `<h2>`. HTML-escaped on output. |
 | `description` | string | Required non-empty when `visible: true`. Card `<p>`. |
 | `section` | string | Must equal a `sections[].key`. Determines grid placement, `data-categories`, and display label. |

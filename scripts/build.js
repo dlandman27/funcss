@@ -26,7 +26,7 @@ function validateCatalog(catalog) {
   const slugs = new Set();
   for (const site of catalog.sites) {
     const id = site.slug || JSON.stringify(site);
-    if (typeof site.slug !== 'string' || !/^[a-z0-9-]+$/i.test(site.slug)) {
+    if (typeof site.slug !== 'string' || !/^[a-z0-9_-]+$/i.test(site.slug)) {
       throw new Error(`invalid slug: ${id}`);
     }
     if (slugs.has(site.slug)) throw new Error(`duplicate slug: ${site.slug}`);

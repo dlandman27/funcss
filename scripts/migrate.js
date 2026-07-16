@@ -38,7 +38,7 @@ function parseFolders(html) {
   const m = html.match(/const folders = \[([\s\S]*?)\];/);
   if (!m) throw new Error('folders[] array not found');
   const slugs = [];
-  const re = /'\/([^']+)\/'/g;
+  const re = /['"]\/([^'"]+)\/['"]/g;
   let f;
   while ((f = re.exec(m[1])) !== null) slugs.push(f[1]);
   return slugs;
@@ -46,7 +46,9 @@ function parseFolders(html) {
 
 function migrate() {
   const htmlPath = path.join(ROOT, 'index.html');
-  const html = fs.readFileSync(htmlPath, 'utf8');
+  // Normalize CRLF → LF so the extraction regexes and generated output are
+  // consistent; git's autocrlf handles checkout conversion.
+  const html = fs.readFileSync(htmlPath, 'utf8').replace(/\r\n/g, '\n');
 
   const parsedSections = parseCards(html);
   if (parsedSections.length !== 7) {

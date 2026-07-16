@@ -31,6 +31,7 @@ const FIXTURE = `
         const folders = [
             '/pi/',
             '/doodle/',
+            "/psychadelics/",
         ];
     </script>`;
 
@@ -51,6 +52,6 @@ test('parseCards finds sections positionally with decoded titles and card fields
   ]);
 });
 
-test('parseFolders extracts slugs', () => {
-  assert.deepEqual(parseFolders(FIXTURE), ['pi', 'doodle']);
+test('parseFolders extracts slugs from single- and double-quoted entries', () => {
+  assert.deepEqual(parseFolders(FIXTURE), ['pi', 'doodle', 'psychadelics']);
 });
