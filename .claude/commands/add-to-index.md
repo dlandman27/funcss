@@ -1,6 +1,7 @@
 # Add to Index
 
-Register an existing site folder in the main directory listing on the homepage (`index.html`).
+Register an existing site folder in the site catalog (`catalog.json`). The homepage
+(`index.html`) is GENERATED from the catalog — never edit it by hand.
 
 ## Usage
 `/add-to-index <folder-name> "<title>" "<description>" <category>`
@@ -17,18 +18,25 @@ Example: `/add-to-index timemeters "Time Meters" "Progress bars for the day, wee
 
 2. **Verify the folder exists** at `sites/<folder-name>/index.html`. If it doesn't, warn the user.
 
-3. **Add a card to `index.html`** (the directory lives in the `.directory-inner` section near the bottom of the page). Find the `<div class="site-grid">` that follows the matching `<h2 class="category-title <category>">` heading and append a new card at the end of that grid:
+3. **Check `catalog.json`** for an existing entry with that slug. If one exists (e.g. imported
+   as hidden during migration), UPDATE it in place — set `name`, `description`, `section`,
+   `visible: true`, `random: true` — instead of adding a duplicate.
 
-   ```html
-   <div class="site-card" data-categories="<category> <subcategory>">
-       <a href="<folder-name>/">
-           <h2><title></h2>
-           <p><description></p>
-           <div class="category"><Category> • <Subcategory></div>
-       </a>
-   </div>
+4. **Otherwise append** to the `sites` array in `catalog.json`:
+
+   ```json
+   {
+     "slug": "<folder-name>",
+     "name": "<title>",
+     "description": "<description>",
+     "section": "<category>",
+     "visible": true,
+     "random": true,
+     "icon": null
+   }
    ```
 
-   Keep the `href` folder-relative (e.g. `<folder-name>/`) — the homepage prefixes `/sites/` at runtime. Pick a fitting subcategory (e.g. `interactive`, `puzzle`, `reflexes`, `music`, etc.).
+5. **Run `npm run build`** — regenerates `index.html`. The build validates the catalog and
+   fails with a clear message if the entry is malformed.
 
-4. **Tell the user** the card was added.
+6. **Show the user** the new card in the `git diff` of `index.html` and confirm.

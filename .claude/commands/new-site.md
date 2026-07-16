@@ -27,18 +27,21 @@ Example: `/new-site typeracer "Type Racer" "Race against the clock to type a ran
    - Smooth animations and interactions where appropriate
    - Match the vibe of the existing sites (playful, polished, a little quirky)
 
-3. **Add a card to `index.html`** (the directory lives in the `.directory-inner` section near the bottom of the homepage). Find the `<div class="site-grid">` that follows the matching `<h2 class="category-title <category>">` heading and insert a new card:
+3. **Register the site in `catalog.json`** — the homepage is GENERATED from the catalog;
+   never edit `index.html` by hand. Append to the `sites` array:
 
-   ```html
-   <div class="site-card" data-categories="<category> <subcategory>">
-       <a href="<folder-name>/">
-           <h2><title></h2>
-           <p><description></p>
-           <div class="category"><Category> • <Subcategory></div>
-       </a>
-   </div>
+   ```json
+   {
+     "slug": "<folder-name>",
+     "name": "<title>",
+     "description": "<description>",
+     "section": "<category>",
+     "visible": true,
+     "random": true,
+     "icon": null
+   }
    ```
 
-   Keep the `href` folder-relative (e.g. `<folder-name>/`) — the homepage prefixes `/sites/` at runtime. Pick a sensible subcategory (e.g. `interactive`, `music`, `reflexes`, `puzzle`, etc.).
+   Then run `npm run build` to regenerate `index.html`.
 
 4. **Tell the user** what was created and where to find it.
