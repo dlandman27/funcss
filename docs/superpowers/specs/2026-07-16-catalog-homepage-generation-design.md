@@ -1,129 +1,145 @@
 # Catalog + Homepage Generation (Phase 1)
 
-**Date:** 2026-07-16
+**Date:** 2026-07-16 (revised same day after codebase deep-dive)
 **Status:** Approved — ready for implementation plan
 
 ## Context
 
-`randomsitesontheweb` is a curated hub of 125 standalone static mini-sites, deployed as static files on Vercel. Today the homepage (`index.html`, ~99 KB) hardcodes all 125 site cards as inline `<a>` blocks, and the site count is derived by looping over that markup. Adding or editing a site means hand-editing the monolithic HTML.
+`randomsitesontheweb` is a curated hub of standalone static mini-sites (125 folders under `sites/`), deployed as static files on Vercel. Today the homepage (`index.html`, ~2150 lines) hand-maintains **two** independent site lists:
 
-This is Phase 1 of a larger, phased effort to make the catalog data-driven:
+1. **109 site cards**, grouped into 7 category sections (`Educational`, `Fun & Interactive`, `Tools`, `Games`, `Entertainment`, `Mindfulness`, `Art`), each an `<h2 class="category-title …">` + `<div class="site-grid">` block.
+2. **A `const folders = […]` array (73 entries)** in inline JS that powers the weighted-random "surprise me" button.
 
-- **Phase 1 (this spec):** Introduce `catalog.json` as the single source of truth and generate the homepage card grid from it at build time. Low risk — does not touch the 125 site files.
-- **Phase 2 (future):** Per-site wrapper template — a shared shell (head, meta, favicon, fonts, `global.js`, home-nav) that every mini-site inherits, migrating the existing 125 full HTML documents onto it. Higher risk; deliberately deferred.
-- **Phase 3 (future):** Open-counts, then thumbs up/down — runtime engagement numbers keyed by catalog slugs, backed by a Vercel serverless function + KV store.
+The two lists have already drifted (73 vs 109), and neither covers all 125 site folders. Adding a site means hand-editing HTML in up to two places.
 
-Each phase gets its own spec → plan → implementation cycle.
+This is Phase 1 of a phased effort:
 
-## Goals (Phase 1)
+- **Phase 1 (this spec):** `catalog.json` as single source of truth; build-time generation of both the card sections and the `folders[]` array. Does not touch the 125 site files.
+- **Phase 2 (future):** shared per-site wrapper template; migrate the mini-sites onto it. Higher risk; deferred.
+- **Phase 3 (future):** open-counts, then thumbs up/down, keyed by catalog slugs (serverless + KV).
 
-- One `catalog.json` is the single source of truth for the site listing.
-- The homepage card grid is **generated** from `catalog.json`, not hand-written.
-- Site count comes from `catalog.length`, not markup traversal.
-- A `visible: true | false` flag hides catalogued-but-unpublished sites (subsumes the `in_progress/` concept).
-- The generated `index.html` keeps all cards baked in — SEO/crawlability unchanged from today.
-- The `add-to-index` skill is updated to append to `catalog.json` and rebuild, instead of editing HTML.
+## Decisions made during design
 
-## Non-Goals (Phase 1)
+- **High-level categories only.** The hand-written per-card sub-category labels (e.g. `Entertainment • Existential`) and multi-token `data-categories` are **dropped**. Each site belongs to exactly one of the 7 high-level sections; the card's `data-categories` and display label both come from that section. (User decision — the old labels were inconsistent and unmaintained.)
+- **Unify the random pool.** `folders[]` is generated from the catalog via a per-site `random` flag, ending the drift permanently.
+- **Icons deferred.** `icon` field reserved in schema, not rendered.
+- **Generated `index.html` is committed** (reviewable diffs; carries a "generated — do not edit" banner).
+- **`vercel.json` is NOT touched in Phase 1.** The deploy config is a working, hard-to-test custom setup; the build runs locally (`npm run build`) and the committed `index.html` deploys exactly as today. Vercel-side build integration can come later if ever needed.
 
-- **Per-site wrapper** and touching the 125 site files — Phase 2.
-- **Open counts / thumbs** and any backend/serverless/KV — Phase 3.
-- **Card icons** — the `icon` field exists in the schema but is not rendered; Phase 1 output is visually identical to today.
-- Any redesign of the homepage hero, filters, CSS, or JS.
+## Goals
+
+- One `catalog.json` drives the card sections, the random pool, and the site count.
+- `visible: true | false` per site hides catalogued-but-unpublished sites.
+- `random: true | false` per site controls random-button pool membership (independent of `visible`, to faithfully preserve current behavior where the two lists disagree).
+- Catalog contains **all** folders under `sites/` — including ones currently listed nowhere (imported as `visible: false, random: false`).
+- Generated homepage is structurally identical to today: same sections, same cards in the same order, same random pool.
+- `.claude/commands/add-to-index.md` rewritten to append to `catalog.json` + rebuild; `.claude/commands/new-site.md` step 3 (card insertion) redirected to the same flow.
+
+## Non-Goals
+
+- Per-site wrapper / touching site files (Phase 2). The `in_progress/` folder is also left alone; its sites can be moved to `sites/` + catalogued `visible:false` later.
+- Open counts / thumbs / any backend (Phase 3).
+- Rendering icons; homepage redesign; changes to hero/filter/sort JS beyond what generation requires.
+- Preserving the old sub-category labels or multi-token `data-categories`.
 
 ## Architecture
 
-Three artifacts replace the hardcoded grid:
-
-1. **`catalog.json`** — ordered array of site records (source of truth).
-2. **`templates/home.html`** — the current `index.html` verbatim, except the 125-card block is replaced by a single `{{cards}}` placeholder. All inline CSS, hero, category filters, and JS remain untouched.
-3. **`scripts/build.js`** — Node script: read `catalog.json` → render a card per `visible: true` entry → inject into the template → write `index.html`.
-
-Data flow:
-
 ```
-catalog.json ─┐
-              ├─→ scripts/build.js ─→ index.html (generated artifact, committed)
+catalog.json ──┐
+               ├─→ scripts/build.js ─→ index.html (generated, committed)
 templates/home.html ─┘
 ```
 
-`index.html` becomes a generated build artifact. The developer edits `catalog.json` and `templates/home.html`; `index.html` is never hand-edited (it carries a "generated — do not edit" banner comment at the top). The build runs both locally (`npm run build`) and on Vercel at deploy time.
+- **`catalog.json`** — source of truth: `{ sections: [...], sites: [...] }`.
+- **`templates/home.html`** — today's `index.html` with two placeholders: `{{SECTIONS}}` (replaces the seven section blocks) and `{{FOLDERS}}` (replaces the `folders[]` array literal body). All CSS/hero/filter/sort/history JS stays verbatim in the template.
+- **`scripts/build.js`** — validates the catalog, renders sections + folders, injects into the template, writes `index.html`. Fails loudly on any invalid entry; never writes partial output.
+- **`scripts/migrate.js`** — one-time scraper: parses the current `index.html` (cards per section, folders array), scans `sites/`, unions the three sources into the initial `catalog.json`, and extracts `templates/home.html`. Kept in-repo for reference; also exports its parsers for migration verification.
 
 ### `catalog.json` schema
 
-Ordered array; array order == render order. Each entry:
-
 ```json
 {
-  "slug": "morse-code",
-  "name": "Morse Code Sandbox",
-  "description": "Learn and Practice Morse Code!",
-  "categories": ["educational", "development"],
-  "visible": true,
-  "icon": null
+  "sections": [
+    { "key": "educational", "title": "Educational" },
+    { "key": "fun", "title": "Fun & Interactive" },
+    { "key": "tools", "title": "Tools" },
+    { "key": "games", "title": "Games" },
+    { "key": "entertainment", "title": "Entertainment" },
+    { "key": "mindfulness", "title": "Mindfulness" },
+    { "key": "art", "title": "Art" }
+  ],
+  "sites": [
+    {
+      "slug": "prefixsuffix",
+      "name": "Prefix & Suffix",
+      "description": "Generate and practice prefixes and suffixes",
+      "section": "educational",
+      "visible": true,
+      "random": true,
+      "icon": null
+    }
+  ]
 }
 ```
 
-| Field | Type | Notes |
+| Field | Type | Rules |
 |---|---|---|
-| `slug` | string | Card `href` (`morse-code/`). Unique. Future counts/thumbs key. |
-| `name` | string | Card `<h2>`. |
-| `description` | string | Card `<p>`. |
-| `categories` | string[] | Lowercase tokens. Build derives **both** `data-categories="educational development"` **and** the display line `Educational • Development` (title-case, joined with ` • `). Removes today's duplication. |
-| `visible` | boolean | `false` → excluded from the generated grid but still catalogued. |
-| `icon` | string \| null | Reserved. Not rendered in Phase 1. |
+| `slug` | string | Unique, matches `^[a-z0-9-]+$` (case-insensitive). Card `href` is `{slug}/` (homepage JS prefixes `/sites/` at runtime). Future counts key. |
+| `name` | string | Required. Card `<h2>`. HTML-escaped on output. |
+| `description` | string | Required non-empty when `visible: true`. Card `<p>`. |
+| `section` | string | Must equal a `sections[].key`. Determines grid placement, `data-categories`, and display label. |
+| `visible` | boolean | `false` → no card rendered. |
+| `random` | boolean | `true` → included in generated `folders[]` as `'/{slug}/'`. Independent of `visible`. |
+| `icon` | string \| null | Reserved; unrendered in Phase 1. |
 
-### Card rendering
+Array order = render order (cards within a section; folders overall). Section order = `sections` array order.
 
-The build renders each visible entry to the exact card markup used today:
+### Generated card markup
 
 ```html
-<div class="site-card" data-categories="{categories joined by space}">
+<div class="site-card" data-categories="{section.key}">
     <a href="{slug}/">
         <h2>{name}</h2>
         <p>{description}</p>
-        <div class="category">{Title-cased categories joined by " • "}</div>
+        <div class="category">{section.title}</div>
     </a>
 </div>
 ```
 
-HTML-escape `name` and `description` on output.
+Each section renders as today: `<!-- {Title} Section -->` comment, `<h2 class="category-title {key}">{title}</h2>`, `<div class="site-grid">…cards…</div>`.
 
-### Build / deploy integration
+### Generated folders block
 
-- `package.json` gains a `build` script (`node scripts/build.js`).
-- Vercel runs the build on deploy. `vercel.json` is updated so the deploy runs the build command and serves the generated `index.html` (the current `builds` block that pins pure-static must be reconciled with running a build step).
-- The generated `index.html` is **committed** to the repo (reviewable diffs; Vercel serves it directly). The build overwrites it on deploy.
+```js
+const folders = [
+    '/{slug}/',   // one per site with random: true, catalog order
+];
+```
 
-## Migration (one-time, automated, verified)
+Entry format `'/{slug}/'` is preserved exactly so existing `localStorage` weight keys (`weight_/pi/`) keep working. Order changes from today's list are fine — selection is weighted-random.
 
-1. A scrape script parses the 125 existing cards out of the current `index.html` (`slug` from `href`, `name` from `<h2>`, `description` from `<p>`, `categories` from `data-categories`) → produces the initial `catalog.json`, preserving current order, all `visible: true`, `icon: null`.
-2. Extract the static shell into `templates/home.html` with the `{{cards}}` placeholder where the grid was.
-3. Regenerate `index.html` from `catalog.json` + template and **diff against the original**. Target: identical modulo insignificant whitespace/formatting. Any real difference is investigated before the pipeline is trusted.
+## Migration (one-time, verified)
 
-## Skill update — `add-to-index`
-
-Rewrite the `add-to-index` skill so "add a site to the homepage" means:
-1. Append an entry to `catalog.json` (prompt for/derive `slug`, `name`, `description`, `categories`; default `visible: true`, `icon: null`).
-2. Run `npm run build`.
-3. Show the resulting card diff.
-
-It must no longer instruct hand-editing `index.html`. (`new-site` skill is left for Phase 2, where the per-site wrapper lands.)
+1. Parse the 7 section blocks from current `index.html` → sites with `section` = containing section (positional, NOT the old `data-categories`), `visible: true`, entities decoded.
+2. Parse `folders[]` → set `random: true` on matching slugs.
+3. Entries in `folders[]` but not carded → added `visible: false, random: true` (name = slug, description = "").
+4. Folders under `sites/` in neither list → added `visible: false, random: false`.
+5. Extract `templates/home.html` (sections region → `{{SECTIONS}}`, folders literal body → `{{FOLDERS}}`, banner comment inserted after doctype).
+6. Rebuild and **verify structurally** (byte-identity is impossible now that labels are simplified): same slugs in the same order per section, identical random-pool slug set, using the same parsers on old vs. new HTML.
 
 ## Error handling
 
-- `build.js` validates each entry: required fields present, `slug` unique and URL-safe, `categories` non-empty array. On violation, fail loudly with the offending slug — do not emit a partial `index.html`.
-- Missing `{{cards}}` placeholder in the template → hard error.
-- `visible` defaults to `true` if omitted (but the schema/skill always writes it explicitly).
+- `build.js` validation failures (duplicate/invalid slug, unknown section, missing name, visible entry with empty description, non-boolean flags) → throw with the offending slug; no output written.
+- Missing `{{SECTIONS}}` or `{{FOLDERS}}` placeholder → hard error.
+- `migrate.js` warns on any card href not matching `^[^/]+/$` and on any parse-count anomaly.
 
 ## Testing / verification
 
-- **Faithfulness:** regenerated `index.html` diffs clean against the pre-migration original.
-- **Visibility:** flipping an entry to `visible: false` removes exactly that card; count drops by one.
-- **Add:** appending a valid entry + build produces a correct, well-formed card in the right position.
-- **Count:** the "number of sites" reflects `catalog` (visible entries) with no markup traversal.
-- **Validation:** a malformed entry (duplicate slug, empty categories) fails the build with a clear message and writes no output.
+- Unit tests (`node --test`, zero new dependencies) for rendering, validation, and template injection.
+- Migration verification: structural diff (per-section slug lists, random-pool set) between pre- and post-migration HTML.
+- Behavioral checks: `visible: false` removes exactly that card; adding a valid entry + build yields a correct card; malformed entry fails the build with a clear message.
 
-## Open questions
+## Skill updates
 
-None blocking. Icons and the generated-file commit policy were decided (deferred; committed).
+- **`add-to-index`**: append entry to `catalog.json` (validate section key, default `visible: true, random: true, icon: null`), run `npm run build`, show diff. Never edit `index.html`.
+- **`new-site`**: only step 3 changes — card insertion is replaced by the same catalog-append + build flow. Site-creation guidance untouched (Phase 2 will revisit).
