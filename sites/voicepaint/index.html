@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Paint</title>
+  <style>
+    :root {
+      --bg: #07070c;
+      --ink: #e8e6f0;
+      --dim: rgba(232, 230, 240, 0.45);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+      display: block;
+      touch-action: none;
+    }
+
+    /* ---- intro / message overlays ---- */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.4rem;
+      text-align: center;
+      padding: 2rem;
+      cursor: pointer;
+      z-index: 10;
+      transition: opacity 0.9s ease;
+      background: radial-gradient(ellipse at 50% 55%, rgba(80, 60, 140, 0.10), transparent 65%);
+    }
+    .overlay.hidden { opacity: 0; pointer-events: none; }
+    .overlay .line {
+      font-size: clamp(1.05rem, 2.6vw, 1.5rem);
+      font-weight: 300;
+      letter-spacing: 0.14em;
+      color: var(--ink);
+      animation: breathe 4.2s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { opacity: 0.55; }
+      50%      { opacity: 1; }
+    }
+    .overlay .sub {
+      font-size: 0.78rem;
+      font-weight: 300;
+      letter-spacing: 0.22em;
+      text-transform: lowercase;
+      color: var(--dim);
+      max-width: 32ch;
+      line-height: 1.7;
+    }
+    .overlay .demo-btn {
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      font-weight: 300;
+      color: var(--ink);
+      background: none;
+      border: 1px solid rgba(232, 230, 240, 0.25);
+      border-radius: 999px;
+      padding: 0.65em 1.8em;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s;
+      font-family: inherit;
+    }
+    .overlay .demo-btn:hover {
+      border-color: rgba(232, 230, 240, 0.6);
+      background: rgba(232, 230, 240, 0.06);
+    }
+    #denied { display: none; cursor: default; }
+
+    /* ---- transient hint after start ---- */
+    #hint {
+      position: fixed;
+      left: 50%;
+      top: 8%;
+      transform: translateX(-50%);
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      text-transform: lowercase;
+      color: var(--dim);
+      opacity: 0;
+      transition: opacity 1.2s ease;
+      pointer-events: none;
+      z-index: 5;
+      white-space: nowrap;
+    }
+    #hint.show { opacity: 1; }
+
+    /* ---- tiny fading tools ---- */
+    #tools {
+      position: fixed;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+      display: none;
+      gap: 6px;
+      z-index: 6;
+    }
+    #tools.on { display: flex; }
+    #tools button {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--ink);
+      opacity: 0.12;
+      transition: opacity 0.8s ease, background 0.3s;
+      padding: 0;
+    }
+    body.ui-awake #tools button { opacity: 0.55; transition: opacity 0.25s ease, background 0.3s; }
+    #tools button:hover { opacity: 0.95 !important; background: rgba(232, 230, 240, 0.08); }
+    #tools svg { width: 17px; height: 17px; display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="intro" class="overlay">
+    <div class="line">&#127908; tap to let your voice paint</div>
+    <div class="sub">pitch draws the shape &middot; volume gives it weight</div>
+  </div>
+
+  <div id="denied" class="overlay">
+    <div class="line">no microphone &mdash; that's okay</div>
+    <div class="sub">your browser kept the mic to itself. you can still watch a little synthesized voice wander across the page.</div>
+    <button class="demo-btn" id="demoBtn" type="button">watch the demo</button>
+  </div>
+
+  <div id="hint">hum a melody</div>
+
+  <div id="tools">
+    <button id="saveBtn" type="button" aria-label="Save painting" title="save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/>
+      </svg>
+    </button>
+    <button id="clearBtn" type="button" aria-label="Clear painting" title="clear">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 6l12 12"/><path d="M18 6L6 18"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var BG = '#07070c';
+    var SCROLL_SPEED = 85;        // css px / second
+    var PEN_X_FRAC = 0.72;        // where new ink lands, as fraction of width
+    var MIN_FREQ = 65;            // Hz, analysis floor
+    var MAX_FREQ = 1400;          // Hz, analysis ceiling
+    var LO = Math.log2(80);       // musical range mapped onto the canvas
+    var HI = Math.log2(1100);
+
+    var cvs = document.getElementById('c');
+    var ctx = cvs.getContext('2d');
+    var intro = document.getElementById('intro');
+    var denied = document.getElementById('denied');
+    var demoBtn = document.getElementById('demoBtn');
+    var hint = document.getElementById('hint');
+    var tools = document.getElementById('tools');
+    var saveBtn = document.getElementById('saveBtn');
+    var clearBtn = document.getElementById('clearBtn');
+
+    var dpr = 1, W = 0, H = 0;    // device-pixel dimensions
+    var running = false;
+    var started = false;
+
+    var audioCtx = null;
+    var analyser = null;
+    var timeBuf = null;
+    var demo = null;              // { osc, gain, nextNote, note }
+
+    // pen state
+    var penY = 0;                 // smoothed y (device px)
+    var penW = 0;                 // smoothed stroke width (device px)
+    var hue = 210;
+    var glow = 0;                 // smoothed intensity 0..1
+    var scrollAcc = 0;
+    var lastT = 0;
+
+    /* ---------- canvas sizing (content-preserving) ---------- */
+    function resize() {
+      var newDpr = Math.min(window.devicePixelRatio || 1, 3);
+      var w = Math.round(window.innerWidth * newDpr);
+      var h = Math.round(window.innerHeight * newDpr);
+      if (w === W && h === H && newDpr === dpr) return;
+
+      var old = null;
+      if (W > 0 && H > 0) {
+        old = document.createElement('canvas');
+        old.width = W; old.height = H;
+        old.getContext('2d').drawImage(cvs, 0, 0);
+      }
+      dpr = newDpr; W = w; H = h;
+      cvs.width = W; cvs.height = H;
+      cvs.style.width = window.innerWidth + 'px';
+      cvs.style.height = window.innerHeight + 'px';
+      paintBackdrop();
+      if (old) {
+        // keep old drawing pinned to the right edge, vertically scaled
+        ctx.drawImage(old, W - old.width * (H / old.height), 0, old.width * (H / old.height), H);
+      }
+      if (penY === 0) penY = H / 2;
+    }
+
+    function paintBackdrop() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = BG;
+      ctx.fillRect(0, 0, W, H);
+      // faint resting line, like paper grain
+      ctx.strokeStyle = 'rgba(232,230,240,0.05)';
+      ctx.lineWidth = Math.max(1, dpr * 0.7);
+      ctx.beginPath();
+      ctx.moveTo(0, H / 2);
+      ctx.lineTo(W, H / 2);
+      ctx.stroke();
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    /* ---------- pitch detection: autocorrelation (ACF2+) ---------- */
+    // Returns { freq, rms }. freq is -1 when no confident pitch is found.
+    function analyse(buf, sampleRate) {
+      var n = buf.length, i;
+      var rms = 0;
+      for (i = 0; i < n; i++) rms += buf[i] * buf[i];
+      rms = Math.sqrt(rms / n);
+      if (rms < 0.008) return { freq: -1, rms: rms };
+
+      // trim leading/trailing low-signal edges to sharpen the correlation
+      var thres = 0.2, r1 = 0, r2 = n - 1;
+      for (i = 0; i < n / 2; i++) { if (Math.abs(buf[i]) < thres) { r1 = i; break; } }
+      for (i = 1; i < n / 2; i++) { if (Math.abs(buf[n - i]) < thres) { r2 = n - i; break; } }
+      var start = r1, end = r2, len = end - start;
+      if (len < 128) { start = 0; end = n; len = n; }
+
+      var minLag = Math.max(2, Math.floor(sampleRate / MAX_FREQ));
+      var maxLag = Math.min(len - 1, Math.ceil(sampleRate / MIN_FREQ));
+      if (maxLag <= minLag + 2) return { freq: -1, rms: rms };
+
+      // autocorrelation for lags 0..maxLag
+      var c = new Float32Array(maxLag + 1);
+      for (var lag = 0; lag <= maxLag; lag++) {
+        var sum = 0;
+        for (i = start; i < end - lag; i++) sum += buf[i] * buf[i + lag];
+        c[lag] = sum;
+      }
+
+      // step off the zero-lag peak, then find the strongest later peak
+      var d = minLag;
+      while (d < maxLag && c[d] > c[d + 1]) d++;
+      var best = -1, bestVal = -Infinity;
+      for (i = d; i <= maxLag; i++) {
+        if (c[i] > bestVal) { bestVal = c[i]; best = i; }
+      }
+      if (best <= 0 || c[0] <= 0 || bestVal / c[0] < 0.30) return { freq: -1, rms: rms };
+
+      // parabolic interpolation around the peak for sub-sample precision
+      var T = best;
+      if (best > 0 && best < maxLag) {
+        var x1 = c[best - 1], x2 = c[best], x3 = c[best + 1];
+        var a = (x1 + x3 - 2 * x2) / 2;
+        var b = (x3 - x1) / 2;
+        if (a) T = best - b / (2 * a);
+      }
+      var freq = sampleRate / T;
+      if (freq < MIN_FREQ || freq > MAX_FREQ) return { freq: -1, rms: rms };
+      return { freq: freq, rms: rms };
+    }
+
+    /* ---------- drawing ---------- */
+    function frame(t) {
+      if (!running) return;
+      requestAnimationFrame(frame);
+
+      var dt = lastT ? Math.min(0.05, (t - lastT) / 1000) : 1 / 60;
+      lastT = t;
+
+      if (demo) tickDemo();
+
+      analyser.getFloatTimeDomainData(timeBuf);
+      var res = analyse(timeBuf, audioCtx.sampleRate);
+      var voiced = res.freq > 0;
+
+      // targets
+      var targetY, targetW, targetGlow;
+      if (voiced) {
+        var norm = (Math.log2(res.freq) - LO) / (HI - LO);
+        norm = Math.max(0, Math.min(1, norm));
+        targetY = H * (0.90 - 0.80 * norm);
+        hue += (((280 - norm * 300) - hue)) * 0.25;   // low = violet/blue, high = warm
+        targetW = (1.2 + Math.min(1, res.rms * 9) * 11) * dpr;
+        targetGlow = Math.min(1, 0.25 + res.rms * 7);
+      } else {
+        targetY = penY + (H / 2 - penY) * 0.06;       // drift home to the centerline
+        targetW = 0.8 * dpr;
+        targetGlow = 0.12;
+      }
+      var prevY = penY;
+      penY += (targetY - penY) * (voiced ? 0.35 : 1);
+      penW += (targetW - penW) * 0.3;
+      glow += (targetGlow - glow) * 0.25;
+
+      // scroll the whole painting left by whole pixels only (keeps it crisp)
+      scrollAcc += SCROLL_SPEED * dt * dpr;
+      var shift = Math.floor(scrollAcc);
+      scrollAcc -= shift;
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      if (shift > 0) {
+        ctx.drawImage(cvs, -shift, 0);
+        ctx.fillStyle = BG;
+        ctx.fillRect(W - shift, 0, shift, H);
+      }
+
+      // lay down the new segment at the pen
+      var px = Math.round(W * PEN_X_FRAC);
+      var x0 = px - shift, y0 = prevY, x1 = px, y1 = penY;
+      var h = ((hue % 360) + 360) % 360;
+
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // halo pass
+      ctx.globalAlpha = 0.28 * glow + 0.04;
+      ctx.strokeStyle = 'hsl(' + h + ', 90%, ' + (48 + glow * 14) + '%)';
+      ctx.lineWidth = penW * 2.6;
+      ctx.shadowColor = 'hsla(' + h + ', 95%, 60%, 0.85)';
+      ctx.shadowBlur = 14 * dpr * glow;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+
+      // core pass
+      ctx.globalAlpha = Math.min(1, 0.35 + glow * 0.75);
+      ctx.strokeStyle = 'hsl(' + h + ', 95%, ' + (62 + glow * 22) + '%)';
+      ctx.lineWidth = penW;
+      ctx.shadowBlur = 7 * dpr * glow;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    }
+
+    /* ---------- demo voice: a silent wandering oscillator ---------- */
+    var PENTA = [0, 3, 5, 7, 10];
+    function startDemo() {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 220;
+      gain.gain.value = 0.35;
+
+      // gentle vibrato so it feels sung, not beeped
+      var lfo = audioCtx.createOscillator();
+      var lfoGain = audioCtx.createGain();
+      lfo.frequency.value = 5.2;
+      lfoGain.gain.value = 7; // cents
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.detune);
+      lfo.start();
+
+      osc.connect(gain);
+      gain.connect(analyser); // analysed, never heard: not routed to destination
+      osc.start();
+      demo = { osc: osc, gain: gain, nextNote: audioCtx.currentTime, note: 12 };
+    }
+
+    function tickDemo() {
+      var now = audioCtx.currentTime;
+      if (now < demo.nextNote) return;
+      // random walk over a two-octave pentatonic ladder (indices 0..14)
+      var stepChoices = [-2, -1, -1, 1, 1, 2, 3, -3];
+      demo.note = Math.max(0, Math.min(14, demo.note + stepChoices[(Math.random() * stepChoices.length) | 0]));
+      var semis = Math.floor(demo.note / 5) * 12 + PENTA[demo.note % 5];
+      var f = 130.81 * Math.pow(2, semis / 12); // from C3
+      var glide = 0.03 + Math.random() * 0.09;
+      demo.osc.frequency.setTargetAtTime(f, now, glide);
+      demo.gain.gain.setTargetAtTime(0.12 + Math.random() * 0.55, now, 0.15);
+      demo.nextNote = now + 0.28 + Math.random() * 0.85;
+    }
+
+    /* ---------- flow ---------- */
+    function buildAudio() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0;
+      timeBuf = new Float32Array(analyser.fftSize);
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function begin() {
+      if (running) return;
+      running = true;
+      penY = H / 2;
+      penW = 0.8 * dpr;
+      intro.classList.add('hidden');
+      denied.classList.add('hidden');
+      tools.classList.add('on');
+      hint.classList.add('show');
+      setTimeout(function () { hint.classList.remove('show'); }, 6000);
+      wakeUI();
+      lastT = 0;
+      requestAnimationFrame(frame);
+    }
+
+    function startWithMic() {
+      if (started) return;
+      started = true;
+      buildAudio();
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showDenied();
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      }).then(function (stream) {
+        var src = audioCtx.createMediaStreamSource(stream);
+        src.connect(analyser);
+        begin();
+      }).catch(function () {
+        showDenied();
+      });
+    }
+
+    function showDenied() {
+      intro.classList.add('hidden');
+      denied.style.display = 'flex';
+      // force reflow so its fade-in transition applies cleanly if re-shown
+      denied.classList.remove('hidden');
+    }
+
+    intro.addEventListener('click', startWithMic);
+    demoBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (!audioCtx) buildAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      startDemo();
+      hint.textContent = 'a synthesized voice, wandering';
+      begin();
+    });
+
+    /* ---------- tiny tools ---------- */
+    saveBtn.addEventListener('click', function () {
+      var a = document.createElement('a');
+      var d = new Date();
+      var stamp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                  String(d.getDate()).padStart(2, '0') + ' ' +
+                  String(d.getHours()).padStart(2, '0') + '.' + String(d.getMinutes()).padStart(2, '0');
+      a.download = 'voice paint ' + stamp + '.png';
+      a.href = cvs.toDataURL('image/png');
+      a.click();
+    });
+
+    clearBtn.addEventListener('click', function () {
+      paintBackdrop();
+      penY = H / 2;
+      penW = 0.8 * dpr;
+    });
+
+    // tools drowse when you stop moving; any pointer activity wakes them
+    var uiTimer = null;
+    function wakeUI() {
+      document.body.classList.add('ui-awake');
+      clearTimeout(uiTimer);
+      uiTimer = setTimeout(function () {
+        document.body.classList.remove('ui-awake');
+      }, 3000);
+    }
+    window.addEventListener('pointermove', wakeUI, { passive: true });
+    window.addEventListener('pointerdown', wakeUI, { passive: true });
+
+    // pause analysis politely when the tab is hidden (rAF stops on its own;
+    // just reset the clock so the scroll doesn't leap on return)
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) lastT = 0;
+    });
+  })();
+  </script>
+</body>
+</html>

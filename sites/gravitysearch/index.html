@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plummet — Gravity Search</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #fff;
+    color: #202124;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* ---------- Top nav ---------- */
+  .topnav {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 22px;
+  }
+  .topnav a.navlink {
+    font-size: 13.5px;
+    color: #3c4043;
+    padding: 4px 2px;
+  }
+  .topnav a.navlink:hover { text-decoration: underline; }
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #5b6ff5, #43b97f);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px 8vh;
+  }
+  .logo {
+    font-size: clamp(56px, 13vw, 96px);
+    font-weight: 700;
+    letter-spacing: -3px;
+    line-height: 1;
+    display: flex;
+    user-select: none;
+    margin-bottom: 6px;
+  }
+  .logo span { display: inline-block; padding: 0 1px; }
+  .l1 { color: #5b6ff5; }
+  .l2 { color: #ef5b5b; }
+  .l3 { color: #f5b93d; }
+  .l4 { color: #5b6ff5; }
+  .l5 { color: #43b97f; }
+  .l6 { color: #ef5b5b; }
+  .l7 { color: #f5b93d; }
+  .tagline {
+    font-size: 14px;
+    color: #70757a;
+    margin: 0 0 28px;
+    user-select: none;
+  }
+
+  .searchwrap {
+    width: min(560px, 92vw);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #dfe1e5;
+    border-radius: 28px;
+    padding: 12px 20px;
+    box-shadow: 0 1px 6px rgba(32,33,36,.12);
+    transition: box-shadow .15s;
+  }
+  .searchwrap:focus-within { box-shadow: 0 2px 10px rgba(32,33,36,.22); }
+  .searchwrap svg { flex: none; }
+  .searchwrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    background: transparent;
+    color: #202124;
+    min-width: 0;
+  }
+
+  .btnrow {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btnrow button {
+    font-family: inherit;
+    font-size: 14px;
+    color: #3c4043;
+    background: #f8f9fa;
+    border: 1px solid #f8f9fa;
+    border-radius: 6px;
+    padding: 10px 18px;
+    cursor: pointer;
+  }
+  .btnrow button:hover { border-color: #dadce0; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+
+  .langs {
+    margin-top: 26px;
+    font-size: 13px;
+    color: #4d5156;
+    user-select: none;
+  }
+  .langs a { color: #4363cc; margin: 0 3px; }
+  .langs a:hover { text-decoration: underline; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    padding: 16px 26px;
+    font-size: 13.5px;
+    color: #70757a;
+  }
+  footer .fgroup { display: flex; gap: 22px; flex-wrap: wrap; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ---------- Physics-mode helpers ---------- */
+  .phys-body {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    will-change: transform;
+  }
+  .phys-body:active { cursor: grabbing; }
+
+  @keyframes tremble {
+    0%   { transform: translate(0,0) rotate(0deg); }
+    20%  { transform: translate(-2px,1px) rotate(-.6deg); }
+    40%  { transform: translate(2px,-1px) rotate(.7deg); }
+    60%  { transform: translate(-2px,-2px) rotate(-.5deg); }
+    80%  { transform: translate(2px,2px) rotate(.6deg); }
+    100% { transform: translate(0,0) rotate(0deg); }
+  }
+  .trembling { animation: tremble .09s linear infinite; }
+
+  /* ---------- Fake result cards ---------- */
+  .result-card {
+    position: fixed;
+    left: 0; top: 0;
+    width: min(420px, 82vw);
+    background: #fff;
+    border: 1px solid #e4e6ea;
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 14px rgba(32,33,36,.16);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    will-change: transform;
+  }
+  .result-card .r-url { font-size: 12px; color: #1a7f37; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .result-card .r-title { font-size: 17px; color: #1a0dab; margin-bottom: 4px; font-weight: 500; line-height: 1.25; }
+  .result-card .r-snip { font-size: 13px; color: #4d5156; line-height: 1.45; }
+
+  /* ---------- Reset button ---------- */
+  #resetBtn {
+    position: fixed;
+    left: 50%;
+    top: 18px;
+    transform: translateX(-50%);
+    z-index: 2147483647;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(32,33,36,.82);
+    border: none;
+    border-radius: 999px;
+    padding: 10px 22px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .6s ease;
+    backdrop-filter: blur(4px);
+  }
+  #resetBtn.show { opacity: 1; pointer-events: auto; }
+  #resetBtn:hover { background: rgba(32,33,36,.95); }
+
+  @media (max-width: 480px) {
+    .topnav { gap: 14px; padding: 14px 16px; }
+    .btnrow button { padding: 10px 14px; }
+    footer { justify-content: center; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+  <nav class="topnav">
+    <a class="navlink" href="#" data-phys>Grail</a>
+    <a class="navlink" href="#" data-phys>Images</a>
+    <a class="navlink" href="#" data-phys>Labs</a>
+    <div class="avatar" data-phys title="You">P</div>
+  </nav>
+
+  <main class="hero">
+    <div class="logo" aria-label="Plummet">
+      <span class="l1" data-phys>P</span><span class="l2" data-phys>l</span><span class="l3" data-phys>u</span><span class="l4" data-phys>m</span><span class="l5" data-phys>m</span><span class="l6" data-phys>e</span><span class="l7" data-phys>t</span>
+    </div>
+    <p class="tagline" data-phys>The search engine with real weight behind it</p>
+
+    <div class="searchwrap" data-phys>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="6.5" stroke="#9aa0a6" stroke-width="2"/>
+        <line x1="15.6" y1="15.6" x2="21" y2="21" stroke="#9aa0a6" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <input id="q" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Search before it&#39;s too late&hellip;" aria-label="Search">
+    </div>
+
+    <div class="btnrow">
+      <button id="searchBtn" data-phys>Plummet Search</button>
+      <button id="heavyBtn" data-phys>I&#39;m Feeling Heavy</button>
+    </div>
+
+    <p class="langs" data-phys>Offered in: <a href="#">Freefall</a> &middot; <a href="#">Terminal Velocity</a> &middot; <a href="#">9.81 m/s&sup2;</a></p>
+  </main>
+
+  <footer>
+    <span data-phys>Earth (mostly)</span>
+    <div class="fgroup">
+      <a href="#" data-phys>About</a>
+      <a href="#" data-phys>How Gravity Works</a>
+      <a href="#" data-phys>Privacy</a>
+      <a href="#" data-phys>Terms</a>
+    </div>
+  </footer>
+
+  <button id="resetBtn" type="button">&#8634; Restore the page</button>
+
+<script>
+(function () {
+  'use strict';
+
+  var GRAVITY = 2300;          // px/s^2
+  var RESTITUTION = 0.42;      // bounciness
+  var FLOOR_FRICTION = 0.90;   // horizontal damping on floor contact
+  var AIR_DRAG = 0.999;
+  var MAX_DT = 1 / 30;
+  var TWO_PI = Math.PI * 2;
+
+  var W = window.innerWidth;
+  var H = window.innerHeight;
+
+  var collapsed = false;
+  var bodies = [];             // active physics bodies
+  var zTop = 100000;
+  var rafId = null;
+  var lastTime = 0;
+
+  var input = document.getElementById('q');
+  var resetBtn = document.getElementById('resetBtn');
+  var spawnTimers = [];
+
+  /* ------------------------------------------------------------------ */
+  /* Body factory                                                        */
+  /* ------------------------------------------------------------------ */
+
+  function makeBody(el, rect, opts) {
+    opts = opts || {};
+    var b = {
+      el: el,
+      w: rect.width,
+      h: rect.height,
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      vx: opts.vx !== undefined ? opts.vx : (Math.random() - 0.5) * 160,
+      vy: opts.vy !== undefined ? opts.vy : (Math.random() - 0.5) * 60,
+      a: opts.a || 0,
+      av: opts.av !== undefined ? opts.av : (Math.random() - 0.5) * 5,
+      mass: Math.max(0.3, (rect.width * rect.height) / 6000),
+      r: (Math.min(rect.width, rect.height) / 2 + Math.max(rect.width, rect.height) / 2) / 2 * 0.72,
+      grabbed: false,
+      entered: !opts.fromSky,
+      spawned: !!opts.spawned,
+      origStyle: opts.spawned ? null : (el.getAttribute('style') || '')
+    };
+    b.r = Math.max(b.r, 14);
+    return b;
+  }
+
+  function fixateElement(b) {
+    var el = b.el;
+    el.classList.add('phys-body');
+    el.style.width = b.w + 'px';
+    el.style.height = b.h + 'px';
+    el.style.zIndex = ++zTop;
+    var kids = el.querySelectorAll('*');
+    for (var i = 0; i < kids.length; i++) kids[i].style.pointerEvents = 'none';
+    render(b);
+  }
+
+  function render(b) {
+    b.el.style.transform =
+      'translate(' + (b.x - b.w / 2).toFixed(2) + 'px,' +
+                     (b.y - b.h / 2).toFixed(2) + 'px) ' +
+      'rotate(' + b.a.toFixed(4) + 'rad)';
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Collapse!                                                           */
+  /* ------------------------------------------------------------------ */
+
+  function collapse() {
+    if (collapsed) return;
+    collapsed = true;
+
+    var query = input.value.trim();
+    input.blur();
+    input.disabled = true;
+
+    var els = Array.prototype.slice.call(document.querySelectorAll('[data-phys]'));
+
+    // Tremble briefly, then let go.
+    els.forEach(function (el) { el.classList.add('trembling'); });
+
+    setTimeout(function () {
+      // Measure everything BEFORE mutating any layout.
+      var rects = els.map(function (el) { return el.getBoundingClientRect(); });
+
+      els.forEach(function (el, i) {
+        el.classList.remove('trembling');
+        var b = makeBody(el, rects[i]);
+        bodies.push(b);
+        fixateElement(b);
+      });
+
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+
+      lastTime = performance.now();
+      rafId = requestAnimationFrame(step);
+
+      if (query) rainResults(query);
+
+      setTimeout(function () { resetBtn.classList.add('show'); }, 1600);
+    }, 380);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Fake search results                                                 */
+  /* ------------------------------------------------------------------ */
+
+  function slugify(q) {
+    var s = q.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return s.slice(0, 24) || 'gravity';
+  }
+
+  function fakeResults(q) {
+    var slug = slugify(q);
+    return [
+      { t: q + ' — Why Is Everything Falling? Scientists Baffled',
+        u: 'https://www.' + slug + 'daily.example › news › collapse',
+        s: 'Breaking: local search results for “' + q + '” reportedly plunged overnight. Experts recommend holding onto something.' },
+      { t: 'Top 10 ' + q + ' Facts That Refuse to Stay Up',
+        u: 'https://listplummet.example › top10 › ' + slug,
+        s: 'Number 7 dropped so hard it left a dent in the footer. You won’t believe how far number 3 fell.' },
+      { t: q + ' | Official Site (currently under the fold)',
+        u: 'https://' + slug + '.example › home',
+        s: 'Welcome! Our homepage is experiencing higher-than-normal gravitational load. Please try lifting the page later.' },
+      { t: 'How to keep your ' + q + ' from hitting rock bottom',
+        u: 'https://support.plummet.example › help › ' + slug,
+        s: 'Step 1: Do not search for it. Step 2: You searched for it, didn’t you. Step 3: See step 1, on the floor.' },
+      { t: 'r/' + slug + ' — “is it normal that my search engine fell over?”',
+        u: 'https://leddit.example › r › ' + slug,
+        s: '412 comments · top reply: “works on my machine, but my machine is also on the floor now.”' },
+      { t: q + ' (physics) — Wikipedium',
+        u: 'https://wikipedium.example › wiki › ' + slug,
+        s: q + ' is subject to an acceleration of approximately 9.81 m/s² toward the bottom of the viewport. [citation needed]' }
+    ];
+  }
+
+  function rainResults(q) {
+    var data = fakeResults(q);
+    var count = Math.min(data.length, 6);
+    for (var i = 0; i < count; i++) {
+      (function (d, i) {
+        var timer = setTimeout(function () {
+          if (!collapsed) return;
+          var card = document.createElement('div');
+          card.className = 'result-card';
+
+          var url = document.createElement('div');
+          url.className = 'r-url';
+          url.textContent = d.u;
+          var title = document.createElement('div');
+          title.className = 'r-title';
+          title.textContent = d.t;
+          var snip = document.createElement('div');
+          snip.className = 'r-snip';
+          snip.textContent = d.s;
+          card.appendChild(url);
+          card.appendChild(title);
+          card.appendChild(snip);
+
+          card.style.zIndex = ++zTop;
+          document.body.appendChild(card);
+
+          var r = card.getBoundingClientRect();
+          var margin = Math.min(60, W * 0.08);
+          var cx = margin + r.width / 2 + Math.random() * Math.max(10, W - r.width - margin * 2);
+          var b = makeBody(card, {
+            left: cx - r.width / 2,
+            top: -r.height - 30 - Math.random() * 120,
+            width: r.width,
+            height: r.height
+          }, {
+            vx: (Math.random() - 0.5) * 220,
+            vy: 120 + Math.random() * 160,
+            av: (Math.random() - 0.5) * 3,
+            fromSky: true,
+            spawned: true
+          });
+          bodies.push(b);
+          render(b);
+        }, 350 + i * 330);
+        spawnTimers.push(timer);
+      })(data[i], i);
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Physics                                                             */
+  /* ------------------------------------------------------------------ */
+
+  function extents(b) {
+    var c = Math.abs(Math.cos(b.a));
+    var s = Math.abs(Math.sin(b.a));
+    return {
+      hw: (b.w * c + b.h * s) / 2,
+      hh: (b.w * s + b.h * c) / 2
+    };
+  }
+
+  function integrate(b, dt) {
+    if (b.grabbed) return;
+
+    b.vy += GRAVITY * dt;
+    b.vx *= AIR_DRAG;
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    b.a += b.av * dt;
+    if (b.a > TWO_PI) b.a -= TWO_PI;
+    if (b.a < -TWO_PI) b.a += TWO_PI;
+
+    var e = extents(b);
+    var onGround = false;
+
+    // Floor
+    if (b.y + e.hh > H) {
+      b.y = H - e.hh;
+      if (b.vy > 0) {
+        if (b.vy > 70) {
+          b.vy = -b.vy * RESTITUTION;
+          b.av = b.av * 0.55 + b.vx * 0.006 + (Math.random() - 0.5) * 0.8;
+        } else {
+          b.vy = 0;
+        }
+      }
+      b.vx *= FLOOR_FRICTION;
+      onGround = true;
+      b.entered = true;
+    }
+
+    // Ceiling (only once fully on screen — lets rained cards enter)
+    if (b.entered && b.y - e.hh < 0) {
+      b.y = e.hh;
+      if (b.vy < 0) b.vy = -b.vy * RESTITUTION;
+    }
+    if (!b.entered && b.y - e.hh > 0) b.entered = true;
+
+    // Walls
+    if (b.x - e.hw < 0) {
+      b.x = e.hw;
+      if (b.vx < 0) { b.vx = -b.vx * RESTITUTION; b.av *= -0.6; }
+    } else if (b.x + e.hw > W) {
+      b.x = W - e.hw;
+      if (b.vx > 0) { b.vx = -b.vx * RESTITUTION; b.av *= -0.6; }
+    }
+
+    // Settle: rotate toward the nearest flat orientation when resting
+    if (onGround && Math.abs(b.vx) < 45 && Math.abs(b.vy) < 30) {
+      var target = Math.round(b.a / (Math.PI / 2)) * (Math.PI / 2);
+      b.a += (target - b.a) * Math.min(1, dt * 9);
+      b.av *= 0.82;
+      if (Math.abs(b.vx) < 4) b.vx = 0;
+    } else {
+      b.av *= 0.999;
+    }
+  }
+
+  function collidePair(a, b) {
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    var minDist = a.r + b.r;
+    var d2 = dx * dx + dy * dy;
+    if (d2 >= minDist * minDist || d2 === 0) return;
+
+    var dist = Math.sqrt(d2);
+    var nx = dx / dist;
+    var ny = dy / dist;
+    var overlap = minDist - dist;
+
+    var invA = a.grabbed ? 0 : 1 / a.mass;
+    var invB = b.grabbed ? 0 : 1 / b.mass;
+    var invSum = invA + invB;
+    if (invSum === 0) return;
+
+    // Positional correction (soft, keeps piles squishy but separate)
+    var corr = overlap / invSum * 0.55;
+    a.x -= nx * corr * invA;
+    a.y -= ny * corr * invA;
+    b.x += nx * corr * invB;
+    b.y += ny * corr * invB;
+
+    // Impulse along the normal
+    var rvx = b.vx - a.vx;
+    var rvy = b.vy - a.vy;
+    var velN = rvx * nx + rvy * ny;
+    if (velN < 0) {
+      var j = -(1 + RESTITUTION * 0.7) * velN / invSum;
+      a.vx -= j * nx * invA;
+      a.vy -= j * ny * invA;
+      b.vx += j * nx * invB;
+      b.vy += j * ny * invB;
+
+      // A pinch of spin from tangential rub
+      var velT = rvx * -ny + rvy * nx;
+      a.av += velT * 0.0015 * (invA ? 1 : 0);
+      b.av -= velT * 0.0015 * (invB ? 1 : 0);
+    }
+  }
+
+  function step(now) {
+    rafId = requestAnimationFrame(step);
+    var dt = Math.min((now - lastTime) / 1000, MAX_DT);
+    lastTime = now;
+    if (dt <= 0) return;
+
+    var sub = 2;
+    var sdt = dt / sub;
+    for (var s = 0; s < sub; s++) {
+      for (var i = 0; i < bodies.length; i++) integrate(bodies[i], sdt);
+      for (var i2 = 0; i2 < bodies.length; i2++) {
+        for (var j = i2 + 1; j < bodies.length; j++) {
+          collidePair(bodies[i2], bodies[j]);
+        }
+      }
+    }
+    for (var k = 0; k < bodies.length; k++) render(bodies[k]);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Grabbing / throwing                                                 */
+  /* ------------------------------------------------------------------ */
+
+  var grab = null; // { body, ox, oy, samples: [] }
+
+  function bodyAtPoint(px, py) {
+    // Topmost first (bodies later in array were grabbed more recently,
+    // but z comes from zTop; test in descending zIndex).
+    var best = null;
+    var bestZ = -1;
+    for (var i = 0; i < bodies.length; i++) {
+      var b = bodies[i];
+      // Oriented-box hit test
+      var dx = px - b.x;
+      var dy = py - b.y;
+      var c = Math.cos(-b.a);
+      var s = Math.sin(-b.a);
+      var lx = dx * c - dy * s;
+      var ly = dx * s + dy * c;
+      var pad = 6;
+      if (Math.abs(lx) <= b.w / 2 + pad && Math.abs(ly) <= b.h / 2 + pad) {
+        var z = parseInt(b.el.style.zIndex, 10) || 0;
+        if (z > bestZ) { bestZ = z; best = b; }
+      }
+    }
+    return best;
+  }
+
+  function onPointerDown(ev) {
+    if (!collapsed || grab) return;
+    if (ev.target === resetBtn) return;
+    var b = bodyAtPoint(ev.clientX, ev.clientY);
+    if (!b) return;
+    ev.preventDefault();
+
+    b.grabbed = true;
+    b.vx = 0; b.vy = 0;
+    b.el.style.zIndex = ++zTop;
+    grab = {
+      body: b,
+      ox: ev.clientX - b.x,
+      oy: ev.clientY - b.y,
+      id: ev.pointerId,
+      samples: [{ x: ev.clientX, y: ev.clientY, t: performance.now() }]
+    };
+  }
+
+  function onPointerMove(ev) {
+    if (!grab || ev.pointerId !== grab.id) return;
+    ev.preventDefault();
+    var b = grab.body;
+    b.x = ev.clientX - grab.ox;
+    b.y = ev.clientY - grab.oy;
+    b.av *= 0.9;
+
+    var t = performance.now();
+    grab.samples.push({ x: ev.clientX, y: ev.clientY, t: t });
+    while (grab.samples.length > 6) grab.samples.shift();
+  }
+
+  function onPointerUp(ev) {
+    if (!grab || ev.pointerId !== grab.id) return;
+    var b = grab.body;
+    b.grabbed = false;
+
+    // Throw velocity from recent pointer samples
+    var s = grab.samples;
+    if (s.length >= 2) {
+      var a0 = s[0];
+      var a1 = s[s.length - 1];
+      var dt = (a1.t - a0.t) / 1000;
+      if (dt > 0.004) {
+        b.vx = Math.max(-2600, Math.min(2600, (a1.x - a0.x) / dt));
+        b.vy = Math.max(-2600, Math.min(2600, (a1.y - a0.y) / dt));
+        b.av += b.vx * 0.001;
+      }
+    }
+    grab = null;
+  }
+
+  window.addEventListener('pointerdown', onPointerDown, { passive: false });
+  window.addEventListener('pointermove', onPointerMove, { passive: false });
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
+
+  /* ------------------------------------------------------------------ */
+  /* Reset                                                               */
+  /* ------------------------------------------------------------------ */
+
+  function reset() {
+    if (!collapsed) return;
+    collapsed = false;
+
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    spawnTimers.forEach(clearTimeout);
+    spawnTimers = [];
+    grab = null;
+
+    bodies.forEach(function (b) {
+      if (b.spawned) {
+        if (b.el.parentNode) b.el.parentNode.removeChild(b.el);
+        return;
+      }
+      b.el.classList.remove('phys-body', 'trembling');
+      if (b.origStyle) b.el.setAttribute('style', b.origStyle);
+      else b.el.removeAttribute('style');
+      var kids = b.el.querySelectorAll('*');
+      for (var i = 0; i < kids.length; i++) kids[i].style.pointerEvents = '';
+    });
+    bodies = [];
+
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    input.disabled = false;
+    input.value = '';
+    resetBtn.classList.remove('show');
+  }
+
+  resetBtn.addEventListener('click', reset);
+
+  /* ------------------------------------------------------------------ */
+  /* Triggers & housekeeping                                             */
+  /* ------------------------------------------------------------------ */
+
+  document.getElementById('searchBtn').addEventListener('click', collapse);
+  document.getElementById('heavyBtn').addEventListener('click', collapse);
+  input.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); collapse(); }
+  });
+
+  // Fake nav / footer links: don't navigate; a click after collapse does nothing weird.
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest && ev.target.closest('a[href="#"]');
+    if (a) ev.preventDefault();
+  });
+
+  window.addEventListener('resize', function () {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    // Nudge bodies back inside the new walls
+    bodies.forEach(function (b) {
+      var e = extents(b);
+      if (b.x + e.hw > W) b.x = W - e.hw;
+      if (b.x - e.hw < 0) b.x = e.hw;
+      if (b.y + e.hh > H) b.y = H - e.hh;
+      if (collapsed) render(b);
+    });
+  });
+})();
+</script>
+</body>
+</html>
