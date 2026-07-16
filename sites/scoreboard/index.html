@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: #0a0a0a;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .board {
+            background: #111;
+            border: 4px solid #222;
+            border-radius: 16px;
+            padding: 32px 24px 28px;
+            width: min(96vw, 680px);
+            box-shadow: 0 0 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .period-label {
+            color: #555;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .period-display {
+            color: #ff9500;
+            font-size: 22px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 12px rgba(255,149,0,0.6);
+            cursor: pointer;
+            transition: opacity 0.1s;
+        }
+
+        .period-display:hover { opacity: 0.75; }
+
+        .clock {
+            color: #ff3b30;
+            font-size: 28px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 14px rgba(255,59,48,0.6);
+            cursor: pointer;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .teams {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 0;
+            align-items: center;
+        }
+
+        .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .team-name-wrap {
+            position: relative;
+        }
+
+        .team-name {
+            background: none;
+            border: none;
+            border-bottom: 2px solid #333;
+            color: #eee;
+            font-family: inherit;
+            font-size: 18px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-align: center;
+            width: 160px;
+            padding: 4px 0;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .team-name:focus { border-color: #555; }
+
+        .score-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score {
+            font-size: clamp(72px, 18vw, 120px);
+            font-weight: bold;
+            line-height: 1;
+            letter-spacing: -4px;
+            cursor: pointer;
+            transition: transform 0.07s, text-shadow 0.15s;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .score:active {
+            transform: scale(0.94);
+        }
+
+        .team-left .score {
+            color: #30d158;
+            text-shadow: 0 0 30px rgba(48,209,88,0.4);
+        }
+
+        .team-right .score {
+            color: #0a84ff;
+            text-shadow: 0 0 30px rgba(10,132,255,0.4);
+        }
+
+        .score.bump {
+            transform: scale(1.12);
+        }
+
+        .team-left .score.bump {
+            text-shadow: 0 0 50px rgba(48,209,88,0.9);
+        }
+
+        .team-right .score.bump {
+            text-shadow: 0 0 50px rgba(10,132,255,0.9);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            background: #1c1c1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #888;
+            font-family: inherit;
+            font-size: 20px;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            transition: background 0.1s, color 0.1s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover { background: #2c2c2e; color: #ccc; }
+        .btn:active { transform: scale(0.9); }
+
+        .divider {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 0 16px;
+        }
+
+        .dash {
+            color: #333;
+            font-size: 48px;
+            font-weight: bold;
+            line-height: 1;
+            margin-top: 8px;
+        }
+
+        .bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 28px;
+            gap: 16px;
+        }
+
+        .reset-btn {
+            background: none;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #444;
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 8px 20px;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .reset-btn:hover { border-color: #555; color: #777; }
+
+        /* floating +1 */
+        .plus-one {
+            position: fixed;
+            font-size: 28px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            pointer-events: none;
+            animation: floatUp 0.9s ease-out forwards;
+            z-index: 100;
+        }
+
+        .plus-one.green { color: #30d158; text-shadow: 0 0 10px rgba(48,209,88,0.8); }
+        .plus-one.blue  { color: #0a84ff; text-shadow: 0 0 10px rgba(10,132,255,0.8); }
+
+        @keyframes floatUp {
+            0%   { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-80px) scale(0.6); opacity: 0; }
+        }
+
+        /* LED dot rows */
+        .led-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .led {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #222;
+            transition: background 0.15s, box-shadow 0.15s;
+        }
+
+        .led.on-green { background: #30d158; box-shadow: 0 0 6px rgba(48,209,88,0.8); }
+        .led.on-blue  { background: #0a84ff; box-shadow: 0 0 6px rgba(10,132,255,0.8); }
+        .led.on-red   { background: #ff3b30; box-shadow: 0 0 6px rgba(255,59,48,0.8); }
+
+        @media (max-width: 480px) {
+            .team-name { width: 110px; font-size: 14px; }
+            .btn { width: 38px; height: 38px; font-size: 18px; }
+            .divider { padding: 0 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="board">
+    <div class="led-row" id="ledRow"></div>
+
+    <div class="top-bar">
+        <div>
+            <div class="period-label">Period</div>
+            <div class="period-display" id="period" onclick="cyclePeriod()">1ST</div>
+        </div>
+        <div class="clock" id="clock" onclick="toggleClock()">00:00</div>
+        <div style="text-align:right">
+            <div class="period-label">Status</div>
+            <div class="period-display" id="status" style="font-size:14px;letter-spacing:2px">LIVE</div>
+        </div>
+    </div>
+
+    <div class="teams">
+        <div class="team team-left">
+            <div class="team-name-wrap">
+                <input class="team-name" id="nameLeft" value="HOME" maxlength="8" spellcheck="false">
+            </div>
+            <div class="score-area">
+                <div class="score" id="scoreLeft" onclick="addScore('left', event)">0</div>
+                <div class="btn-row">
+                    <div class="btn" onclick="addScore('left', event)">+</div>
+                    <div class="btn" onclick="subScore('left')">−</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider">
+            <div class="dash">–</div>
+        </div>
+
+        <div class="team team-right">
+            <div class="team-name-wrap">
+                <input class="team-name" id="nameRight" value="AWAY" maxlength="8" spellcheck="false">
+            </div>
+            <div class="score-area">
+                <div class="score" id="scoreRight" onclick="addScore('right', event)">0</div>
+                <div class="btn-row">
+                    <div class="btn" onclick="addScore('right', event)">+</div>
+                    <div class="btn" onclick="subScore('right')">−</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="reset-btn" onclick="resetAll()">Reset</button>
+    </div>
+</div>
+
+<script>
+    let scores = { left: 0, right: 0 };
+    let periodIdx = 0;
+    const periods = ['1ST', '2ND', '3RD', '4TH', 'OT', '2OT'];
+
+    // Clock
+    let clockSecs = 0;
+    let clockRunning = false;
+    let clockInterval = null;
+
+    function toggleClock() {
+        clockRunning = !clockRunning;
+        document.getElementById('status').textContent = clockRunning ? 'LIVE' : 'PAUSED';
+        if (clockRunning) {
+            clockInterval = setInterval(() => {
+                clockSecs++;
+                updateClockDisplay();
+            }, 1000);
+        } else {
+            clearInterval(clockInterval);
+        }
+    }
+
+    function updateClockDisplay() {
+        const m = String(Math.floor(clockSecs / 60)).padStart(2, '0');
+        const s = String(clockSecs % 60).padStart(2, '0');
+        document.getElementById('clock').textContent = `${m}:${s}`;
+    }
+
+    function cyclePeriod() {
+        periodIdx = (periodIdx + 1) % periods.length;
+        document.getElementById('period').textContent = periods[periodIdx];
+    }
+
+    function addScore(side, e) {
+        scores[side]++;
+        const el = document.getElementById('score' + capitalize(side));
+        el.textContent = scores[side];
+        el.classList.remove('bump');
+        void el.offsetWidth;
+        el.classList.add('bump');
+        setTimeout(() => el.classList.remove('bump'), 200);
+        spawnPlusOne(e, side);
+        flashLeds(side);
+    }
+
+    function subScore(side) {
+        if (scores[side] > 0) {
+            scores[side]--;
+            document.getElementById('score' + capitalize(side)).textContent = scores[side];
+        }
+    }
+
+    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    function spawnPlusOne(e, side) {
+        const el = document.createElement('div');
+        el.className = 'plus-one ' + (side === 'left' ? 'green' : 'blue');
+        el.textContent = '+1';
+        // position near click or score element
+        const scoreEl = document.getElementById('score' + capitalize(side));
+        const rect = scoreEl.getBoundingClientRect();
+        el.style.left = (rect.left + rect.width / 2 - 20 + (Math.random() - 0.5) * 40) + 'px';
+        el.style.top  = (rect.top + (Math.random() * 20)) + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 900);
+    }
+
+    // LED row
+    const ledRow = document.getElementById('ledRow');
+    for (let i = 0; i < 24; i++) {
+        const d = document.createElement('div');
+        d.className = 'led';
+        ledRow.appendChild(d);
+    }
+
+    function flashLeds(side) {
+        const cls = side === 'left' ? 'on-green' : 'on-blue';
+        const leds = ledRow.querySelectorAll('.led');
+        let i = 0;
+        const interval = setInterval(() => {
+            leds.forEach(l => l.className = 'led');
+            if (i < leds.length) {
+                leds[i].className = 'led ' + cls;
+                if (i > 0) leds[i - 1].className = 'led ' + cls;
+            }
+            i++;
+            if (i > leds.length + 1) {
+                clearInterval(interval);
+                leds.forEach(l => l.className = 'led');
+            }
+        }, 30);
+    }
+
+    function resetAll() {
+        scores = { left: 0, right: 0 };
+        document.getElementById('scoreLeft').textContent = '0';
+        document.getElementById('scoreRight').textContent = '0';
+        clockSecs = 0;
+        clockRunning = false;
+        clearInterval(clockInterval);
+        updateClockDisplay();
+        document.getElementById('status').textContent = 'LIVE';
+        periodIdx = 0;
+        document.getElementById('period').textContent = periods[0];
+    }
+</script>
+</body>
+</html>

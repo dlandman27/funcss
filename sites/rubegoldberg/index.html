@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rube Goldberg Machine</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 18px 20px 10px;
+            width: 100%;
+        }
+
+        header h1 {
+            font-size: clamp(1.4rem, 4vw, 2.2rem);
+            color: #f0c040;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(240,192,64,0.5);
+        }
+
+        header p {
+            color: #8899aa;
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        #step-label {
+            min-height: 32px;
+            font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+            color: #7efff5;
+            text-align: center;
+            padding: 6px 20px;
+            letter-spacing: 1px;
+            transition: opacity 0.3s;
+            text-shadow: 0 0 10px rgba(126,255,245,0.6);
+        }
+
+        #canvas-wrap {
+            width: 100%;
+            max-width: 960px;
+            padding: 0 12px;
+            flex: 1;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 12px;
+            border: 2px solid #334;
+            background: #0d1117;
+            box-shadow: 0 0 40px rgba(126,255,245,0.08);
+        }
+
+        #controls {
+            display: flex;
+            gap: 14px;
+            padding: 16px 20px 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+        }
+
+        button:active { transform: scale(0.96); }
+
+        #btn-start {
+            background: linear-gradient(135deg, #f0c040, #e07020);
+            color: #1a1a2e;
+            box-shadow: 0 4px 20px rgba(240,160,40,0.45);
+            font-size: 1.1rem;
+            padding: 14px 44px;
+        }
+
+        #btn-start:hover { box-shadow: 0 6px 28px rgba(240,160,40,0.65); transform: translateY(-2px); }
+        #btn-start:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        #btn-reset {
+            background: #1e2a3a;
+            color: #8ab4d4;
+            border: 2px solid #334;
+        }
+
+        #btn-reset:hover { background: #243040; border-color: #557; }
+
+        #progress-bar {
+            width: 100%;
+            max-width: 960px;
+            padding: 0 12px 6px;
+        }
+
+        #progress-track {
+            height: 6px;
+            background: #1e2a3a;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7efff5, #f0c040);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        #step-dots {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0 0;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #1e2a3a;
+            border: 2px solid #334;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .step-dot.active { background: #7efff5; border-color: #7efff5; }
+        .step-dot.done { background: #f0c040; border-color: #f0c040; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Rube Goldberg Machine</h1>
+    <p>A satisfyingly unnecessary chain reaction</p>
+</header>
+
+<div id="step-label">Press START to begin the madness</div>
+
+<div id="progress-bar">
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <div id="step-dots"></div>
+</div>
+
+<div id="canvas-wrap">
+    <canvas id="rube" width="940" height="540"></canvas>
+</div>
+
+<div id="controls">
+    <button id="btn-start">START</button>
+    <button id="btn-reset">Reset</button>
+</div>
+
+<script>
+(function() {
+    const canvas = document.getElementById('rube');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    const btnStart = document.getElementById('btn-start');
+    const btnReset = document.getElementById('btn-reset');
+    const stepLabel = document.getElementById('step-label');
+    const progressFill = document.getElementById('progress-fill');
+    const stepDotsContainer = document.getElementById('step-dots');
+
+    // ── Palette ──────────────────────────────────────────────
+    const C = {
+        bg: '#0d1117',
+        grid: '#12181f',
+        platform: '#2a3a4a',
+        platformEdge: '#4a6a7a',
+        ramp: '#3a5a6a',
+        ball: '#f0c040',
+        ballGlow: 'rgba(240,192,64,0.35)',
+        lever: '#c0784a',
+        leverEdge: '#e09060',
+        bucket: '#5a8aa0',
+        rope: '#c8b860',
+        bell: '#f0c040',
+        bellShine: '#fffbe0',
+        domino: '#e06050',
+        gear: '#7080c0',
+        gearTooth: '#9090e0',
+        flag: '#e04060',
+        flagPole: '#a0a0c0',
+        spring: '#60c0a0',
+        text: '#7efff5',
+        textDim: '#4a6a7a',
+        done: '#f0c040',
+        spark: '#ffffff',
+    };
+
+    // ── Step definitions ──────────────────────────────────────
+    const STEPS = [
+        { name: "Step 1: Ball Rolls!" },
+        { name: "Step 2: Lever Tips!" },
+        { name: "Step 3: Bucket Falls!" },
+        { name: "Step 4: Rope Pulls!" },
+        { name: "Step 5: Bell Rings!" },
+        { name: "Step 6: Dominoes Fall!" },
+        { name: "Step 7: Gear Spins!" },
+        { name: "Step 8: Spring Launches!" },
+        { name: "Step 9: Flag Pops Up!" },
+        { name: "DONE! Glorious chaos." },
+    ];
+    const TOTAL = STEPS.length;
+
+    // Build step dots
+    stepDotsContainer.innerHTML = '';
+    for (let i = 0; i < TOTAL; i++) {
+        const d = document.createElement('div');
+        d.className = 'step-dot';
+        d.id = `dot-${i}`;
+        stepDotsContainer.appendChild(d);
+    }
+
+    // ── Animation state ───────────────────────────────────────
+    let raf = null;
+    let currentStep = -1;
+    let stepT = 0;        // 0..1 progress within current step
+    let stepDuration = 0; // ms for current step
+    let stepStart = 0;    // timestamp when step began
+    let running = false;
+    let done = false;
+    let sparks = [];
+
+    // Persistent state values that carry across steps
+    const state = {
+        ballX: 0, ballY: 0,
+        leverAngle: 0,       // radians, 0 = horizontal
+        bucketY: 0,
+        ropePull: 0,         // 0..1
+        bellSwing: 0,        // angle
+        dominoes: [],        // [{angle, x, y, w, h}]
+        gearAngle: 0,
+        springCompress: 0,   // 0..1, 1=max compress
+        springBallY: 0,
+        flagHeight: 0,       // 0..1
+        doneBurst: 0,        // 0..1
+    };
+
+    // ── Layout constants (in canvas pixels) ──────────────────
+    // Ramp: top-left area
+    const RAMP = { x1: 40, y1: 90, x2: 270, y2: 240 };
+    const BALL_R = 14;
+
+    // Lever: pivot in middle-left
+    const LEV = { px: 310, py: 255, len: 110 };   // pivot x,y; half-length
+
+    // Bucket: hangs from right end of lever
+    const BKT = { w: 36, h: 28 };
+
+    // Rope anchor: bucket pulls this
+    const ROPE_ANCHOR = { x: 490, y: 140 };
+    const ROPE_END = { x: 530, y: 260 };
+
+    // Bell: hangs from rope end
+    const BELL = { x: 545, y: 280, r: 20 };
+
+    // Dominoes: right side, 6 tiles
+    const DOM_START_X = 610;
+    const DOM_Y = 360;
+    const DOM_W = 14;
+    const DOM_H = 56;
+    const DOM_GAP = 32;
+    const DOM_COUNT = 6;
+
+    // Gear: center
+    const GEAR = { x: 830, y: 290, r: 44, teeth: 10 };
+
+    // Spring: bottom-right area
+    const SPR = { x: 830, y: 430, w: 50, naturalH: 60 };
+
+    // Flag pole
+    const FLAGPOLE = { x: 870, y: 150, h: 100 };
+
+    // ── Helper drawing functions ──────────────────────────────
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+    function easeOut(t) { return 1 - Math.pow(1-t, 3); }
+    function easeIn(t) { return t * t * t; }
+    function bounce(t) {
+        if (t < 1/2.75) return 7.5625*t*t;
+        if (t < 2/2.75) { t -= 1.5/2.75; return 7.5625*t*t+0.75; }
+        if (t < 2.5/2.75) { t -= 2.25/2.75; return 7.5625*t*t+0.9375; }
+        t -= 2.625/2.75; return 7.5625*t*t+0.984375;
+    }
+
+    function drawRoundRect(x, y, w, h, r, fill, stroke) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, r);
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+    }
+
+    function drawGrid() {
+        ctx.strokeStyle = C.grid;
+        ctx.lineWidth = 1;
+        const step = 40;
+        for (let x = 0; x < W; x += step) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        for (let y = 0; y < H; y += step) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+    }
+
+    function drawRamp() {
+        // Ramp surface
+        ctx.beginPath();
+        ctx.moveTo(RAMP.x1, RAMP.y1);
+        ctx.lineTo(RAMP.x2, RAMP.y2);
+        ctx.strokeStyle = C.ramp;
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Support struts
+        ctx.strokeStyle = C.platformEdge;
+        ctx.lineWidth = 2;
+        for (let i = 0; i <= 3; i++) {
+            const t = i / 3;
+            const rx = lerp(RAMP.x1, RAMP.x2, t);
+            const ry = lerp(RAMP.y1, RAMP.y2, t);
+            ctx.beginPath();
+            ctx.moveTo(rx, ry);
+            ctx.lineTo(rx, H - 60);
+            ctx.stroke();
+        }
+
+        // Floor platform
+        drawRoundRect(RAMP.x1 - 10, RAMP.y2 + 4, RAMP.x2 - RAMP.x1 + 40, 12, 4, C.platform, C.platformEdge);
+
+        // Ramp label
+        ctx.fillStyle = C.textDim;
+        ctx.font = '11px Courier New';
+        ctx.fillText('RAMP', RAMP.x1 + 4, RAMP.y1 - 8);
+    }
+
+    function drawBall(x, y, glowing) {
+        if (glowing) {
+            const grad = ctx.createRadialGradient(x - 4, y - 4, 2, x, y, BALL_R * 2.5);
+            grad.addColorStop(0, C.ballGlow);
+            grad.addColorStop(1, 'transparent');
+            ctx.beginPath();
+            ctx.arc(x, y, BALL_R * 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+        // Shadow
+        ctx.beginPath();
+        ctx.ellipse(x, y + BALL_R - 2, BALL_R * 0.8, 5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fill();
+
+        // Ball
+        const ballGrad = ctx.createRadialGradient(x - 4, y - 4, 2, x, y, BALL_R);
+        ballGrad.addColorStop(0, '#fff8d0');
+        ballGrad.addColorStop(0.4, C.ball);
+        ballGrad.addColorStop(1, '#806010');
+        ctx.beginPath();
+        ctx.arc(x, y, BALL_R, 0, Math.PI * 2);
+        ctx.fillStyle = ballGrad;
+        ctx.fill();
+        ctx.strokeStyle = '#a07820';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    function drawLever(angle) {
+        // Pivot
+        ctx.beginPath();
+        ctx.arc(LEV.px, LEV.py, 8, 0, Math.PI * 2);
+        ctx.fillStyle = C.platformEdge;
+        ctx.fill();
+
+        // Lever bar
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const lx1 = LEV.px - cos * LEV.len;
+        const ly1 = LEV.py - sin * LEV.len;
+        const lx2 = LEV.px + cos * LEV.len;
+        const ly2 = LEV.py + sin * LEV.len;
+        ctx.beginPath();
+        ctx.moveTo(lx1, ly1);
+        ctx.lineTo(lx2, ly2);
+        ctx.strokeStyle = C.lever;
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        ctx.strokeStyle = C.leverEdge;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Pivot cap
+        ctx.beginPath();
+        ctx.arc(LEV.px, LEV.py, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+    }
+
+    function getLeverRightEnd(angle) {
+        return {
+            x: LEV.px + Math.cos(angle) * LEV.len,
+            y: LEV.py + Math.sin(angle) * LEV.len
+        };
+    }
+
+    function drawBucket(x, y, fill) {
+        // Body
+        ctx.beginPath();
+        ctx.moveTo(x - BKT.w/2, y);
+        ctx.lineTo(x - BKT.w/2 + 4, y + BKT.h);
+        ctx.lineTo(x + BKT.w/2 - 4, y + BKT.h);
+        ctx.lineTo(x + BKT.w/2, y);
+        ctx.closePath();
+        ctx.fillStyle = C.bucket;
+        ctx.fill();
+        ctx.strokeStyle = '#7abacc';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Handle
+        ctx.beginPath();
+        ctx.arc(x, y - 6, BKT.w/2 - 4, Math.PI, 0);
+        ctx.strokeStyle = '#9ab';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        if (fill > 0) {
+            // Water spill
+            ctx.beginPath();
+            ctx.arc(x, y + BKT.h - 4, BKT.w * 0.35, 0, Math.PI);
+            ctx.fillStyle = `rgba(100,180,255,${fill * 0.7})`;
+            ctx.fill();
+        }
+    }
+
+    function drawRope(pull) {
+        const startX = LEV.px + Math.cos(state.leverAngle) * LEV.len;
+        const startY = LEV.py + Math.sin(state.leverAngle) * LEV.len;
+        const targetX = ROPE_ANCHOR.x;
+        const targetY = ROPE_ANCHOR.y;
+        // Rope sags
+        const midX = lerp(startX, targetX, 0.5);
+        const sag = 20 * (1 - pull);
+        const midY = lerp(startY, targetY, 0.5) + sag;
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.quadraticCurveTo(midX, midY, targetX, targetY);
+        ctx.strokeStyle = C.rope;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Pulley
+        ctx.beginPath();
+        ctx.arc(ROPE_ANCHOR.x, ROPE_ANCHOR.y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = C.platformEdge;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    function drawBell(swing) {
+        const bx = BELL.x + Math.sin(swing) * 16;
+        const by = BELL.y;
+
+        // Rope from anchor
+        ctx.beginPath();
+        ctx.moveTo(ROPE_ANCHOR.x, ROPE_ANCHOR.y + 8);
+        ctx.lineTo(bx, by - BELL.r);
+        ctx.strokeStyle = C.rope;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Bell body
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.rotate(swing * 0.5);
+        const bellGrad = ctx.createRadialGradient(-4, -4, 2, 0, 0, BELL.r);
+        bellGrad.addColorStop(0, C.bellShine);
+        bellGrad.addColorStop(0.4, C.bell);
+        bellGrad.addColorStop(1, '#806010');
+        ctx.beginPath();
+        ctx.arc(0, 0, BELL.r, 0, Math.PI * 2);
+        ctx.fillStyle = bellGrad;
+        ctx.fill();
+        ctx.strokeStyle = '#a07820';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Bell opening
+        ctx.beginPath();
+        ctx.ellipse(0, BELL.r, BELL.r * 0.7, 5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#1a1a00';
+        ctx.fill();
+        // Clapper
+        ctx.beginPath();
+        ctx.arc(Math.sin(swing) * 6, BELL.r * 0.6, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#604000';
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function initDominoes() {
+        state.dominoes = [];
+        for (let i = 0; i < DOM_COUNT; i++) {
+            state.dominoes.push({
+                x: DOM_START_X + i * DOM_GAP,
+                y: DOM_Y,
+                angle: 0,  // 0=upright, Math.PI/2=flat
+                w: DOM_W,
+                h: DOM_H,
+            });
+        }
+    }
+
+    function drawDominoes() {
+        state.dominoes.forEach((d, i) => {
+            ctx.save();
+            ctx.translate(d.x, d.y);
+            ctx.rotate(d.angle);
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.25)';
+            ctx.fillRect(-d.w/2, -2, d.w, 4);
+
+            const grd = ctx.createLinearGradient(-d.w/2, 0, d.w/2, 0);
+            grd.addColorStop(0, '#c04030');
+            grd.addColorStop(0.5, C.domino);
+            grd.addColorStop(1, '#903020');
+            ctx.fillStyle = grd;
+            ctx.fillRect(-d.w/2, -d.h, d.w, d.h);
+            ctx.strokeStyle = '#ff8070';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-d.w/2, -d.h, d.w, d.h);
+            // Dots
+            ctx.fillStyle = '#fff';
+            const dots = i + 1;
+            const spacing = d.h / (dots + 1);
+            for (let j = 1; j <= Math.min(dots, 3); j++) {
+                ctx.beginPath();
+                ctx.arc(0, -d.h + spacing * j, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        });
+    }
+
+    function drawGear(angle) {
+        const { x, y, r, teeth } = GEAR;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+
+        // Teeth
+        for (let i = 0; i < teeth; i++) {
+            const a = (i / teeth) * Math.PI * 2;
+            const x1 = Math.cos(a) * r;
+            const y1 = Math.sin(a) * r;
+            const x2 = Math.cos(a) * (r + 14);
+            const y2 = Math.sin(a) * (r + 14);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = C.gearTooth;
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        // Main disc
+        const grdG = ctx.createRadialGradient(-r*0.3, -r*0.3, 4, 0, 0, r);
+        grdG.addColorStop(0, '#a0b0e0');
+        grdG.addColorStop(1, '#404070');
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fillStyle = grdG;
+        ctx.fill();
+        ctx.strokeStyle = C.gearTooth;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Spokes
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.75);
+            ctx.strokeStyle = C.gearTooth;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        // Hub
+        ctx.beginPath();
+        ctx.arc(0, 0, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#c0c0e0';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    function drawSpring(compress, ballY) {
+        const { x, y, w, naturalH } = SPR;
+        const h = naturalH * (1 - compress * 0.55);
+        const coils = 8;
+        const cx = x;
+        const baseY = y;
+        const topY = y - h;
+
+        // Base
+        drawRoundRect(cx - w/2 - 4, baseY, w + 8, 10, 3, C.platform, C.platformEdge);
+
+        // Spring coils
+        ctx.beginPath();
+        ctx.moveTo(cx, topY);
+        for (let i = 0; i <= coils * 4; i++) {
+            const t = i / (coils * 4);
+            const sy = lerp(topY, baseY, t);
+            const sx = cx + (i % 2 === 0 ? -w/2 : w/2) * Math.sin(t * Math.PI * coils);
+            if (i === 0) ctx.moveTo(sx, sy);
+            else ctx.lineTo(sx, sy);
+        }
+        ctx.strokeStyle = C.spring;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
+        // Platform on top of spring
+        drawRoundRect(cx - w/2, topY - 8, w, 8, 3, '#507060', '#80c0a0');
+
+        // Flying ball on spring
+        if (ballY < topY - BALL_R) {
+            drawBall(cx, ballY, true);
+        } else {
+            drawBall(cx, topY - BALL_R, ballY > topY - BALL_R - 5);
+        }
+    }
+
+    function drawFlag(height) {
+        const { x, y, h } = FLAGPOLE;
+        const poleH = h * 1.2;
+        // Pole
+        ctx.beginPath();
+        ctx.moveTo(x, y + poleH);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = C.flagPole;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Base
+        drawRoundRect(x - 10, y + poleH - 4, 20, 8, 3, C.platform, C.platformEdge);
+
+        if (height > 0) {
+            const flagY = y + poleH * (1 - height * 0.85);
+            const flagW = 48;
+            const flagH = 30;
+            // Flag wave
+            ctx.beginPath();
+            ctx.moveTo(x, flagY);
+            ctx.bezierCurveTo(
+                x + flagW * 0.4, flagY + Math.sin(Date.now() * 0.008) * 5,
+                x + flagW * 0.7, flagY + Math.sin(Date.now() * 0.008 + 1) * 5,
+                x + flagW, flagY + flagH / 2
+            );
+            ctx.bezierCurveTo(
+                x + flagW * 0.7, flagY + flagH + Math.sin(Date.now() * 0.008 + 1) * 5,
+                x + flagW * 0.4, flagY + flagH + Math.sin(Date.now() * 0.008) * 5,
+                x, flagY + flagH
+            );
+            ctx.closePath();
+            ctx.fillStyle = C.flag;
+            ctx.fill();
+            ctx.strokeStyle = '#ff8090';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            // Star on flag
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${Math.round(flagH * 0.6)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('★', x + flagW * 0.45, flagY + flagH * 0.72);
+            ctx.textAlign = 'left';
+        }
+    }
+
+    function drawSparks() {
+        sparks = sparks.filter(s => s.life > 0);
+        sparks.forEach(s => {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${s.color},${s.life})`;
+            ctx.fill();
+            s.x += s.vx;
+            s.y += s.vy;
+            s.vy += 0.15;
+            s.life -= 0.035;
+        });
+    }
+
+    function spawnSparks(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 1.5 + Math.random() * 3;
+            sparks.push({
+                x, y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 2,
+                r: 4 + Math.random() * 4,
+                life: 0.9 + Math.random() * 0.1,
+                color: color || '255,220,80',
+            });
+        }
+    }
+
+    function drawDoneText() {
+        const alpha = state.doneBurst;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.textAlign = 'center';
+        const pulse = 1 + Math.sin(Date.now() * 0.006) * 0.04;
+        ctx.font = `bold ${Math.round(54 * pulse)}px Courier New`;
+        ctx.fillStyle = C.done;
+        ctx.shadowColor = C.done;
+        ctx.shadowBlur = 30;
+        ctx.fillText('DONE!', W / 2, H / 2 - 20);
+        ctx.shadowBlur = 0;
+        ctx.font = '22px Courier New';
+        ctx.fillStyle = C.text;
+        ctx.fillText('Glorious, beautiful, unnecessary chaos.', W / 2, H / 2 + 22);
+        ctx.restore();
+        ctx.textAlign = 'left';
+    }
+
+    // ── Scene drawing ─────────────────────────────────────────
+    function drawScene() {
+        // Background
+        ctx.fillStyle = C.bg;
+        ctx.fillRect(0, 0, W, H);
+        drawGrid();
+
+        // Floor
+        drawRoundRect(0, H - 55, W, 55, 0, '#111820', '#1e2a3a');
+        ctx.strokeStyle = '#2a4a5a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, H - 55); ctx.lineTo(W, H - 55);
+        ctx.stroke();
+
+        // Structural platforms
+        drawRoundRect(280, 248, 50, 10, 3, C.platform, C.platformEdge);     // lever base
+        drawRoundRect(470, 130, 80, 10, 3, C.platform, C.platformEdge);     // rope anchor shelf
+        drawRoundRect(590, 352, DOM_COUNT * DOM_GAP + 20, 10, 3, C.platform, C.platformEdge); // domino shelf
+        drawRoundRect(780, 328, 100, 10, 3, C.platform, C.platformEdge);    // gear shelf
+
+        // Ramp
+        drawRamp();
+
+        // Rope (drawn before lever so lever is on top)
+        if (currentStep >= 3) drawRope(state.ropePull);
+
+        // Lever
+        drawLever(state.leverAngle);
+
+        // Bucket (hangs from right end of lever)
+        const re = getLeverRightEnd(state.leverAngle);
+        drawBucket(re.x, re.y + 10, currentStep >= 2 ? (currentStep === 2 ? stepT : 1) : 0);
+
+        // Bell
+        drawBell(state.bellSwing);
+
+        // Dominoes
+        drawDominoes();
+
+        // Gear
+        drawGear(state.gearAngle);
+
+        // Spring
+        drawSpring(state.springCompress, state.springBallY);
+
+        // Flag
+        drawFlag(state.flagHeight);
+
+        // Ball (drawn on top of everything when rolling on ramp)
+        if (currentStep <= 1) {
+            drawBall(state.ballX, state.ballY, true);
+        }
+
+        // Sparks
+        drawSparks();
+
+        // Done overlay
+        if (done) {
+            drawDoneText();
+        }
+    }
+
+    // ── Step logic ────────────────────────────────────────────
+    const stepDurations = [1400, 900, 900, 700, 800, 1200, 900, 900, 1100, 1200];
+
+    function startStep(index) {
+        currentStep = index;
+        stepT = 0;
+        stepDuration = stepDurations[index];
+        stepStart = performance.now();
+        updateProgressUI(index);
+
+        // On-start effects
+        if (index === 0) {
+            // Ball starts at top of ramp
+            state.ballX = RAMP.x1 + BALL_R;
+            state.ballY = RAMP.y1 - BALL_R + 2;
+        }
+        if (index === 4) spawnSparks(BELL.x, BELL.y, 18, '255,220,80');
+        if (index === 5) {/* handled during step */}
+        if (index === 7) spawnSparks(SPR.x, SPR.y - SPR.naturalH, 12, '100,255,180');
+        if (index === 9) {
+            done = true;
+            spawnSparks(W/2, H/2, 50, '255,200,50');
+        }
+    }
+
+    function updateStep(now) {
+        const elapsed = now - stepStart;
+        stepT = clamp(elapsed / stepDuration, 0, 1);
+
+        switch (currentStep) {
+            case 0: { // Ball rolls down ramp
+                const t = easeIn(stepT);
+                state.ballX = lerp(RAMP.x1 + BALL_R, RAMP.x2 - BALL_R, t);
+                state.ballY = lerp(RAMP.y1 - BALL_R + 2, RAMP.y2 - BALL_R - 2, t);
+                // Subtle bounce
+                state.ballY += Math.sin(t * Math.PI * 3) * -3 * (1-t);
+                break;
+            }
+            case 1: { // Lever tips
+                const t = easeOut(stepT);
+                state.leverAngle = lerp(0, 0.38, t);
+                // Ball rests on left end of lever for a moment
+                const le = { x: LEV.px - Math.cos(state.leverAngle) * LEV.len,
+                              y: LEV.py - Math.sin(state.leverAngle) * LEV.len };
+                state.ballX = le.x;
+                state.ballY = le.y - BALL_R;
+                break;
+            }
+            case 2: { // Bucket falls
+                const t = easeIn(stepT);
+                // Lever continues tilting
+                state.leverAngle = lerp(0.38, 0.7, easeOut(stepT));
+                // Ball falls off lever
+                state.ballX = lerp(LEV.px - Math.cos(0.38) * LEV.len, LEV.px - 30, t);
+                state.ballY = lerp(LEV.py - Math.sin(0.38) * LEV.len - BALL_R,
+                                   H - 55 - BALL_R * 2, t);
+                break;
+            }
+            case 3: { // Rope pulls
+                state.ropePull = easeInOut(stepT);
+                break;
+            }
+            case 4: { // Bell rings
+                state.bellSwing = Math.sin(stepT * Math.PI * 5) * 0.6 * (1 - stepT * 0.5);
+                if (stepT > 0.3 && stepT < 0.35) spawnSparks(BELL.x, BELL.y - 10, 4, '255,220,80');
+                break;
+            }
+            case 5: { // Dominoes fall
+                const fallDelay = 1 / (DOM_COUNT + 2);
+                state.dominoes.forEach((d, i) => {
+                    const start = i * fallDelay;
+                    const end = start + fallDelay * 1.5;
+                    const t = clamp((stepT - start) / (end - start), 0, 1);
+                    d.angle = easeIn(t) * Math.PI * 0.47;
+                    if (t > 0.5 && t < 0.52) spawnSparks(d.x, d.y - d.h/2, 6, '255,100,80');
+                });
+                break;
+            }
+            case 6: { // Gear spins
+                state.gearAngle = easeInOut(stepT) * Math.PI * 4;
+                break;
+            }
+            case 7: { // Spring launches ball
+                if (stepT < 0.4) {
+                    state.springCompress = easeIn(stepT / 0.4);
+                    state.springBallY = SPR.y - SPR.naturalH * (1 - state.springCompress * 0.55) - BALL_R;
+                } else {
+                    const lt = (stepT - 0.4) / 0.6;
+                    state.springCompress = lerp(1, 0, easeOut(lt));
+                    // Ball flies upward
+                    const launchT = easeOut(lt);
+                    state.springBallY = lerp(SPR.y - SPR.naturalH * 0.45 - BALL_R, SPR.y - 200, launchT);
+                }
+                break;
+            }
+            case 8: { // Flag pops up
+                state.flagHeight = bounce(stepT);
+                break;
+            }
+            case 9: { // Done
+                state.doneBurst = easeOut(stepT);
+                if (Math.random() < 0.12) {
+                    spawnSparks(
+                        Math.random() * W,
+                        Math.random() * H * 0.6,
+                        6,
+                        `${Math.floor(Math.random()*200+55)},${Math.floor(Math.random()*200+55)},${Math.floor(Math.random()*200+55)}`
+                    );
+                }
+                break;
+            }
+        }
+    }
+
+    function updateProgressUI(index) {
+        progressFill.style.width = `${(index / (TOTAL - 1)) * 100}%`;
+        for (let i = 0; i < TOTAL; i++) {
+            const dot = document.getElementById(`dot-${i}`);
+            if (i < index) dot.className = 'step-dot done';
+            else if (i === index) dot.className = 'step-dot active';
+            else dot.className = 'step-dot';
+        }
+        stepLabel.textContent = STEPS[index].name;
+    }
+
+    // ── Main loop ─────────────────────────────────────────────
+    function tick(now) {
+        if (!running) return;
+
+        updateStep(now);
+        drawScene();
+
+        if (stepT >= 1) {
+            // Advance to next step
+            const next = currentStep + 1;
+            if (next < TOTAL) {
+                startStep(next);
+            } else {
+                running = false;
+                btnStart.disabled = false;
+                btnStart.textContent = 'DONE!';
+            }
+        }
+
+        raf = requestAnimationFrame(tick);
+    }
+
+    function resetMachine() {
+        running = false;
+        done = false;
+        currentStep = -1;
+        stepT = 0;
+        sparks = [];
+        state.ballX = RAMP.x1 + BALL_R;
+        state.ballY = RAMP.y1 - BALL_R + 2;
+        state.leverAngle = 0;
+        state.bucketY = 0;
+        state.ropePull = 0;
+        state.bellSwing = 0;
+        state.gearAngle = 0;
+        state.springCompress = 0;
+        state.springBallY = SPR.y - SPR.naturalH - BALL_R;
+        state.flagHeight = 0;
+        state.doneBurst = 0;
+        initDominoes();
+
+        progressFill.style.width = '0%';
+        for (let i = 0; i < TOTAL; i++) {
+            const dot = document.getElementById(`dot-${i}`);
+            dot.className = 'step-dot';
+        }
+        stepLabel.textContent = 'Press START to begin the madness';
+        btnStart.disabled = false;
+        btnStart.textContent = 'START';
+
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        drawScene();
+    }
+
+    function startMachine() {
+        if (running) return;
+        resetMachine();
+        running = true;
+        btnStart.disabled = true;
+        btnStart.textContent = 'Running…';
+        initDominoes();
+        startStep(0);
+        raf = requestAnimationFrame(tick);
+    }
+
+    btnStart.addEventListener('click', startMachine);
+    btnReset.addEventListener('click', resetMachine);
+
+    // Initial state
+    resetMachine();
+
+})();
+</script>
+</body>
+</html>

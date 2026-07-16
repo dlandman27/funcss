@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slackmoji Maker</title>
+    <style>
+        :root {
+            --bg1: #1e1b4b;
+            --bg2: #4c1d95;
+            --accent: #f472b6;
+            --accent2: #22d3ee;
+            --card: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.15);
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            color: var(--text);
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 16px 60px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 6vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            text-align: center;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            color: var(--muted);
+            text-align: center;
+            margin: 10px 0 28px;
+            font-size: 1rem;
+            max-width: 460px;
+        }
+
+        .stage {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Drop zone */
+        .drop {
+            border: 2px dashed var(--border);
+            border-radius: 20px;
+            background: var(--card);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, background .2s, transform .1s;
+        }
+        .drop:hover { border-color: var(--accent); background: rgba(255,255,255,.1); }
+        .drop.drag { border-color: var(--accent2); background: rgba(34,211,238,.12); transform: scale(1.01); }
+        .drop .emoji { font-size: 3rem; display: block; margin-bottom: 10px; }
+        .drop strong { color: var(--text); }
+        .drop small { display: block; color: var(--muted); margin-top: 8px; }
+
+        /* Preview */
+        .preview-wrap {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+        .preview-wrap.show { display: flex; }
+
+        .checker {
+            width: 176px;
+            height: 176px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #cbd5e1;
+            background-image:
+                linear-gradient(45deg, #94a3b8 25%, transparent 25%),
+                linear-gradient(-45deg, #94a3b8 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #94a3b8 75%),
+                linear-gradient(-45deg, transparent 75%, #94a3b8 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+            box-shadow: 0 12px 40px rgba(0,0,0,.35);
+            overflow: hidden;
+        }
+        #preview {
+            width: 128px;
+            height: 128px;
+            image-rendering: -webkit-optimize-contrast;
+            object-fit: contain;
+        }
+        .size-line { font-size: .9rem; color: var(--muted); text-align: center; }
+        .size-line b { color: var(--text); }
+        .size-line.warn b { color: #fbbf24; }
+
+        /* Effects */
+        .section-label {
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--muted);
+            margin-bottom: -6px;
+        }
+        .effects {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .fx {
+            appearance: none;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 14px 6px;
+            font-size: .95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform .1s, border-color .2s, background .2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .fx .ico { font-size: 1.5rem; }
+        .fx:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); }
+        .fx.active { border-color: var(--accent2); background: rgba(34,211,238,.18); box-shadow: 0 0 0 1px var(--accent2) inset; }
+        .fx:disabled { opacity: .4; cursor: not-allowed; }
+
+        .actions { display: flex; gap: 12px; }
+        .btn {
+            flex: 1;
+            appearance: none;
+            border: none;
+            border-radius: 14px;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .1s, opacity .2s;
+        }
+        .btn:active { transform: scale(.98); }
+        .btn.primary { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #111; }
+        .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+        .spinner {
+            display: none;
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+        .spinner.show { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .note {
+            font-size: .78rem;
+            color: var(--muted);
+            text-align: center;
+            max-width: 460px;
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <h1>Slackmoji Maker 🎉</h1>
+    <p class="tagline">Drop a GIF or image, pick an effect, and get a Slack-ready emoji — 128&times;128, under 128KB, no upload required.</p>
+
+    <div class="stage">
+        <div class="drop" id="drop">
+            <span class="emoji">🖼️</span>
+            <strong>Drop a GIF or image here</strong>
+            <small>or click to choose &middot; GIF, PNG, JPG, WebP</small>
+            <input type="file" id="file" accept="image/*" class="hidden">
+        </div>
+
+        <div class="preview-wrap" id="previewWrap">
+            <div class="checker"><img id="preview" alt="emoji preview"></div>
+            <div class="size-line" id="sizeLine"></div>
+        </div>
+
+        <div id="controls" class="hidden">
+            <div class="section-label">Effect</div>
+            <div class="effects" id="effects">
+                <button class="fx" data-fx="resize"><span class="ico">🔲</span>Resize</button>
+                <button class="fx" data-fx="party"><span class="ico">🌈</span>Party</button>
+                <button class="fx" data-fx="spin"><span class="ico">🔄</span>Spin</button>
+                <button class="fx" data-fx="shake"><span class="ico">📳</span>Shake</button>
+                <button class="fx" data-fx="bounce"><span class="ico">⤴️</span>Bounce</button>
+                <button class="fx" data-fx="intensify"><span class="ico">💥</span>Intensify</button>
+            </div>
+            <div class="actions" style="margin-top:16px;">
+                <button class="btn ghost" id="resetBtn">New image</button>
+                <button class="btn primary" id="downloadBtn" disabled>
+                    <span id="dlText">Download</span>
+                    <span class="spinner" id="spinner"></span>
+                </button>
+            </div>
+        </div>
+
+        <p class="note" id="note"></p>
+    </div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Slackmoji Maker — vanilla, self-contained.
+   Decodes input (animated GIF via ImageDecoder, else single frame),
+   applies a per-frame effect on a 128x128 canvas, then encodes a
+   real GIF89a from scratch (median-cut palette + LZW) so the output
+   works as a Slack custom emoji.
+   ============================================================ */
+
+const SIZE = 128;
+const MAX_BYTES = 128 * 1024;
+
+let sourceFrames = [];      // [{canvas, delayCs}]
+let currentEffect = null;
+let currentBlobUrl = null;
+
+const $ = id => document.getElementById(id);
+const drop = $('drop'), fileInput = $('file');
+const previewWrap = $('previewWrap'), preview = $('preview'), sizeLine = $('sizeLine');
+const controls = $('controls'), effectsEl = $('effects');
+const downloadBtn = $('downloadBtn'), resetBtn = $('resetBtn');
+const spinner = $('spinner'), dlText = $('dlText'), note = $('note');
+
+/* ---------- Effect definitions ----------
+   fn(i, n) returns transform for output frame i of n:
+   { dx, dy, rot(deg), scale, hue(deg) }  */
+const EFFECTS = {
+    resize:    { frames: 1,  delay: 100, base: 1.00, fn: () => ({}) },
+    party:     { frames: 12, delay: 6,   base: 1.00, fn: (i, n) => ({ hue: Math.round(i / n * 360) }) },
+    spin:      { frames: 18, delay: 4,   base: 0.70, fn: (i, n) => ({ rot: i / n * 360 }) },
+    shake:     { frames: 10, delay: 3,   base: 0.86, fn: (i) => ({ dx: Math.round(7 * Math.sin(i * 1.9)), dy: Math.round(3 * Math.cos(i * 2.7)) }) },
+    bounce:    { frames: 14, delay: 5,   base: 0.78, fn: (i, n) => ({ dy: -Math.round(34 * Math.abs(Math.sin(i / n * Math.PI))) }) },
+    intensify: { frames: 10, delay: 2,   base: 0.80, fn: (i) => ({ dx: Math.round(9 * Math.sin(i * 3.1)), dy: Math.round(9 * Math.cos(i * 4.3)), scale: 1 + 0.06 * Math.abs(Math.sin(i * 1.3)) }) }
+};
+
+/* ============================================================
+   Input handling
+   ============================================================ */
+drop.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+['dragover', 'dragenter'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.add('drag');
+}));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.remove('drag');
+}));
+drop.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) loadFile(f);
+});
+
+async function loadFile(file) {
+    if (!file.type.startsWith('image/') && !/\.gif$/i.test(file.name)) {
+        note.textContent = 'That doesn\'t look like an image. Try a GIF, PNG, JPG, or WebP.';
+        return;
+    }
+    note.textContent = 'Reading image…';
+    try {
+        await decodeSource(file);
+    } catch (err) {
+        console.error(err);
+        note.textContent = 'Couldn\'t read that file. Try a different image.';
+        return;
+    }
+    controls.classList.remove('hidden');
+    note.textContent = sourceFrames.length > 1
+        ? `Loaded ${sourceFrames.length} frames. Pick an effect below.`
+        : 'Loaded. Pick an effect below.';
+    // Auto-select resize so the user sees something immediately.
+    selectEffect('resize');
+}
+
+async function decodeSource(file) {
+    sourceFrames = [];
+    const isGif = file.type === 'image/gif' || /\.gif$/i.test(file.name);
+
+    if (isGif && 'ImageDecoder' in window) {
+        const buf = await file.arrayBuffer();
+        const dec = new ImageDecoder({ data: buf, type: 'image/gif' });
+        await dec.tracks.ready;
+        const track = dec.tracks.selectedTrack;
+        const count = (track && track.frameCount) || 1;
+        let acc = null, actx = null;
+        for (let i = 0; i < count; i++) {
+            let res;
+            try { res = await dec.decode({ frameIndex: i }); }
+            catch (e) { break; }
+            const vf = res.image;
+            if (!acc) {
+                acc = document.createElement('canvas');
+                acc.width = vf.displayWidth || vf.codedWidth;
+                acc.height = vf.displayHeight || vf.codedHeight;
+                actx = acc.getContext('2d');
+            }
+            // Draw over the accumulator so "keep previous frame" disposal composites correctly.
+            actx.drawImage(vf, 0, 0);
+            const snap = document.createElement('canvas');
+            snap.width = acc.width; snap.height = acc.height;
+            snap.getContext('2d').drawImage(acc, 0, 0);
+            const durUs = vf.duration || 100000; // microseconds; fall back to 100ms
+            sourceFrames.push({ canvas: snap, delayCs: Math.max(2, Math.round(durUs / 10000)) });
+            vf.close();
+        }
+        if (sourceFrames.length === 0) throw new Error('no frames decoded');
+    } else {
+        // Static image, or GIF in a browser without ImageDecoder (first frame only).
+        const bmp = await createImageBitmap(file);
+        const c = document.createElement('canvas');
+        c.width = bmp.width; c.height = bmp.height;
+        c.getContext('2d').drawImage(bmp, 0, 0);
+        sourceFrames.push({ canvas: c, delayCs: 100 });
+        if (bmp.close) bmp.close();
+        if (isGif && !('ImageDecoder' in window)) {
+            note.textContent = 'Heads up: this browser can only read the first frame of a GIF. Chrome or Edge will read the full animation.';
+        }
+    }
+}
+
+/* ============================================================
+   Effect selection + rendering
+   ============================================================ */
+effectsEl.addEventListener('click', e => {
+    const btn = e.target.closest('.fx');
+    if (btn) selectEffect(btn.dataset.fx);
+});
+
+async function selectEffect(key) {
+    currentEffect = key;
+    [...effectsEl.children].forEach(b => b.classList.toggle('active', b.dataset.fx === key));
+    setBusy(true);
+    // Let the spinner paint before the heavy synchronous work.
+    await new Promise(r => setTimeout(r, 20));
+    try {
+        const { framesData, delays } = generate(key);
+        const result = buildGif(framesData, delays);
+        showResult(result);
+    } catch (err) {
+        console.error(err);
+        note.textContent = 'Something went wrong building that effect.';
+    } finally {
+        setBusy(false);
+    }
+}
+
+function generate(key) {
+    const eff = EFFECTS[key];
+    const srcCount = sourceFrames.length;
+    let total, useSourceDelays = false;
+
+    if (key === 'resize') {
+        total = srcCount;
+        useSourceDelays = srcCount > 1;
+    } else {
+        total = srcCount > 1 ? Math.min(40, Math.max(eff.frames, srcCount)) : eff.frames;
+    }
+
+    const framesData = [], delays = [];
+    for (let i = 0; i < total; i++) {
+        const src = sourceFrames[i % srcCount].canvas;
+        framesData.push(renderFrame(key, i, total, src));
+        delays.push(useSourceDelays ? sourceFrames[i].delayCs : eff.delay);
+    }
+    return { framesData, delays };
+}
+
+function renderFrame(key, i, n, src) {
+    const eff = EFFECTS[key];
+    const t = eff.fn(i, n);
+    const c = document.createElement('canvas');
+    c.width = SIZE; c.height = SIZE;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    ctx.imageSmoothingQuality = 'high';
+
+    const scale = Math.min(SIZE / src.width, SIZE / src.height) * eff.base * (t.scale || 1);
+    const dw = src.width * scale, dh = src.height * scale;
+
+    ctx.save();
+    ctx.translate(SIZE / 2 + (t.dx || 0), SIZE / 2 + (t.dy || 0));
+    if (t.rot) ctx.rotate(t.rot * Math.PI / 180);
+    if (t.hue) ctx.filter = `hue-rotate(${t.hue}deg)`;
+    ctx.drawImage(src, -dw / 2, -dh / 2, dw, dh);
+    ctx.restore();
+
+    return ctx.getImageData(0, 0, SIZE, SIZE).data;
+}
+
+/* ============================================================
+   Quantization (median cut) + nearest-color mapping
+   ============================================================ */
+function samplePixels(framesData) {
+    let totalOpaque = 0;
+    for (const d of framesData)
+        for (let i = 3; i < d.length; i += 4) if (d[i] >= 128) totalOpaque++;
+    const stride = Math.max(1, Math.floor(totalOpaque / 18000));
+    const pix = [];
+    let seen = 0;
+    for (const d of framesData) {
+        for (let i = 0; i < d.length; i += 4) {
+            if (d[i + 3] < 128) continue;
+            if (seen++ % stride === 0) pix.push([d[i], d[i + 1], d[i + 2]]);
+        }
+    }
+    return pix;
+}
+
+function medianCut(pixels, maxColors) {
+    if (pixels.length === 0) return [[0, 0, 0]];
+    let boxes = [pixels];
+    while (boxes.length < maxColors) {
+        let bi = -1, bestRange = -1, bestChan = 0;
+        for (let i = 0; i < boxes.length; i++) {
+            const b = boxes[i];
+            if (b.length < 2) continue;
+            const mn = [255, 255, 255], mx = [0, 0, 0];
+            for (const p of b) for (let c = 0; c < 3; c++) {
+                if (p[c] < mn[c]) mn[c] = p[c];
+                if (p[c] > mx[c]) mx[c] = p[c];
+            }
+            const ranges = [mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]];
+            const mr = Math.max(ranges[0], ranges[1], ranges[2]);
+            if (mr > bestRange) { bestRange = mr; bi = i; bestChan = ranges.indexOf(mr); }
+        }
+        if (bi < 0) break;
+        const b = boxes[bi];
+        b.sort((p, q) => p[bestChan] - q[bestChan]);
+        const mid = b.length >> 1;
+        boxes.splice(bi, 1, b.slice(0, mid), b.slice(mid));
+    }
+    return boxes.map(b => {
+        if (!b.length) return [0, 0, 0];
+        const s = [0, 0, 0];
+        for (const p of b) { s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; }
+        return [Math.round(s[0] / b.length), Math.round(s[1] / b.length), Math.round(s[2] / b.length)];
+    });
+}
+
+function mapFrame(data, palette, transIndex) {
+    const out = new Uint8Array(data.length / 4);
+    const cache = new Map();
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        if (data[i + 3] < 128) { out[j] = transIndex; continue; }
+        const key = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
+        let idx = cache.get(key);
+        if (idx === undefined) {
+            let best = 0, bd = Infinity;
+            for (let p = 0; p < palette.length; p++) {
+                const c = palette[p];
+                const dr = data[i] - c[0], dg = data[i + 1] - c[1], db = data[i + 2] - c[2];
+                const d = dr * dr + dg * dg + db * db;
+                if (d < bd) { bd = d; best = p; }
+            }
+            idx = best; cache.set(key, idx);
+        }
+        out[j] = idx;
+    }
+    return out;
+}
+
+/* ============================================================
+   GIF89a encoder (LZW)
+   ============================================================ */
+function lzwEncode(indices, minCode) {
+    const clear = 1 << minCode;
+    const eoi = clear + 1;
+    let codeSize = minCode + 1;
+    let dict, next;
+    const initDict = () => {
+        dict = new Map();
+        for (let i = 0; i < clear; i++) dict.set(String(i), i);
+        next = eoi + 1;
+        codeSize = minCode + 1;
+    };
+    const out = [];
+    let cur = 0, curBits = 0;
+    const emit = code => {
+        cur |= code << curBits;
+        curBits += codeSize;
+        while (curBits >= 8) { out.push(cur & 0xff); cur >>= 8; curBits -= 8; }
+    };
+
+    initDict();
+    emit(clear);
+    let prefix = String(indices[0]);
+    for (let i = 1; i < indices.length; i++) {
+        const k = indices[i];
+        const combined = prefix + ',' + k;
+        if (dict.has(combined)) {
+            prefix = combined;
+        } else {
+            emit(dict.get(prefix));
+            // Grow the code width BEFORE assigning the next entry (matches how
+            // real GIF decoders track width — bumping after would be one step early).
+            if (next === (1 << codeSize) && codeSize < 12) codeSize++;
+            if (next < 4096) {
+                dict.set(combined, next);
+                next++;
+            } else {
+                emit(clear);
+                initDict();
+            }
+            prefix = String(k);
+        }
+    }
+    emit(dict.get(prefix));
+    emit(eoi);
+    if (curBits > 0) out.push(cur & 0xff);
+    return out;
+}
+
+function encodeGIF(frames, width, height, palette, transIndex) {
+    const bytes = [];
+    const push = (...b) => { for (const x of b) bytes.push(x & 0xff); };
+    const pushStr = s => { for (let i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i)); };
+
+    const bits = Math.max(1, Math.ceil(Math.log2(palette.length)));
+    const gctBits = bits - 1;                 // stored size field
+    const gctLen = 1 << bits;                  // padded color-table length
+    const minCode = Math.max(2, gctBits + 1);
+
+    pushStr('GIF89a');
+    // Logical screen descriptor
+    push(width & 255, width >> 8, height & 255, height >> 8);
+    push(0x80 | (gctBits << 4) | gctBits, 0, 0);
+    // Global color table (padded)
+    for (let i = 0; i < gctLen; i++) {
+        const c = palette[i] || [0, 0, 0];
+        push(c[0], c[1], c[2]);
+    }
+    // NETSCAPE looping extension
+    push(0x21, 0xFF, 0x0B);
+    pushStr('NETSCAPE2.0');
+    push(0x03, 0x01, 0x00, 0x00, 0x00);
+
+    for (const f of frames) {
+        // Graphic control extension: disposal=2 (restore to bg), transparent flag set
+        const packed = (2 << 2) | 0x01;
+        push(0x21, 0xF9, 0x04, packed, f.delay & 255, (f.delay >> 8) & 255, transIndex, 0x00);
+        // Image descriptor
+        push(0x2C, 0, 0, 0, 0, width & 255, width >> 8, height & 255, height >> 8, 0x00);
+        // LZW data
+        push(minCode);
+        const data = lzwEncode(f.indices, minCode);
+        let p = 0;
+        while (p < data.length) {
+            const n = Math.min(255, data.length - p);
+            push(n);
+            for (let i = 0; i < n; i++) push(data[p + i]);
+            p += n;
+        }
+        push(0x00);
+    }
+    push(0x3B);
+    return new Uint8Array(bytes);
+}
+
+/* ============================================================
+   Build pipeline with automatic size reduction
+   ============================================================ */
+function encodeAtColors(framesData, delays, maxColors) {
+    const palette = medianCut(samplePixels(framesData), maxColors);
+    const transIndex = palette.length;             // one reserved transparent slot
+    const encPalette = [...palette, [0, 0, 0]];
+    const indexed = framesData.map(d => mapFrame(d, palette, transIndex));
+    const frames = indexed.map((ind, i) => ({ indices: ind, delay: delays[i] }));
+    return encodeGIF(frames, SIZE, SIZE, encPalette, transIndex);
+}
+
+function buildGif(framesData, delays) {
+    let reduced = false;
+    for (const colors of [255, 192, 128, 64, 32]) {
+        const gif = encodeAtColors(framesData, delays, colors);
+        if (gif.length <= MAX_BYTES || colors === 32) {
+            return { bytes: gif, size: gif.length, reduced, colors, frames: framesData.length };
+        }
+        reduced = true;
+    }
+}
+
+/* ============================================================
+   Show result
+   ============================================================ */
+function showResult(result) {
+    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    const blob = new Blob([result.bytes], { type: 'image/gif' });
+    currentBlobUrl = URL.createObjectURL(blob);
+    preview.src = currentBlobUrl;      // the <img> IS the real output GIF, animated by the browser
+    previewWrap.classList.add('show');
+
+    const kb = (result.size / 1024).toFixed(1);
+    const ok = result.size <= MAX_BYTES;
+    sizeLine.className = 'size-line' + (ok ? '' : ' warn');
+    sizeLine.innerHTML = `<b>${kb} KB</b> &middot; ${SIZE}&times;${SIZE} &middot; ${result.frames} frame${result.frames > 1 ? 's' : ''}`
+        + (ok ? ' &middot; Slack-ready ✅' : ' &middot; still over 128KB ⚠️');
+
+    downloadBtn.disabled = false;
+    downloadBtn.onclick = () => downloadBlob(blob);
+
+    if (result.reduced) {
+        note.textContent = `Compressed to ${result.colors} colors to fit Slack's 128KB limit.`;
+    } else {
+        note.textContent = '';
+    }
+}
+
+function downloadBlob(blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${currentEffect || 'emoji'}.gif`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function setBusy(on) {
+    spinner.classList.toggle('show', on);
+    dlText.textContent = on ? 'Building…' : 'Download';
+    downloadBtn.disabled = on;
+    [...effectsEl.children].forEach(b => b.disabled = on);
+}
+
+/* ---------- Reset ---------- */
+resetBtn.addEventListener('click', () => {
+    sourceFrames = [];
+    currentEffect = null;
+    if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
+    preview.removeAttribute('src');
+    previewWrap.classList.remove('show');
+    controls.classList.add('hidden');
+    [...effectsEl.children].forEach(b => b.classList.remove('active'));
+    fileInput.value = '';
+    note.textContent = '';
+});
+</script>
+</body>
+</html>

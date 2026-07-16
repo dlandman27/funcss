@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOU ARE BEING WATCHED</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        @import url('data:text/css,');
+
+        :root {
+            --green: #00ff41;
+            --green-dim: #00aa2a;
+            --green-dark: #003d10;
+            --green-faint: rgba(0, 255, 65, 0.07);
+            --red: #ff2200;
+            --amber: #ffaa00;
+            --bg: #000301;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--green);
+            font-family: 'Courier New', Courier, monospace;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            cursor: none;
+            user-select: none;
+        }
+
+        /* ─── SCANLINES ─── */
+        #scanlines {
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 3px,
+                rgba(0, 0, 0, 0.18) 3px,
+                rgba(0, 0, 0, 0.18) 4px
+            );
+            pointer-events: none;
+            z-index: 100;
+            animation: scanPan 8s linear infinite;
+        }
+
+        @keyframes scanPan {
+            0%   { background-position: 0 0; }
+            100% { background-position: 0 200px; }
+        }
+
+        /* ─── VIGNETTE ─── */
+        #vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.85) 100%);
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        /* ─── MAIN FEED ─── */
+        #feed-wrapper {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #feed-container {
+            position: relative;
+            width: min(90vw, 160vh);
+            aspect-ratio: 16/9;
+            background: #000;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            box-shadow:
+                0 0 40px rgba(0, 255, 65, 0.08),
+                inset 0 0 60px rgba(0, 0, 0, 0.8);
+        }
+
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(0) brightness(1.1) contrast(1.2) sepia(0.3) hue-rotate(90deg);
+            transform: scaleX(-1);
+            display: none;
+        }
+
+        #static-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* green tint overlay on video */
+        #feed-tint {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 60, 10, 0.35);
+            mix-blend-mode: multiply;
+            pointer-events: none;
+        }
+
+        /* ─── TRACKING BOX ─── */
+        #tracker {
+            position: absolute;
+            border: 2px solid var(--green);
+            box-shadow: 0 0 8px rgba(0, 255, 65, 0.6), inset 0 0 8px rgba(0, 255, 65, 0.05);
+            transition: left 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                        top 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                        width 0.8s ease,
+                        height 0.8s ease;
+            pointer-events: none;
+        }
+
+        .tracker-corner {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-color: var(--green);
+            border-style: solid;
+        }
+        .tracker-corner.tl { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .tracker-corner.tr { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+        .tracker-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 2px 2px; }
+        .tracker-corner.br { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+        #tracker-label {
+            position: absolute;
+            top: -22px;
+            left: 0;
+            font-size: clamp(8px, 1.2vw, 12px);
+            color: var(--green);
+            white-space: nowrap;
+            letter-spacing: 0.08em;
+        }
+
+        #tracker-confidence {
+            position: absolute;
+            bottom: -20px;
+            right: 0;
+            font-size: clamp(7px, 1vw, 11px);
+            color: var(--green-dim);
+            white-space: nowrap;
+        }
+
+        /* ─── HUD TOP-LEFT ─── */
+        #hud-topleft {
+            position: absolute;
+            top: clamp(8px, 2%, 18px);
+            left: clamp(8px, 2%, 18px);
+            font-size: clamp(9px, 1.4vw, 13px);
+            line-height: 1.7;
+            pointer-events: none;
+        }
+
+        .cam-id {
+            font-size: clamp(12px, 2vw, 18px);
+            font-weight: bold;
+            letter-spacing: 0.12em;
+            color: var(--green);
+            text-shadow: 0 0 10px rgba(0,255,65,0.8);
+        }
+
+        .hud-row {
+            color: var(--green-dim);
+            letter-spacing: 0.06em;
+        }
+
+        .hud-highlight {
+            color: var(--green);
+        }
+
+        /* ─── HUD TOP-RIGHT ─── */
+        #hud-topright {
+            position: absolute;
+            top: clamp(8px, 2%, 18px);
+            right: clamp(8px, 2%, 18px);
+            text-align: right;
+            font-size: clamp(9px, 1.4vw, 13px);
+            line-height: 1.7;
+            pointer-events: none;
+        }
+
+        #rec-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            font-size: clamp(11px, 1.8vw, 16px);
+            font-weight: bold;
+            color: var(--red);
+            letter-spacing: 0.12em;
+            text-shadow: 0 0 8px rgba(255, 34, 0, 0.8);
+        }
+
+        #rec-dot {
+            width: clamp(7px, 1vw, 10px);
+            height: clamp(7px, 1vw, 10px);
+            border-radius: 50%;
+            background: var(--red);
+            box-shadow: 0 0 6px var(--red);
+            animation: recBlink 1s step-end infinite;
+        }
+
+        @keyframes recBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* ─── HUD BOTTOM-LEFT ─── */
+        #hud-bottomleft {
+            position: absolute;
+            bottom: clamp(8px, 2%, 18px);
+            left: clamp(8px, 2%, 18px);
+            font-size: clamp(8px, 1.2vw, 12px);
+            line-height: 1.7;
+            pointer-events: none;
+        }
+
+        /* ─── HUD BOTTOM-RIGHT ─── */
+        #hud-bottomright {
+            position: absolute;
+            bottom: clamp(8px, 2%, 18px);
+            right: clamp(8px, 2%, 18px);
+            text-align: right;
+            font-size: clamp(8px, 1.2vw, 12px);
+            line-height: 1.7;
+            pointer-events: none;
+        }
+
+        /* ─── BIOMETRIC SIDEBAR ─── */
+        #biometrics {
+            position: absolute;
+            top: 50%;
+            right: clamp(8px, 2%, 18px);
+            transform: translateY(-50%);
+            font-size: clamp(8px, 1.1vw, 12px);
+            line-height: 2;
+            pointer-events: none;
+            border-left: 1px solid rgba(0,255,65,0.3);
+            padding-left: clamp(6px, 1.2vw, 14px);
+        }
+
+        .bio-label {
+            color: var(--green-dim);
+            letter-spacing: 0.06em;
+            font-size: 0.85em;
+        }
+
+        .bio-value {
+            color: var(--green);
+            font-weight: bold;
+            letter-spacing: 0.1em;
+        }
+
+        .bio-value.warn {
+            color: var(--amber);
+            text-shadow: 0 0 6px rgba(255,170,0,0.7);
+            animation: warnPulse 1.2s ease-in-out infinite;
+        }
+
+        .bio-value.danger {
+            color: var(--red);
+            text-shadow: 0 0 8px rgba(255, 34, 0, 0.8);
+            animation: dangerPulse 0.6s ease-in-out infinite;
+        }
+
+        @keyframes warnPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes dangerPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .threat-bar-bg {
+            width: 100%;
+            height: 4px;
+            background: rgba(0,255,65,0.15);
+            border-radius: 2px;
+            margin: 2px 0 6px 0;
+            overflow: hidden;
+        }
+
+        .threat-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--green);
+            transition: width 2s ease, background 2s ease;
+        }
+
+        /* ─── SUBJECT IDENTIFIED FLASH ─── */
+        #subject-id {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        #subject-id-text {
+            font-size: clamp(18px, 4vw, 48px);
+            font-weight: bold;
+            letter-spacing: 0.18em;
+            color: var(--green);
+            text-shadow:
+                0 0 20px rgba(0,255,65,1),
+                0 0 40px rgba(0,255,65,0.6),
+                0 0 80px rgba(0,255,65,0.3);
+            border: 2px solid var(--green);
+            padding: 12px 30px;
+            background: rgba(0,0,0,0.6);
+        }
+
+        #subject-sub {
+            font-size: clamp(9px, 1.5vw, 14px);
+            color: var(--green-dim);
+            letter-spacing: 0.2em;
+            margin-top: 10px;
+        }
+
+        @keyframes flashIn {
+            0%   { opacity: 0; transform: scale(1.3); }
+            15%  { opacity: 1; transform: scale(1); }
+            80%  { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.95); }
+        }
+
+        .flash-anim {
+            animation: flashIn 2.5s ease forwards;
+        }
+
+        /* ─── ALERT OVERLAY ─── */
+        #alert-overlay {
+            position: absolute;
+            inset: 0;
+            border: 3px solid var(--red);
+            box-shadow: inset 0 0 40px rgba(255,34,0,0.2);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #alert-overlay.active {
+            opacity: 1;
+            animation: alertFlash 0.8s step-end infinite;
+        }
+
+        @keyframes alertFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        /* ─── GLITCH ─── */
+        #glitch-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .glitch-strip {
+            position: absolute;
+            left: 0;
+            right: 0;
+            background: rgba(0, 255, 65, 0.06);
+            transform: translateX(0);
+        }
+
+        /* ─── GRID OVERLAY ─── */
+        #grid-overlay {
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(rgba(0,255,65,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,65,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        /* ─── PROGRESS BARS (signal, integrity) ─── */
+        .mini-bar-bg {
+            display: inline-block;
+            width: clamp(30px, 5vw, 60px);
+            height: 5px;
+            background: rgba(0,255,65,0.15);
+            border-radius: 2px;
+            vertical-align: middle;
+            margin-left: 4px;
+            overflow: hidden;
+        }
+        .mini-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--green);
+            transition: width 3s ease;
+        }
+
+        /* ─── INTRO SCREEN ─── */
+        #intro {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            gap: 20px;
+            transition: opacity 0.8s ease;
+        }
+
+        #intro h1 {
+            font-size: clamp(22px, 5vw, 56px);
+            letter-spacing: 0.2em;
+            color: var(--green);
+            text-shadow: 0 0 30px rgba(0,255,65,0.8);
+            text-align: center;
+            animation: flicker 4s step-end infinite;
+        }
+
+        @keyframes flicker {
+            0%,100% { opacity:1 }
+            92%  { opacity:1 }
+            93%  { opacity:0.1 }
+            94%  { opacity:1 }
+            96%  { opacity:0.05 }
+            97%  { opacity:1 }
+        }
+
+        #intro p {
+            color: var(--green-dim);
+            font-size: clamp(11px, 1.6vw, 15px);
+            letter-spacing: 0.12em;
+            text-align: center;
+            max-width: 480px;
+            padding: 0 20px;
+            line-height: 1.7;
+        }
+
+        #intro-btn {
+            margin-top: 10px;
+            background: none;
+            border: 2px solid var(--green);
+            color: var(--green);
+            font-family: 'Courier New', monospace;
+            font-size: clamp(13px, 1.8vw, 17px);
+            letter-spacing: 0.15em;
+            padding: 12px 32px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+        }
+
+        #intro-btn:hover {
+            background: rgba(0,255,65,0.12);
+            box-shadow: 0 0 20px rgba(0,255,65,0.4);
+        }
+
+        #intro-sub {
+            font-size: clamp(9px, 1.2vw, 12px);
+            color: rgba(0,255,65,0.3);
+            letter-spacing: 0.08em;
+        }
+
+        /* ─── TYPEWRITER ─── */
+        .typed::after {
+            content: '_';
+            animation: blink 0.7s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── INTRO ─── -->
+<div id="intro">
+    <h1>YOU ARE BEING WATCHED</h1>
+    <p id="intro-type"></p>
+    <button id="intro-btn">ACKNOWLEDGE &amp; CONTINUE</button>
+    <span id="intro-sub">CONNECTION ENCRYPTED &bull; SESSION LOGGED</span>
+</div>
+
+<!-- ─── SCANLINES + VIGNETTE ─── -->
+<div id="scanlines"></div>
+<div id="vignette"></div>
+
+<!-- ─── FEED ─── -->
+<div id="feed-wrapper">
+    <div id="feed-container">
+
+        <!-- The actual video / static canvas -->
+        <video id="webcam" autoplay muted playsinline></video>
+        <canvas id="static-canvas"></canvas>
+        <div id="feed-tint"></div>
+
+        <!-- Grid overlay -->
+        <div id="grid-overlay"></div>
+
+        <!-- Glitch strips -->
+        <div id="glitch-layer"></div>
+
+        <!-- ─── TRACKING BOX ─── -->
+        <div id="tracker">
+            <div class="tracker-corner tl"></div>
+            <div class="tracker-corner tr"></div>
+            <div class="tracker-corner bl"></div>
+            <div class="tracker-corner br"></div>
+            <div id="tracker-label">SUBJECT_001 ▶ TRACKING</div>
+            <div id="tracker-confidence">CONF: <span id="conf-val">97.3%</span></div>
+        </div>
+
+        <!-- ─── HUD TOP LEFT ─── -->
+        <div id="hud-topleft">
+            <div class="cam-id">CAM 04</div>
+            <div class="hud-row">SYS: <span class="hud-highlight">ONLINE</span></div>
+            <div class="hud-row">MODE: <span class="hud-highlight">SURVEILLANCE</span></div>
+            <div class="hud-row">SIGNAL: <span class="mini-bar-bg"><span class="mini-bar-fill" id="signal-bar" style="width:87%"></span></span></div>
+        </div>
+
+        <!-- ─── HUD TOP RIGHT ─── -->
+        <div id="hud-topright">
+            <div id="rec-indicator"><div id="rec-dot"></div>REC</div>
+            <div class="hud-row" id="timestamp">--:--:--</div>
+            <div class="hud-row" id="datestamp">----/--/--</div>
+            <div class="hud-row">FRAME: <span class="hud-highlight" id="frame-count">000000</span></div>
+        </div>
+
+        <!-- ─── HUD BOTTOM LEFT ─── -->
+        <div id="hud-bottomleft">
+            <div class="hud-row">LOC: <span class="hud-highlight" id="coord-lat">51.5074° N</span></div>
+            <div class="hud-row">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hud-highlight" id="coord-lon">0.1278° W</span></div>
+            <div class="hud-row">NODE: <span class="hud-highlight">ALPHA-7</span></div>
+            <div class="hud-row">INTEGRITY: <span class="mini-bar-bg"><span class="mini-bar-fill" id="integrity-bar" style="width:100%"></span></span></div>
+        </div>
+
+        <!-- ─── HUD BOTTOM RIGHT ─── -->
+        <div id="hud-bottomright">
+            <div class="hud-row">SUBJECTS: <span class="hud-highlight">1</span></div>
+            <div class="hud-row">ZONE: <span class="hud-highlight">SECTOR 9</span></div>
+            <div class="hud-row">UPLINK: <span class="hud-highlight" id="uplink-ms">24ms</span></div>
+        </div>
+
+        <!-- ─── BIOMETRICS ─── -->
+        <div id="biometrics">
+            <div class="bio-label">HEART RATE</div>
+            <div class="bio-value" id="bio-hr">72 BPM</div>
+            <div class="bio-label">TEMP</div>
+            <div class="bio-value" id="bio-temp">36.6 °C</div>
+            <div class="bio-label">STRESS</div>
+            <div class="bio-value" id="bio-stress">LOW</div>
+            <div class="bio-label">THREAT LVL</div>
+            <div class="bio-value" id="bio-threat">LOW</div>
+            <div class="threat-bar-bg">
+                <div class="threat-bar-fill" id="threat-fill" style="width:15%"></div>
+            </div>
+            <div class="bio-label">PROFILE</div>
+            <div class="bio-value" id="bio-profile">UNKNOWN</div>
+            <div class="bio-label">CLEARANCE</div>
+            <div class="bio-value" id="bio-clearance">NONE</div>
+        </div>
+
+        <!-- ─── SUBJECT ID FLASH ─── -->
+        <div id="subject-id">
+            <div id="subject-id-text">SUBJECT IDENTIFIED</div>
+            <div id="subject-sub">CROSS-REFERENCING DATABASE...</div>
+        </div>
+
+        <!-- Alert border -->
+        <div id="alert-overlay"></div>
+
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ─────────────────────── INTRO TYPEWRITER ─────────────────────── */
+    const introType = document.getElementById('intro-type');
+    const introLines = [
+        'This terminal has detected a human presence.',
+        'Initializing facial recognition...',
+        'Your session is being recorded.',
+        'You have been profiled.'
+    ];
+    let lineIdx = 0, charIdx = 0, typingDone = false;
+
+    introType.classList.add('typed');
+
+    function typeNext() {
+        if (lineIdx >= introLines.length) {
+            typingDone = true;
+            introType.classList.remove('typed');
+            return;
+        }
+        const line = introLines[lineIdx];
+        if (charIdx <= line.length) {
+            introType.textContent = line.substring(0, charIdx);
+            charIdx++;
+            setTimeout(typeNext, 45);
+        } else {
+            charIdx = 0;
+            lineIdx++;
+            setTimeout(typeNext, 900);
+        }
+    }
+    setTimeout(typeNext, 600);
+
+    document.getElementById('intro-btn').addEventListener('click', () => {
+        const intro = document.getElementById('intro');
+        intro.style.opacity = '0';
+        setTimeout(() => { intro.style.display = 'none'; }, 800);
+        initSurveillance();
+    });
+
+    /* ─────────────────────── CORE INIT ─────────────────────── */
+    let usingWebcam = false;
+    let frameCount = 0;
+    let startTime = Date.now();
+    let threatLevel = 0;       // 0-100
+    let heartRate = 72;
+    let trackerX = 35, trackerY = 25, trackerW = 28, trackerH = 38;
+    let targetTX = 35, targetTY = 25, targetTW = 28, targetTH = 38;
+
+    function initSurveillance() {
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // try webcam
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+                .then(stream => {
+                    usingWebcam = true;
+                    const video = document.getElementById('webcam');
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                    document.getElementById('static-canvas').style.display = 'none';
+                })
+                .catch(() => {
+                    startStaticCanvas();
+                });
+        } else {
+            startStaticCanvas();
+        }
+
+        startTracker();
+        startBiometrics();
+        startGlitch();
+        startGlitchStrips();
+
+        // Subject identified after 4s
+        setTimeout(flashSubjectIdentified, 4000);
+        // Second more urgent flash
+        setTimeout(() => flashSubjectIdentified('FACIAL MATCH: 98.7%', 'IDENTITY CONFIRMED — DATABASE UPDATED'), 12000);
+
+        // Fake coord drift
+        setInterval(driftCoords, 3000);
+        // Uplink jitter
+        setInterval(jitterUplink, 2000);
+        // Signal noise
+        setInterval(signalNoise, 5000);
+        // Frame counter
+        setInterval(() => {
+            frameCount += Math.floor(Math.random() * 3) + 1;
+            document.getElementById('frame-count').textContent = String(frameCount).padStart(6, '0');
+        }, 33);
+    }
+
+    /* ─────────────────────── CLOCK ─────────────────────── */
+    function updateClock() {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        document.getElementById('timestamp').textContent =
+            pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+        document.getElementById('datestamp').textContent =
+            now.getFullYear() + '/' + pad(now.getMonth() + 1) + '/' + pad(now.getDate());
+    }
+
+    /* ─────────────────────── STATIC CANVAS ─────────────────────── */
+    function startStaticCanvas() {
+        const canvas = document.getElementById('static-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        let frame = 0;
+        function drawStatic() {
+            const w = canvas.width, h = canvas.height;
+            const imageData = ctx.createImageData(w, h);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const v = Math.random() > 0.5
+                    ? Math.floor(Math.random() * 80)
+                    : Math.floor(Math.random() * 30);
+                // green tinted
+                data[i]     = v * 0.1;   // R
+                data[i + 1] = v;          // G
+                data[i + 2] = v * 0.15;  // B
+                data[i + 3] = 255;
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            // occasional horizontal band
+            if (Math.random() < 0.04) {
+                const bandY = Math.random() * h;
+                const bandH = Math.random() * 20 + 5;
+                ctx.fillStyle = 'rgba(0,255,65,0.06)';
+                ctx.fillRect(0, bandY, w, bandH);
+            }
+
+            // scanline shimmer
+            if (frame % 3 === 0) {
+                const scanY = (frame * 4) % h;
+                const grad = ctx.createLinearGradient(0, scanY, 0, scanY + 3);
+                grad.addColorStop(0, 'rgba(0,255,65,0)');
+                grad.addColorStop(0.5, 'rgba(0,255,65,0.04)');
+                grad.addColorStop(1, 'rgba(0,255,65,0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, scanY, w, 3);
+            }
+
+            frame++;
+            requestAnimationFrame(drawStatic);
+        }
+        drawStatic();
+    }
+
+    /* ─────────────────────── TRACKER ─────────────────────── */
+    function startTracker() {
+        const tracker = document.getElementById('tracker');
+        const container = document.getElementById('feed-container');
+
+        function moveTracker() {
+            const cw = container.clientWidth;
+            const ch = container.clientHeight;
+
+            // Target a region that feels like a face in the center-ish area
+            const cx = 50 + (Math.random() - 0.5) * 20;  // % across
+            const cy = 30 + (Math.random() - 0.5) * 20;  // % down
+            const size = 18 + Math.random() * 12;
+
+            targetTX = cx - size / 2;
+            targetTY = cy - size / 1.4;
+            targetTW = size;
+            targetTH = size * 1.3;
+
+            tracker.style.left   = targetTX + '%';
+            tracker.style.top    = targetTY + '%';
+            tracker.style.width  = targetTW + '%';
+            tracker.style.height = targetTH + '%';
+
+            // Update confidence
+            const conf = (94 + Math.random() * 5.9).toFixed(1);
+            document.getElementById('conf-val').textContent = conf + '%';
+        }
+
+        moveTracker();
+        setInterval(moveTracker, 2200);
+
+        // Micro-jitter
+        setInterval(() => {
+            const jx = (Math.random() - 0.5) * 0.8;
+            const jy = (Math.random() - 0.5) * 0.8;
+            tracker.style.left = (targetTX + jx) + '%';
+            tracker.style.top  = (targetTY + jy) + '%';
+        }, 150);
+    }
+
+    /* ─────────────────────── BIOMETRICS ─────────────────────── */
+    function startBiometrics() {
+        const elapsed = () => (Date.now() - startTime) / 1000;
+
+        setInterval(() => {
+            const t = elapsed();
+            // Threat escalates over 90 seconds
+            threatLevel = Math.min(100, (t / 90) * 100 + Math.random() * 5);
+
+            // Heart rate climbs with threat
+            const hrBase = 72 + (threatLevel / 100) * 45;
+            heartRate = hrBase + (Math.random() - 0.5) * 6;
+
+            // Temp
+            const temp = (36.6 + (threatLevel / 100) * 1.8 + (Math.random() - 0.5) * 0.1).toFixed(1);
+
+            document.getElementById('bio-hr').textContent = Math.round(heartRate) + ' BPM';
+            document.getElementById('bio-temp').textContent = temp + ' °C';
+
+            // Stress
+            let stress, stressClass;
+            if (threatLevel < 30) { stress = 'LOW';      stressClass = ''; }
+            else if (threatLevel < 60) { stress = 'ELEVATED'; stressClass = 'warn'; }
+            else { stress = 'CRITICAL'; stressClass = 'danger'; }
+
+            const stressEl = document.getElementById('bio-stress');
+            stressEl.textContent = stress;
+            stressEl.className = 'bio-value ' + stressClass;
+
+            // Threat label
+            let threat, threatClass;
+            if (threatLevel < 25) { threat = 'LOW';      threatClass = ''; }
+            else if (threatLevel < 55) { threat = 'MODERATE'; threatClass = 'warn'; }
+            else if (threatLevel < 80) { threat = 'HIGH';     threatClass = 'warn'; }
+            else { threat = 'CRITICAL'; threatClass = 'danger'; }
+
+            const threatEl = document.getElementById('bio-threat');
+            threatEl.textContent = threat;
+            threatEl.className = 'bio-value ' + threatClass;
+
+            // Bar
+            const fill = document.getElementById('threat-fill');
+            const pct = threatLevel;
+            fill.style.width = pct + '%';
+            if (pct < 25) fill.style.background = 'var(--green)';
+            else if (pct < 55) fill.style.background = 'var(--amber)';
+            else fill.style.background = 'var(--red)';
+
+            // Profile reveal
+            if (t > 20 && document.getElementById('bio-profile').textContent === 'UNKNOWN') {
+                document.getElementById('bio-profile').textContent = 'CIVILIAN';
+            }
+            if (t > 45 && document.getElementById('bio-clearance').textContent === 'NONE') {
+                document.getElementById('bio-clearance').textContent = 'LEVEL-0';
+            }
+
+            // Alert border at high threat
+            const alertOverlay = document.getElementById('alert-overlay');
+            if (threatLevel >= 80) {
+                alertOverlay.classList.add('active');
+            } else {
+                alertOverlay.classList.remove('active');
+            }
+
+        }, 1000);
+    }
+
+    /* ─────────────────────── SUBJECT FLASH ─────────────────────── */
+    function flashSubjectIdentified(line1, line2) {
+        const el = document.getElementById('subject-id');
+        const text = document.getElementById('subject-id-text');
+        const sub = document.getElementById('subject-sub');
+
+        text.textContent = line1 || 'SUBJECT IDENTIFIED';
+        sub.textContent  = line2 || 'CROSS-REFERENCING DATABASE...';
+
+        el.style.opacity = '0';
+        el.classList.remove('flash-anim');
+        // force reflow
+        void el.offsetWidth;
+        el.classList.add('flash-anim');
+    }
+
+    /* ─────────────────────── GLITCH ─────────────────────── */
+    function startGlitch() {
+        const container = document.getElementById('feed-container');
+
+        function doGlitch() {
+            const duration = Math.random() * 120 + 30;
+            container.style.transform = `translate(${(Math.random()-0.5)*4}px, ${(Math.random()-0.5)*2}px)`;
+            setTimeout(() => {
+                container.style.transform = '';
+            }, duration);
+        }
+
+        // Random glitch interval, more frequent as threat rises
+        function scheduleGlitch() {
+            const base = 3000 - (threatLevel / 100) * 2000;
+            const interval = base + Math.random() * 2000;
+            setTimeout(() => {
+                doGlitch();
+                scheduleGlitch();
+            }, interval);
+        }
+        scheduleGlitch();
+    }
+
+    function startGlitchStrips() {
+        const layer = document.getElementById('glitch-layer');
+
+        function makeStrip() {
+            const strip = document.createElement('div');
+            strip.className = 'glitch-strip';
+            const topPct = Math.random() * 95;
+            const heightPx = Math.random() * 8 + 2;
+            strip.style.top = topPct + '%';
+            strip.style.height = heightPx + 'px';
+            strip.style.opacity = (Math.random() * 0.4 + 0.1).toString();
+            strip.style.transform = `translateX(${(Math.random()-0.5)*10}%)`;
+            layer.appendChild(strip);
+            setTimeout(() => strip.remove(), Math.random() * 300 + 50);
+        }
+
+        function stripLoop() {
+            if (Math.random() < 0.4) makeStrip();
+            setTimeout(stripLoop, Math.random() * 400 + 100);
+        }
+        stripLoop();
+    }
+
+    /* ─────────────────────── DRIFT COORDS ─────────────────────── */
+    const baseLat = 51.5074, baseLon = -0.1278;
+    function driftCoords() {
+        const lat = baseLat + (Math.random() - 0.5) * 0.002;
+        const lon = baseLon + (Math.random() - 0.5) * 0.002;
+        const latDir = lat >= 0 ? 'N' : 'S';
+        const lonDir = lon >= 0 ? 'E' : 'W';
+        document.getElementById('coord-lat').textContent =
+            Math.abs(lat).toFixed(4) + '° ' + latDir;
+        document.getElementById('coord-lon').textContent =
+            Math.abs(lon).toFixed(4) + '° ' + lonDir;
+    }
+
+    /* ─────────────────────── UPLINK JITTER ─────────────────────── */
+    function jitterUplink() {
+        const ms = Math.floor(Math.random() * 80 + 10);
+        document.getElementById('uplink-ms').textContent = ms + 'ms';
+    }
+
+    /* ─────────────────────── SIGNAL NOISE ─────────────────────── */
+    function signalNoise() {
+        const pct = Math.floor(70 + Math.random() * 28);
+        document.getElementById('signal-bar').style.width = pct + '%';
+        const integ = Math.floor(88 + Math.random() * 12);
+        document.getElementById('integrity-bar').style.width = integ + '%';
+    }
+
+})();
+</script>
+</body>
+</html>

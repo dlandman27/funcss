@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paint by Number</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1e;
+      color: #e8e8ec;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 20px 24px 0;
+      text-align: center;
+    }
+    header h1 { font-size: 1.6em; font-weight: 700; letter-spacing: -0.02em; }
+    header p { color: #888; font-size: 0.88em; margin-top: 4px; }
+
+    /* ── Upload screen ── */
+    #upload-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 40px 20px;
+    }
+
+    .drop-zone {
+      width: min(480px, 92vw);
+      height: 220px;
+      border: 2px dashed #444;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: #222228;
+    }
+    .drop-zone:hover, .drop-zone.drag { border-color: #7b6cff; background: #26262e; }
+    .drop-zone .icon { font-size: 40px; }
+    .drop-zone p { color: #aaa; font-size: 0.9em; }
+    .drop-zone strong { color: #ddd; }
+
+    #fileInput { display: none; }
+
+    .controls-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    label.ctrl { display: flex; flex-direction: column; gap: 4px; font-size: 0.82em; color: #aaa; }
+    label.ctrl select, label.ctrl input[type=range] { margin-top: 2px; }
+    select {
+      background: #2a2a32; border: 1px solid #444; color: #ddd;
+      padding: 6px 10px; border-radius: 8px; font-size: 0.9em; cursor: pointer;
+    }
+    input[type=range] { width: 120px; cursor: pointer; accent-color: #7b6cff; }
+
+    .btn {
+      padding: 10px 24px; border-radius: 10px; font-size: 0.92em; font-weight: 600;
+      cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: #7b6cff; color: #fff; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-ghost { background: #2a2a32; color: #ccc; border: 1px solid #444; }
+    .btn-ghost:hover { background: #333340; }
+
+    /* ── App screen ── */
+    #app-screen { display: none; flex: 1; flex-direction: column; padding: 12px; gap: 12px; }
+    #app-screen.visible { display: flex; }
+
+    .top-bar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between;
+      background: #222228; border-radius: 10px; padding: 10px 14px;
+    }
+    .top-bar .left { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .top-bar .right { display: flex; gap: 8px; align-items: center; }
+
+    #progress-text { font-size: 0.82em; color: #aaa; }
+    #progress-bar-wrap { width: 120px; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
+    #progress-bar { height: 100%; background: #7b6cff; width: 0%; transition: width 0.3s; border-radius: 3px; }
+
+    .main-area {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 160px;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    @media (max-width: 600px) {
+      .main-area { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    }
+
+    .canvas-wrap {
+      background: #222228; border-radius: 10px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; position: relative;
+      min-height: 300px;
+    }
+
+    #paintCanvas {
+      max-width: 100%; max-height: calc(100vh - 220px);
+      display: block; cursor: crosshair;
+      image-rendering: pixelated;
+    }
+
+    /* Palette sidebar */
+    .palette-panel {
+      background: #222228; border-radius: 10px; padding: 12px;
+      display: flex; flex-direction: column; gap: 8px; overflow-y: auto;
+    }
+    .palette-panel h3 { font-size: 0.78em; color: #888; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+
+    .color-swatch {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 8px; cursor: pointer;
+      border: 2px solid transparent; transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .color-swatch:hover { background: #2a2a35; }
+    .color-swatch.active { border-color: #7b6cff; background: #2a2a35; }
+    .swatch-box {
+      width: 26px; height: 26px; border-radius: 5px; flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .swatch-label { font-size: 0.85em; font-weight: 600; }
+    .swatch-count { font-size: 0.72em; color: #666; margin-left: auto; }
+    .swatch-done { opacity: 0.45; }
+    .swatch-done .swatch-box { opacity: 0.5; }
+
+    /* Eraser */
+    .eraser-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 8px; cursor: pointer;
+      border: 2px solid transparent; background: none; color: #aaa;
+      font-size: 0.85em; font-family: inherit; transition: background 0.15s, border-color 0.15s;
+      width: 100%;
+    }
+    .eraser-btn:hover { background: #2a2a35; }
+    .eraser-btn.active { border-color: #ff9eb5; background: #2a2a35; color: #ff9eb5; }
+
+    #loading-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 100; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    }
+    #loading-overlay.show { display: flex; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: #7b6cff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-msg { font-size: 0.9em; color: #aaa; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Paint by Number</h1>
+  <p>Upload a photo — get a paint-by-number template to fill in</p>
+</header>
+
+<!-- Upload screen -->
+<div id="upload-screen">
+  <div class="drop-zone" id="dropZone">
+    <div class="icon">🖼️</div>
+    <p><strong>Click to upload</strong> or drag an image here</p>
+    <p>JPG, PNG, GIF, WebP</p>
+  </div>
+  <input type="file" id="fileInput" accept="image/*">
+
+  <div class="controls-row">
+    <label class="ctrl">
+      Colors
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="range" id="colorCount" min="4" max="20" value="10" step="1">
+        <span id="colorCountVal" style="color:#ddd;font-size:0.9em;min-width:18px">10</span>
+      </div>
+    </label>
+    <label class="ctrl">
+      Detail
+      <select id="detailLevel">
+        <option value="320">Low (fast)</option>
+        <option value="500" selected>Medium</option>
+        <option value="700">High (slow)</option>
+      </select>
+    </label>
+  </div>
+
+  <button class="btn btn-primary" id="processBtn" style="display:none">Generate Paint by Number</button>
+</div>
+
+<!-- App screen -->
+<div id="app-screen">
+  <div class="top-bar">
+    <div class="left">
+      <button class="btn btn-ghost" id="newImageBtn">← New Image</button>
+      <button class="btn btn-ghost" id="toggleRefBtn">👁 Reference</button>
+      <button class="btn btn-ghost" id="downloadBtn">⬇ Save</button>
+    </div>
+    <div class="right">
+      <span id="progress-text">0 / 0 filled</span>
+      <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <div class="canvas-wrap">
+      <canvas id="paintCanvas"></canvas>
+    </div>
+    <div class="palette-panel" id="palettePanel">
+      <h3>Colors</h3>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div id="loading-msg">Processing image…</div>
+</div>
+
+<script>
+(() => {
+  // ── State ──
+  let originalImg = null;
+  let quantizedData = null; // Uint8Array of color indices per pixel
+  let regionMap = null;     // Int32Array: region ID per pixel
+  let regions = [];         // [{id, colorIndex, area, cx, cy}]
+  let palette = [];         // [{r,g,b}]
+  let filledRegions = new Set();
+  let selectedColor = 0;    // palette index (or -1 for eraser)
+  let imgW = 0, imgH = 0;
+  let showReference = false;
+
+  // Paint canvas layers:
+  // - outlineCanvas (offscreen): black outlines + numbers
+  // - fillCanvas (offscreen): user fills
+  let outlineCanvas, fillCanvas, outlineCtx, fillCtx;
+
+  const uploadScreen  = document.getElementById('upload-screen');
+  const appScreen     = document.getElementById('app-screen');
+  const dropZone      = document.getElementById('dropZone');
+  const fileInput     = document.getElementById('fileInput');
+  const processBtn    = document.getElementById('processBtn');
+  const paintCanvas   = document.getElementById('paintCanvas');
+  const paintCtx      = paintCanvas.getContext('2d');
+  const palettePanel  = document.getElementById('palettePanel');
+  const colorCountEl  = document.getElementById('colorCount');
+  const colorCountVal = document.getElementById('colorCountVal');
+  const loadingOverlay= document.getElementById('loading-overlay');
+  const loadingMsg    = document.getElementById('loading-msg');
+  const progressText  = document.getElementById('progress-text');
+  const progressBar   = document.getElementById('progress-bar');
+  const toggleRefBtn  = document.getElementById('toggleRefBtn');
+  const newImageBtn   = document.getElementById('newImageBtn');
+  const downloadBtn   = document.getElementById('downloadBtn');
+
+  colorCountEl.addEventListener('input', () => colorCountVal.textContent = colorCountEl.value);
+
+  // ── Upload / drag ──
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => e.target.files[0] && loadImage(e.target.files[0]));
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); e.dataTransfer.files[0] && loadImage(e.dataTransfer.files[0]); });
+
+  function loadImage(file) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      originalImg = img;
+      processBtn.style.display = 'block';
+      // Show tiny preview in drop zone
+      dropZone.innerHTML = `<div class="icon">✅</div><p><strong>${file.name}</strong></p><p>Click "Generate" to process</p>`;
+    };
+    img.src = url;
+  }
+
+  processBtn.addEventListener('click', () => {
+    if (!originalImg) return;
+    showLoading('Processing image…');
+    setTimeout(() => processImage(), 50);
+  });
+
+  // ── Main processing ──
+  function processImage() {
+    const maxDim = parseInt(document.getElementById('detailLevel').value);
+    const k = parseInt(colorCountEl.value);
+
+    // Resize
+    let w = originalImg.width, h = originalImg.height;
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    w = Math.round(w * scale);
+    h = Math.round(h * scale);
+    imgW = w; imgH = h;
+
+    const srcCanvas = document.createElement('canvas');
+    srcCanvas.width = w; srcCanvas.height = h;
+    const srcCtx = srcCanvas.getContext('2d');
+    srcCtx.drawImage(originalImg, 0, 0, w, h);
+    const imageData = srcCtx.getImageData(0, 0, w, h);
+    const pixels = imageData.data;
+
+    setLoading('Quantizing colors…');
+    setTimeout(() => {
+      palette = kMeans(pixels, w, h, k);
+      quantizedData = assignColors(pixels, w, h, palette);
+
+      setLoading('Finding regions…');
+      setTimeout(() => {
+        const result = labelRegions(quantizedData, w, h, palette.length);
+        regionMap = result.regionMap;
+        regions   = result.regions;
+
+        setLoading('Drawing template…');
+        setTimeout(() => {
+          buildCanvases(w, h, pixels);
+          hideLoading();
+          showApp();
+        }, 20);
+      }, 20);
+    }, 20);
+  }
+
+  // ── K-means ──
+  function kMeans(pixels, w, h, k) {
+    const n = w * h;
+    // Sample pixels
+    const step = Math.max(1, Math.floor(n / 2000));
+    const samples = [];
+    for (let i = 0; i < n; i += step) {
+      const p = i * 4;
+      if (pixels[p + 3] < 128) continue;
+      samples.push([pixels[p], pixels[p+1], pixels[p+2]]);
+    }
+
+    // Init centroids (k-means++ style)
+    const centroids = [samples[Math.floor(Math.random() * samples.length)]];
+    while (centroids.length < k) {
+      const dists = samples.map(s => {
+        let minD = Infinity;
+        centroids.forEach(c => { const d = colorDist2(s, c); if (d < minD) minD = d; });
+        return minD;
+      });
+      const sum = dists.reduce((a, b) => a + b, 0);
+      let rand = Math.random() * sum, cumul = 0;
+      for (let i = 0; i < samples.length; i++) {
+        cumul += dists[i];
+        if (cumul >= rand) { centroids.push(samples[i]); break; }
+      }
+    }
+
+    // Iterate
+    for (let iter = 0; iter < 12; iter++) {
+      const sums = centroids.map(() => [0,0,0,0]);
+      samples.forEach(s => {
+        let best = 0, bestD = Infinity;
+        centroids.forEach((c, ci) => { const d = colorDist2(s, c); if (d < bestD) { bestD = d; best = ci; } });
+        sums[best][0] += s[0]; sums[best][1] += s[1]; sums[best][2] += s[2]; sums[best][3]++;
+      });
+      centroids.forEach((c, ci) => {
+        const cnt = sums[ci][3];
+        if (cnt > 0) { centroids[ci] = [sums[ci][0]/cnt, sums[ci][1]/cnt, sums[ci][2]/cnt]; }
+      });
+    }
+
+    return centroids.map(c => ({ r: Math.round(c[0]), g: Math.round(c[1]), b: Math.round(c[2]) }));
+  }
+
+  function colorDist2(a, b) {
+    return (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2;
+  }
+
+  function assignColors(pixels, w, h, palette) {
+    const n = w * h;
+    const out = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const p = i * 4;
+      const r = pixels[p], g = pixels[p+1], b = pixels[p+2];
+      let best = 0, bestD = Infinity;
+      palette.forEach((c, ci) => {
+        const d = (r-c.r)**2 + (g-c.g)**2 + (b-c.b)**2;
+        if (d < bestD) { bestD = d; best = ci; }
+      });
+      out[i] = best;
+    }
+    return out;
+  }
+
+  // ── Connected components (BFS) ──
+  function labelRegions(qData, w, h, numColors) {
+    const n = w * h;
+    const regionMap = new Int32Array(n).fill(-1);
+    const regions = [];
+    let regionId = 0;
+    const MIN_AREA = Math.max(8, Math.floor(n / 5000));
+
+    for (let start = 0; start < n; start++) {
+      if (regionMap[start] !== -1) continue;
+      const colorIdx = qData[start];
+      // BFS
+      const queue = [start];
+      const pixels = [];
+      regionMap[start] = regionId;
+      let qi = 0;
+      while (qi < queue.length) {
+        const cur = queue[qi++];
+        pixels.push(cur);
+        const x = cur % w, y = Math.floor(cur / w);
+        const neighbors = [];
+        if (x > 0)   neighbors.push(cur - 1);
+        if (x < w-1) neighbors.push(cur + 1);
+        if (y > 0)   neighbors.push(cur - w);
+        if (y < h-1) neighbors.push(cur + w);
+        for (const nb of neighbors) {
+          if (regionMap[nb] === -1 && qData[nb] === colorIdx) {
+            regionMap[nb] = regionId;
+            queue.push(nb);
+          }
+        }
+      }
+
+      // Compute centroid
+      let sx = 0, sy = 0;
+      pixels.forEach(p => { sx += p % w; sy += Math.floor(p / w); });
+      const area = pixels.length;
+      const cx = Math.round(sx / area), cy = Math.round(sy / area);
+
+      regions.push({ id: regionId, colorIndex: colorIdx, area, cx, cy, pixels });
+      regionId++;
+    }
+
+    // Merge tiny regions into nearest neighbor
+    const smallRegions = regions.filter(r => r.area < MIN_AREA);
+    smallRegions.forEach(small => {
+      // Find a border neighbor with different region
+      let foundNeighbor = -1;
+      for (const pi of small.pixels) {
+        const x = pi % w, y = Math.floor(pi / w);
+        const nbs = [];
+        if (x > 0) nbs.push(pi-1); if (x < w-1) nbs.push(pi+1);
+        if (y > 0) nbs.push(pi-w); if (y < h-1) nbs.push(pi+w);
+        for (const nb of nbs) {
+          if (regionMap[nb] !== small.id) { foundNeighbor = regionMap[nb]; break; }
+        }
+        if (foundNeighbor !== -1) break;
+      }
+      if (foundNeighbor !== -1) {
+        small.pixels.forEach(pi => regionMap[pi] = foundNeighbor);
+        const target = regions.find(r => r.id === foundNeighbor);
+        if (target) target.area += small.area;
+        small.area = 0;
+      }
+    });
+
+    return { regionMap, regions: regions.filter(r => r.area > 0) };
+  }
+
+  // ── Build canvases ──
+  function buildCanvases(w, h, origPixels) {
+    outlineCanvas = document.createElement('canvas');
+    outlineCanvas.width = w; outlineCanvas.height = h;
+    outlineCtx = outlineCanvas.getContext('2d');
+
+    fillCanvas = document.createElement('canvas');
+    fillCanvas.width = w; fillCanvas.height = h;
+    fillCtx = fillCanvas.getContext('2d');
+
+    // Draw outline image (white bg + black borders + numbers)
+    const outImg = outlineCtx.createImageData(w, h);
+    const od = outImg.data;
+
+    // Fill white
+    for (let i = 0; i < w * h * 4; i += 4) {
+      od[i] = 245; od[i+1] = 245; od[i+2] = 245; od[i+3] = 255;
+    }
+
+    // Draw borders: where neighboring pixel has different color index
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        const c = quantizedData[i];
+        let isBorder = false;
+        if (x > 0   && quantizedData[i-1] !== c) isBorder = true;
+        if (x < w-1 && quantizedData[i+1] !== c) isBorder = true;
+        if (y > 0   && quantizedData[i-w] !== c) isBorder = true;
+        if (y < h-1 && quantizedData[i+w] !== c) isBorder = true;
+        if (isBorder) {
+          const p = i * 4;
+          od[p] = 30; od[p+1] = 30; od[p+2] = 30; od[p+3] = 255;
+        }
+      }
+    }
+
+    outlineCtx.putImageData(outImg, 0, 0);
+
+    // Draw numbers at region centroids
+    const SHOW_MIN = Math.max(12, Math.floor(w * h / 4000));
+    outlineCtx.textAlign = 'center';
+    outlineCtx.textBaseline = 'middle';
+
+    regions.forEach(r => {
+      if (r.area < SHOW_MIN) return;
+      const num = r.colorIndex + 1;
+      const fontSize = Math.max(6, Math.min(14, Math.sqrt(r.area) * 0.35));
+      outlineCtx.font = `bold ${fontSize}px Arial`;
+      outlineCtx.fillStyle = '#222';
+      outlineCtx.fillText(num, r.cx, r.cy);
+    });
+
+    // Fill canvas starts transparent
+    fillCtx.clearRect(0, 0, w, h);
+
+    // Size the visible canvas
+    const maxW = paintCanvas.parentElement.clientWidth - 4;
+    const maxH = window.innerHeight - 200;
+    const scale = Math.min(1, maxW / w, maxH / h);
+    paintCanvas.width  = Math.round(w * scale);
+    paintCanvas.height = Math.round(h * scale);
+    paintCanvas.style.width  = paintCanvas.width + 'px';
+    paintCanvas.style.height = paintCanvas.height + 'px';
+    paintCanvas._scale = scale;
+
+    renderPaintCanvas();
+    buildPalette();
+    updateProgress();
+  }
+
+  function renderPaintCanvas() {
+    const { width: cw, height: ch } = paintCanvas;
+    paintCtx.clearRect(0, 0, cw, ch);
+
+    if (showReference && originalImg) {
+      paintCtx.drawImage(originalImg, 0, 0, cw, ch);
+      return;
+    }
+
+    // White bg
+    paintCtx.fillStyle = '#f5f5f5';
+    paintCtx.fillRect(0, 0, cw, ch);
+
+    // User fills (scale fill canvas)
+    paintCtx.drawImage(fillCanvas, 0, 0, cw, ch);
+
+    // Outline on top
+    paintCtx.drawImage(outlineCanvas, 0, 0, cw, ch);
+  }
+
+  // ── Palette ──
+  function buildPalette() {
+    palettePanel.innerHTML = '<h3>Colors</h3>';
+
+    // Count pixels per color
+    const counts = new Array(palette.length).fill(0);
+    quantizedData.forEach(c => counts[c]++);
+
+    palette.forEach((col, i) => {
+      const hex = rgbToHex(col.r, col.g, col.b);
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch' + (i === selectedColor ? ' active' : '');
+      sw.dataset.idx = i;
+      sw.innerHTML = `
+        <div class="swatch-box" style="background:${hex}"></div>
+        <span class="swatch-label">${i+1}</span>
+        <span class="swatch-count">${Math.round(counts[i]/(imgW*imgH)*100)}%</span>
+      `;
+      sw.addEventListener('click', () => selectColor(i));
+      palettePanel.appendChild(sw);
+    });
+
+    // Eraser
+    const eraser = document.createElement('button');
+    eraser.className = 'eraser-btn';
+    eraser.innerHTML = '⬜ Eraser';
+    eraser.addEventListener('click', () => selectColor(-1));
+    palettePanel.appendChild(eraser);
+
+    // Select first color
+    selectColor(0);
+  }
+
+  function selectColor(idx) {
+    selectedColor = idx;
+    palettePanel.querySelectorAll('.color-swatch').forEach(sw => {
+      sw.classList.toggle('active', parseInt(sw.dataset.idx) === idx);
+    });
+    const eraser = palettePanel.querySelector('.eraser-btn');
+    if (eraser) eraser.classList.toggle('active', idx === -1);
+  }
+
+  // ── Painting ──
+  paintCanvas.addEventListener('click', e => {
+    if (!regionMap) return;
+    const rect = paintCanvas.getBoundingClientRect();
+    const scale = paintCanvas._scale || 1;
+    const x = Math.floor((e.clientX - rect.left) / scale);
+    const y = Math.floor((e.clientY - rect.top) / scale);
+    if (x < 0 || y < 0 || x >= imgW || y >= imgH) return;
+
+    const clickedRegionId = regionMap[y * imgW + x];
+    const region = regions.find(r => r.id === clickedRegionId);
+    if (!region) return;
+
+    if (selectedColor === -1) {
+      // Erase region
+      eraseRegion(region);
+      filledRegions.delete(clickedRegionId);
+    } else {
+      // Fill region with selected color
+      fillRegion(region, palette[selectedColor]);
+      filledRegions.add(clickedRegionId);
+    }
+
+    renderPaintCanvas();
+    updateProgress();
+  });
+
+  function fillRegion(region, color) {
+    const imgData = fillCtx.getImageData(0, 0, imgW, imgH);
+    const d = imgData.data;
+    region.pixels.forEach(pi => {
+      const p = pi * 4;
+      d[p]   = color.r;
+      d[p+1] = color.g;
+      d[p+2] = color.b;
+      d[p+3] = 255;
+    });
+    fillCtx.putImageData(imgData, 0, 0);
+  }
+
+  function eraseRegion(region) {
+    const imgData = fillCtx.getImageData(0, 0, imgW, imgH);
+    const d = imgData.data;
+    region.pixels.forEach(pi => {
+      const p = pi * 4;
+      d[p+3] = 0;
+    });
+    fillCtx.putImageData(imgData, 0, 0);
+  }
+
+  function updateProgress() {
+    const totalRegions = regions.filter(r => r.area >= Math.max(8, Math.floor(imgW*imgH/5000))).length;
+    const filled = filledRegions.size;
+    progressText.textContent = `${filled} / ${totalRegions} filled`;
+    const pct = totalRegions > 0 ? (filled / totalRegions) * 100 : 0;
+    progressBar.style.width = pct + '%';
+  }
+
+  // ── UI actions ──
+  toggleRefBtn.addEventListener('click', () => {
+    showReference = !showReference;
+    toggleRefBtn.textContent = showReference ? '🖼 Template' : '👁 Reference';
+    renderPaintCanvas();
+  });
+
+  newImageBtn.addEventListener('click', () => {
+    appScreen.classList.remove('visible');
+    uploadScreen.style.display = 'flex';
+    dropZone.innerHTML = `<div class="icon">🖼️</div><p><strong>Click to upload</strong> or drag an image here</p><p>JPG, PNG, GIF, WebP</p>`;
+    processBtn.style.display = 'none';
+    originalImg = null; quantizedData = null; regionMap = null;
+    regions = []; filledRegions = new Set();
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    renderPaintCanvas();
+    const link = document.createElement('a');
+    link.download = 'paint-by-number.png';
+    link.href = paintCanvas.toDataURL();
+    link.click();
+  });
+
+  // ── Loading ──
+  function showLoading(msg) {
+    loadingMsg.textContent = msg;
+    loadingOverlay.classList.add('show');
+  }
+  function setLoading(msg) { loadingMsg.textContent = msg; }
+  function hideLoading() { loadingOverlay.classList.remove('show'); }
+
+  function showApp() {
+    uploadScreen.style.display = 'none';
+    appScreen.classList.add('visible');
+  }
+
+  // ── Helpers ──
+  function rgbToHex(r, g, b) {
+    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+  }
+
+})();
+</script>
+</body>
+</html>

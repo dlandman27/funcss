@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Museum of Bad Art — Permanent Collection</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+    :root {
+      --cream: #f5f0e8;
+      --parchment: #ede6d6;
+      --dark: #1a1612;
+      --mid: #3a322a;
+      --gold: #8b6914;
+      --rust: #7a3b1e;
+      --mat: #e8e0d0;
+      --frame: #2a1f14;
+      --frame-inner: #4a3728;
+      --label-bg: #faf7f2;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      background-color: var(--cream);
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 79px,
+          rgba(0,0,0,0.03) 79px,
+          rgba(0,0,0,0.03) 80px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 79px,
+          rgba(0,0,0,0.03) 79px,
+          rgba(0,0,0,0.03) 80px
+        );
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      color: var(--dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .museum-header {
+      text-align: center;
+      padding: 36px 20px 20px;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
+      position: relative;
+    }
+
+    .museum-name {
+      font-family: 'IM Fell English', Georgia, serif;
+      font-size: clamp(1.1rem, 3vw, 1.4rem);
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 4px;
+    }
+
+    .museum-subtitle {
+      font-size: clamp(0.7rem, 2vw, 0.82rem);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-style: italic;
+    }
+
+    .header-rule {
+      width: 60px;
+      height: 1px;
+      background: var(--gold);
+      margin: 12px auto 0;
+    }
+
+    /* ── ROOM BADGE ── */
+    .room-badge {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #999;
+      line-height: 1.6;
+      text-align: right;
+    }
+
+    .room-badge strong {
+      display: block;
+      color: var(--mid);
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    /* ── MAIN GALLERY ── */
+    .gallery {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px 20px;
+    }
+
+    /* ── FRAME ── */
+    .frame-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .frame-outer {
+      background: var(--frame);
+      padding: 18px;
+      box-shadow:
+        0 0 0 1px #0a0704,
+        4px 4px 0 2px rgba(0,0,0,0.4),
+        8px 8px 20px rgba(0,0,0,0.35),
+        inset 0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+    }
+
+    .frame-outer::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .frame-inner {
+      background: var(--mat);
+      padding: 20px;
+      box-shadow: inset 2px 2px 8px rgba(0,0,0,0.25), inset -1px -1px 4px rgba(0,0,0,0.15);
+    }
+
+    #painting-canvas {
+      display: block;
+      width: clamp(260px, 70vw, 580px);
+      height: clamp(200px, 55vw, 460px);
+      image-rendering: pixelated;
+    }
+
+    /* ── TRANSITION FADE ── */
+    .frame-wrapper.fading .frame-inner {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .frame-wrapper .frame-inner {
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
+
+    /* ── LABEL CARD ── */
+    .label-card {
+      background: var(--label-bg);
+      border: 1px solid rgba(0,0,0,0.1);
+      padding: 22px 28px 20px;
+      width: clamp(260px, 70vw, 580px);
+      margin-top: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      position: relative;
+      opacity: 1;
+      transition: opacity 0.35s ease;
+    }
+
+    .label-card.fading {
+      opacity: 0;
+    }
+
+    .label-card::before {
+      content: '';
+      position: absolute;
+      left: 28px;
+      top: 0;
+      width: 40px;
+      height: 2px;
+      background: var(--gold);
+    }
+
+    .artwork-title {
+      font-family: 'IM Fell English', Georgia, serif;
+      font-size: clamp(1.3rem, 4vw, 1.85rem);
+      line-height: 1.2;
+      margin-bottom: 6px;
+      color: var(--dark);
+    }
+
+    .artwork-artist {
+      font-size: 0.9rem;
+      color: var(--mid);
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+
+    .artwork-meta {
+      font-size: 0.78rem;
+      color: #777;
+      font-style: italic;
+      margin-bottom: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .label-divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(0,0,0,0.1);
+      margin: 14px 0;
+    }
+
+    .artwork-description {
+      font-size: clamp(0.82rem, 2.2vw, 0.96rem);
+      line-height: 1.7;
+      color: #4a4035;
+      font-style: italic;
+      margin-bottom: 14px;
+    }
+
+    .label-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .artwork-price {
+      font-size: 0.82rem;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .acquisition-note {
+      font-size: 0.7rem;
+      color: #aaa;
+      font-style: italic;
+    }
+
+    /* ── BUTTONS ── */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: clamp(260px, 70vw, 580px);
+    }
+
+    .btn {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 0.88rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      padding: 12px 26px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--dark);
+      color: var(--cream);
+      flex: 1;
+    }
+
+    .btn-primary:hover {
+      background: var(--mid);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--mid);
+      border: 1px solid var(--mid);
+      flex: 1;
+    }
+
+    .btn-secondary:hover {
+      background: var(--mid);
+      color: var(--cream);
+    }
+
+    .btn-secondary.collected {
+      background: var(--rust);
+      color: var(--cream);
+      border-color: var(--rust);
+    }
+
+    /* ── FOOTER ── */
+    .museum-footer {
+      text-align: center;
+      padding: 20px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      font-size: 0.7rem;
+      color: #bbb;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ── EXHIBIT NUMBER ── */
+    .exhibit-counter {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #bbb;
+      line-height: 1.7;
+      pointer-events: none;
+    }
+
+    .exhibit-counter span {
+      display: block;
+      color: var(--mid);
+      font-size: 1.1rem;
+      font-family: 'IM Fell English', Georgia, serif;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="museum-header">
+    <div class="room-badge">
+      <strong id="room-num">Room 4</strong>
+      Gallery of the Permanent Collection
+    </div>
+    <div class="museum-name">Museum of Bad Art</div>
+    <div class="museum-subtitle">Est. 1994 &mdash; Celebrating the Unwatchable</div>
+    <div class="header-rule"></div>
+  </header>
+
+  <main class="gallery">
+    <div class="frame-wrapper" id="frame-wrapper">
+      <div class="frame-outer">
+        <div class="frame-inner">
+          <canvas id="painting-canvas" width="580" height="460"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="label-card" id="label-card">
+      <div class="artwork-title" id="artwork-title">Loading...</div>
+      <div class="artwork-artist" id="artwork-artist"></div>
+      <div class="artwork-meta" id="artwork-meta"></div>
+      <div class="label-divider"></div>
+      <div class="artwork-description" id="artwork-description"></div>
+      <div class="label-footer">
+        <div>
+          <div class="artwork-price" id="artwork-price"></div>
+          <div class="acquisition-note" id="acquisition-note"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="next-btn" onclick="nextPiece()">Next Piece &rarr;</button>
+      <button class="btn btn-secondary" id="collect-btn" onclick="toggleCollect()">Add to Collection &hearts;</button>
+    </div>
+  </main>
+
+  <footer class="museum-footer">
+    &copy; Museum of Bad Art &mdash; All works reproduced without the artist's blessing
+  </footer>
+
+  <div class="exhibit-counter">
+    Exhibit
+    <span id="exhibit-num">#001</span>
+  </div>
+
+  <script>
+  // ── RNG helpers ──────────────────────────────────────────────────────────────
+  let seed = Date.now();
+  function rng() {
+    seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+    return (seed >>> 0) / 0xffffffff;
+  }
+  function ri(min, max) { return Math.floor(rng() * (max - min + 1)) + min; }
+  function rf(min, max) { return rng() * (max - min) + min; }
+  function pick(arr) { return arr[Math.floor(rng() * arr.length)]; }
+
+  // ── State ────────────────────────────────────────────────────────────────────
+  let exhibitCount = 0;
+  let isCollected = false;
+  const rooms = ['Room 1','Room 2','Room 3','Room 4','Room 5','The Annex','The Vault','Lower Level','Mezzanine','The Back Room'];
+
+  // ── Color palettes (deliberately awful) ──────────────────────────────────────
+  const badColors = [
+    '#ff6b35','#f7c59f','#efefd0','#004e89','#1a936f',   // clash 1
+    '#c3423f','#9bc53d','#fde74c','#5bc0eb','#fa7921',   // garish
+    '#8338ec','#ff006e','#fb5607','#ffbe0b','#3a86ff',   // neon chaos
+    '#6b4226','#d4a574','#c8b8a2','#7fb069','#e76f51',   // muddy earthy
+    '#ff4d6d','#c77dff','#e0aaff','#5e60ce','#48cae4',   // pastel chaos
+    '#b5179e','#7209b7','#560bad','#480ca8','#f72585',   // deep purple mess
+    '#caffbf','#fdffb6','#ffd6ff','#a0c4ff','#bdb2ff',   // too-soft sludge
+    '#d62828','#f77f00','#fcbf49','#eae2b7','#003049',   // war poster bad
+    '#99582a','#432818','#ffe6a7','#6f4e37','#c0a080',   // brown beige crime
+    '#2dc653','#ff595e','#ffca3a','#6a4c93','#1982c4',   // kindergarten
+  ];
+
+  function badColor() {
+    return pick(badColors);
+  }
+
+  function garishBg() {
+    const bgs = [
+      '#c8e6c9','#ffccbc','#f8bbd9','#e1bee7','#b3e5fc',
+      '#fff9c4','#d7ccc8','#cfd8dc','#ffe082','#a5d6a7',
+      '#ff8f00','#e040fb','#00b0ff','#76ff03','#ff1744',
+      '#795548','#607d8b','#9e9e9e','#f06292','#4fc3f7',
+      '#8d6e63','#ffb74d','#dce775','#4dd0e1','#ce93d8',
+    ];
+    return pick(bgs);
+  }
+
+  // ── Painting generator ────────────────────────────────────────────────────────
+  function generatePainting(canvas) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Reset seed for this painting
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    const bgColor = garishBg();
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, W, H);
+
+    // Sometimes add a second bg gradient — off-center, wrong color
+    if (rng() > 0.4) {
+      const gx = rf(0, W);
+      const gy = rf(0, H);
+      const gr = ctx.createRadialGradient(gx, gy, 0, gx, gy, rf(W*0.4, W));
+      gr.addColorStop(0, badColor() + 'cc');
+      gr.addColorStop(1, 'transparent');
+      ctx.fillStyle = gr;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Horizon line (bad landscape attempt)
+    if (rng() > 0.55) {
+      const hy = rf(H * 0.25, H * 0.75);
+      ctx.fillStyle = badColor();
+      ctx.fillRect(0, hy, W, H - hy);
+      // wonky "ground" with slight tilt
+      ctx.save();
+      ctx.translate(0, hy);
+      ctx.rotate(rf(-0.08, 0.08));
+      ctx.fillStyle = badColor();
+      ctx.fillRect(-50, ri(0, 20), W + 100, H);
+      ctx.restore();
+    }
+
+    // Sun or moon (badly placed)
+    if (rng() > 0.5) {
+      const sx = rf(-20, W + 20);
+      const sy = rf(-20, H * 0.7);
+      const sr = rf(20, 80);
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fillStyle = rng() > 0.5 ? '#ffee58' : '#e0e0e0';
+      ctx.fill();
+      // sometimes add poorly drawn rays
+      if (rng() > 0.5) {
+        ctx.strokeStyle = '#ffee58';
+        ctx.lineWidth = ri(2, 5);
+        for (let i = 0; i < ri(5, 9); i++) {
+          const angle = (i / ri(5, 9)) * Math.PI * 2;
+          const r1 = sr + ri(5, 15);
+          const r2 = sr + ri(20, 50);
+          ctx.beginPath();
+          ctx.moveTo(sx + Math.cos(angle) * r1, sy + Math.sin(angle) * r1);
+          ctx.lineTo(sx + Math.cos(angle) * r2, sy + Math.sin(angle) * r2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Blobs (filled bezier shapes)
+    const blobCount = ri(3, 9);
+    for (let i = 0; i < blobCount; i++) {
+      const bx = rf(-50, W + 50);
+      const by = rf(-50, H + 50);
+      ctx.beginPath();
+      const points = ri(5, 10);
+      const radius = rf(20, 120);
+      for (let p = 0; p < points; p++) {
+        const angle = (p / points) * Math.PI * 2;
+        const r = radius * rf(0.4, 1.6);
+        const x = bx + Math.cos(angle) * r;
+        const y = by + Math.sin(angle) * r;
+        if (p === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = badColor() + ri(80, 220).toString(16).padStart(2, '0');
+      ctx.fill();
+    }
+
+    // Rectangles (wrong sizes, wrong colors)
+    const rectCount = ri(2, 7);
+    for (let i = 0; i < rectCount; i++) {
+      const rx = rf(-30, W);
+      const ry = rf(-30, H);
+      const rw = rf(10, W * 0.7);
+      const rh = rf(10, H * 0.6);
+      ctx.save();
+      ctx.translate(rx + rw/2, ry + rh/2);
+      ctx.rotate(rf(-0.5, 0.5));
+      ctx.fillStyle = badColor() + ri(80, 200).toString(16).padStart(2, '0');
+      ctx.fillRect(-rw/2, -rh/2, rw, rh);
+      ctx.restore();
+    }
+
+    // Triangles (trying to be geometric, failing)
+    const triCount = ri(1, 5);
+    for (let i = 0; i < triCount; i++) {
+      const tx = rf(0, W);
+      const ty = rf(0, H);
+      const ts = rf(20, 130);
+      ctx.beginPath();
+      ctx.moveTo(tx + rf(-ts, ts), ty - ts * rf(0.5, 1.5));
+      ctx.lineTo(tx + ts * rf(0.7, 1.3), ty + ts * rf(0.5, 1.2));
+      ctx.lineTo(tx - ts * rf(0.7, 1.3), ty + ts * rf(0.3, 1.2));
+      ctx.closePath();
+      ctx.fillStyle = badColor() + ri(100, 230).toString(16).padStart(2, '0');
+      ctx.fill();
+    }
+
+    // Circles (overlapping)
+    const circCount = ri(3, 10);
+    for (let i = 0; i < circCount; i++) {
+      const cx = rf(-20, W + 20);
+      const cy = rf(-20, H + 20);
+      const cr = rf(5, 80);
+      ctx.beginPath();
+      ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+      ctx.fillStyle = badColor() + ri(60, 200).toString(16).padStart(2, '0');
+      ctx.fill();
+      // some have visible stroke in wrong color
+      if (rng() > 0.6) {
+        ctx.strokeStyle = badColor();
+        ctx.lineWidth = ri(1, 5);
+        ctx.stroke();
+      }
+    }
+
+    // Squiggles (attempt at gestural brushwork)
+    const squigCount = ri(3, 10);
+    for (let i = 0; i < squigCount; i++) {
+      ctx.beginPath();
+      ctx.moveTo(rf(0, W), rf(0, H));
+      const steps = ri(3, 8);
+      for (let s = 0; s < steps; s++) {
+        const cpx1 = rf(0, W);
+        const cpy1 = rf(0, H);
+        const cpx2 = rf(0, W);
+        const cpy2 = rf(0, H);
+        const ex = rf(0, W);
+        const ey = rf(0, H);
+        ctx.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, ex, ey);
+      }
+      ctx.strokeStyle = badColor();
+      ctx.lineWidth = rf(1, 12);
+      ctx.lineCap = pick(['round','square','butt']);
+      ctx.stroke();
+    }
+
+    // "Brush strokes" — thick bezier, sometimes with texture
+    const strokeCount = ri(4, 12);
+    for (let i = 0; i < strokeCount; i++) {
+      const sx = rf(-10, W + 10);
+      const sy = rf(-10, H + 10);
+      const ex = rf(-10, W + 10);
+      const ey = rf(-10, H + 10);
+      const cpx = rf(0, W);
+      const cpy = rf(0, H);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo(cpx, cpy, ex, ey);
+      ctx.strokeStyle = badColor() + 'cc';
+      ctx.lineWidth = rf(4, 28);
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Vague face attempt (happens ~30% of the time)
+    if (rng() > 0.68) {
+      const fx = rf(W * 0.15, W * 0.75);
+      const fy = rf(H * 0.2, H * 0.65);
+      const fsize = rf(30, 70);
+      // head
+      ctx.beginPath();
+      ctx.ellipse(fx, fy, fsize * rf(0.7, 1.3), fsize, rf(-0.3, 0.3), 0, Math.PI * 2);
+      ctx.fillStyle = badColor() + 'bb';
+      ctx.fill();
+      ctx.strokeStyle = badColor();
+      ctx.lineWidth = ri(2, 5);
+      ctx.stroke();
+      // eyes — wildly misaligned
+      const eyeColors = ['#000000','#ff0000','#00ff00','#0000ff','#ffffff'];
+      ctx.beginPath();
+      ctx.arc(fx - fsize * rf(0.15, 0.45), fy - fsize * rf(0.05, 0.35), ri(3, 10), 0, Math.PI * 2);
+      ctx.fillStyle = pick(eyeColors);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(fx + fsize * rf(0.15, 0.5), fy - fsize * rf(-0.1, 0.3), ri(2, 9), 0, Math.PI * 2);
+      ctx.fillStyle = pick(eyeColors);
+      ctx.fill();
+      // mouth — a slash
+      ctx.beginPath();
+      ctx.moveTo(fx - fsize * rf(0.2, 0.5), fy + fsize * rf(0.2, 0.6));
+      ctx.lineTo(fx + fsize * rf(0.1, 0.5), fy + fsize * rf(0.15, 0.7));
+      ctx.strokeStyle = badColor();
+      ctx.lineWidth = ri(2, 6);
+      ctx.stroke();
+    }
+
+    // Final layer: some dots / drips
+    if (rng() > 0.4) {
+      const dotCount = ri(5, 25);
+      for (let i = 0; i < dotCount; i++) {
+        const dx = rf(0, W);
+        const dy = rf(0, H);
+        ctx.beginPath();
+        ctx.arc(dx, dy, rf(1, 8), 0, Math.PI * 2);
+        ctx.fillStyle = badColor();
+        ctx.fill();
+        // drip
+        if (rng() > 0.6) {
+          ctx.fillRect(dx - 1, dy, rf(1, 3), rf(5, 40));
+        }
+      }
+    }
+
+    // Stray text (artist "signature", badly placed)
+    if (rng() > 0.6) {
+      const sigs = ['ok','done','good?','hmm','✓','art','no','yes','idk'];
+      ctx.font = `${ri(10, 22)}px serif`;
+      ctx.fillStyle = badColor();
+      ctx.fillText(pick(sigs), rf(0, W - 40), rf(H * 0.7, H - 10));
+    }
+  }
+
+  // ── Description generator ──────────────────────────────────────────────────────
+  const titleWords1 = [
+    'Chromatic','Beige','Silent','Angry','Forgotten','Abstract','Urgent','Heavy',
+    'Wet','Confused','Lateral','Passive','Screaming','Hollow','Burning','Damp',
+    'Sincere','Anxious','Peripheral','Mutual','Approximate','Regional','Dormant',
+    'Trembling','Deliberate','Sudden','Tertiary','Moist','Oblong','Residual',
+  ];
+  const titleWords2 = [
+    'Regret','Manifesto','Rectangle','Dialogue','Gesture','Void','Incident',
+    'Witness','Epoch','Longing','Territory','Posture','Grief','Velocity',
+    'Density','Remainder','Threshold','Condition','Urgency','Reckoning',
+    'Syntax','Residue','Frequency','Membrane','Fugue','Protocol','Absence',
+    'Texture','Plateau','Momentum',
+  ];
+  const artists = [
+    'D. Mortlake','B. Quisenberry','T. Flomm','R. Chegwidden','M. Spudley',
+    'O. Blatherwick','C. Nurt','F. Plonkett','H. Drabb','W. Soggington',
+    'P. Gloomis','E. Vrondle','K. Blifton','A. Scritchley','J. Mundweiler',
+    'N. Klumpt','S. Haggard-Price','L. Fumble','G. Trossell','I. Bleak',
+  ];
+  const mediums = [
+    'Oil on canvas',
+    'Acrylic and regret',
+    'Mixed media and fury',
+    'Found pigment on cardboard',
+    'Enamel on particleboard',
+    'Watercolour and desperation',
+    'House paint on linen',
+    'Acrylic on found canvas (garage sale)',
+    'Oil and misunderstanding',
+    'Spray paint and self-doubt',
+    'Tempera on printer paper',
+    'Gouache and compromise',
+  ];
+  const subjects = [
+    "the viewer's relationship with negative space",
+    "our collective fear of the colour orange",
+    "the tension between foreground and regret",
+    "the viewer's complicity in looking",
+    "post-industrial longing for a shape",
+    "the quiet violence of a poorly placed circle",
+    "memory, loss, and incorrect proportions",
+    "the impossibility of a straight line",
+    "masculine fragility expressed through rectangles",
+    "the spiritual dimension of beige",
+    "late-capitalist anxiety and overlapping blobs",
+    "the failure of geometry as metaphor",
+    "the viewer's relationship with Thursday",
+    "an absent father figure suggested by smudging",
+    "the horizon as a political act",
+    "the unspoken language of chaotic brushwork",
+    "the void between one colour and another",
+    "a traumatic response to symmetry",
+    "the domestic uncanny of a misaligned oval",
+    "what it means to try and fail beautifully",
+  ];
+  const themes = [
+    "mortality and the act of applying paint",
+    "the futility of representation",
+    "formlessness as a form of resistance",
+    "beauty as a fundamentally broken concept",
+    "the relationship between the artist's hand and their self-esteem",
+    "landscape as emotional autobiography",
+    "the body politic as an irregular hexagon",
+    "stillness, motion, and unfortunate colour choices",
+    "the space between intention and outcome",
+    "sincerity in an age of irony (and vice versa)",
+    "what the artist was going through at the time",
+    "everything, simultaneously",
+    "nothing in particular but with great conviction",
+    "the artist's therapy sessions (2007–2009)",
+  ];
+  const statements = [
+    "a bold statement about the nature of seeing itself",
+    "a meditation on why the artist felt compelled to do this",
+    "an uncomfortable confrontation with one's own assumptions about colour",
+    "a refusal to be easily categorised, or looked at for long",
+    "evidence that something happened here",
+    "a document of a specific Tuesday afternoon",
+    "the most honest thing the artist has ever made",
+    "a question without an answer, or perhaps several questions without answers",
+    "a testament to the enduring human need to mark surfaces",
+    "simultaneously too much and not enough",
+    "the culmination of the artist's 'difficult period'",
+    "a significant work in the tradition of significant works",
+  ];
+  const acquisitions = [
+    'Gift of the Flomm Estate, 2004',
+    'Acquired through the Quisenberry Bequest',
+    'Anonymous donation, 1999',
+    'On loan from a private collector (reluctantly)',
+    'Discovered in a skip outside the artist\'s studio',
+    'Donated by the artist after repeated rejection elsewhere',
+    'Purchased for less than the frame cost',
+    'Found in the museum\'s storage (origin unknown)',
+    'Gift of the artist\'s neighbor, who wanted it gone',
+    'Acquired at auction (only bidder)',
+  ];
+
+  function generateDescription(num) {
+    const useUntitled = rng() > 0.45;
+    const title = useUntitled
+      ? `Untitled No. ${num}`
+      : `${pick(titleWords1)} ${pick(titleWords2)}`;
+
+    const artist = pick(artists);
+    const year = ri(1987, 2019);
+    const medium = pick(mediums);
+
+    const desc = `This work challenges ${pick(subjects)}. Through a process of ${
+      pick(['deliberate chaos','intuitive mark-making','sustained misunderstanding',
+            'confident wrongness','fearless incompetence','aggressive sincerity',
+            'emotional honesty and poor technique','visceral uncertainty'])
+    }, ${artist.split('.')[0]}. invites contemplation of ${pick(themes)}. The piece is ${pick(statements)}.`;
+
+    const prices = [
+      '$4,200','$8,750','$14,000','$22,500','$6,100','$31,000','$9,400','$17,600',
+      '$3,800','$55,000','$2,950','$12,100','$47,500','$88,000',
+      'Not For Sale (Priceless)','Not For Sale (Artist Refuses)','Price Upon Request',
+      'Offered at $1,200 (no takers yet)',
+    ];
+    const price = pick(prices);
+    const acquisition = pick(acquisitions);
+
+    return { title, artist, year, medium, desc, price, acquisition };
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+  function nextPiece() {
+    exhibitCount++;
+    seed = Date.now() + exhibitCount * 31337;
+
+    const frameWrapper = document.getElementById('frame-wrapper');
+    const labelCard = document.getElementById('label-card');
+
+    // Fade out
+    frameWrapper.classList.add('fading');
+    labelCard.classList.add('fading');
+
+    setTimeout(() => {
+      // Generate new painting
+      const canvas = document.getElementById('painting-canvas');
+      generatePainting(canvas);
+
+      // Generate new description
+      const info = generateDescription(exhibitCount);
+      document.getElementById('artwork-title').textContent = info.title;
+      document.getElementById('artwork-artist').textContent = info.artist;
+      document.getElementById('artwork-meta').textContent = `${info.year}  ·  ${info.medium}`;
+      document.getElementById('artwork-description').textContent = info.desc;
+      document.getElementById('artwork-price').textContent = info.price;
+      document.getElementById('acquisition-note').textContent = info.acquisition;
+
+      // Update counters
+      document.getElementById('exhibit-num').textContent = '#' + String(exhibitCount).padStart(3, '0');
+      document.getElementById('room-num').textContent = pick(rooms);
+
+      // Reset collect button
+      isCollected = false;
+      const btn = document.getElementById('collect-btn');
+      btn.textContent = 'Add to Collection ♥';
+      btn.classList.remove('collected');
+
+      // Fade back in
+      frameWrapper.classList.remove('fading');
+      labelCard.classList.remove('fading');
+    }, 320);
+  }
+
+  function toggleCollect() {
+    isCollected = !isCollected;
+    const btn = document.getElementById('collect-btn');
+    if (isCollected) {
+      btn.textContent = 'In Your Collection ♥';
+      btn.classList.add('collected');
+    } else {
+      btn.textContent = 'Add to Collection ♥';
+      btn.classList.remove('collected');
+    }
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  nextPiece();
+  </script>
+</body>
+</html>

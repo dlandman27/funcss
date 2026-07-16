@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mirror</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #0a0a0c;
+      cursor: text;
+    }
+
+    /* Hidden input to capture typing */
+    #capture {
+      position: fixed;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px; height: 1px;
+      top: 0; left: 0;
+    }
+
+    /* 4-quadrant grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Divider lines */
+    .grid::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 50%;
+      width: 1px; height: 100%;
+      background: rgba(255,255,255,0.07);
+      pointer-events: none;
+      z-index: 10;
+    }
+    .grid::after {
+      content: '';
+      position: fixed;
+      left: 0; top: 50%;
+      width: 100%; height: 1px;
+      background: rgba(255,255,255,0.07);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .quadrant {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      overflow: hidden;
+    }
+
+    .quadrant-text {
+      font-size: clamp(20px, 4vw, 48px);
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.35;
+      word-break: break-word;
+      text-align: center;
+      max-width: 100%;
+      transition: opacity 0.1s;
+    }
+
+    .quadrant-text.empty {
+      opacity: 0.12;
+      font-weight: 400;
+      font-style: italic;
+    }
+
+    /* Label in each corner */
+    .label {
+      position: absolute;
+      font-size: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.3;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .label-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Top-left: Normal */
+    #q-normal {
+      grid-column: 1; grid-row: 1;
+    }
+    #q-normal .quadrant-text { color: #c8b8ff; }
+    #q-normal .label { top: 16px; left: 18px; color: #c8b8ff; }
+    #q-normal .label-dot { background: #c8b8ff; }
+
+    /* Top-right: Backwards */
+    #q-backwards {
+      grid-column: 2; grid-row: 1;
+    }
+    #q-backwards .quadrant-text { color: #ff9eb5; }
+    #q-backwards .label { top: 16px; right: 18px; color: #ff9eb5; flex-direction: row-reverse; }
+    #q-backwards .label-dot { background: #ff9eb5; }
+
+    /* Bottom-left: Upside Down */
+    #q-upside {
+      grid-column: 1; grid-row: 2;
+    }
+    #q-upside .quadrant-text { color: #7adcff; }
+    #q-upside .label { bottom: 16px; left: 18px; color: #7adcff; }
+    #q-upside .label-dot { background: #7adcff; }
+
+    /* Bottom-right: Mirrored */
+    #q-mirrored {
+      grid-column: 2; grid-row: 2;
+    }
+    #q-mirrored .quadrant-text { color: #7affb8; }
+    #q-mirrored .label { bottom: 16px; right: 18px; color: #7affb8; flex-direction: row-reverse; }
+    #q-mirrored .label-dot { background: #7affb8; }
+
+    .mirrored-span { display: inline-block; transform: scaleX(-1); }
+
+    /* Cursor blink in normal quadrant */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: #c8b8ff;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Hint at very bottom center */
+    .hint {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: rgba(255,255,255,0.15);
+      letter-spacing: 0.08em;
+      pointer-events: none;
+      z-index: 20;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<input id="capture" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+<div class="grid">
+  <div class="quadrant" id="q-normal">
+    <div class="label"><div class="label-dot"></div>Normal</div>
+    <div class="quadrant-text empty" id="out-normal">start typing<span class="cursor"></span></div>
+  </div>
+
+  <div class="quadrant" id="q-backwards">
+    <div class="label"><div class="label-dot"></div>Backwards</div>
+    <div class="quadrant-text empty" id="out-backwards">gnipy trats</div>
+  </div>
+
+  <div class="quadrant" id="q-upside">
+    <div class="label"><div class="label-dot"></div>Upside Down</div>
+    <div class="quadrant-text empty" id="out-upside">ƃuᴉdʎʇ ʇɹɐʇs</div>
+  </div>
+
+  <div class="quadrant" id="q-mirrored">
+    <div class="label"><div class="label-dot"></div>Mirrored</div>
+    <div class="quadrant-text empty" id="out-mirrored"><span class="mirrored-span">start typing</span></div>
+  </div>
+</div>
+
+<div class="hint">just start typing anywhere</div>
+
+<script>
+  const FLIP_MAP = {
+    'a':'ɐ','b':'q','c':'ɔ','d':'p','e':'ǝ','f':'ɟ','g':'ƃ','h':'ɥ','i':'ᴉ','j':'ɾ',
+    'k':'ʞ','l':'l','m':'ɯ','n':'u','o':'o','p':'d','q':'b','r':'ɹ','s':'s','t':'ʇ',
+    'u':'n','v':'ʌ','w':'ʍ','x':'x','y':'ʎ','z':'z',
+    'A':'∀','B':'ᗺ','C':'Ɔ','D':'ᗡ','E':'Ǝ','F':'Ⅎ','G':'פ','H':'H','I':'I','J':'ſ',
+    'K':'ʞ','L':'˥','M':'W','N':'N','O':'O','P':'Ԁ','Q':'Q','R':'ᴚ','S':'S','T':'⊥',
+    'U':'∩','V':'Λ','W':'M','X':'X','Y':'⅄','Z':'Z',
+    '0':'0','1':'Ɩ','2':'ᄅ','3':'Ɛ','4':'ㄣ','5':'ϛ','6':'9','7':'ʌ','8':'8','9':'6',
+    '.':'˙',',':'\'','\'':',','!':'¡','?':'¿','(':')',')'  :'(','[':']',']':'[',
+    '{':'}','}':'{','<':'>','>':'<','&':'⅋','_':'‾','"':'„',
+  };
+
+  function flipChar(ch) { return FLIP_MAP[ch] !== undefined ? FLIP_MAP[ch] : ch; }
+  function toUpsideDown(str) { return str.split('').reverse().map(flipChar).join(''); }
+  function toBackwards(str) { return str.split('').reverse().join(''); }
+  function esc(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  const capture = document.getElementById('capture');
+  const outNormal   = document.getElementById('out-normal');
+  const outBack     = document.getElementById('out-backwards');
+  const outUpside   = document.getElementById('out-upside');
+  const outMirrored = document.getElementById('out-mirrored');
+
+  // Keep input focused always
+  capture.focus();
+  document.addEventListener('click', () => capture.focus());
+  document.addEventListener('keydown', () => capture.focus());
+
+  capture.addEventListener('input', update);
+
+  function update() {
+    const raw = capture.value;
+
+    if (!raw) {
+      outNormal.innerHTML   = 'start typing<span class="cursor"></span>';
+      outBack.textContent   = 'gnipy trats';
+      outUpside.textContent = 'ƃuᴉdʎʇ ʇɹɐʇs';
+      outMirrored.innerHTML = '<span class="mirrored-span">start typing</span>';
+      [outNormal,outBack,outUpside,outMirrored].forEach(el=>el.classList.add('empty'));
+      return;
+    }
+
+    [outNormal,outBack,outUpside,outMirrored].forEach(el=>el.classList.remove('empty'));
+
+    outNormal.innerHTML   = esc(raw) + '<span class="cursor"></span>';
+    outBack.textContent   = toBackwards(raw);
+    outUpside.textContent = toUpsideDown(raw);
+    outMirrored.innerHTML = '<span class="mirrored-span">' + esc(raw) + '</span>';
+  }
+</script>
+</body>
+</html>
