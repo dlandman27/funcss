@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chaos Game</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a0a10;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #game {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+
+    #prompt {
+      position: fixed;
+      top: 42%;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(18px, 3vw, 26px);
+      color: rgba(220, 220, 240, 0.7);
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    #prompt.hidden { opacity: 0; }
+
+    #stats {
+      position: fixed;
+      top: 18px;
+      left: 20px;
+      font-family: Georgia, serif;
+      font-size: clamp(12px, 1.6vw, 15px);
+      font-variant-numeric: tabular-nums;
+      color: rgba(190, 190, 215, 0.55);
+      font-style: italic;
+      pointer-events: none;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(18, 18, 30, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+    }
+
+    #controls.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #controls button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgba(235, 235, 245, 0.85);
+      font-size: 16px;
+      line-height: 1;
+      min-width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      transition: background 0.15s ease;
+    }
+
+    #controls button:hover { background: rgba(255, 255, 255, 0.1); }
+
+    #ratioVal {
+      min-width: 46px;
+      text-align: center;
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+      color: rgba(235, 235, 245, 0.9);
+    }
+
+    .lbl {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(200, 200, 220, 0.45);
+      padding-left: 6px;
+    }
+
+    .divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.12);
+      margin: 0 4px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="prompt">place three points anywhere</div>
+  <div id="stats"></div>
+
+  <div id="controls">
+    <span class="lbl">jump</span>
+    <button id="ratioDown">&#8249;</button>
+    <div id="ratioVal">0.50</div>
+    <button id="ratioUp">&#8250;</button>
+    <div class="divider"></div>
+    <button id="reset" title="start over">&#215;</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const prompt = document.getElementById('prompt');
+    const stats = document.getElementById('stats');
+    const controls = document.getElementById('controls');
+    const ratioVal = document.getElementById('ratioVal');
+
+    let W, H, dpr;
+    let dots;              // accumulation canvas
+    let dctx;
+
+    const vertices = [];   // {x, y, hue}
+    const HUES = [16, 190, 285, 55, 330, 140];
+    let ratio = 0.5;
+    let jumps = 0;
+    let point = null;
+    let lastVertex = -1;
+
+    const JUMPS_PER_FRAME = 6000;
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      dots = document.createElement('canvas');
+      dots.width = W * dpr;
+      dots.height = H * dpr;
+      dctx = dots.getContext('2d');
+      dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      restart();
+    }
+
+    function restart() {
+      dctx.clearRect(0, 0, W, H);
+      jumps = 0;
+      lastVertex = -1;
+      if (vertices.length >= 3) {
+        point = { x: (vertices[0].x + vertices[1].x) / 2, y: (vertices[0].y + vertices[1].y) / 2 };
+      } else {
+        point = null;
+      }
+    }
+
+    // ---- The chaos game itself ----
+
+    function iterate() {
+      if (!point || vertices.length < 3) return;
+      const useNoRepeat = vertices.length > 3;
+
+      dctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < JUMPS_PER_FRAME; i++) {
+        let vi = (Math.random() * vertices.length) | 0;
+        if (useNoRepeat && vi === lastVertex) {
+          vi = (vi + 1 + ((Math.random() * (vertices.length - 1)) | 0)) % vertices.length;
+        }
+        lastVertex = vi;
+        const v = vertices[vi];
+        point.x += (v.x - point.x) * ratio;
+        point.y += (v.y - point.y) * ratio;
+
+        if (jumps + i > 20) {  // let it settle onto the attractor first
+          dctx.fillStyle = `hsla(${v.hue}, 85%, 62%, 0.14)`;
+          dctx.fillRect(point.x, point.y, 1, 1);
+        }
+      }
+      dctx.globalCompositeOperation = 'source-over';
+      jumps += JUMPS_PER_FRAME;
+    }
+
+    // ---- Render ----
+
+    function render() {
+      ctx.fillStyle = '#0a0a10';
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(dots, 0, 0, W, H);
+
+      // vertex handles
+      for (const v of vertices) {
+        const g = ctx.createRadialGradient(v.x, v.y, 0, v.x, v.y, 14);
+        g.addColorStop(0, `hsla(${v.hue}, 90%, 70%, 0.9)`);
+        g.addColorStop(0.4, `hsla(${v.hue}, 90%, 60%, 0.25)`);
+        g.addColorStop(1, `hsla(${v.hue}, 90%, 60%, 0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(v.x - 14, v.y - 14, 28, 28);
+        ctx.fillStyle = `hsl(${v.hue}, 90%, 72%)`;
+        ctx.beginPath();
+        ctx.arc(v.x, v.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (vertices.length >= 3) {
+        stats.textContent = `${jumps.toLocaleString()} jumps · ${vertices.length} points · drag a point to reshape it`;
+      } else if (vertices.length > 0) {
+        stats.textContent = `${vertices.length} of 3`;
+      } else {
+        stats.textContent = '';
+      }
+    }
+
+    function loop() {
+      iterate();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    // ---- Input: place & drag vertices ----
+
+    let draggingVertex = null;
+
+    function vertexAt(x, y) {
+      for (const v of vertices) {
+        if (Math.hypot(v.x - x, v.y - y) < 18) return v;
+      }
+      return null;
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const v = vertexAt(e.clientX, e.clientY);
+      if (v) {
+        draggingVertex = v;
+        canvas.setPointerCapture(e.pointerId);
+        return;
+      }
+      if (vertices.length < 6) {
+        vertices.push({ x: e.clientX, y: e.clientY, hue: HUES[vertices.length] });
+        if (vertices.length >= 3) {
+          prompt.classList.add('hidden');
+          controls.classList.add('show');
+          restart();
+        } else if (vertices.length === 1) {
+          prompt.textContent = 'two more';
+        } else if (vertices.length === 2) {
+          prompt.textContent = 'one more';
+        }
+        if (vertices.length > 3) restart();
+      }
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!draggingVertex) return;
+      draggingVertex.x = e.clientX;
+      draggingVertex.y = e.clientY;
+      restart();
+    });
+
+    canvas.addEventListener('pointerup', () => { draggingVertex = null; });
+    canvas.addEventListener('pointercancel', () => { draggingVertex = null; });
+
+    // ---- Controls ----
+
+    function setRatio(r) {
+      ratio = Math.max(0.2, Math.min(0.8, Math.round(r * 100) / 100));
+      ratioVal.textContent = ratio.toFixed(2);
+      restart();
+    }
+
+    document.getElementById('ratioDown').addEventListener('click', () => setRatio(ratio - 0.05));
+    document.getElementById('ratioUp').addEventListener('click', () => setRatio(ratio + 0.05));
+
+    document.getElementById('reset').addEventListener('click', () => {
+      vertices.length = 0;
+      restart();
+      controls.classList.remove('show');
+      prompt.textContent = 'place three points anywhere';
+      prompt.classList.remove('hidden');
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 200);
+    });
+
+    setup();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
