@@ -106,3 +106,37 @@ test('hit: returns 502 when Redis fails', async () => {
   await hit(mockReq('POST', { slug: 'pi' }), res);
   assert.strictEqual(res.statusCode, 502);
 });
+
+const counts = require('../api/counts');
+
+test('counts: converts HGETALL flat array to {slug: number} with cache header', async () => {
+  stubFetch(okResponse(['pi', '42', 'snake', '7']));
+  const res = mockRes();
+  await counts(mockReq('GET'), res);
+  assert.strictEqual(res.statusCode, 200);
+  assert.deepStrictEqual(res.body, { pi: 42, snake: 7 });
+  assert.strictEqual(res.headers['Cache-Control'], 's-maxage=60, stale-while-revalidate=300');
+  assert.strictEqual(fetchCalls[0].url, 'https://example.upstash.io/hgetall/plays');
+});
+
+test('counts: returns {} when the hash does not exist yet', async () => {
+  stubFetch(okResponse(null));
+  const res = mockRes();
+  await counts(mockReq('GET'), res);
+  assert.strictEqual(res.statusCode, 200);
+  assert.deepStrictEqual(res.body, {});
+});
+
+test('counts: rejects non-GET with 405', async () => {
+  stubFetch(okResponse([]));
+  const res = mockRes();
+  await counts(mockReq('POST'), res);
+  assert.strictEqual(res.statusCode, 405);
+});
+
+test('counts: returns 502 when Redis fails', async () => {
+  stubFetch({ ok: false, status: 500, json: async () => ({}) });
+  const res = mockRes();
+  await counts(mockReq('GET'), res);
+  assert.strictEqual(res.statusCode, 502);
+});
