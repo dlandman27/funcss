@@ -46,3 +46,63 @@ test('redis() throws on non-OK HTTP status', async () => {
   stubFetch({ ok: false, status: 401, json: async () => ({}) });
   await assert.rejects(() => redis(['ping']), /401/);
 });
+
+const hit = require('../api/hit');
+
+function mockReq(method, query) {
+  return { method, query: query || {} };
+}
+function mockRes() {
+  const res = { statusCode: 200, headers: {}, body: undefined };
+  res.status = (code) => { res.statusCode = code; return res; };
+  res.json = (body) => { res.body = body; return res; };
+  res.setHeader = (name, value) => { res.headers[name] = value; };
+  return res;
+}
+
+test('hit: increments a valid catalog slug via HINCRBY', async () => {
+  stubFetch(okResponse(42));
+  const res = mockRes();
+  await hit(mockReq('POST', { slug: 'pi' }), res);
+  assert.strictEqual(res.statusCode, 200);
+  assert.deepStrictEqual(res.body, { slug: 'pi', count: 42 });
+  assert.strictEqual(fetchCalls[0].url, 'https://example.upstash.io/hincrby/plays/pi/1');
+});
+
+test('hit: lowercases the slug before validating and counting', async () => {
+  stubFetch(okResponse(1));
+  const res = mockRes();
+  await hit(mockReq('POST', { slug: 'PI' }), res);
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.slug, 'pi');
+});
+
+test('hit: rejects non-POST with 405', async () => {
+  stubFetch(okResponse(1));
+  const res = mockRes();
+  await hit(mockReq('GET', { slug: 'pi' }), res);
+  assert.strictEqual(res.statusCode, 405);
+  assert.strictEqual(fetchCalls.length, 0);
+});
+
+test('hit: rejects a slug not in the catalog with 400 and never touches Redis', async () => {
+  stubFetch(okResponse(1));
+  const res = mockRes();
+  await hit(mockReq('POST', { slug: 'not-a-real-site' }), res);
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(fetchCalls.length, 0);
+});
+
+test('hit: rejects a missing slug with 400', async () => {
+  stubFetch(okResponse(1));
+  const res = mockRes();
+  await hit(mockReq('POST', {}), res);
+  assert.strictEqual(res.statusCode, 400);
+});
+
+test('hit: returns 502 when Redis fails', async () => {
+  stubFetch({ ok: false, status: 500, json: async () => ({}) });
+  const res = mockRes();
+  await hit(mockReq('POST', { slug: 'pi' }), res);
+  assert.strictEqual(res.statusCode, 502);
+});
