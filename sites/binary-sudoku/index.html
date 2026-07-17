@@ -360,8 +360,8 @@
 
     <div id="main">
         <div id="tabs">
-            <button class="tab active" data-diff="easy">Easy<span class="skulls">&nbsp;</span></button>
-            <button class="tab" data-diff="medium">Medium<span class="skulls">💀</span></button>
+            <button class="tab" data-diff="easy">Easy<span class="skulls">&nbsp;</span></button>
+            <button class="tab active" data-diff="medium">Medium<span class="skulls">💀</span></button>
             <button class="tab" data-diff="hard">Hard<span class="skulls">💀💀</span></button>
             <button class="tab" data-diff="extreme">Extreme<span class="skulls">💀💀💀</span></button>
         </div>
@@ -453,10 +453,11 @@
         const $ = id => document.getElementById(id);
         const gridEl = $('grid'), hintEl = $('hint'), timerEl = $('timer');
 
-        let diff = 'easy';
+        let diff = 'medium';
         let size = 1, solution = [], given = [], entries = [];
         let selected = -1;
         let startTime = 0, timerInterval = null, solvedState = false;
+        let autoWinTimer = null;
 
         // ── persistent stats ──
         const store = {
@@ -523,8 +524,9 @@
             renderStats();
 
             // Easy mode: the puzzle arrives fully solved. Congratulations are inevitable.
+            clearTimeout(autoWinTimer);
             if (entries.every(e => e !== null)) {
-                setTimeout(win, 900);
+                autoWinTimer = setTimeout(win, 900);
             }
         }
 
