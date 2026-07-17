@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fireflies</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #060a08;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #meadow {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    #hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 6vh;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(14px, 2vw, 18px);
+      color: rgba(210, 230, 190, 0.45);
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      transition: opacity 3s ease;
+    }
+
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="meadow"></canvas>
+  <div id="hint">give them a few minutes to find the rhythm &mdash; click to scatter it</div>
+
+  <script>
+    const canvas = document.getElementById('meadow');
+    const ctx = canvas.getContext('2d');
+    const hint = document.getElementById('hint');
+
+    let W, H, dpr;
+    let background;
+
+    // ---- Fireflies: Kuramoto oscillators that drift through a meadow ----
+
+    let N;
+    let fx, fy, fvx, fvy, phase, omega, wanderT;
+
+    const TWO_PI = Math.PI * 2;
+    const MEAN_PERIOD = 2.9;          // seconds per flash
+    const COUPLING = 1.35;            // how strongly neighbors pull each other's rhythm
+    const NEIGHBOR_R = 130;
+    const MAX_NEIGHBORS = 10;
+
+    let cellSize, cols, rows, cellHead, cellNext;
+
+    function initFlies() {
+      N = Math.max(120, Math.min(320, Math.floor((W * H) / 6500)));
+      fx = new Float32Array(N); fy = new Float32Array(N);
+      fvx = new Float32Array(N); fvy = new Float32Array(N);
+      phase = new Float32Array(N);
+      omega = new Float32Array(N);
+      wanderT = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        fx[i] = Math.random() * W;
+        fy[i] = H * (0.1 + Math.random() * 0.78);
+        phase[i] = Math.random() * TWO_PI;
+        omega[i] = TWO_PI / (MEAN_PERIOD * (0.92 + Math.random() * 0.16));
+        wanderT[i] = Math.random() * 1000;
+      }
+      cellSize = NEIGHBOR_R;
+      cols = Math.max(1, Math.ceil(W / cellSize));
+      rows = Math.max(1, Math.ceil(H / cellSize));
+      cellHead = new Int32Array(cols * rows);
+      cellNext = new Int32Array(N);
+    }
+
+    function buildGrid() {
+      cellHead.fill(-1);
+      for (let i = 0; i < N; i++) {
+        let cx = (fx[i] / cellSize) | 0;
+        let cy = (fy[i] / cellSize) | 0;
+        if (cx < 0) cx = 0; else if (cx >= cols) cx = cols - 1;
+        if (cy < 0) cy = 0; else if (cy >= rows) cy = rows - 1;
+        const c = cx + cy * cols;
+        cellNext[i] = cellHead[c];
+        cellHead[c] = i;
+      }
+    }
+
+    function step(dt) {
+      buildGrid();
+      const r2 = NEIGHBOR_R * NEIGHBOR_R;
+
+      for (let i = 0; i < N; i++) {
+        // rhythm: pulled toward the phase of nearby flies
+        let sum = 0, count = 0;
+        const cx = Math.min(cols - 1, Math.max(0, (fx[i] / cellSize) | 0));
+        const cy = Math.min(rows - 1, Math.max(0, (fy[i] / cellSize) | 0));
+        for (let gy = Math.max(0, cy - 1); gy <= Math.min(rows - 1, cy + 1) && count < MAX_NEIGHBORS; gy++) {
+          for (let gx = Math.max(0, cx - 1); gx <= Math.min(cols - 1, cx + 1) && count < MAX_NEIGHBORS; gx++) {
+            let j = cellHead[gx + gy * cols];
+            while (j !== -1 && count < MAX_NEIGHBORS) {
+              if (j !== i) {
+                const dx = fx[j] - fx[i], dy = fy[j] - fy[i];
+                if (dx * dx + dy * dy < r2) {
+                  sum += Math.sin(phase[j] - phase[i]);
+                  count++;
+                }
+              }
+              j = cellNext[j];
+            }
+          }
+        }
+        let dphase = omega[i];
+        if (count > 0) dphase += (COUPLING * sum) / count;
+        phase[i] = (phase[i] + dphase * dt) % TWO_PI;
+
+        // gentle wandering flight
+        wanderT[i] += dt;
+        const t = wanderT[i];
+        fvx[i] += (Math.sin(t * 0.7 + i * 1.7) * 0.9 + Math.sin(t * 0.23 + i) * 0.5) * dt * 8;
+        fvy[i] += (Math.cos(t * 0.61 + i * 2.3) * 0.7 + Math.sin(t * 0.31 + i * 0.7) * 0.4) * dt * 8;
+        fvx[i] *= 0.98;
+        fvy[i] *= 0.98;
+        const sp = Math.hypot(fvx[i], fvy[i]);
+        if (sp > 18) { fvx[i] = fvx[i] / sp * 18; fvy[i] = fvy[i] / sp * 18; }
+        fx[i] += fvx[i] * dt;
+        fy[i] += fvy[i] * dt;
+
+        // stay in the meadow
+        if (fx[i] < -20) fx[i] = W + 20;
+        if (fx[i] > W + 20) fx[i] = -20;
+        if (fy[i] < H * 0.06) fvy[i] += 6 * dt;
+        if (fy[i] > H * 0.92) fvy[i] -= 6 * dt;
+      }
+    }
+
+    // ---- Background: night meadow ----
+
+    function drawBackground() {
+      background = document.createElement('canvas');
+      background.width = W * dpr;
+      background.height = H * dpr;
+      const b = background.getContext('2d');
+      b.scale(dpr, dpr);
+
+      const sky = b.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#04070c');
+      sky.addColorStop(0.6, '#081009');
+      sky.addColorStop(1, '#0a1408');
+      b.fillStyle = sky;
+      b.fillRect(0, 0, W, H);
+
+      // faint stars
+      for (let i = 0; i < 90; i++) {
+        b.fillStyle = `rgba(200, 215, 235, ${0.05 + Math.random() * 0.2})`;
+        b.fillRect(Math.random() * W, Math.random() * H * 0.5, 1, 1);
+      }
+
+      // hazy moon
+      const mx = W * (0.15 + Math.random() * 0.7), my = H * 0.16;
+      const halo = b.createRadialGradient(mx, my, 0, mx, my, 90);
+      halo.addColorStop(0, 'rgba(220, 228, 210, 0.22)');
+      halo.addColorStop(0.25, 'rgba(220, 228, 210, 0.08)');
+      halo.addColorStop(1, 'rgba(220, 228, 210, 0)');
+      b.fillStyle = halo;
+      b.fillRect(mx - 90, my - 90, 180, 180);
+      b.fillStyle = 'rgba(226, 232, 216, 0.75)';
+      b.beginPath();
+      b.arc(mx, my, 16, 0, TWO_PI);
+      b.fill();
+
+      // layered grass silhouettes
+      drawGrass(b, H * 0.93, 46, 'rgba(10, 22, 10, 0.9)');
+      drawGrass(b, H * 0.96, 60, 'rgba(4, 12, 5, 0.95)');
+    }
+
+    function drawGrass(b, baseY, maxH, color) {
+      b.strokeStyle = color;
+      b.lineWidth = 2;
+      const blades = Math.floor(W / 3);
+      for (let i = 0; i < blades; i++) {
+        const x = Math.random() * W;
+        const h = maxH * (0.4 + Math.random() * 0.6);
+        const lean = (Math.random() - 0.5) * 18;
+        b.beginPath();
+        b.moveTo(x, baseY + 10);
+        b.quadraticCurveTo(x + lean * 0.3, baseY - h * 0.6, x + lean, baseY - h);
+        b.stroke();
+      }
+      b.fillStyle = color;
+      b.fillRect(0, baseY + 4, W, H - baseY);
+    }
+
+    // ---- Render ----
+
+    function render() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < N; i++) {
+        // flash shape: a sharp warm pulse as phase passes zero
+        const c = Math.cos(phase[i]);
+        const glow = c > 0 ? Math.pow(c, 10) : 0;
+
+        // always-faint body
+        ctx.fillStyle = `rgba(150, 170, 110, ${0.10 + glow * 0.3})`;
+        ctx.fillRect(fx[i] - 1, fy[i] - 1, 2, 2);
+
+        if (glow > 0.03) {
+          const r = 5 + glow * 14;
+          const g = ctx.createRadialGradient(fx[i], fy[i], 0, fx[i], fy[i], r);
+          g.addColorStop(0, `rgba(230, 255, 130, ${0.85 * glow})`);
+          g.addColorStop(0.35, `rgba(190, 235, 90, ${0.4 * glow})`);
+          g.addColorStop(1, 'rgba(160, 220, 70, 0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(fx[i] - r, fy[i] - r, r * 2, r * 2);
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // ---- Main loop ----
+
+    let last = performance.now();
+    function loop(now) {
+      let dt = (now - last) / 1000;
+      last = now;
+      dt = Math.max(0.001, Math.min(0.05, dt));
+      step(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    // ---- Scatter the rhythm ----
+
+    function scatter(x, y) {
+      const R2 = 220 * 220;
+      for (let i = 0; i < N; i++) {
+        const dx = fx[i] - x, dy = fy[i] - y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < R2) {
+          phase[i] = Math.random() * TWO_PI;
+          const d = Math.sqrt(d2) + 1;
+          fvx[i] += (dx / d) * 14;
+          fvy[i] += (dy / d) * 14;
+        }
+      }
+      hint.classList.add('hidden');
+    }
+
+    canvas.addEventListener('pointerdown', (e) => scatter(e.clientX, e.clientY));
+
+    // ---- Setup ----
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawBackground();
+      initFlies();
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 200);
+    });
+
+    setup();
+    setTimeout(() => hint.classList.add('hidden'), 12000);
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

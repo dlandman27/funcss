@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weaver</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #221c18;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #loom {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(30, 24, 20, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 240, 220, 0.1);
+      transition: opacity 0.6s ease;
+    }
+
+    #controls.faded { opacity: 0.12; }
+    #controls:hover { opacity: 1; }
+
+    #controls button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgba(240, 228, 210, 0.85);
+      font-size: 17px;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #controls button:hover { background: rgba(255, 240, 220, 0.1); }
+
+    #hint {
+      position: fixed;
+      top: 8vh;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(14px, 2vw, 18px);
+      color: rgba(235, 220, 195, 0.5);
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      transition: opacity 2s ease;
+    }
+
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="loom"></canvas>
+  <div id="hint">drag sideways to weave the weft &mdash; up and down for the warp</div>
+
+  <div id="controls">
+    <button id="save" title="save cloth">&#8595;</button>
+    <button id="clear" title="unravel">&#215;</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('loom');
+    const ctx = canvas.getContext('2d');
+    const hint = document.getElementById('hint');
+    const controls = document.getElementById('controls');
+
+    const LANE = 16;            // thread width in CSS px
+    let W, H, dpr, cols, rows;
+    let warp, weft;             // per-cell thread hue (or -1 for none)
+
+    let hue = Math.random() * 360;
+
+    const threadColor = (h, l) => `hsl(${h}, 52%, ${l}%)`;
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cols = Math.ceil(W / LANE);
+      rows = Math.ceil(H / LANE);
+      warp = new Float32Array(cols * rows).fill(-1);
+      weft = new Float32Array(cols * rows).fill(-1);
+      paintBacking();
+    }
+
+    function paintBacking() {
+      ctx.fillStyle = '#221c18';
+      ctx.fillRect(0, 0, W, H);
+      // faint loom grid
+      ctx.strokeStyle = 'rgba(255, 235, 210, 0.035)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let c = 0; c <= cols; c++) { ctx.moveTo(c * LANE, 0); ctx.lineTo(c * LANE, H); }
+      for (let r = 0; r <= rows; r++) { ctx.moveTo(0, r * LANE); ctx.lineTo(W, r * LANE); }
+      ctx.stroke();
+    }
+
+    // ---- Thread rendering ----
+
+    function drawWeftSegment(c, r, h) {
+      const x = c * LANE, y = r * LANE;
+      const g = ctx.createLinearGradient(0, y, 0, y + LANE);
+      g.addColorStop(0, threadColor(h, 30));
+      g.addColorStop(0.35, threadColor(h, 58));
+      g.addColorStop(0.65, threadColor(h, 52));
+      g.addColorStop(1, threadColor(h, 26));
+      ctx.fillStyle = g;
+      ctx.fillRect(x, y + 0.5, LANE, LANE - 1);
+      // fiber lines
+      ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(x, y + LANE * 0.33);
+      ctx.lineTo(x + LANE, y + LANE * 0.33);
+      ctx.moveTo(x, y + LANE * 0.66);
+      ctx.lineTo(x + LANE, y + LANE * 0.66);
+      ctx.stroke();
+    }
+
+    function drawWarpSegment(c, r, h) {
+      const x = c * LANE, y = r * LANE;
+      const g = ctx.createLinearGradient(x, 0, x + LANE, 0);
+      g.addColorStop(0, threadColor(h, 30));
+      g.addColorStop(0.35, threadColor(h, 58));
+      g.addColorStop(0.65, threadColor(h, 52));
+      g.addColorStop(1, threadColor(h, 26));
+      ctx.fillStyle = g;
+      ctx.fillRect(x + 0.5, y, LANE - 1, LANE);
+      ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(x + LANE * 0.33, y);
+      ctx.lineTo(x + LANE * 0.33, y + LANE);
+      ctx.moveTo(x + LANE * 0.66, y);
+      ctx.lineTo(x + LANE * 0.66, y + LANE);
+      ctx.stroke();
+    }
+
+    function redrawCell(c, r) {
+      if (c < 0 || r < 0 || c >= cols || r >= rows) return;
+      const i = c + r * cols;
+      const x = c * LANE, y = r * LANE;
+
+      // backing
+      ctx.fillStyle = '#221c18';
+      ctx.fillRect(x, y, LANE, LANE);
+      ctx.strokeStyle = 'rgba(255, 235, 210, 0.035)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, LANE - 1, LANE - 1);
+
+      const wa = warp[i], we = weft[i];
+      if (wa < 0 && we < 0) return;
+
+      if (wa >= 0 && we >= 0) {
+        // plain weave: checkerboard decides who's on top
+        const weftOnTop = (c + r) % 2 === 0;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, LANE, LANE);
+        ctx.clip();
+        if (weftOnTop) {
+          drawWarpSegment(c, r, wa);
+          ctx.shadowColor = 'rgba(0,0,0,0.55)';
+          ctx.shadowBlur = 4;
+          drawWeftSegment(c, r, we);
+        } else {
+          drawWeftSegment(c, r, we);
+          ctx.shadowColor = 'rgba(0,0,0,0.55)';
+          ctx.shadowBlur = 4;
+          drawWarpSegment(c, r, wa);
+        }
+        ctx.restore();
+      } else if (wa >= 0) {
+        drawWarpSegment(c, r, wa);
+      } else {
+        drawWeftSegment(c, r, we);
+      }
+    }
+
+    // ---- Laying thread ----
+
+    function layWeft(c, r) {
+      if (c < 0 || r < 0 || c >= cols || r >= rows) return;
+      weft[c + r * cols] = hue;
+      redrawCell(c, r);
+    }
+
+    function layWarp(c, r) {
+      if (c < 0 || r < 0 || c >= cols || r >= rows) return;
+      warp[c + r * cols] = hue;
+      redrawCell(c, r);
+    }
+
+    let drawing = false;
+    let lastX = 0, lastY = 0;
+
+    function weaveTo(x, y) {
+      const dx = x - lastX, dy = y - lastY;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 3) return;
+
+      hue = (hue + dist * 0.12) % 360;
+
+      const steps = Math.ceil(dist / (LANE * 0.5));
+      for (let i = 1; i <= steps; i++) {
+        const px = lastX + (dx * i) / steps;
+        const py = lastY + (dy * i) / steps;
+        const c = Math.floor(px / LANE);
+        const r = Math.floor(py / LANE);
+        if (Math.abs(dx) >= Math.abs(dy)) layWeft(c, r);
+        else layWarp(c, r);
+      }
+
+      lastX = x;
+      lastY = y;
+    }
+
+    // ---- Input ----
+
+    canvas.addEventListener('pointerdown', (e) => {
+      drawing = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      hint.classList.add('hidden');
+      controls.classList.add('faded');
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!drawing) return;
+      if (e.getCoalescedEvents) {
+        for (const ev of e.getCoalescedEvents()) weaveTo(ev.clientX, ev.clientY);
+      } else {
+        weaveTo(e.clientX, e.clientY);
+      }
+    });
+
+    function stopDrawing() {
+      drawing = false;
+      controls.classList.remove('faded');
+    }
+    canvas.addEventListener('pointerup', stopDrawing);
+    canvas.addEventListener('pointercancel', stopDrawing);
+
+    // ---- Controls ----
+
+    document.getElementById('clear').addEventListener('click', () => {
+      warp.fill(-1);
+      weft.fill(-1);
+      paintBacking();
+    });
+
+    document.getElementById('save').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'weave.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'c' || e.key === 'C') document.getElementById('clear').click();
+      if (e.key === 's' || e.key === 'S') document.getElementById('save').click();
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 200);
+    });
+
+    setup();
+    setTimeout(() => hint.classList.add('hidden'), 10000);
+  </script>
+</body>
+</html>

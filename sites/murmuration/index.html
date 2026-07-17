@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Murmuration</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #10141f;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #sky {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: none;
+    }
+
+    #hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 6vh;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(14px, 2vw, 18px);
+      color: rgba(230, 214, 188, 0.5);
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      transition: opacity 3s ease;
+    }
+
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="sky"></canvas>
+  <div id="hint">your cursor is the hawk</div>
+
+  <script>
+    const canvas = document.getElementById('sky');
+    const ctx = canvas.getContext('2d');
+    const hint = document.getElementById('hint');
+
+    let W, H, dpr;
+    let background;
+
+    // ---- Boids ----
+
+    let N;
+    let px, py, vx, vy;
+
+    const MAX_SPEED = 4.3;
+    const MIN_SPEED = 2.3;
+    const FLEE_SPEED = 5.6;
+    const NEIGHBOR_R = 52;
+    const SEP_R = 18;
+    const TOPO = 7;            // starlings track ~7 nearest neighbors
+    const FLEE_R = 160;
+
+    // spatial hash
+    let cellSize, cols, rows, cellHead, cellNext;
+
+    function initBoids() {
+      N = Math.max(900, Math.min(2400, Math.floor((W * H) / 850)));
+      px = new Float32Array(N); py = new Float32Array(N);
+      vx = new Float32Array(N); vy = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        px[i] = W * (0.3 + Math.random() * 0.4);
+        py[i] = H * (0.15 + Math.random() * 0.35);
+        const a = Math.random() * Math.PI * 2;
+        const s = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+        vx[i] = Math.cos(a) * s;
+        vy[i] = Math.sin(a) * s;
+      }
+      cellSize = NEIGHBOR_R;
+      cols = Math.max(1, Math.ceil(W / cellSize));
+      rows = Math.max(1, Math.ceil(H / cellSize));
+      cellHead = new Int32Array(cols * rows);
+      cellNext = new Int32Array(N);
+    }
+
+    function buildGrid() {
+      cellHead.fill(-1);
+      for (let i = 0; i < N; i++) {
+        let cx = (px[i] / cellSize) | 0;
+        let cy = (py[i] / cellSize) | 0;
+        if (cx < 0) cx = 0; else if (cx >= cols) cx = cols - 1;
+        if (cy < 0) cy = 0; else if (cy >= rows) cy = rows - 1;
+        const c = cx + cy * cols;
+        cellNext[i] = cellHead[c];
+        cellHead[c] = i;
+      }
+    }
+
+    // ---- Predator (the hawk) ----
+
+    const hawk = {
+      x: -9999, y: -9999,
+      tx: -9999, ty: -9999,
+      active: false,
+      auto: false,
+      autoT: 0, autoDur: 0,
+      ax0: 0, ay0: 0, ax1: 0, ay1: 0,
+      lastPointer: -60000,
+      vx: 0, vy: 0,
+    };
+    let autoTimer = 8000 + Math.random() * 8000;
+
+    // ---- Wandering attractor keeps the flock in the sky ----
+
+    let t0 = performance.now();
+    const p1 = Math.random() * 10, p2 = Math.random() * 10, p3 = Math.random() * 10;
+
+    function attractor(now) {
+      const t = now - t0;
+      return {
+        x: W * (0.5 + 0.28 * Math.sin(t * 0.00013 + p1) * Math.sin(t * 0.00007 + p2)),
+        y: H * (0.34 + 0.16 * Math.sin(t * 0.00011 + p3)),
+      };
+    }
+
+    // ---- Simulation ----
+
+    const nIdx = new Int32Array(64);
+
+    function step(now, dt) {
+      buildGrid();
+      const att = attractor(now);
+      const ceiling = H * 0.06;
+      const floor = H * 0.72;
+      const hawkOn = hawk.active || hawk.auto;
+
+      for (let i = 0; i < N; i++) {
+        const x = px[i], y = py[i];
+
+        // gather up to TOPO neighbors from surrounding cells
+        let count = 0;
+        const cx = Math.min(cols - 1, Math.max(0, (x / cellSize) | 0));
+        const cy = Math.min(rows - 1, Math.max(0, (y / cellSize) | 0));
+        for (let gy = Math.max(0, cy - 1); gy <= Math.min(rows - 1, cy + 1) && count < 24; gy++) {
+          for (let gx = Math.max(0, cx - 1); gx <= Math.min(cols - 1, cx + 1) && count < 24; gx++) {
+            let j = cellHead[gx + gy * cols];
+            while (j !== -1 && count < 24) {
+              if (j !== i) nIdx[count++] = j;
+              j = cellNext[j];
+            }
+          }
+        }
+
+        let ax = 0, ay = 0;
+        let avx = 0, avy = 0, ccx = 0, ccy = 0, used = 0;
+
+        for (let k = 0; k < count && used < TOPO; k++) {
+          const j = nIdx[k];
+          const dx = px[j] - x, dy = py[j] - y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 > NEIGHBOR_R * NEIGHBOR_R) continue;
+          used++;
+          avx += vx[j]; avy += vy[j];
+          ccx += px[j]; ccy += py[j];
+          if (d2 < SEP_R * SEP_R && d2 > 0.01) {
+            const d = Math.sqrt(d2);
+            const f = (1 - d / SEP_R) * 0.55;
+            ax -= (dx / d) * f;
+            ay -= (dy / d) * f;
+          }
+        }
+
+        if (used > 0) {
+          ax += (avx / used - vx[i]) * 0.065;              // alignment
+          ay += (avy / used - vy[i]) * 0.065;
+          ax += (ccx / used - x) * 0.0045;                 // cohesion
+          ay += (ccy / used - y) * 0.0045;
+        }
+
+        // drift toward the wandering roost point
+        ax += (att.x - x) * 0.00055;
+        ay += (att.y - y) * 0.00055;
+
+        // stay in the sky
+        if (y > floor) ay -= (y - floor) * 0.004;
+        if (y < ceiling) ay += (ceiling - y) * 0.004;
+        if (x < W * 0.04) ax += (W * 0.04 - x) * 0.003;
+        if (x > W * 0.96) ax -= (x - W * 0.96) * 0.003;
+
+        // flee the hawk
+        let fleeing = false;
+        if (hawkOn) {
+          const dx = x - hawk.x, dy = y - hawk.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < FLEE_R * FLEE_R && d2 > 0.01) {
+            const d = Math.sqrt(d2);
+            const f = (1 - d / FLEE_R);
+            ax += (dx / d) * f * 1.5;
+            ay += (dy / d) * f * 1.5;
+            fleeing = true;
+          }
+        }
+
+        vx[i] += ax * dt;
+        vy[i] += ay * dt;
+
+        const sp = Math.hypot(vx[i], vy[i]);
+        const cap = fleeing ? FLEE_SPEED : MAX_SPEED;
+        if (sp > cap) { vx[i] = vx[i] / sp * cap; vy[i] = vy[i] / sp * cap; }
+        else if (sp < MIN_SPEED && sp > 0.01) { vx[i] = vx[i] / sp * MIN_SPEED; vy[i] = vy[i] / sp * MIN_SPEED; }
+
+        px[i] += vx[i] * dt;
+        py[i] += vy[i] * dt;
+      }
+    }
+
+    // ---- Background: dusk over dark hills ----
+
+    function drawBackground() {
+      background = document.createElement('canvas');
+      background.width = W * dpr;
+      background.height = H * dpr;
+      const b = background.getContext('2d');
+      b.scale(dpr, dpr);
+
+      const sky = b.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#141a2e');
+      sky.addColorStop(0.45, '#2c2f4a');
+      sky.addColorStop(0.68, '#6d4a5b');
+      sky.addColorStop(0.8, '#b06a45');
+      sky.addColorStop(0.88, '#d9955c');
+      sky.addColorStop(1, '#e8b070');
+      b.fillStyle = sky;
+      b.fillRect(0, 0, W, H);
+
+      // low sun glow
+      const sunX = W * 0.68, sunY = H * 0.84;
+      const glow = b.createRadialGradient(sunX, sunY, 0, sunX, sunY, W * 0.35);
+      glow.addColorStop(0, 'rgba(255, 214, 150, 0.55)');
+      glow.addColorStop(1, 'rgba(255, 214, 150, 0)');
+      b.fillStyle = glow;
+      b.fillRect(0, 0, W, H);
+
+      // two ranges of hills
+      drawHills(b, H * 0.84, H * 0.05, '#241f2b');
+      drawHills(b, H * 0.9, H * 0.04, '#15121c');
+
+      // a bare tree on one side
+      const tx = Math.random() < 0.5 ? W * 0.12 : W * 0.86;
+      drawTree(b, tx, H * 0.905, H * 0.14);
+    }
+
+    function drawHills(b, baseY, amp, color) {
+      b.fillStyle = color;
+      b.beginPath();
+      b.moveTo(0, H);
+      b.lineTo(0, baseY);
+      const segs = 7;
+      let prevX = 0, prevY = baseY + (Math.random() - 0.5) * amp;
+      for (let s = 1; s <= segs; s++) {
+        const nx = (W / segs) * s;
+        const ny = baseY + (Math.random() - 0.5) * 2 * amp;
+        const cx = (prevX + nx) / 2;
+        b.quadraticCurveTo(prevX, prevY, cx, (prevY + ny) / 2);
+        prevX = nx; prevY = ny;
+      }
+      b.lineTo(W, H);
+      b.closePath();
+      b.fill();
+    }
+
+    function drawTree(b, x, y, h) {
+      b.strokeStyle = '#0d0b12';
+      b.lineCap = 'round';
+      const branch = (bx, by, angle, len, width, depth) => {
+        if (depth === 0 || len < 3) return;
+        const ex = bx + Math.cos(angle) * len;
+        const ey = by + Math.sin(angle) * len;
+        b.lineWidth = width;
+        b.beginPath();
+        b.moveTo(bx, by);
+        b.lineTo(ex, ey);
+        b.stroke();
+        const n = 2 + (Math.random() < 0.4 ? 1 : 0);
+        for (let i = 0; i < n; i++) {
+          branch(ex, ey, angle + (Math.random() - 0.5) * 1.1, len * (0.62 + Math.random() * 0.16), width * 0.62, depth - 1);
+        }
+      };
+      branch(x, y, -Math.PI / 2 + (Math.random() - 0.5) * 0.2, h * 0.42, h * 0.045, 6);
+    }
+
+    // ---- Render ----
+
+    function render(now) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // birds as short streaks along their velocity
+      ctx.strokeStyle = 'rgba(16, 16, 24, 0.92)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        ctx.moveTo(px[i], py[i]);
+        ctx.lineTo(px[i] - vx[i] * 1.15, py[i] - vy[i] * 1.15);
+      }
+      ctx.stroke();
+
+      if (hawk.active || hawk.auto) drawHawk();
+    }
+
+    function drawHawk() {
+      const ang = Math.atan2(hawk.vy, hawk.vx || 0.001);
+      ctx.save();
+      ctx.translate(hawk.x, hawk.y);
+      ctx.rotate(ang);
+      ctx.fillStyle = 'rgba(10, 10, 16, 0.95)';
+      // body
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 11, 3.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // swept wings
+      ctx.beginPath();
+      ctx.moveTo(2, 0);
+      ctx.quadraticCurveTo(-6, -16, -16, -20);
+      ctx.quadraticCurveTo(-4, -8, -3, -1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(2, 0);
+      ctx.quadraticCurveTo(-6, 16, -16, 20);
+      ctx.quadraticCurveTo(-4, 8, -3, 1);
+      ctx.closePath();
+      ctx.fill();
+      // tail
+      ctx.beginPath();
+      ctx.moveTo(-9, 0);
+      ctx.lineTo(-17, -3);
+      ctx.lineTo(-17, 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ---- Hawk update ----
+
+    function updateHawk(now, dt) {
+      if (hawk.active) {
+        const ox = hawk.x, oy = hawk.y;
+        hawk.x += (hawk.tx - hawk.x) * 0.25 * dt;
+        hawk.y += (hawk.ty - hawk.y) * 0.25 * dt;
+        hawk.vx = hawk.vx * 0.8 + (hawk.x - ox) * 0.2;
+        hawk.vy = hawk.vy * 0.8 + (hawk.y - oy) * 0.2;
+        if (now - hawk.lastPointer > 6000) hawk.active = false;
+        return;
+      }
+      if (hawk.auto) {
+        hawk.autoT += dt * 16.7;
+        const t = Math.min(1, hawk.autoT / hawk.autoDur);
+        const ox = hawk.x, oy = hawk.y;
+        hawk.x = hawk.ax0 + (hawk.ax1 - hawk.ax0) * t;
+        hawk.y = hawk.ay0 + (hawk.ay1 - hawk.ay0) * t + Math.sin(t * Math.PI * 3) * 30;
+        hawk.vx = hawk.x - ox; hawk.vy = hawk.y - oy;
+        if (t >= 1) hawk.auto = false;
+        return;
+      }
+      // idle: occasionally a wild hawk glides through
+      autoTimer -= dt * 16.7;
+      if (autoTimer <= 0 && now - hawk.lastPointer > 6000) {
+        hawk.auto = true;
+        hawk.autoT = 0;
+        hawk.autoDur = 5000 + Math.random() * 3000;
+        const fromLeft = Math.random() < 0.5;
+        hawk.ax0 = fromLeft ? -40 : W + 40;
+        hawk.ax1 = fromLeft ? W + 40 : -40;
+        hawk.ay0 = H * (0.15 + Math.random() * 0.4);
+        hawk.ay1 = H * (0.15 + Math.random() * 0.4);
+        hawk.x = hawk.ax0; hawk.y = hawk.ay0;
+        autoTimer = 12000 + Math.random() * 14000;
+      }
+    }
+
+    // ---- Main loop ----
+
+    let lastFrame = performance.now();
+
+    function loop(now) {
+      let dt = (now - lastFrame) / 16.7;
+      lastFrame = now;
+      dt = Math.max(0.2, Math.min(2.5, dt));
+
+      updateHawk(now, dt);
+      step(now, dt);
+      render(now);
+      requestAnimationFrame(loop);
+    }
+
+    // ---- Input ----
+
+    function pointerMove(x, y, now) {
+      if (!hawk.active) { hawk.x = x; hawk.y = y; hawk.vx = 0; hawk.vy = 0; }
+      hawk.tx = x; hawk.ty = y;
+      hawk.active = true;
+      hawk.auto = false;
+      hawk.lastPointer = now;
+      hint.classList.add('hidden');
+    }
+
+    canvas.addEventListener('pointermove', (e) => pointerMove(e.clientX, e.clientY, performance.now()));
+    canvas.addEventListener('pointerdown', (e) => pointerMove(e.clientX, e.clientY, performance.now()));
+    window.addEventListener('pointerout', (e) => {
+      if (!e.relatedTarget) hawk.active = false;
+    });
+
+    // ---- Setup ----
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawBackground();
+      initBoids();
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 200);
+    });
+
+    setup();
+    setTimeout(() => hint.classList.add('hidden'), 8000);
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
