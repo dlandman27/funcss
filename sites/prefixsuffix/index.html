@@ -1,115 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Longest Name</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            padding: 20px;
+            min-height: 100vh;
+            padding: 40px 20px;
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            max-width: 1200px;
-            margin: 0 auto;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        h1 {
+        .nametag {
+            background: #e8112d;
+            border-radius: 22px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+            width: min(680px, 100%);
+            overflow: hidden;
+            transform: rotate(-1.5deg);
+            padding-bottom: 34px; /* the red strip at the bottom of the sticker */
+        }
+
+        .nametag-header {
+            color: white;
             text-align: center;
-            color: #333;
-            margin-bottom: 30px;
+            padding: 22px 20px 14px;
         }
 
-        .mega-name {
-            font-size: 1.5em;
-            padding: 30px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            white-space: nowrap;
-            overflow-x: auto;
-            margin-bottom: 30px;
-            border: 1px solid #ddd;
+        .nametag-header .hello {
+            font-size: 3.4em;
+            font-weight: 900;
+            font-family: Arial, Helvetica, sans-serif;
+            letter-spacing: 2px;
+            line-height: 1;
         }
 
-        .guide {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border: 1px solid #ddd;
+        .nametag-header .subtitle {
+            font-size: 1.05em;
+            font-weight: bold;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-top: 8px;
         }
 
-        .guide h2 {
-            color: #333;
-            margin-top: 0;
+        .nametag-body {
+            background: white;
+            margin: 0 14px;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
         }
 
-        .guide ul {
-            padding-left: 20px;
+        #name {
+            font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+            color: #1d3557;
+            text-align: center;
+            font-size: 2em;
+            line-height: 1.35;
+            overflow-wrap: break-word;
+            max-width: 100%;
         }
 
-        .guide li {
-            margin-bottom: 10px;
-            line-height: 1.5;
+        .stats {
+            color: rgba(255,255,255,0.85);
+            margin: 22px 0 6px;
+            font-size: 0.95em;
         }
 
-        /* Add subtle scrollbar styling */
-        .mega-name::-webkit-scrollbar {
-            height: 8px;
+        .stats strong {
+            color: white;
+            font-size: 1.15em;
         }
 
-        .mega-name::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
+        .controls {
+            width: min(680px, 100%);
+            margin-top: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
         }
 
-        .mega-name::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            background: #f1faee;
+            color: #1d3557;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.25);
+            transition: transform 0.05s, box-shadow 0.05s;
         }
 
-        .mega-name::-webkit-scrollbar-thumb:hover {
-            background: #555;
+        button:hover {
+            background: white;
+        }
+
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.25);
+        }
+
+        button.majesty {
+            background: #ffb703;
+        }
+
+        button.reset {
+            background: transparent;
+            color: rgba(255,255,255,0.8);
+            box-shadow: none;
+        }
+
+        button.reset:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .picker {
+            width: min(680px, 100%);
+            margin-top: 14px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .picker .chip {
+            background: rgba(255,255,255,0.92);
+            border-radius: 999px;
+            padding: 7px 14px;
+            font-weight: normal;
+            font-size: 0.9em;
+            box-shadow: none;
+        }
+
+        .picker .chip.used {
+            opacity: 0.35;
+        }
+
+        .picker .chip.surprise {
+            background: #ffb703;
+            font-weight: bold;
+        }
+
+        .controls button.open {
+            outline: 3px solid #ffb703;
+        }
+
+        .myname {
+            width: min(680px, 100%);
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .myname input {
+            flex: 0 1 320px;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 0.95em;
+            font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+        }
+
+        .myname input:focus {
+            outline: 3px solid #ffb703;
+        }
+
+        .order-note {
+            color: rgba(255,255,255,0.55);
+            font-size: 0.85em;
+            margin-top: 28px;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.6;
         }
     </style>
 </head>
 <body>
-    <h1>The Longest Name</h1>
-    <div class="mega-name">
-        His Most Sacred Imperial and Royal Majesty The Right Honourable Lord High Chancellor Sir The Most Reverend Dr. Prof. Chancellor Dean President Ambassador General Admiral Field Marshal Chief Justice Supreme Commander James William Alexander Robert George Edward Charles Henry Arthur Thomas Michael Philip David Richard Joseph Christopher Benjamin Smith-Jones-Williams-Brown-Taylor-Davies-Evans-Wilson-Roberts-Thompson-Clarke-Walker-Wright-Robinson-Wood III Jr. Sr., KBE, GBE, KCB, OM, CH, GCVO, PC, AFC, DSO, MC, PhD, MD, ScD, DPhil, LLD, DD, DSc, DCL, DLitt, DMus, DEd, MBA, JD, FRCS, FRCP, FRS, FRSA, FBA, FSA, FRCOG, FRCP, FRCR, FRCA, FRCGP, FDSRCS, FRCPCH, FRCPE, FRCPI, FRCSE, FRCSI, FRCPsych, FRCEM, FRCPSG, Esq.
+    <div class="nametag">
+        <div class="nametag-header">
+            <div class="hello">HELLO</div>
+            <div class="subtitle">my name is</div>
+        </div>
+        <div class="nametag-body">
+            <div id="name"></div>
+        </div>
     </div>
-    <div class="guide">
-        <h2>About This Name</h2>
-        <ul>
-            <li><strong>What is this?</strong> This is an example of an extremely long formal name that includes various titles, honors, and post-nominal letters.</li>
-            <li><strong>How to read it:</strong> The name scrolls horizontally. You can use your mouse wheel or trackpad to scroll left and right, o click and drag the scrollbar below the name.</li>
-            <li><strong>Components include:</strong>
-                <ul>
-                    <li>Royal and noble titles</li>
-                    <li>Academic titles and degrees</li>
-                    <li>Military ranks</li>
-                    <li>Professional positions</li>
-                    <li>Multiple surnames</li>
-                    <li>Honors and decorations</li>
-                    <li>Professional fellowships</li>
-                </ul>
-            </li>
-            <li><strong>Name Component Order:</strong>
-                <ul>
-                    <li>Honorific Titles (His Most Sacred Imperial and Royal Majesty)</li>
-                    <li>Professional Titles (Lord High Chancellor, Ambassador, etc.)</li>
-                    <li>Academic Titles (Dr., Prof.)</li>
-                    <li>Given Names (James William Alexander...)</li>
-                    <li>Compound Surname (Smith-Jones-Williams...)</li>
-                    <li>Generational Suffixes (III Jr. Sr.)</li>
-                    <li>Orders of Chivalry (KBE, GBE, etc.)</li>
-                    <li>Academic Degrees (PhD, MD, etc.)</li>
-                    <li>Professional Fellowships (FRCS, FRCP, etc.)</li>
-                </ul>
-            </li>
-            <li><strong>Fun fact:</strong> While this is an exaggerated example, some historical figures did have remarkably long names and titles, particularly among nobility and royalty.</li>
-        </ul>
+
+    <div class="stats"><strong id="charCount">0</strong> characters &middot; <strong id="partCount">0</strong> parts</div>
+
+    <form class="myname" id="mynameForm">
+        <input type="text" id="mynameInput" placeholder="Type your actual name…" maxlength="80" autocomplete="name">
+        <button type="submit">That's Me</button>
+    </form>
+
+    <div class="controls">
+        <button data-cat="honorifics">+ Royal Title</button>
+        <button data-cat="positions">+ Important Job</button>
+        <button data-cat="academic">+ Dr. / Prof.</button>
+        <button data-cat="given">+ First Name</button>
+        <button data-cat="surnames">+ Surname</button>
+        <button data-cat="generational">+ Jr. / III</button>
+        <button data-cat="postnoms">+ Fancy Letters</button>
+        <button class="majesty" id="majestyBtn">👑 Full Majesty</button>
+        <button class="reset" id="resetBtn">Start Over</button>
     </div>
+
+    <div class="picker" id="picker" hidden></div>
+
+    <p class="order-note">
+        Formal names follow a strict order: honorific titles, then professional positions, academic titles,
+        given names, the (hyphenated) surname, generational suffixes, and finally the post-nominal letters.
+        This page respects the rules. It just doesn't respect moderation.
+    </p>
+
+    <script>
+        const POOLS = {
+            honorifics: ['His Most Sacred Imperial and Royal Majesty', 'The Right Honourable', 'His Serene Highness', 'The Most Reverend', 'His Excellency', 'The Most Noble', 'His Illustrious Highness', 'The Venerable'],
+            positions: ['Lord High Chancellor', 'Supreme Commander', 'Field Marshal', 'Chief Justice', 'Ambassador', 'Admiral of the Fleet', 'President', 'Chancellor', 'Dean', 'Grand Vizier', 'Lord Warden of the Cinque Ports', 'Master of the Rolls'],
+            academic: ['Dr.', 'Prof.', 'The Learned Dr.', 'Prof. Emeritus'],
+            given: ['James', 'William', 'Alexander', 'Robert', 'George', 'Edward', 'Charles', 'Henry', 'Arthur', 'Thomas', 'Michael', 'Philip', 'David', 'Richard', 'Joseph', 'Christopher', 'Benjamin', 'Maximilian', 'Bartholomew', 'Montgomery'],
+            surnames: ['Smith', 'Jones', 'Williams', 'Brown', 'Taylor', 'Davies', 'Evans', 'Wilson', 'Roberts', 'Thompson', 'Clarke', 'Walker', 'Wright', 'Robinson', 'Wood', 'Featherstonehaugh', 'Cholmondeley', 'Worcestershire'],
+            generational: ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V', 'VI', 'the Elder', 'the Younger'],
+            postnoms: ['KBE', 'GBE', 'KCB', 'OM', 'CH', 'GCVO', 'PC', 'AFC', 'DSO', 'MC', 'PhD', 'MD', 'ScD', 'DPhil', 'LLD', 'DD', 'DSc', 'DCL', 'DLitt', 'DMus', 'MBA', 'JD', 'FRCS', 'FRCP', 'FRS', 'FRSA', 'FBA', 'FSA', 'FRCPsych', 'FRCEM', 'Esq.']
+        };
+
+        // Canonical formal-name order
+        const ORDER = ['honorifics', 'positions', 'academic', 'given', 'surnames', 'generational', 'postnoms'];
+
+        let parts;
+
+        function baseName() {
+            const saved = localStorage.getItem('longestname-basename');
+            if (!saved) return { given: ['James'], surnames: ['Smith'] };
+            const words = saved.trim().split(/\s+/);
+            if (words.length === 1) return { given: words, surnames: [] };
+            return { given: words.slice(0, -1), surnames: words.slice(-1) };
+        }
+
+        function freshStart() {
+            const base = baseName();
+            parts = { honorifics: [], positions: [], academic: [], given: [...base.given], surnames: [...base.surnames], generational: [], postnoms: [] };
+        }
+
+        function pick(cat) {
+            const unused = POOLS[cat].filter(x => !parts[cat].includes(x));
+            const pool = unused.length ? unused : POOLS[cat];
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        function buildName() {
+            const segs = [];
+            for (const cat of ORDER) {
+                if (!parts[cat].length) continue;
+                if (cat === 'surnames') segs.push(parts[cat].join('-'));
+                else if (cat === 'postnoms') segs.push(parts[cat].join(', '));
+                else segs.push(parts[cat].join(' '));
+            }
+            // Comma before the post-nominals, spaces everywhere else
+            const main = segs.slice(0, parts.postnoms.length ? -1 : segs.length).join(' ');
+            return parts.postnoms.length ? main + ', ' + segs[segs.length - 1] : main;
+        }
+
+        function render() {
+            const name = buildName();
+            const el = document.getElementById('name');
+            el.textContent = name;
+            const size = Math.max(0.9, 2 - name.length / 220);
+            el.style.fontSize = size + 'em';
+            document.getElementById('charCount').textContent = name.length;
+            document.getElementById('partCount').textContent = ORDER.reduce((n, c) => n + parts[c].length, 0);
+        }
+
+        const picker = document.getElementById('picker');
+        let openCat = null;
+
+        function renderPicker() {
+            if (!openCat) {
+                picker.hidden = true;
+                document.querySelectorAll('button[data-cat]').forEach(b => b.classList.remove('open'));
+                return;
+            }
+            picker.hidden = false;
+            document.querySelectorAll('button[data-cat]').forEach(b =>
+                b.classList.toggle('open', b.dataset.cat === openCat));
+            picker.innerHTML = '';
+
+            const surprise = document.createElement('button');
+            surprise.className = 'chip surprise';
+            surprise.textContent = '🎲 Surprise me';
+            surprise.addEventListener('click', () => {
+                parts[openCat].push(pick(openCat));
+                render();
+                renderPicker();
+            });
+            picker.appendChild(surprise);
+
+            for (const item of POOLS[openCat]) {
+                const chip = document.createElement('button');
+                chip.className = 'chip' + (parts[openCat].includes(item) ? ' used' : '');
+                chip.textContent = item;
+                chip.addEventListener('click', () => {
+                    const i = parts[openCat].indexOf(item);
+                    if (i >= 0) parts[openCat].splice(i, 1);
+                    else parts[openCat].push(item);
+                    render();
+                    renderPicker();
+                });
+                picker.appendChild(chip);
+            }
+        }
+
+        document.querySelectorAll('button[data-cat]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                openCat = openCat === btn.dataset.cat ? null : btn.dataset.cat;
+                renderPicker();
+            });
+        });
+
+        document.getElementById('mynameForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const value = document.getElementById('mynameInput').value.trim();
+            if (!value) return;
+            localStorage.setItem('longestname-basename', value);
+            const base = baseName();
+            parts.given = [...base.given];
+            parts.surnames = [...base.surnames];
+            render();
+            renderPicker();
+        });
+
+        document.getElementById('majestyBtn').addEventListener('click', () => {
+            // Every title and honor, but keep whoever the tag belongs to
+            const base = baseName();
+            for (const cat of ORDER) {
+                parts[cat] = [...POOLS[cat]];
+            }
+            parts.given = [...base.given];
+            parts.surnames = [...base.surnames];
+            render();
+            renderPicker();
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            freshStart();
+            render();
+            renderPicker();
+        });
+
+        freshStart();
+        render();
+    </script>
 </body>
 </html>
