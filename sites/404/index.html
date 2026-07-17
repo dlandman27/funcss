@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>404 Not Found</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500;700&family=Caveat:wght@600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --ink: #14110f;
+            --rust: #8a5a33;
+            --steel: #4a4644;
+            --steel-dark: #322f2d;
+            --brass: #c9a04e;
+            --glow: #ffd97a;
+            --paper: #f5ecd6;
+            --red: #c0392b;
+        }
+
+        html, body { height: 100%; }
+
+        /* ── PHASE 1: a perfectly normal 404 page ── */
+        #error-page {
+            min-height: 100vh;
+            background: #fff;
+            color: #000;
+            font-family: 'Times New Roman', Times, serif;
+            padding: 24px 0 0 24px;
+            transition: opacity 0.9s ease;
+        }
+        #error-page h1 { font-size: 2em; font-weight: 700; margin-bottom: 8px; }
+        #error-page hr { border: none; border-top: 1px solid #000; margin: 8px 0; }
+        #error-page .server { font-style: italic; }
+
+        .psst {
+            font-family: 'Times New Roman', Times, serif;
+            margin-top: 48px;
+            color: #444;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+        .psst.show { opacity: 1; }
+        #come-in {
+            display: inline-block;
+            margin-top: 10px;
+            font-family: inherit;
+            font-size: 1em;
+            background: none;
+            border: none;
+            color: #0000ee;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        #error-page.leaving { opacity: 0; pointer-events: none; }
+
+        /* ── PHASE 2: the room ── */
+        #room {
+            display: none;
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse at 50% 30%, rgba(255, 217, 122, 0.08), transparent 60%),
+                linear-gradient(#1b1816, #0e0c0b);
+            color: var(--paper);
+            font-family: 'Space Grotesk', sans-serif;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 60px;
+            gap: 30px;
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+        }
+        #room.on { display: flex; animation: room-in 1.2s ease; }
+        @keyframes room-in { from { opacity: 0; } to { opacity: 1; } }
+
+        .room-sign {
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.25em;
+            font-size: clamp(0.8rem, 2.5vw, 1.05rem);
+            color: var(--brass);
+            border: 2px solid var(--brass);
+            padding: 8px 18px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(201, 160, 78, 0.15);
+            animation: flicker 7s infinite;
+        }
+        @keyframes flicker {
+            0%, 91%, 93%, 100% { opacity: 1; }
+            92% { opacity: 0.35; }
+        }
+        .room-sub {
+            font-size: 0.8rem;
+            color: rgba(245, 236, 214, 0.45);
+            margin-top: -20px;
+            font-style: italic;
+        }
+
+        /* ── the machine ── */
+        #machine {
+            width: min(440px, 92vw);
+            background: linear-gradient(var(--steel), var(--steel-dark));
+            border: 3px solid var(--ink);
+            border-radius: 16px;
+            padding: 22px 22px 26px;
+            position: relative;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.08);
+        }
+        #machine.rumble { animation: rumble 0.5s linear; }
+        @keyframes rumble {
+            0%, 100% { transform: translate(0, 0) rotate(0); }
+            20% { transform: translate(-3px, 2px) rotate(-0.5deg); }
+            40% { transform: translate(3px, -2px) rotate(0.5deg); }
+            60% { transform: translate(-2px, -1px) rotate(-0.3deg); }
+            80% { transform: translate(2px, 1px) rotate(0.3deg); }
+        }
+        .machine-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.2em;
+            text-align: center;
+            color: var(--paper);
+            background: var(--red);
+            border: 2px solid var(--ink);
+            border-radius: 6px;
+            padding: 5px 8px;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+        }
+        .rivet {
+            position: absolute;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #6b6560;
+            box-shadow: inset -1px -1px 2px rgba(0,0,0,0.6);
+        }
+        .rivet.tl { top: 8px; left: 8px; } .rivet.tr { top: 8px; right: 8px; }
+        .rivet.bl { bottom: 8px; left: 8px; } .rivet.br { bottom: 8px; right: 8px; }
+
+        .gauges { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .gauge {
+            width: 74px; height: 74px;
+            border-radius: 50%;
+            background: var(--paper);
+            border: 3px solid var(--ink);
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.25);
+        }
+        .gauge .needle {
+            position: absolute;
+            left: 50%; bottom: 50%;
+            width: 3px; height: 28px;
+            margin-left: -1.5px;
+            background: var(--red);
+            border-radius: 2px;
+            transform-origin: bottom center;
+            transition: transform 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+        }
+        .gauge::after {
+            content: '';
+            position: absolute;
+            left: 50%; top: 50%;
+            width: 8px; height: 8px;
+            margin: -4px 0 0 -4px;
+            border-radius: 50%;
+            background: var(--ink);
+        }
+        .gauge small {
+            position: absolute;
+            bottom: 8px; left: 0; right: 0;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--ink);
+            letter-spacing: 0.05em;
+        }
+
+        /* digit chute */
+        .chute {
+            height: 54px;
+            background: #0d0b0a;
+            border: 3px solid var(--ink);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--glow);
+            letter-spacing: 0.35em;
+            text-shadow: 0 0 12px rgba(255, 217, 122, 0.55);
+        }
+
+        /* the lever */
+        .lever-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        #lever {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--paper);
+            background: var(--red);
+            border: 3px solid var(--ink);
+            border-radius: 10px;
+            padding: 12px 26px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 var(--ink);
+            transition: transform 0.08s ease, box-shadow 0.08s ease;
+        }
+        #lever:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+        #dispense-msg {
+            min-height: 20px;
+            font-size: 0.8rem;
+            color: rgba(245, 236, 214, 0.6);
+            text-align: center;
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        /* floating digits */
+        .float-digit {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--glow);
+            text-shadow: 0 0 10px rgba(255, 217, 122, 0.6);
+            pointer-events: none;
+            z-index: 50;
+            animation: digit-rise linear forwards;
+        }
+        @keyframes digit-rise {
+            to { transform: translateY(-45vh) rotate(var(--spin, 40deg)); opacity: 0; }
+        }
+
+        /* maintenance log */
+        .log {
+            width: min(360px, 90vw);
+            background: var(--paper);
+            color: var(--ink);
+            border: 3px solid var(--ink);
+            border-radius: 4px;
+            padding: 16px 20px;
+            transform: rotate(-1.6deg);
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45);
+            font-family: 'Caveat', cursive;
+            font-size: 1.25rem;
+            line-height: 1.45;
+        }
+        .log h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.66rem;
+            letter-spacing: 0.2em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .log li { list-style: none; }
+        .log li + li { border-top: 1px dashed rgba(20, 17, 15, 0.25); }
+
+        /* exit */
+        .exit {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            color: rgba(245, 236, 214, 0.55);
+            text-decoration: none;
+            border: 2px solid rgba(245, 236, 214, 0.25);
+            border-radius: 6px;
+            padding: 8px 16px;
+            transition: all 0.2s ease;
+        }
+        .exit:hover { color: var(--paper); border-color: var(--paper); }
+
+        .room-footer {
+            font-size: 0.72rem;
+            color: rgba(245, 236, 214, 0.3);
+            font-style: italic;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .room-sign, #machine.rumble { animation: none; }
+            .float-digit { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Phase 1: nothing to see here -->
+    <div id="error-page">
+        <h1>404 Not Found</h1>
+        <hr>
+        <p class="server">nginx/1.18.0</p>
+
+        <div class="psst" id="psst1"><p>...</p></div>
+        <div class="psst" id="psst2">
+            <p>You're still here?</p>
+            <button id="come-in">fine. come in.</button>
+        </div>
+    </div>
+
+    <!-- Phase 2: the room that does not exist -->
+    <div id="room">
+        <div class="room-sign">RANDOMNESS DEPT. — AUTHORIZED PERSONNEL ONLY</div>
+        <p class="room-sub">so this is where it all comes from</p>
+
+        <div id="machine">
+            <span class="rivet tl"></span><span class="rivet tr"></span>
+            <span class="rivet bl"></span><span class="rivet br"></span>
+            <div class="machine-label">Randomness Engine · Do Not Touch</div>
+            <div class="gauges">
+                <div class="gauge"><span class="needle"></span><small>ENTROPY</small></div>
+                <div class="gauge"><span class="needle"></span><small>CHAOS</small></div>
+                <div class="gauge"><span class="needle"></span><small>WHIMSY</small></div>
+            </div>
+            <div class="chute" id="chute">0 0 0 0 0 0</div>
+            <div class="lever-row">
+                <button id="lever">PULL LEVER</button>
+            </div>
+            <div id="dispense-msg"></div>
+        </div>
+
+        <div class="log">
+            <h3>Maintenance log</h3>
+            <ul>
+                <li>Day 847 — the sevens keep coming out slightly bent.</li>
+                <li>Day 902 — found a 10 in the hopper. no idea. destroyed it.</li>
+                <li>Day 1,113 — mop missing again.</li>
+                <li>Day 1,240 — someone opened the door. investigating.</li>
+            </ul>
+        </div>
+
+        <a class="exit" href="/">← EXIT (back to the website)</a>
+        <p class="room-footer">This room does not exist.</p>
+    </div>
+
+    <script>
+        'use strict';
+
+        const $ = id => document.getElementById(id);
+
+        // ── Phase 1: let the silence sit, then crack the door ──
+        setTimeout(() => $('psst1').classList.add('show'), 2200);
+        setTimeout(() => $('psst2').classList.add('show'), 4200);
+
+        $('come-in').addEventListener('click', () => {
+            $('error-page').classList.add('leaving');
+            setTimeout(() => {
+                $('error-page').style.display = 'none';
+                $('room').classList.add('on');
+                document.title = 'Room 404';
+                startRoom();
+            }, 900);
+        });
+
+        // ── Phase 2 ──
+        let roomStarted = false;
+        function startRoom() {
+            if (roomStarted) return;
+            roomStarted = true;
+
+            // gauges idle at nervous little angles
+            const needles = document.querySelectorAll('.needle');
+            function jitter() {
+                needles.forEach(n => {
+                    n.style.transform = 'rotate(' + (Math.random() * 120 - 60) + 'deg)';
+                });
+                setTimeout(jitter, 900 + Math.random() * 1400);
+            }
+            jitter();
+
+            // the chute ticks over constantly
+            const chute = $('chute');
+            setInterval(() => {
+                chute.textContent = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join(' ');
+            }, 300);
+
+            // ambient digits drift up from the machine
+            setInterval(() => spawnDigit(false), 1400);
+        }
+
+        function spawnDigit(burst) {
+            const m = $('machine').getBoundingClientRect();
+            const d = document.createElement('span');
+            d.className = 'float-digit';
+            d.textContent = Math.floor(Math.random() * 10);
+            d.style.left = (m.left + Math.random() * m.width) + 'px';
+            d.style.top = (m.top + (burst ? Math.random() * 30 : 10)) + 'px';
+            d.style.fontSize = (burst ? 16 + Math.random() * 22 : 12 + Math.random() * 10) + 'px';
+            d.style.setProperty('--spin', (Math.random() * 140 - 70) + 'deg');
+            d.style.animationDuration = (2 + Math.random() * 2.5) + 's';
+            document.body.appendChild(d);
+            setTimeout(() => d.remove(), 5000);
+        }
+
+        // ── the lever ──
+        const QUALITY_CONTROL = [
+            'dispensed: one fresh 7.',
+            'warning: this 3 is slightly used.',
+            'that one came out warm. sorry.',
+            'a 9 got loose. it went toward the exit.',
+            'dispensed: several numbers. do not ask which.',
+            'the machine appreciated that.',
+            'entropy levels nominal. whimsy levels concerning.',
+            'please do not pull the lever again.',
+            'ok you can pull the lever again.',
+        ];
+        let pullCount = 0;
+
+        $('lever').addEventListener('click', () => {
+            const machine = $('machine');
+            machine.classList.remove('rumble');
+            void machine.offsetWidth;
+            machine.classList.add('rumble');
+
+            document.querySelectorAll('.needle').forEach(n => {
+                n.style.transform = 'rotate(' + (Math.random() * 160 - 80) + 'deg)';
+            });
+
+            const count = 14 + Math.floor(Math.random() * 10);
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => spawnDigit(true), i * 35);
+            }
+
+            pullCount++;
+            $('dispense-msg').textContent = pullCount <= QUALITY_CONTROL.length
+                ? QUALITY_CONTROL[pullCount - 1]
+                : QUALITY_CONTROL[Math.floor(Math.random() * QUALITY_CONTROL.length)];
+        });
+    </script>
+</body>
+</html>

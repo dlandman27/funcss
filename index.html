@@ -460,10 +460,166 @@
             color: var(--ink);
             display: inline-block;
             padding: 1px 8px;
+            min-width: 3.2ch;
+            text-align: center;
             border-radius: 6px;
             border: 2px solid var(--ink);
             background: var(--lime);
             transform: rotate(-2deg);
+        }
+
+        /* ── Sticker peel: cards lift a corner on hover ── */
+        .site-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            background: linear-gradient(225deg, var(--paper) 0%, var(--paper) 50%, #dfd2ae 50%, #c9b98e 100%);
+            box-shadow: -2px 2px 4px rgba(32, 26, 23, 0.25);
+            border-bottom-left-radius: 10px;
+            transition: width 0.18s ease, height 0.18s ease;
+            z-index: 5;
+        }
+        .site-card:hover::after {
+            width: 30px;
+            height: 30px;
+        }
+
+        /* ── Count badge: clickable +1 gag ── */
+        .site-count { cursor: pointer; }
+        .badge-pop { animation: badge-pop 0.2s ease; }
+        @keyframes badge-pop {
+            50% { transform: rotate(-2deg) scale(1.2); }
+        }
+        .badge-wobble { animation: badge-wobble 0.5s ease; }
+        @keyframes badge-wobble {
+            0%   { transform: rotate(-2deg); }
+            25%  { transform: rotate(5deg) scale(0.95); }
+            50%  { transform: rotate(-7deg); }
+            75%  { transform: rotate(3deg); }
+            100% { transform: rotate(-2deg); }
+        }
+        .plus-one {
+            position: fixed;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--ink);
+            background: var(--lime);
+            border: 2px solid var(--ink);
+            border-radius: 6px;
+            padding: 0 6px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            z-index: 9999;
+            animation: plus-one 0.8s ease-out forwards;
+        }
+        @keyframes plus-one {
+            0%   { transform: translate(-50%, 0) rotate(4deg); opacity: 1; }
+            100% { transform: translate(-50%, -56px) rotate(-8deg); opacity: 0; }
+        }
+
+        /* ── Draggable logo ── */
+        .logo-img { cursor: grab; touch-action: none; }
+        .logo-img.logo-return { transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .logo-img.logo-wobble { animation: logo-wobble 0.55s ease; }
+        @keyframes logo-wobble {
+            0%   { transform: rotate(0deg); }
+            25%  { transform: rotate(-4deg); }
+            50%  { transform: rotate(3deg); }
+            75%  { transform: rotate(-2deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* ── Konami code: everything falls off the sheet ── */
+        .sticker-fall {
+            animation: sticker-fall 1.7s cubic-bezier(0.45, 0, 0.9, 0.6) forwards;
+            pointer-events: none;
+        }
+        @keyframes sticker-fall {
+            0%   { transform: none; }
+            12%  { transform: translateY(-14px) rotate(calc(var(--rot, 20deg) * 0.15)); }
+            100% { transform: translateY(130vh) rotate(var(--rot, 20deg)); }
+        }
+        .konami-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            background: var(--lime);
+            border: 3px solid var(--ink);
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-family: var(--font-display);
+            font-weight: 600;
+            color: var(--ink);
+            z-index: 10000;
+            animation: toast-in 0.4s cubic-bezier(0.2, 1.4, 0.4, 1) 1.6s both;
+        }
+        @keyframes toast-in {
+            from { transform: translateX(-50%) translateY(90px) rotate(-2deg); }
+            to   { transform: translateX(-50%) translateY(0) rotate(-2deg); }
+        }
+
+        /* ── Scrollbar: chunky sticker-style, shifts hue as you scroll ── */
+        html {
+            --scroll-thumb: var(--orange);
+            scrollbar-color: var(--scroll-thumb) var(--paper); /* Firefox */
+        }
+        ::-webkit-scrollbar {
+            width: 16px;
+            height: 16px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--paper);
+            border-left: 3px solid var(--ink);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--scroll-thumb);
+            border: 3px solid var(--ink);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-corner {
+            background: var(--paper);
+        }
+
+        /* ── Click splat: comic action lines + sparkle, sticker-style ── */
+        .click-splat {
+            position: fixed;
+            width: 0;
+            height: 0;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .click-splat i {
+            position: absolute;
+            left: -1.5px;
+            bottom: 0;
+            width: 3px;
+            height: var(--h);
+            background: var(--ink);
+            border-radius: 2px;
+            transform-origin: 50% 100%;
+            animation: splat-line 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+        }
+        @keyframes splat-line {
+            0%   { transform: rotate(var(--a)) translateY(-4px) scaleY(0.3); opacity: 1; }
+            40%  { transform: rotate(var(--a)) translateY(calc(-4px - var(--d) * 0.6)) scaleY(1); opacity: 1; }
+            100% { transform: rotate(var(--a)) translateY(calc(-4px - var(--d))) scaleY(0.1); opacity: 0; }
+        }
+        .click-splat .splat-star {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            left: -14px;
+            top: -14px;
+            animation: splat-star 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+        }
+        @keyframes splat-star {
+            0%   { transform: scale(0) rotate(-25deg); opacity: 1; }
+            55%  { transform: scale(1.15) rotate(6deg); opacity: 1; }
+            100% { transform: scale(0.55) rotate(18deg); opacity: 0; }
         }
 
         /* ============================================================
@@ -602,7 +758,7 @@
         }
 
         .site-card:hover {
-            transform: translate(-3px, -3px);
+            transform: translate(-3px, -3px) rotate(-0.7deg);
             box-shadow: 8px 8px 0 var(--ink);
         }
 
@@ -677,6 +833,108 @@
             .search-wrap { flex: 1 1 100%; margin-right: 0; }
         }
 
+        /* ── Made by Dylan: sticker at the top of the page ── */
+        .made-by {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px 6px 8px;
+            background: var(--card, #fff);
+            border: var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            text-decoration: none;
+            color: var(--ink);
+            transform: rotate(2deg);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .made-by:hover {
+            transform: rotate(-1deg) translate(-2px, 2px) scale(1.04);
+            box-shadow: 6px 6px 0 var(--ink);
+        }
+        .made-by-avatar {
+            width: 40px;
+            height: 40px;
+            image-rendering: pixelated;
+        }
+        .made-by:hover .made-by-avatar {
+            animation: logo-wobble 0.55s ease;
+        }
+        .made-by-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+        .made-by-label {
+            font-size: 0.68rem;
+            color: rgba(32, 26, 23, 0.6);
+            font-family: var(--font-mono);
+        }
+        .made-by-name {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.98rem;
+        }
+        @media (max-width: 600px) {
+            .made-by { padding: 5px 10px 5px 6px; top: 8px; right: 8px; }
+            .made-by-avatar { width: 32px; height: 32px; }
+            .made-by-label { display: none; }
+            .made-by-name { font-size: 0.85rem; }
+        }
+
+        /* ── The door. Nobody talks about the door. ── */
+        .secret-door {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: fit-content;
+            margin: 0 auto 26px;
+            text-decoration: none;
+            opacity: 0.75;
+            transition: opacity 0.2s ease;
+        }
+        .secret-door:hover { opacity: 1; }
+        .door-plaque {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.08em;
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 4px;
+            background: var(--card);
+            padding: 0 5px;
+        }
+        .door-frame {
+            display: block;
+            width: 38px;
+            height: 58px;
+            background: #a5764a;
+            border: 3px solid var(--ink);
+            border-bottom-width: 4px;
+            border-radius: 5px 5px 0 0;
+            position: relative;
+            transform-origin: left center;
+            transition: transform 0.35s ease, box-shadow 0.35s ease;
+        }
+        .secret-door:hover .door-frame {
+            transform: perspective(160px) rotateY(-24deg);
+            box-shadow: inset -10px 0 14px -6px rgba(255, 220, 120, 0.9);
+        }
+        .door-knob {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--ink);
+        }
+
         /* Floating back-to-top sticker — appears once you scroll down */
         .back-to-top {
             position: fixed;
@@ -720,6 +978,15 @@
     </style>
 </head>
 <body>
+    <!-- Made by: pinned sticker, top of screen -->
+    <a class="made-by" href="https://dylanlandman.com" target="_blank" rel="noopener">
+        <img src="/dylan.png" alt="Pixel-art portrait of Dylan Landman" class="made-by-avatar">
+        <span class="made-by-text">
+            <span class="made-by-label">Made by</span>
+            <span class="made-by-name">Dylan Landman</span>
+        </span>
+    </a>
+
     <div class="container" id="top">
         <img src="/logo.png" alt="Random Sites On the Web" class="logo-img">
 
@@ -1605,9 +1872,15 @@
             </div>
 
             <!-- Footer message -->
-            <div style="text-align: center; margin: 40px 0; padding: 20px; color: #2c3e50; font-style: italic;">
+            <div style="text-align: center; margin: 40px 0 20px; padding: 20px; color: #2c3e50; font-style: italic;">
                 And more to come...
             </div>
+
+            <!-- Nobody is told about the door. -->
+            <a class="secret-door" href="/sites/404/" aria-label="A small door">
+                <span class="door-plaque">404</span>
+                <span class="door-frame"><span class="door-knob"></span></span>
+            </a>
         </div>
     </section>
 
@@ -1930,9 +2203,25 @@
                 }
             });
 
-            // Keep the "over N experiences" count honest.
+            // Keep the "over N experiences" count honest — and count up to it.
             const countEl = document.querySelector('.site-count');
-            if (countEl) countEl.textContent = siteCards.length;
+            if (countEl) {
+                const target = siteCards.length;
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    countEl.textContent = target;
+                } else {
+                    const duration = 1400;
+                    let start = null;
+                    countEl.textContent = '0';
+                    requestAnimationFrame(function tick(now) {
+                        if (start === null) start = now;
+                        const t = Math.min((now - start) / duration, 1);
+                        const eased = 1 - Math.pow(1 - t, 3);
+                        countEl.textContent = Math.round(eased * target);
+                        if (t < 1) requestAnimationFrame(tick);
+                    });
+                }
+            }
 
             // ---- Generated sticker thumbnails --------------------------------
             // Each section gets its own color; each site gets a fitting emoji.
@@ -2154,6 +2443,225 @@
 
     <!-- Add QR Code library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <!-- Click splat: comic burst wherever you click, to match the sticker logo -->
+    <script>
+        (function () {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const COLORS = ['#f47b28', '#f0563e', '#5aa0db', '#a98fd0', '#b7ce3c'];
+            const pick = () => COLORS[Math.floor(Math.random() * COLORS.length)];
+
+            document.addEventListener('pointerdown', function (e) {
+                const splat = document.createElement('div');
+                splat.className = 'click-splat';
+                splat.style.left = e.clientX + 'px';
+                splat.style.top = e.clientY + 'px';
+
+                const lines = 8;
+                const base = Math.random() * 360;
+                for (let i = 0; i < lines; i++) {
+                    const line = document.createElement('i');
+                    line.style.setProperty('--a', (base + i * (360 / lines) + (Math.random() * 18 - 9)) + 'deg');
+                    line.style.setProperty('--d', (28 + Math.random() * 26) + 'px');
+                    line.style.setProperty('--h', (9 + Math.random() * 9) + 'px');
+                    if (Math.random() < 0.35) line.style.background = pick();
+                    splat.appendChild(line);
+                }
+
+                const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                star.setAttribute('viewBox', '0 0 100 100');
+                star.setAttribute('class', 'splat-star');
+                star.innerHTML = '<path d="M50 2 C56 36 64 44 98 50 C64 56 56 64 50 98 C44 64 36 56 2 50 C36 44 44 36 50 2 Z" fill="' + pick() + '" stroke="#201a17" stroke-width="7" stroke-linejoin="round"/>';
+                splat.appendChild(star);
+
+                document.body.appendChild(splat);
+                setTimeout(() => splat.remove(), 600);
+            });
+        })();
+    </script>
+
+    <!-- Scrollbar thumb blends through the palette as you scroll down -->
+    <script>
+        (function () {
+            const STOPS = [
+                [244, 123, 40],  // orange
+                [240, 86, 62],   // coral
+                [169, 143, 208], // purple
+                [90, 160, 219],  // sky
+                [183, 206, 60],  // lime
+            ];
+            let ticking = false;
+
+            function update() {
+                ticking = false;
+                const max = document.documentElement.scrollHeight - window.innerHeight;
+                const t = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+                const pos = t * (STOPS.length - 1);
+                const i = Math.min(Math.floor(pos), STOPS.length - 2);
+                const f = pos - i;
+                const c = STOPS[i].map((v, ch) => Math.round(v + (STOPS[i + 1][ch] - v) * f));
+                document.documentElement.style.setProperty('--scroll-thumb', 'rgb(' + c.join(',') + ')');
+            }
+
+            window.addEventListener('scroll', function () {
+                if (!ticking) { ticking = true; requestAnimationFrame(update); }
+            }, { passive: true });
+            update();
+        })();
+    </script>
+
+    <!-- Draggable logo: grab it, fling it, it bounces and wobbles back home -->
+    <script>
+        (function () {
+            const logo = document.querySelector('.logo-img');
+            if (!logo) return;
+            logo.draggable = false;
+
+            let x = 0, y = 0, vx = 0, vy = 0;
+            let dragging = false, physicsId = null;
+            let lastX = 0, lastY = 0, lastT = 0;
+
+            function setTransform(rot) {
+                logo.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + (rot || 0) + 'deg)';
+            }
+
+            logo.addEventListener('pointerdown', function (e) {
+                e.preventDefault();
+                dragging = true;
+                cancelAnimationFrame(physicsId);
+                logo.classList.remove('logo-return', 'logo-wobble');
+                logo.setPointerCapture(e.pointerId);
+                logo.style.cursor = 'grabbing';
+                lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
+                vx = vy = 0;
+            });
+
+            logo.addEventListener('pointermove', function (e) {
+                if (!dragging) return;
+                const now = performance.now();
+                const dx = e.clientX - lastX, dy = e.clientY - lastY;
+                x += dx; y += dy;
+                const dt = Math.max(now - lastT, 1);
+                vx = 0.8 * vx + 0.2 * (dx / dt * 16);
+                vy = 0.8 * vy + 0.2 * (dy / dt * 16);
+                lastX = e.clientX; lastY = e.clientY; lastT = now;
+                setTransform(Math.max(-12, Math.min(12, vx)));
+            });
+
+            function release() {
+                if (!dragging) return;
+                dragging = false;
+                logo.style.cursor = 'grab';
+                fly();
+            }
+            logo.addEventListener('pointerup', release);
+            logo.addEventListener('pointercancel', release);
+
+            function fly() {
+                function step() {
+                    vy += 0.5;                 // gravity
+                    vx *= 0.99; vy *= 0.995;   // air drag
+                    x += vx; y += vy;
+                    const r = logo.getBoundingClientRect();
+                    if (r.left < 0 && vx < 0)              { vx = -vx * 0.7; x -= r.left; }
+                    if (r.right > innerWidth && vx > 0)    { vx = -vx * 0.7; x -= r.right - innerWidth; }
+                    if (r.top < 0 && vy < 0)               { vy = -vy * 0.7; y -= r.top; }
+                    if (r.bottom > innerHeight && vy > 0)  { vy = -vy * 0.7; vx *= 0.85; y -= r.bottom - innerHeight; }
+                    setTransform(Math.max(-15, Math.min(15, vx * 1.5)));
+                    const resting = r.bottom >= innerHeight - 3 && Math.abs(vy) < 1 && Math.abs(vx) < 0.4;
+                    if (resting || (Math.abs(vx) < 0.05 && Math.abs(vy) < 0.05)) {
+                        goHome();
+                        return;
+                    }
+                    physicsId = requestAnimationFrame(step);
+                }
+                physicsId = requestAnimationFrame(step);
+            }
+
+            function goHome() {
+                x = 0; y = 0; vx = 0; vy = 0;
+                logo.classList.add('logo-return');
+                setTransform(0);
+                setTimeout(function () {
+                    logo.classList.remove('logo-return');
+                    logo.style.transform = '';
+                    logo.classList.add('logo-wobble');
+                    setTimeout(() => logo.classList.remove('logo-wobble'), 600);
+                }, 900);
+            }
+        })();
+    </script>
+
+    <!-- Count badge: click for a +1 that doesn't stick -->
+    <script>
+        (function () {
+            const badge = document.querySelector('.site-count');
+            if (!badge) return;
+            badge.title = 'add a site';
+            const realCount = () => document.querySelectorAll('.site-card').length;
+            let bonus = 0, resetTimer = null;
+
+            badge.addEventListener('click', function () {
+                bonus++;
+                badge.textContent = realCount() + bonus;
+                badge.classList.remove('badge-pop');
+                void badge.offsetWidth;
+                badge.classList.add('badge-pop');
+
+                const r = badge.getBoundingClientRect();
+                const plus = document.createElement('span');
+                plus.className = 'plus-one';
+                plus.textContent = '+1';
+                plus.style.left = (r.left + r.width / 2 + (Math.random() * 24 - 12)) + 'px';
+                plus.style.top = (r.top - 6) + 'px';
+                document.body.appendChild(plus);
+                setTimeout(() => plus.remove(), 850);
+
+                clearTimeout(resetTimer);
+                resetTimer = setTimeout(function () {
+                    bonus = 0;
+                    badge.textContent = realCount();
+                    badge.classList.remove('badge-pop');
+                    badge.classList.add('badge-wobble');
+                    setTimeout(() => badge.classList.remove('badge-wobble'), 550);
+                }, 1200);
+            });
+        })();
+    </script>
+
+    <!-- Konami code: ↑↑↓↓←→←→BA and everything falls off the sheet -->
+    <script>
+        (function () {
+            const SEQ = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+                         'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+            let i = 0, done = false;
+
+            document.addEventListener('keydown', function (e) {
+                const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+                i = (k === SEQ[i]) ? i + 1 : (k === SEQ[0] ? 1 : 0);
+                if (i === SEQ.length) {
+                    i = 0;
+                    if (!done) { done = true; collapse(); }
+                }
+            });
+
+            function collapse() {
+                const els = document.querySelectorAll(
+                    '.site-card, .logo-img, .container h1, .description, .button-group, ' +
+                    '.scroll-hint, .sites-header-inner, .back-to-top, .made-by'
+                );
+                els.forEach(function (el) {
+                    el.style.setProperty('--rot', (Math.random() * 140 - 70) + 'deg');
+                    el.style.animationDelay = (Math.random() * 1.3) + 's';
+                    el.classList.add('sticker-fall');
+                });
+                const toast = document.createElement('div');
+                toast.className = 'konami-toast';
+                toast.textContent = 'oops. refresh to re-stick everything.';
+                document.body.appendChild(toast);
+            }
+        })();
+    </script>
 </body>
 </html>
 
