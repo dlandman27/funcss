@@ -88,3 +88,13 @@ test('generateHtml is safe when content contains $& replacement patterns', () =>
   const out = generateHtml('{{SECTIONS}} {{FOLDERS}}', c);
   assert.ok(out.includes('costs $&amp; and $1 dollars'));
 });
+
+test('generated homepage includes the play-counts fetch', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const root = path.join(__dirname, '..');
+  const template = fs.readFileSync(path.join(root, 'templates', 'home.html'), 'utf8');
+  const html = generateHtml(template, clone(CATALOG));
+  assert.ok(html.includes("fetch('/api/counts')"), 'homepage should fetch /api/counts');
+  assert.ok(html.includes("el.className = 'plays'"), 'homepage should render .plays elements');
+});

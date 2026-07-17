@@ -810,6 +810,13 @@
             font-size: 0.95em;
         }
 
+        .site-card .plays {
+            margin-top: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            opacity: 0.55;
+        }
+
         .category {
             display: none;
         }
@@ -2278,6 +2285,27 @@
                     link.insertBefore(thumb, link.firstChild);
                 });
             });
+
+            // ---- Play counts (live, from /api/counts) -------------------------
+            fetch('/api/counts')
+                .then(r => (r.ok ? r.json() : null))
+                .then(countsBySlug => {
+                    if (!countsBySlug) return;
+                    document.querySelectorAll('.site-card a').forEach(link => {
+                        const slug = (link.getAttribute('href') || '')
+                            .replace('/sites/', '').replace(/\/$/, '').toLowerCase();
+                        const n = countsBySlug[slug];
+                        if (!n || n < 5) return; // hide sparse counts
+                        const el = document.createElement('div');
+                        el.className = 'plays';
+                        el.textContent = '▶ ' + (n >= 1000
+                            ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+                            : n) + ' plays';
+                        el.title = n + ' plays';
+                        link.appendChild(el);
+                    });
+                })
+                .catch(() => {}); // local dev / API down → no counts, no errors
 
             const rickrollTerms = ['rickroll', 'rick roll', 'rick astley', 'never gonna give you up'];
 
