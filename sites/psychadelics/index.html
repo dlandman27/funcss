@@ -5,337 +5,336 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Psychedelic Waves</title>
+    <meta name="description" content="Paint into a living reaction-diffusion culture and watch it bloom">
+    <meta name="keywords" content="psychedelic, reaction diffusion, generative, waves, interactive">
+    <meta name="author" content="@randomsitesontheweb">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='13' fill='%23f0563e' stroke='%23201a17' stroke-width='2.5'/><circle cx='16' cy='16' r='7' fill='%23f7c948' stroke='%23201a17' stroke-width='2.5'/></svg>">
     <style>
-        body {
+        html, body {
             margin: 0;
+            padding: 0;
+            height: 100%;
             overflow: hidden;
-            background: #000;
+            background: #201a17;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
-
         canvas {
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
+            display: block;
         }
-
-        .info {
+        #hint {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            color: rgba(255,255,255,0.5);
-            font-family: monospace;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font: italic 17px Georgia, 'Times New Roman', serif;
+            color: #fff8ef;
+            opacity: 0.7;
             pointer-events: none;
-            transition: opacity 0.3s;
-            opacity: 1;
+            transition: opacity 1.2s ease;
+            white-space: nowrap;
         }
-
-        body:hover .info {
-            opacity: 0;
+        #plaque {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(32, 26, 23, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid #201a17;
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 #201a17;
+            padding: 8px 20px;
+            font: italic 14px Georgia, 'Times New Roman', serif;
+            color: #fff8ef;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: opacity 0.6s ease;
         }
+        #plaque.dim { opacity: 0.12; }
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    <div class="info">Move your mouse around...</div>
+    <canvas id="c"></canvas>
+    <div id="hint">draw anywhere &mdash; it grows</div>
+    <div id="plaque"></div>
 
     <script>
-        const canvas = document.getElementById('canvas');
+    (() => {
+        const canvas = document.getElementById('c');
         const ctx = canvas.getContext('2d');
+        const plaque = document.getElementById('plaque');
+        const hint = document.getElementById('hint');
 
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
+        // ---------- grid ----------
+        const SCALE = 4;                    // css px per sim cell
+        let W = 0, H = 0, gw = 0, gh = 0;
+        let A, B, A2, B2, img, off, offCtx;
 
-        let mouseX = width / 2;
-        let mouseY = height / 2;
-        let time = 0;
-
-        const particles = [];
-        const numParticles = 100;
-        const colors = [
-            '#FF6B6B',
-            '#4ECDC4',
-            '#45B7D1',
-            '#96CEB4',
-            '#FFEEAD',
-            '#D4A5A5',
-            '#FF69B4',
-            '#7B68EE',
-            '#00FA9A'
-        ];
-
-        let currentMode = 0;
-        let transitionProgress = 0;
-        const TRANSITION_SPEED = 0.005;
-        
-        const visualModes = [
-            {
-                name: 'waves',
-                update: (particle, time) => {
-                    const dx = mouseX - particle.x;
-                    const dy = mouseY - particle.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const force = Math.min(100 / (dist * dist), 5);
-                    
-                    particle.angle += 0.02;
-                    const waveForce = Math.sin(particle.angle + time) * 2;
-                    
-                    particle.speedX += (dx / dist) * force + waveForce;
-                    particle.speedY += (dy / dist) * force + Math.cos(particle.angle + time);
-                }
-            },
-            {
-                name: 'vortex',
-                update: (particle, time) => {
-                    const dx = mouseX - particle.x;
-                    const dy = mouseY - particle.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const angle = Math.atan2(dy, dx);
-                    
-                    const vortexStrength = 5 + Math.sin(time) * 2;
-                    particle.speedX += Math.cos(angle + Math.PI/2) * vortexStrength;
-                    particle.speedY += Math.sin(angle + Math.PI/2) * vortexStrength;
-                    particle.speedX *= 0.98;
-                    particle.speedY *= 0.98;
-                }
-            },
-            {
-                name: 'fireworks',
-                update: (particle, time) => {
-                    const gravity = 0.2;
-                    particle.speedY += gravity;
-                    
-                    if (particle.y > height) {
-                        particle.y = height;
-                        particle.speedY = -Math.random() * 15;
-                        particle.speedX = (Math.random() - 0.5) * 10;
+        function alloc() {
+            W = innerWidth; H = innerHeight;
+            const dpr = Math.min(devicePixelRatio || 1, 2);
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const ngw = Math.min(360, Math.ceil(W / SCALE));
+            const ngh = Math.min(240, Math.ceil(H / SCALE));
+            const nA = new Float32Array(ngw * ngh).fill(1);
+            const nB = new Float32Array(ngw * ngh);
+            if (B) {
+                // keep whatever was growing when the window resizes
+                const cw = Math.min(gw, ngw), ch = Math.min(gh, ngh);
+                for (let y = 0; y < ch; y++) {
+                    for (let x = 0; x < cw; x++) {
+                        nA[y * ngw + x] = A[y * gw + x];
+                        nB[y * ngw + x] = B[y * gw + x];
                     }
-                    
-                    particle.speedX *= 0.99;
                 }
-            },
-            {
-                name: 'tornado',
-                update: (particle, time) => {
-                    const centerX = mouseX;
-                    const centerY = mouseY;
-                    const dx = centerX - particle.x;
-                    const dy = centerY - particle.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    particle.angle += 0.1 / (dist * 0.1);
-                    const radius = 100 + Math.sin(time + particle.angle) * 50;
-                    
-                    particle.speedX += (dx - radius * Math.cos(particle.angle)) * 0.02;
-                    particle.speedY += (dy - radius * Math.sin(particle.angle)) * 0.02;
-                }
-            },
-            {
-                name: 'dna',
-                update: (particle, time) => {
-                    const waveLength = 200;
-                    const amplitude = 100;
-                    
-                    particle.speedX += (mouseX + Math.sin(particle.y / waveLength + time) * amplitude - particle.x) * 0.1;
-                    particle.speedY += (particle.y < height ? 1 : -height) * 2;
-                }
-            },
-            {
-                name: 'blackhole',
-                update: (particle, time) => {
-                    const dx = mouseX - particle.x;
-                    const dy = mouseY - particle.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    const gravitationalPull = 50 / (dist + 1);
-                    particle.speedX += dx * gravitationalPull * 0.01;
-                    particle.speedY += dy * gravitationalPull * 0.01;
-                    
-                    particle.speedX *= 0.99;
-                    particle.speedY *= 0.99;
-                }
-            },
-            {
-                name: 'matrix',
-                update: (particle, time) => {
-                    particle.speedY = 3 + Math.sin(time + particle.x) * 2;
-                    
-                    if (particle.y > height) {
-                        particle.y = 0;
-                        particle.x = Math.random() * width;
+            }
+            gw = ngw; gh = ngh;
+            A = nA; B = nB;
+            A2 = new Float32Array(gw * gh);
+            B2 = new Float32Array(gw * gh);
+            off = document.createElement('canvas');
+            off.width = gw; off.height = gh;
+            offCtx = off.getContext('2d');
+            img = offCtx.createImageData(gw, gh);
+            img.data.fill(255);
+        }
+        alloc();
+
+        // ---------- seeding ----------
+        function seedBlob(cx, cy, r) {
+            for (let y = -r; y <= r; y++) {
+                for (let x = -r; x <= r; x++) {
+                    if (x * x + y * y <= r * r) {
+                        const gx = ((cx + x) % gw + gw) % gw;
+                        const gy = ((cy + y) % gh + gh) % gh;
+                        B[gy * gw + gx] = 1;
                     }
-                    
-                    particle.speedX = Math.sin(time + particle.y * 0.1) * 0.5;
-                }
-            },
-            {
-                name: 'constellation',
-                update: (particle, time) => {
-                    const nearbyParticles = particles.filter(p => {
-                        const dx = p.x - particle.x;
-                        const dy = p.y - particle.y;
-                        return Math.sqrt(dx * dx + dy * dy) < 100;
-                    });
-                    
-                    nearbyParticles.forEach(p => {
-                        const dx = p.x - particle.x;
-                        const dy = p.y - particle.y;
-                        particle.speedX += dx * 0.0001;
-                        particle.speedY += dy * 0.0001;
-                    });
-                    
-                    particle.speedX += (Math.random() - 0.5) * 0.5;
-                    particle.speedY += (Math.random() - 0.5) * 0.5;
-                }
-            },
-            {
-                name: 'spiral',
-                update: (particle, time) => {
-                    const centerX = width / 2;
-                    const centerY = height / 2;
-                    const dx = centerX - particle.x;
-                    const dy = centerY - particle.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    particle.angle += 0.02;
-                    const spiralForce = 0.5 + Math.sin(time) * 0.3;
-                    
-                    particle.speedX += (dx / dist) * spiralForce + Math.cos(particle.angle) * 2;
-                    particle.speedY += (dy / dist) * spiralForce + Math.sin(particle.angle) * 2;
-                }
-            },
-            {
-                name: 'galaxy',
-                update: (particle, time) => {
-                    const centerX = width / 2;
-                    const centerY = height / 2;
-                    const dx = centerX - particle.x;
-                    const dy = centerY - particle.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const angle = Math.atan2(dy, dx);
-                    
-                    particle.speedX += Math.cos(angle + Math.PI/2) * (3 + Math.sin(time));
-                    particle.speedY += Math.sin(angle + Math.PI/2) * (3 + Math.sin(time));
-                    particle.speedX *= 0.95;
-                    particle.speedY *= 0.95;
-                }
-            },
-            {
-                name: 'flower',
-                update: (particle, time) => {
-                    const centerX = width / 2;
-                    const centerY = height / 2;
-                    const dx = centerX - particle.x;
-                    const dy = centerY - particle.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const petals = 5 + Math.sin(time) * 2;
-                    
-                    particle.angle += 0.02;
-                    const r = Math.cos(petals * Math.atan2(dy, dx)) * 100;
-                    
-                    particle.speedX += (dx - r * Math.cos(particle.angle)) * 0.01;
-                    particle.speedY += (dy - r * Math.sin(particle.angle)) * 0.01;
                 }
             }
+        }
+
+        function seedSmiley() {
+            // secret culture: it starts out smiling, then dissolves into the pattern
+            const cx = gw >> 1, cy = gh >> 1, R = Math.min(gw, gh) * 0.3;
+            for (let t = 0; t < 400; t++) {
+                const a = t / 400 * Math.PI * 2;
+                seedBlob(Math.round(cx + Math.cos(a) * R), Math.round(cy + Math.sin(a) * R), 1);
+            }
+            seedBlob(Math.round(cx - R * 0.38), Math.round(cy - R * 0.3), 2);
+            seedBlob(Math.round(cx + R * 0.38), Math.round(cy - R * 0.3), 2);
+            for (let t = 0; t < 120; t++) {
+                const a = Math.PI * (0.22 + 0.56 * t / 120);
+                seedBlob(Math.round(cx + Math.cos(a) * R * 0.55), Math.round(cy + Math.sin(a) * R * 0.55), 1);
+            }
+        }
+
+        function seedRandom() {
+            const n = 4 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < n; i++) {
+                seedBlob(Math.floor(Math.random() * gw), Math.floor(Math.random() * gh), 3);
+            }
+        }
+
+        if (Math.random() < 0.03) seedSmiley(); else seedRandom();
+
+        // ---------- chemistry: strains the culture drifts through ----------
+        const STRAINS = [
+            // no 'waves' strain (f .014 / k .045): it self-annihilates on a torus
+            { name: 'labyrinth',f: 0.0290, k: 0.0570 },
+            { name: 'coral',    f: 0.0545, k: 0.0620 },
+            { name: 'mitosis',  f: 0.0367, k: 0.0649 },
+            { name: 'solitons', f: 0.0300, k: 0.0620 },
+            { name: 'worms',    f: 0.0780, k: 0.0610 }
         ];
+        const HOLD = 1400, FADE = 500;      // frames per strain, frames of crossfade
+        let strainClock = 0, strainIdx = 0;
+        let feed = STRAINS[0].f, kill = STRAINS[0].k;
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 4 + 2;
-                this.color = colors[Math.floor(Math.random() * colors.length)];
-                this.speedX = Math.random() * 2 - 1;
-                this.speedY = Math.random() * 2 - 1;
-                this.angle = Math.random() * Math.PI * 2;
-                this.colorIndex = Math.floor(Math.random() * colors.length);
-                this.colorTransitionSpeed = 0.01 + Math.random() * 0.02;
-            }
-
-            update() {
-                // Get current and next mode
-                const currentModeIndex = Math.floor(currentMode);
-                const nextModeIndex = (currentModeIndex + 1) % visualModes.length;
-                const transitionT = currentMode - currentModeIndex;
-
-                // Update particle using both modes
-                visualModes[currentModeIndex].update(this, time);
-                
-                if (transitionT > 0) {
-                    // Blend with next mode during transition
-                    const tempSpeedX = this.speedX;
-                    const tempSpeedY = this.speedY;
-                    
-                    visualModes[nextModeIndex].update(this, time);
-                    
-                    this.speedX = tempSpeedX * (1 - transitionT) + this.speedX * transitionT;
-                    this.speedY = tempSpeedY * (1 - transitionT) + this.speedY * transitionT;
+        function updateChemistry() {
+            strainClock++;
+            const cur = STRAINS[strainIdx], nxt = STRAINS[(strainIdx + 1) % STRAINS.length];
+            if (strainClock < HOLD) {
+                feed = cur.f; kill = cur.k;
+            } else {
+                const t = (strainClock - HOLD) / FADE;
+                if (t >= 1) {
+                    strainIdx = (strainIdx + 1) % STRAINS.length;
+                    strainClock = 0;
+                    feed = nxt.f; kill = nxt.k;
+                    setPlaque();
+                } else {
+                    feed = cur.f + (nxt.f - cur.f) * t;
+                    kill = cur.k + (nxt.k - cur.k) * t;
                 }
-
-                this.speedX *= 0.97;
-                this.speedY *= 0.97;
-
-                this.colorIndex = (this.colorIndex + this.colorTransitionSpeed) % colors.length;
-
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                if (this.x < 0) this.x = width;
-                if (this.x > width) this.x = 0;
-                if (this.y < 0) this.y = height;
-                if (this.y > height) this.y = 0;
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                
-                const gradient = ctx.createRadialGradient(
-                    this.x, this.y, 0,
-                    this.x, this.y, this.size
-                );
-                
-                const colorIndex = Math.floor(this.colorIndex);
-                const nextColorIndex = (colorIndex + 1) % colors.length;
-                const t = this.colorIndex - colorIndex;
-                
-                gradient.addColorStop(0, colors[colorIndex]);
-                gradient.addColorStop(1, colors[nextColorIndex]);
-                
-                ctx.fillStyle = gradient;
-                ctx.fill();
             }
         }
 
-        for (let i = 0; i < numParticles; i++) {
-            particles.push(new Particle());
+        function setPlaque() {
+            const s = STRAINS[strainIdx];
+            plaque.textContent = 'culture: ' + s.name +
+                ' · feed ' + s.f.toFixed(4) + ' · kill ' + s.k.toFixed(4);
+        }
+        setPlaque();
+
+        // ---------- palette LUT (house colors, ink to cream) ----------
+        const STOPS = [
+            [0.00, 0x20, 0x1a, 0x17],   // ink
+            [0.30, 0xa9, 0x8f, 0xd0],   // purple
+            [0.50, 0x5a, 0xa0, 0xdb],   // sky
+            [0.65, 0xf0, 0x56, 0x3e],   // coral
+            [0.78, 0xf4, 0x7b, 0x28],   // orange
+            [0.90, 0xf7, 0xc9, 0x48],   // gold
+            [1.00, 0xff, 0xf8, 0xef]    // cream
+        ];
+        const LUT = new Uint8Array(256 * 3);
+        for (let i = 0; i < 256; i++) {
+            const t = i / 255;
+            let s = 0;
+            while (s < STOPS.length - 2 && t > STOPS[s + 1][0]) s++;
+            const [t0, r0, g0, b0] = STOPS[s];
+            const [t1, r1, g1, b1] = STOPS[s + 1];
+            const u = (t - t0) / (t1 - t0);
+            LUT[i * 3] = r0 + (r1 - r0) * u;
+            LUT[i * 3 + 1] = g0 + (g1 - g0) * u;
+            LUT[i * 3 + 2] = b0 + (b1 - b0) * u;
         }
 
-        function animate() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(0, 0, width, height);
+        // ---------- simulation (Gray-Scott, 9-point laplacian, toroidal) ----------
+        const DA = 1.0, DB = 0.5, ITER = 9;
 
-            particles.forEach(particle => {
-                particle.update();
-                particle.draw();
-            });
-
-            // Update current mode
-            currentMode = (currentMode + TRANSITION_SPEED) % visualModes.length;
-            time += 0.01;
-            requestAnimationFrame(animate);
+        function step() {
+            for (let y = 0; y < gh; y++) {
+                const up = ((y - 1 + gh) % gh) * gw;
+                const dn = ((y + 1) % gh) * gw;
+                const row = y * gw;
+                for (let x = 0; x < gw; x++) {
+                    const lt = (x - 1 + gw) % gw, rt = (x + 1) % gw;
+                    const i = row + x;
+                    const a = A[i], b = B[i];
+                    const lapA = (A[up + x] + A[dn + x] + A[row + lt] + A[row + rt]) * 0.2 +
+                                 (A[up + lt] + A[up + rt] + A[dn + lt] + A[dn + rt]) * 0.05 - a;
+                    const lapB = (B[up + x] + B[dn + x] + B[row + lt] + B[row + rt]) * 0.2 +
+                                 (B[up + lt] + B[up + rt] + B[dn + lt] + B[dn + rt]) * 0.05 - b;
+                    const abb = a * b * b;
+                    // clamp to [0,1]: seeded B=1 next to A=1 otherwise feeds back to NaN
+                    const na = a + DA * lapA - abb + feed * (1 - a);
+                    const nb = b + DB * lapB + abb - (kill + feed) * b;
+                    A2[i] = na < 0 ? 0 : na > 1 ? 1 : na;
+                    B2[i] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
+                }
+            }
+            [A, A2] = [A2, A];
+            [B, B2] = [B2, B];
         }
 
-        window.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
+        function render() {
+            const d = img.data;
+            for (let i = 0; i < gw * gh; i++) {
+                let v = B[i] * 2.5;
+                if (v > 1) v = 1; else if (v < 0) v = 0;
+                const li = (v * 255 | 0) * 3;
+                const p = i * 4;
+                d[p] = LUT[li];
+                d[p + 1] = LUT[li + 1];
+                d[p + 2] = LUT[li + 2];
+            }
+            offCtx.putImageData(img, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            ctx.drawImage(off, 0, 0, gw, gh, 0, 0, W, H);
+        }
+
+        // ---------- loop with idle sleep ----------
+        let running = false;
+        let frame = 0;
+        let deadFrames = 0;
+
+        function wake() {
+            if (!running) {
+                running = true;
+                requestAnimationFrame(tick);
+            }
+        }
+
+        function activity() {
+            // sample the field: is anything still alive?
+            let sum = 0;
+            for (let i = 0; i < gw * gh; i += 97) sum += B[i];
+            return sum;
+        }
+
+        function tick() {
+            updateChemistry();
+            for (let s = 0; s < ITER; s++) step();
+            render();
+            frame++;
+
+            if (frame % 60 === 0) {
+                if (activity() < 0.5) {
+                    deadFrames++;
+                    // the culture died out (some chemistry kills it) - restock the dish
+                    if (deadFrames >= 2) { seedRandom(); deadFrames = 0; }
+                } else {
+                    deadFrames = 0;
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+        // note: the dish never truly idles while alive - it re-seeds itself if it dies,
+        // so the loop only rests when the tab is hidden (rAF pauses there anyway)
+
+        // ---------- input: paint chemical B ----------
+        let drawing = false;
+        let lastGX = 0, lastGY = 0;
+        let hinted = false;
+        function dismissHint() {
+            if (!hinted) { hinted = true; hint.style.opacity = '0'; }
+        }
+        setTimeout(dismissHint, 10000);
+
+        function paintLine(x0, y0, x1, y1) {
+            const dx = x1 - x0, dy = y1 - y0;
+            const steps = Math.max(1, Math.ceil(Math.hypot(dx, dy)));
+            for (let s = 0; s <= steps; s++) {
+                seedBlob(Math.round(x0 + dx * s / steps), Math.round(y0 + dy * s / steps), 2);
+            }
+        }
+
+        canvas.addEventListener('pointerdown', e => {
+            drawing = true;
+            canvas.setPointerCapture(e.pointerId);
+            lastGX = e.clientX / SCALE; lastGY = e.clientY / SCALE;
+            seedBlob(Math.round(lastGX), Math.round(lastGY), 3);
+            dismissHint();
+            plaque.classList.add('dim');
+            wake();
         });
 
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+        canvas.addEventListener('pointermove', e => {
+            if (!drawing) return;
+            const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+            for (const ev of events) {
+                const gx = ev.clientX / SCALE, gy = ev.clientY / SCALE;
+                paintLine(lastGX, lastGY, gx, gy);
+                lastGX = gx; lastGY = gy;
+            }
         });
 
-        animate();
+        function stopDrawing() {
+            drawing = false;
+            plaque.classList.remove('dim');
+        }
+        canvas.addEventListener('pointerup', stopDrawing);
+        canvas.addEventListener('pointercancel', stopDrawing);
+
+        wake();
+    })();
     </script>
 </body>
 </html>

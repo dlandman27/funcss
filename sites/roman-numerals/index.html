@@ -5,171 +5,421 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roman Numeral Converter</title>
+    <meta name="description" content="Numerals chiseled onto a slab, itemized on the mason's invoice. Converts both directions.">
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --gold: #f7c948;
+            --stone: #cfc8ba;
+            --stone-dark: #b5ad9e;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--paper);
+            color: var(--ink);
+        }
+
         body {
-            font-family: 'Georgia', serif;
-            background: linear-gradient(135deg, #2C1810, #4A2C2A, #6B4423);
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 0;
-            color: #F5F5DC;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            min-height: 100vh;
+            padding: 1.2rem 1rem 2rem;
+            font-family: Georgia, 'Times New Roman', serif;
         }
 
-        .container {
-            background: linear-gradient(145deg, #3D2914, #2C1810);
-            padding: 60px;
-            border-radius: 0;
-            border: 3px solid #8B4513;
-            box-shadow: 0 0 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(139, 69, 19, 0.2);
+        header {
             text-align: center;
-            max-width: 500px;
-            width: 90%;
-            position: relative;
+            margin-bottom: 1.3rem;
         }
 
-        .container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 2px,
-                rgba(139, 69, 19, 0.1) 2px,
-                rgba(139, 69, 19, 0.1) 4px
-            );
-            pointer-events: none;
+        header .dept {
+            font-style: italic;
+            font-size: 0.8rem;
+            letter-spacing: 0.12em;
+            opacity: 0.7;
         }
 
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 40px;
-            color: #DAA520;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            font-weight: normal;
-            letter-spacing: 2px;
+        header h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
             text-transform: uppercase;
+            font-size: clamp(1.3rem, 5.5vw, 2rem);
+            margin: 0.25rem 0 0;
         }
 
-        .input-section {
-            margin-bottom: 40px;
-        }
-
-        input[type="number"] {
-            font-size: 2.2em;
-            padding: 20px;
-            border: 2px solid #8B4513;
-            border-radius: 0;
-            background: #F5F5DC;
-            color: #2C1810;
-            text-align: center;
-            width: 250px;
-            font-family: 'Georgia', serif;
-            font-weight: normal;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        input[type="number"]:focus {
-            outline: none;
-            border-color: #DAA520;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 10px rgba(218, 165, 32, 0.3);
-        }
-
-        .result {
-            font-size: 3.5em;
-            color: #DAA520;
-            margin: 40px 0;
-            min-height: 100px;
+        .commission {
             display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        #order {
+            width: min(60vw, 260px);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.4rem;
+            text-align: center;
+            text-transform: uppercase;
+            padding: 0.55rem 0.6rem;
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 3px 3px 0 var(--ink);
+            outline: none;
+        }
+
+        #order:focus { background: #fff; }
+
+        .slab {
+            position: relative;
+            background: var(--stone);
+            border: 4px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 8px 8px 0 var(--ink);
+            width: min(94vw, 640px);
+            min-height: 170px;
+            padding: 2rem 1.4rem 2.4rem;
+            display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(145deg, #2C1810, #3D2914);
-            border: 2px solid #8B4513;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            font-family: 'Georgia', serif;
-            font-weight: normal;
-            letter-spacing: 3px;
-            position: relative;
-            z-index: 1;
+            gap: 0.3rem 0.55rem;
+            margin-bottom: 1.4rem;
+            background-image:
+                radial-gradient(ellipse 90px 26px at 18% 22%, var(--stone-dark) 0%, transparent 70%),
+                radial-gradient(ellipse 70px 20px at 82% 76%, var(--stone-dark) 0%, transparent 70%),
+                radial-gradient(ellipse 60px 30px at 65% 15%, var(--stone-dark) 0%, transparent 70%);
         }
 
-        .result::before {
-            content: '';
+        .slab::after {
+            content: 'EX OFFICINA LAPIDARIA';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 1px,
-                rgba(218, 165, 32, 0.1) 1px,
-                rgba(218, 165, 32, 0.1) 2px
-            );
+            bottom: 7px;
+            right: 14px;
+            font-size: 0.58rem;
+            letter-spacing: 0.2em;
+            opacity: 0.45;
+            font-style: italic;
+        }
+
+        .glyph {
+            font-family: 'Times New Roman', Georgia, serif;
+            font-weight: bold;
+            font-size: clamp(2.6rem, 11vw, 4.6rem);
+            line-height: 1;
+            color: var(--ink);
+            text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.55), -1px -1px 0 rgba(32, 26, 23, 0.35);
+            animation: chisel 0.22s cubic-bezier(0.2, 1.6, 0.4, 1) backwards;
+        }
+
+        .glyph.crooked { transform: rotate(7deg) translateY(4px); }
+
+        @keyframes chisel {
+            0%   { transform: scale(2.4); opacity: 0; }
+            60%  { transform: scale(0.92); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .glyph.arabic {
+            font-family: 'Arial Black', Arial, sans-serif;
+        }
+
+        .slab .idle {
+            font-style: italic;
+            font-size: 1rem;
+            opacity: 0.55;
+            animation: none;
+        }
+
+        .invoice {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 var(--ink);
+            width: min(94vw, 380px);
+            padding: 0.9rem 1.2rem;
+            font-size: 0.92rem;
+        }
+
+        .invoice .head {
+            text-align: center;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid var(--ink);
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .invoice .line {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.16em 0;
+            border-bottom: 1px dotted rgba(32, 26, 23, 0.3);
+            animation: lineIn 0.25s ease backwards;
+        }
+
+        @keyframes lineIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .invoice .line .sym {
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            letter-spacing: 0.12em;
+        }
+
+        .invoice .line .val {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .invoice .total {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            border-top: 2px solid var(--ink);
+            margin-top: 0.45rem;
+            padding-top: 0.4rem;
+            font-weight: bold;
+        }
+
+        .invoice .total .val { font-family: 'Courier New', monospace; }
+
+        .invoice .memo {
+            font-style: italic;
+            font-size: 0.78rem;
+            opacity: 0.75;
+            margin-top: 0.55rem;
+            text-align: center;
+        }
+
+        #ledger {
+            position: fixed;
+            top: 12px;
+            right: 14px;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 0.3rem 0.9rem;
+            font-style: italic;
+            font-size: 0.85rem;
+            transform: rotate(2deg);
             pointer-events: none;
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            .glyph { animation: none; }
+            .invoice .line { animation: none; }
+        }
     </style>
 </head>
 <body>
-    
-    <div class="container">
+    <header>
+        <div class="dept">guild of stonecutters · est. DCCLIII a.u.c.</div>
         <h1>Roman Numeral Converter</h1>
-        
-        <div class="input-section">
-            <input type="number" id="numberInput" placeholder="1" min="1" max="3999">
-        </div>
-        
-        <div class="result" id="result"></div>
+    </header>
+
+    <div class="commission">
+        <input id="order" type="text" inputmode="text" autocomplete="off" spellcheck="false"
+               placeholder="1994 or MCMXCIV" aria-label="number or numeral to convert">
     </div>
 
+    <div id="slab" class="slab">
+        <span class="idle">state your commission above — arabic or roman, the chisel does not care</span>
+    </div>
+
+    <div class="invoice">
+        <div class="head">Stonemason's Invoice</div>
+        <div id="lines"></div>
+        <div class="total"><span id="totalLabel">total</span><span class="val" id="totalVal">—</span></div>
+        <div class="memo" id="memo">the guild carves I through MMMCMXCIX. no zero. the romans never invented it.</div>
+    </div>
+
+    <div id="ledger">stones carved: <span id="carved">0</span></div>
+
     <script>
+        (() => {
+            const PAIRS = [
+                [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+                [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+                [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+            ];
+            const VALUES = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
 
-        function convertToRoman(num) {
-            const values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
-            const symbols = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
-            
-            let result = '';
-            for (let i = 0; i < values.length; i++) {
-                while (num >= values[i]) {
-                    result += symbols[i];
-                    num -= values[i];
+            const order = document.getElementById('order');
+            const slab = document.getElementById('slab');
+            const linesEl = document.getElementById('lines');
+            const totalVal = document.getElementById('totalVal');
+            const totalLabel = document.getElementById('totalLabel');
+            const memo = document.getElementById('memo');
+            const carvedEl = document.getElementById('carved');
+            const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            let carved = 0;
+            try { carved = parseInt(localStorage.getItem('mason-carved')) || 0; } catch (e) {}
+            carvedEl.textContent = carved;
+
+            let carveTimer = null;
+            let countedThisOrder = false;
+
+            function toRoman(n) {
+                let out = '';
+                for (const [v, s] of PAIRS) {
+                    while (n >= v) { out += s; n -= v; }
                 }
+                return out;
             }
-            return result;
-        }
 
-        function convertNumber() {
-            const input = document.getElementById('numberInput');
-            const result = document.getElementById('result');
-            
-            const num = parseInt(input.value);
-            
-            if (isNaN(num) || num < 1 || num > 3999) {
-                result.textContent = "";
-                return;
+            function fromRoman(str) {
+                let total = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const cur = VALUES[str[i]];
+                    const next = VALUES[str[i + 1]] || 0;
+                    total += cur < next ? -cur : cur;
+                }
+                // reject malformed numerals (IIII, VX, IC...) by round-tripping
+                return toRoman(total) === str ? total : null;
             }
-            
-            const roman = convertToRoman(num);
-            result.textContent = roman;
-        }
 
-        // Event listeners
-        document.getElementById('numberInput').addEventListener('input', function(e) {
-            const value = parseInt(e.target.value);
-            if (value > 3999) {
-                e.target.value = 3999;
+            function breakdown(n) {
+                const items = [];
+                for (const [v, s] of PAIRS) {
+                    while (n >= v) { items.push([s, v]); n -= v; }
+                }
+                return items;
             }
-            convertNumber();
-        });
+
+            function clearSlab() {
+                clearTimeout(carveTimer);
+                slab.innerHTML = '';
+            }
+
+            function idle(msg) {
+                clearSlab();
+                slab.innerHTML = '<span class="idle">' + msg + '</span>';
+                linesEl.innerHTML = '';
+                totalVal.textContent = '—';
+                totalLabel.textContent = 'total';
+            }
+
+            function carve(glyphs, arabic) {
+                clearSlab();
+                const chars = [...glyphs];
+                chars.forEach((ch, i) => {
+                    const g = document.createElement('span');
+                    g.className = 'glyph' + (arabic ? ' arabic' : '');
+                    g.textContent = ch;
+                    if (!arabic && Math.random() < 0.03) {
+                        g.classList.add('crooked');
+                        g.title = 'apprentice error. no refunds.';
+                    }
+                    if (!reduced) g.style.animationDelay = (i * 90) + 'ms';
+                    slab.appendChild(g);
+                });
+            }
+
+            function invoice(items, total, note) {
+                linesEl.innerHTML = '';
+                items.forEach(([sym, val], i) => {
+                    const line = document.createElement('div');
+                    line.className = 'line';
+                    line.innerHTML = '<span class="sym">' + sym + '</span><span class="val">' + val.toLocaleString() + '</span>';
+                    if (!reduced) line.style.animationDelay = (i * 60) + 'ms';
+                    linesEl.appendChild(line);
+                });
+                totalLabel.textContent = 'total (' + items.length + ' cuts)';
+                totalVal.textContent = total;
+                memo.textContent = note;
+            }
+
+            function tally() {
+                if (countedThisOrder) return;
+                countedThisOrder = true;
+                carved++;
+                carvedEl.textContent = carved;
+                try { localStorage.setItem('mason-carved', carved); } catch (e) {}
+            }
+
+            function process() {
+                const raw = order.value.trim().toUpperCase();
+                countedThisOrder = false;
+
+                if (raw === '') {
+                    idle('state your commission above — arabic or roman, the chisel does not care');
+                    memo.textContent = 'the guild carves I through MMMCMXCIX. no zero. the romans never invented it.';
+                    return;
+                }
+
+                if (/^[0-9]+$/.test(raw)) {
+                    const n = parseInt(raw, 10);
+                    if (n === 0) {
+                        idle('zero. the concept reached rome around a thousand years too late. request denied.');
+                        memo.textContent = 'nulla is a word, not a numeral.';
+                        return;
+                    }
+                    if (n > 3999) {
+                        idle('the guild does not carve beyond MMMCMXCIX. commission a second slab.');
+                        memo.textContent = 'overline notation (V̄ = 5000) is available from our competitors.';
+                        return;
+                    }
+                    const roman = toRoman(n);
+                    carve(roman, false);
+                    invoice(breakdown(n), n.toLocaleString(),
+                        'carved while you waited. payment due in denarii.');
+                    tally();
+                    return;
+                }
+
+                if (/^[IVXLCDM]+$/.test(raw)) {
+                    const n = fromRoman(raw);
+                    if (n === null) {
+                        idle('"' + raw + '" is not proper numeral grammar. the guild has standards.');
+                        memo.textContent = 'subtractive notation only: IV, not IIII. we are not a clock face.';
+                        return;
+                    }
+                    carve(String(n), true);
+                    invoice(breakdown(n).map(([s, v]) => [s, v]), n.toLocaleString(),
+                        'translated to arabic for tax purposes.');
+                    tally();
+                    return;
+                }
+
+                if (/[.,]/.test(raw)) {
+                    idle('fractions. take those to the greeks.');
+                    memo.textContent = 'the uncia system is not supported and never will be.';
+                    return;
+                }
+
+                idle('the chisel recognizes 0–9 and I V X L C D M. nothing else survives contact with stone.');
+                memo.textContent = '';
+            }
+
+            order.addEventListener('input', () => {
+                clearTimeout(carveTimer);
+                carveTimer = setTimeout(process, 250);
+            });
+
+            order.focus();
+        })();
     </script>
 </body>
 </html>

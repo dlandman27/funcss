@@ -4,63 +4,634 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supersized Cursor</title>
-    <meta name="description" content="Experience a supersized cursor that follows your mouse">
-    <meta name="keywords" content="cursor, mouse, interactive, fun">
+    <title>Nice Cursor</title>
+    <meta name="description" content="A cursor so big it shoves the whole page around">
+    <meta name="keywords" content="cursor, mouse, physics, interactive, fun">
     <meta name="author" content="@randomsitesontheweb">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M8,28L2,2l26,6l-10,10l10,10l-4,4l-10-10L8,28z' fill='black' stroke='white' stroke-width='1'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M8,28L2,2l26,6l-10,10l10,10l-4,4l-10-10L8,28z' fill='%23fff8ef' stroke='%23201a17' stroke-width='2'/></svg>">
     <style>
-        body {
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+        }
+        html, body {
             margin: 0;
             padding: 0;
-            min-height: 100vh;
-            background: #111;
-            font-family: 'Arial', sans-serif;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
             cursor: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
-
-        #custom-cursor {
-            width: 50px;
-            height: 50px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M8,28L2,2l26,6l-10,10l10,10l-4,4l-10-10L8,28z" fill="black" stroke="white" stroke-width="1"/></svg>');
+        canvas {
             position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            transform: scale(10);
-            transform-origin: 0 0;
+            inset: 0;
+            display: block;
         }
-
-        .message {
-            font-size: 64px;
-            text-align: center;
-            color: white;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-            font-weight: bold;
+        #hint {
+            position: fixed;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font: italic 17px Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            opacity: 0.75;
+            pointer-events: none;
+            transition: opacity 1.2s ease;
+            white-space: nowrap;
+        }
+        #plaque {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(32, 26, 23, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 8px 20px;
+            font: italic 15px Georgia, 'Times New Roman', serif;
+            color: var(--cream);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        body.shake {
+            animation: shake 0.25s linear;
+        }
+        @keyframes shake {
+            0%   { transform: translate(0, 0); }
+            15%  { transform: translate(-7px, 4px); }
+            30%  { transform: translate(6px, -5px); }
+            45%  { transform: translate(-5px, -3px); }
+            60%  { transform: translate(4px, 5px); }
+            75%  { transform: translate(-3px, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            body.shake { animation: none; }
         }
     </style>
 </head>
 <body>
-    <div id="custom-cursor"></div>
-    <div class="message">Nice Cursor!</div>
+    <canvas id="c"></canvas>
+    <div id="hint">give it a shove &mdash; clicking makes it worse</div>
+    <div id="plaque">estimated damages: $0.00</div>
 
     <script>
-        const cursor = document.getElementById('custom-cursor');
+    (() => {
+        const INK = '#201a17';
+        const PAPER = '#f2ede2';
+        const CREAM = '#fff8ef';
+        const PALETTE = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
 
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const plaque = document.getElementById('plaque');
+        const hint = document.getElementById('hint');
+        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        let W = 0, H = 0, DPR = 1;
+        function sizeCanvas() {
+            DPR = Math.min(devicePixelRatio || 1, 2);
+            W = innerWidth; H = innerHeight;
+            canvas.width = W * DPR;
+            canvas.height = H * DPR;
+            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        }
+        sizeCanvas();
+
+        // ---------- damage ledger ----------
+        let damage = 0;
+        try { damage = parseFloat(localStorage.getItem('nicecursor-damage')) || 0; } catch (e) {}
+        let saveTimer = null;
+        function addDamage(d) {
+            damage += d;
+            plaque.textContent = 'estimated damages: $' +
+                damage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                try { localStorage.setItem('nicecursor-damage', damage.toFixed(2)); } catch (e) {}
+            }, 500);
+        }
+        addDamage(0);
+
+        // ---------- bodies ----------
+        // Everything on the desk is a puck: it slides, spins, bumps, and rests crooked.
+        const bodies = [];
+        function makeBody(kind, x, y, w, h, extra) {
+            return Object.assign({
+                kind, x, y, w, h,
+                vx: 0, vy: 0,
+                rot: (Math.random() - 0.5) * 0.14,
+                vrot: 0,
+                r: Math.max(w, h) / 2,
+                mass: Math.max(1, (w * h) / 1600),
+                color: PALETTE[bodies.length % PALETTE.length]
+            }, extra || {});
+        }
+
+        function spawnLetters() {
+            const line1 = 'NICE', line2 = 'CURSOR.';
+            const fs = Math.min(W * 0.155, H * 0.18, 150);
+            ctx.font = '900 ' + fs + 'px "Arial Black", Arial, sans-serif';
+            const gap = fs * 0.08;
+            let ci = 0;
+            [[line1, H * 0.36], [line2, H * 0.56]].forEach(([word, cy]) => {
+                const widths = [...word].map(ch => ctx.measureText(ch).width);
+                const total = widths.reduce((a, b) => a + b, 0) + gap * (word.length - 1);
+                let x = (W - total) / 2;
+                [...word].forEach((ch, i) => {
+                    bodies.push(makeBody('letter', x + widths[i] / 2, cy, widths[i], fs * 0.8,
+                        { ch, fs, color: PALETTE[ci++ % PALETTE.length] }));
+                    x += widths[i] + gap;
+                });
+            });
+        }
+
+        function spawnWidgets() {
+            const kinds = ['button', 'cancel', 'checkbox', 'radio-on', 'radio-off', 'toggle',
+                           'slider', 'progress', 'link', 'closex', 'window', 'search'];
+            const sizes = {
+                button: [96, 42], cancel: [110, 42], checkbox: [34, 34], 'radio-on': [32, 32],
+                'radio-off': [32, 32], toggle: [64, 32], slider: [130, 26], progress: [140, 24],
+                link: [116, 36], closex: [36, 36], window: [160, 108], search: [130, 34]
+            };
+            const titleBox = { x: W / 2, y: H * 0.46, hw: W * 0.42, hh: H * 0.24 };
+            kinds.forEach(kind => {
+                const [w, h] = sizes[kind];
+                for (let tries = 0; tries < 40; tries++) {
+                    const x = 60 + Math.random() * (W - 120);
+                    const y = 60 + Math.random() * (H - 140);
+                    const inTitle = Math.abs(x - titleBox.x) < titleBox.hw && Math.abs(y - titleBox.y) < titleBox.hh;
+                    const crowded = bodies.some(b => Math.hypot(b.x - x, b.y - y) < b.r + Math.max(w, h) / 2 + 18);
+                    if (!inTitle && !crowded) {
+                        bodies.push(makeBody(kind, x, y, w, h));
+                        break;
+                    }
+                }
+            });
+        }
+
+        // Secret: sometimes a real mouse is hiding among the widgets. It flees the cursor.
+        let mouse = null;
+        if (Math.random() < 0.04) {
+            mouse = { x: 60 + Math.random() * (W - 120), y: 60 + Math.random() * (H - 140), vx: 0, vy: 0, dir: 1, wig: 0, gone: false };
+        }
+
+        spawnLetters();
+        spawnWidgets();
+
+        // ---------- particles ----------
+        const particles = [];
+        function pushParticle(p) {
+            if (particles.length < 80) particles.push(p);
+            wake();
+        }
+
+        // ---------- pointer & giant cursor ----------
+        const ptr = { x: W / 2, y: H * 0.8, visible: false };
+        const cur = { x: W / 2, y: H * 0.8, px: W / 2, py: H * 0.8, vx: 0, vy: 0, squash: 0 };
+        const CURSOR_SCALE = Math.min(5, Math.max(3, W / 260));
+
+        function drawCursorPath(g) {
+            g.beginPath();
+            g.moveTo(8, 28); g.lineTo(2, 2); g.lineTo(28, 8);
+            g.lineTo(18, 18); g.lineTo(28, 28); g.lineTo(24, 32);
+            g.lineTo(14, 22); g.closePath();
+        }
+
+        // ---------- physics ----------
+        function collideCursor(b) {
+            // two coarse circles along the arrow: the tip and the belly
+            const lean = clamp(cur.vx * 0.006, -0.28, 0.28);
+            const hits = [
+                { ox: 10, oy: 10, r: 9 * CURSOR_SCALE / 1.6 },
+                { ox: 15 * CURSOR_SCALE * 0.8, oy: 16 * CURSOR_SCALE * 0.8, r: 10 * CURSOR_SCALE }
+            ];
+            for (const hcirc of hits) {
+                const hx = cur.x + Math.cos(lean) * hcirc.ox - Math.sin(lean) * hcirc.oy;
+                const hy = cur.y + Math.sin(lean) * hcirc.ox + Math.cos(lean) * hcirc.oy;
+                const dx = b.x - hx, dy = b.y - hy;
+                const dist = Math.hypot(dx, dy);
+                const min = hcirc.r + b.r * 0.82;
+                if (dist > 0.001 && dist < min) {
+                    const nx = dx / dist, ny = dy / dist;
+                    b.x += nx * (min - dist);
+                    b.y += ny * (min - dist);
+                    const push = Math.max(cur.vx * nx + cur.vy * ny, 0);
+                    b.vx += nx * (push * 1.15 + 1.5);
+                    b.vy += ny * (push * 1.15 + 1.5);
+                    b.vrot += (nx * cur.vy - ny * cur.vx) * 0.004;
+                    if (push > 4) addDamage(push * (0.01 + Math.random() * 0.03));
+                    wake();
+                }
+            }
+        }
+
+        function collideBodies() {
+            for (let i = 0; i < bodies.length; i++) {
+                for (let j = i + 1; j < bodies.length; j++) {
+                    const a = bodies[i], b = bodies[j];
+                    const dx = b.x - a.x, dy = b.y - a.y;
+                    const dist = Math.hypot(dx, dy);
+                    const min = (a.r + b.r) * 0.78;
+                    if (dist > 0.001 && dist < min) {
+                        const nx = dx / dist, ny = dy / dist;
+                        const overlap = (min - dist) / (a.mass + b.mass);
+                        a.x -= nx * overlap * b.mass; a.y -= ny * overlap * b.mass;
+                        b.x += nx * overlap * a.mass; b.y += ny * overlap * a.mass;
+                        const rel = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+                        if (rel > 0) {
+                            const imp = rel * 0.9 / (1 / a.mass + 1 / b.mass);
+                            a.vx -= imp * nx / a.mass; a.vy -= imp * ny / a.mass;
+                            b.vx += imp * nx / b.mass; b.vy += imp * ny / b.mass;
+                            a.vrot += rel * 0.002; b.vrot -= rel * 0.002;
+                            if (rel > 6) addDamage(rel * 0.008);
+                        }
+                    }
+                }
+            }
+        }
+
+        function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+        function stepBody(b) {
+            b.x += b.vx; b.y += b.vy; b.rot += b.vrot;
+            b.vx *= 0.94; b.vy *= 0.94; b.vrot *= 0.93;
+            const m = b.r * 0.6;
+            if (b.x < m) { b.x = m; b.vx = Math.abs(b.vx) * 0.7; }
+            if (b.x > W - m) { b.x = W - m; b.vx = -Math.abs(b.vx) * 0.7; }
+            if (b.y < m) { b.y = m; b.vy = Math.abs(b.vy) * 0.7; }
+            if (b.y > H - m) { b.y = H - m; b.vy = -Math.abs(b.vy) * 0.7; }
+            if (Math.abs(b.vx) < 0.04) b.vx = 0;
+            if (Math.abs(b.vy) < 0.04) b.vy = 0;
+            if (Math.abs(b.vrot) < 0.0015) b.vrot = 0;
+        }
+
+        function stomp() {
+            cur.squash = 1;
+            const R = Math.min(300, W * 0.5);
+            let total = 0;
+            for (const b of bodies) {
+                const dx = b.x - cur.x, dy = b.y - cur.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < R && dist > 0.001) {
+                    const f = (1 - dist / R) * 26 / Math.sqrt(b.mass);
+                    b.vx += (dx / dist) * f;
+                    b.vy += (dy / dist) * f;
+                    b.vrot += (Math.random() - 0.5) * 0.15;
+                    total += f;
+                }
+            }
+            if (mouse && !mouse.gone) {
+                const d = Math.hypot(mouse.x - cur.x, mouse.y - cur.y);
+                if (d < R) { mouse.vx += (mouse.x - cur.x) / d * 20; mouse.vy += (mouse.y - cur.y) / d * 20; }
+            }
+            addDamage(0.5 + total * 0.04);
+            pushParticle({ kind: 'ring', x: cur.x, y: cur.y, r: 20, max: R, life: 1 });
+            if (!reducedMotion) {
+                document.body.classList.remove('shake');
+                void document.body.offsetWidth;
+                document.body.classList.add('shake');
+            }
+            wake();
+        }
+
+        // ---------- drawing ----------
+        function sticker(x, y, rot, drawFn) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rot);
+            // hard offset shadow: ink silhouette first
+            ctx.save();
+            ctx.translate(3, 3);
+            drawFn(true);
+            ctx.restore();
+            drawFn(false);
+            ctx.restore();
+        }
+
+        function rrect(g, x, y, w, h, r) {
+            g.beginPath();
+            g.moveTo(x + r, y);
+            g.arcTo(x + w, y, x + w, y + h, r);
+            g.arcTo(x + w, y + h, x, y + h, r);
+            g.arcTo(x, y + h, x, y, r);
+            g.arcTo(x, y, x + w, y, r);
+            g.closePath();
+        }
+
+        function drawBody(b) {
+            if (b.kind === 'letter') {
+                ctx.save();
+                ctx.translate(b.x, b.y);
+                ctx.rotate(b.rot);
+                ctx.font = '900 ' + b.fs + 'px "Arial Black", Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = INK;
+                ctx.fillText(b.ch, 4, 4);
+                ctx.lineWidth = Math.max(6, b.fs * 0.07);
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = INK;
+                ctx.strokeText(b.ch, 0, 0);
+                ctx.fillStyle = b.color;
+                ctx.fillText(b.ch, 0, 0);
+                ctx.restore();
+                return;
+            }
+            sticker(b.x, b.y, b.rot, shadow => {
+                const w = b.w, h = b.h;
+                ctx.lineWidth = 2.5;
+                ctx.lineJoin = 'round';
+                const fill = c => { ctx.fillStyle = shadow ? INK : c; ctx.fill(); if (!shadow) { ctx.strokeStyle = INK; ctx.stroke(); } };
+                switch (b.kind) {
+                    case 'button':
+                        rrect(ctx, -w / 2, -h / 2, w, h, 12); fill(b.color);
+                        if (!shadow) {
+                            ctx.fillStyle = INK;
+                            ctx.font = '900 16px "Arial Black", Arial, sans-serif';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('OK', 0, 1);
+                        }
+                        break;
+                    case 'cancel':
+                        rrect(ctx, -w / 2, -h / 2, w, h, 12); fill(CREAM);
+                        if (!shadow) {
+                            ctx.fillStyle = INK;
+                            ctx.font = '900 14px "Arial Black", Arial, sans-serif';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('CANCEL', 0, 1);
+                        }
+                        break;
+                    case 'checkbox':
+                        rrect(ctx, -w / 2, -h / 2, w, h, 8); fill(CREAM);
+                        if (!shadow) {
+                            ctx.beginPath();
+                            ctx.moveTo(-8, 0); ctx.lineTo(-3, 7); ctx.lineTo(9, -8);
+                            ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.strokeStyle = INK; ctx.stroke();
+                        }
+                        break;
+                    case 'radio-on':
+                    case 'radio-off':
+                        ctx.beginPath(); ctx.arc(0, 0, w / 2, 0, 7); fill(CREAM);
+                        if (!shadow && b.kind === 'radio-on') {
+                            ctx.beginPath(); ctx.arc(0, 0, w / 5, 0, 7);
+                            ctx.fillStyle = INK; ctx.fill();
+                        }
+                        break;
+                    case 'toggle':
+                        rrect(ctx, -w / 2, -h / 2, w, h, h / 2); fill(b.color);
+                        if (!shadow) {
+                            ctx.beginPath(); ctx.arc(w / 2 - h / 2, 0, h / 2 - 5, 0, 7);
+                            ctx.fillStyle = CREAM; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.stroke();
+                        }
+                        break;
+                    case 'slider':
+                        rrect(ctx, -w / 2, -5, w, 10, 5); fill(CREAM);
+                        if (!shadow) {
+                            ctx.beginPath(); ctx.arc(w * 0.15, 0, 12, 0, 7);
+                            ctx.fillStyle = b.color; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.stroke();
+                        }
+                        break;
+                    case 'progress':
+                        rrect(ctx, -w / 2, -h / 2, w, h, h / 2); fill(CREAM);
+                        if (!shadow) {
+                            rrect(ctx, -w / 2 + 4, -h / 2 + 4, (w - 8) * 0.62, h - 8, (h - 8) / 2);
+                            ctx.fillStyle = b.color; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.stroke();
+                        }
+                        break;
+                    case 'link':
+                        rrect(ctx, -w / 2, -h / 2, w, h, 999); fill(CREAM);
+                        if (!shadow) {
+                            ctx.fillStyle = '#5aa0db';
+                            ctx.font = 'italic 17px Georgia, serif';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('click here', 0, -1);
+                            ctx.beginPath(); ctx.moveTo(-34, 9); ctx.lineTo(34, 9);
+                            ctx.strokeStyle = '#5aa0db'; ctx.lineWidth = 1.5; ctx.stroke();
+                        }
+                        break;
+                    case 'closex':
+                        rrect(ctx, -w / 2, -h / 2, w, h, 10); fill(b.color);
+                        if (!shadow) {
+                            ctx.beginPath();
+                            ctx.moveTo(-7, -7); ctx.lineTo(7, 7);
+                            ctx.moveTo(7, -7); ctx.lineTo(-7, 7);
+                            ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.strokeStyle = INK; ctx.stroke();
+                        }
+                        break;
+                    case 'search':
+                        rrect(ctx, -w / 2, -h / 2, w, h, h / 2); fill(CREAM);
+                        if (!shadow) {
+                            ctx.beginPath(); ctx.arc(-w / 2 + 18, -1, 7, 0, 7);
+                            ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+                            ctx.beginPath(); ctx.moveTo(-w / 2 + 23, 4); ctx.lineTo(-w / 2 + 29, 10);
+                            ctx.lineCap = 'round'; ctx.stroke();
+                        }
+                        break;
+                    case 'window':
+                        rrect(ctx, -w / 2, -h / 2, w, h, 10); fill(CREAM);
+                        if (!shadow) {
+                            rrect(ctx, -w / 2, -h / 2, w, 26, 10);
+                            ctx.save(); ctx.clip();
+                            ctx.fillStyle = b.color;
+                            ctx.fillRect(-w / 2, -h / 2, w, 26);
+                            ctx.restore();
+                            ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2 + 26); ctx.lineTo(w / 2, -h / 2 + 26);
+                            ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+                            for (let d = 0; d < 3; d++) {
+                                ctx.beginPath(); ctx.arc(-w / 2 + 14 + d * 14, -h / 2 + 13, 4, 0, 7);
+                                ctx.fillStyle = INK; ctx.fill();
+                            }
+                            ctx.fillStyle = INK;
+                            ctx.font = 'italic 14px Georgia, serif';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('Are you sure?', 0, -2);
+                            rrect(ctx, -w / 2 + 16, h / 2 - 34, 52, 22, 8);
+                            ctx.fillStyle = '#b7ce3c'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+                            rrect(ctx, w / 2 - 68, h / 2 - 34, 52, 22, 8);
+                            ctx.fillStyle = '#f0563e'; ctx.fill(); ctx.stroke();
+                        }
+                        break;
+                }
+            });
+        }
+
+        function drawMouse() {
+            if (!mouse || mouse.gone) return;
+            mouse.wig += Math.hypot(mouse.vx, mouse.vy) * 0.15;
+            sticker(mouse.x, mouse.y, Math.atan2(mouse.vy, mouse.vx) * 0.2 + Math.sin(mouse.wig) * 0.1, shadow => {
+                ctx.lineWidth = 2;
+                ctx.lineJoin = 'round';
+                // tail
+                if (!shadow) {
+                    ctx.beginPath();
+                    ctx.moveTo(-14, 2);
+                    ctx.quadraticCurveTo(-26, 6 + Math.sin(mouse.wig) * 4, -32, -2);
+                    ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();
+                }
+                // body
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 15, 10, 0, 0, 7);
+                ctx.fillStyle = shadow ? INK : '#c9c2b8'; ctx.fill();
+                if (!shadow) { ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.stroke(); }
+                // ear + eye + nose
+                if (!shadow) {
+                    ctx.beginPath(); ctx.arc(4, -9, 5, 0, 7);
+                    ctx.fillStyle = '#ff7fa5'; ctx.fill(); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(9, -3, 1.8, 0, 7);
+                    ctx.fillStyle = INK; ctx.fill();
+                    ctx.beginPath(); ctx.arc(15.5, 0, 2, 0, 7);
+                    ctx.fillStyle = INK; ctx.fill();
+                }
+            });
+        }
+
+        function drawGiantCursor() {
+            if (!ptr.visible) return;
+            const lean = clamp(cur.vx * 0.006, -0.28, 0.28);
+            const sq = cur.squash;
+            const scale = CURSOR_SCALE * (1 - sq * 0.18 + (sq > 0 && sq < 0.5 ? (0.5 - sq) * 0.12 : 0));
+            ctx.save();
+            ctx.translate(cur.x, cur.y);
+            ctx.rotate(lean);
+            ctx.scale(scale, scale);
+            ctx.translate(-2, -2);
+            ctx.save();
+            ctx.translate(1.6, 1.6);
+            drawCursorPath(ctx);
+            ctx.fillStyle = INK;
+            ctx.fill();
+            ctx.restore();
+            drawCursorPath(ctx);
+            ctx.fillStyle = CREAM;
+            ctx.fill();
+            ctx.lineWidth = 2.4 / Math.sqrt(scale);
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                if (p.kind === 'ring') {
+                    p.r += (p.max - p.r) * 0.18;
+                    p.life -= 0.045;
+                    if (p.life <= 0) { particles.splice(i, 1); continue; }
+                    ctx.globalAlpha = p.life;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7);
+                    ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.stroke();
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7);
+                    ctx.lineWidth = 3; ctx.strokeStyle = CREAM; ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        // ---------- loop with idle sleep ----------
+        let running = false;
+        let rafId = 0;
+
+        function wake() {
+            if (!running) {
+                running = true;
+                rafId = requestAnimationFrame(tick);
+            }
+        }
+
+        function isIdle() {
+            if (particles.length || cur.squash > 0) return false;
+            if (Math.hypot(ptr.x - cur.x, ptr.y - cur.y) > 0.5) return false;
+            if (mouse && !mouse.gone && (Math.abs(mouse.vx) > 0.05 || Math.abs(mouse.vy) > 0.05)) return false;
+            return bodies.every(b => b.vx === 0 && b.vy === 0 && b.vrot === 0);
+        }
+
+        function tick() {
+            // giant cursor: stiff spring toward the pointer, so it feels heavy
+            cur.px = cur.x; cur.py = cur.y;
+            cur.x += (ptr.x - cur.x) * 0.3;
+            cur.y += (ptr.y - cur.y) * 0.3;
+            cur.vx = cur.x - cur.px;
+            cur.vy = cur.y - cur.py;
+            if (cur.squash > 0) cur.squash = Math.max(0, cur.squash - 0.08);
+
+            for (const b of bodies) { collideCursor(b); stepBody(b); }
+            collideBodies();
+
+            if (mouse && !mouse.gone) {
+                const dx = mouse.x - cur.x, dy = mouse.y - cur.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 220 && ptr.visible) {
+                    mouse.vx += dx / d * 1.4;
+                    mouse.vy += dy / d * 1.4;
+                }
+                mouse.x += mouse.vx; mouse.y += mouse.vy;
+                mouse.vx *= 0.92; mouse.vy *= 0.92;
+                if (mouse.x < -60 || mouse.x > W + 60 || mouse.y < -60 || mouse.y > H + 60) mouse.gone = true;
+            }
+
+            ctx.fillStyle = PAPER;
+            ctx.fillRect(0, 0, W, H);
+            for (const b of bodies) drawBody(b);
+            drawMouse();
+            drawParticles();
+            drawGiantCursor();
+
+            if (isIdle()) {
+                running = false;
+            } else {
+                rafId = requestAnimationFrame(tick);
+            }
+        }
+
+        // ---------- input ----------
+        let hinted = false;
+        function dismissHint() {
+            if (!hinted) { hinted = true; hint.style.opacity = '0'; }
+        }
+        setTimeout(dismissHint, 10000);
+
+        addEventListener('pointermove', e => {
+            ptr.x = e.clientX; ptr.y = e.clientY;
+            ptr.visible = true;
+            wake();
+        }, { passive: true });
+
+        addEventListener('pointerdown', e => {
+            ptr.x = e.clientX; ptr.y = e.clientY;
+            ptr.visible = true;
+            dismissHint();
+            stomp();
         });
 
-        document.addEventListener('mouseleave', () => {
-            cursor.style.display = 'none';
+        addEventListener('pointerleave', () => { ptr.visible = false; wake(); });
+        document.addEventListener('mouseleave', () => { ptr.visible = false; wake(); });
+
+        let resizeTimer = null;
+        addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                sizeCanvas();
+                for (const b of bodies) {
+                    b.x = clamp(b.x, b.r * 0.6, W - b.r * 0.6);
+                    b.y = clamp(b.y, b.r * 0.6, H - b.r * 0.6);
+                }
+                wake();
+            }, 150);
         });
 
-        document.addEventListener('mouseenter', () => {
-            cursor.style.display = 'block';
-        });
+        // first paint
+        wake();
+    })();
     </script>
 </body>
 </html>

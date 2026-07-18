@@ -4,7 +4,7 @@
 <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1,000 Balls</title>
+<title>2,500 Balls</title>
 <style>
   html, body {
     margin: 0;
@@ -38,12 +38,12 @@
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="counter">1,000 balls</div>
+<div id="counter">2,500 balls</div>
 <script>
 (function () {
   'use strict';
 
-  var N = 1000;                 // exactly one thousand balls
+  var N = 2500;                 // exactly two thousand five hundred balls
   var TAU = Math.PI * 2;
   var GRAVITY = 1900;           // px/s^2
   var WALL_REST = 0.32;         // wall bounce damping
@@ -72,7 +72,7 @@
   // ---- palette / sprites -------------------------------------------------
   var PALETTE = ['#ef476f', '#f78c6b', '#ffd166', '#06d6a0', '#118ab2'];
   var BUCKETS = 9;
-  var R_MIN = 5, R_MAX = 13;
+  var R_MIN = 8, R_MAX = 20;
 
   function hexToRgb(hex) {
     var n = parseInt(hex.slice(1), 16);
@@ -94,7 +94,7 @@
       var rr = R_MIN + (R_MAX - R_MIN) * b / (BUCKETS - 1);
       idealArea += Math.PI * rr * rr * (N / BUCKETS);
     }
-    var budget = vw * vh * 0.34; // pit should cover ~1/3 of the screen
+    var budget = vw * vh * 0.58; // the pit owns most of the screen now
     if (idealArea > budget) sizeScale = Math.max(0.42, Math.sqrt(budget / idealArea));
   })();
 
@@ -177,7 +177,7 @@
       INVM[i] = 1 / (R[i] * R[i]);
       SPR[i] = color * BUCKETS + bucket;
       X[i] = R[i] + Math.random() * Math.max(1, W - R[i] * 2);
-      Y[i] = -Math.random() * H * 1.6 - R[i];
+      Y[i] = -Math.random() * H * 3.2 - R[i];
       VX[i] = (Math.random() - 0.5) * 120;
       VY[i] = Math.random() * 80;
     }
@@ -220,7 +220,7 @@
 
   // Instant scatter on click/touch.
   function burst(bx, by) {
-    var RAD = 190;
+    var RAD = 240;
     for (var i = 0; i < N; i++) {
       var dx = X[i] - bx, dy = Y[i] - by;
       var d2 = dx * dx + dy * dy;
@@ -343,7 +343,7 @@
 
   function applyPointer(h) {
     if (!hasPointer && !isDown) return;
-    var RAD = isDown ? 175 : 105;
+    var RAD = isDown ? 215 : 130;
     var rad2 = RAD * RAD;
     var base = isDown ? 2600 : 0;
     for (var i = 0; i < N; i++) {

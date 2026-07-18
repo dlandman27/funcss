@@ -1,247 +1,408 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Duplicate</title>
+    <meta name="description" content="It starts with one a. The button doubles it. There is no reason to stop.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='4' y='4' width='42' height='42' rx='8' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><text x='25' y='35' font-family='Georgia' font-size='30' font-style='italic' text-anchor='middle' fill='%23f0563e'>a</text></svg>">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
         }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: white;
             min-height: 100vh;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            font-family: 'Courier New', monospace;
-            overflow: auto;
+            gap: 14px;
+            padding: 26px 16px 40px;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .container {
-            text-align: center;
+        header { text-align: center; }
+        h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(24px, 6vw, 34px);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: inline-block;
+            transform: rotate(-1.4deg);
+        }
+        header p { font-style: italic; font-size: 15px; color: rgba(32,26,23,0.6); margin-top: 4px; }
+
+        .wall-card {
             position: relative;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-0.5deg);
+            padding: 10px;
+            line-height: 0;
         }
-
-        .text-display {
-            color: black;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            word-wrap: break-word;
-            max-width: 90vw;
-            line-height: 1;
-            white-space: pre-wrap;
+        .wall-card.pop { animation: cardPop 0.25s cubic-bezier(0.2, 1.5, 0.4, 1); }
+        @keyframes cardPop {
+            0% { transform: rotate(-0.5deg) scale(0.985); }
+            60% { transform: rotate(-0.5deg) scale(1.012); }
+            100% { transform: rotate(-0.5deg) scale(1); }
         }
+        canvas#wall { display: block; }
 
-        .counter {
+        .sample-plaque {
             position: absolute;
-            top: -60px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(0,0,0,0.7);
-            font-size: 18px;
-            font-weight: normal;
+            bottom: -12px;
+            right: 14px;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 4px 12px;
+            font-style: italic;
+            font-size: 12px;
+            line-height: 1.3;
+            display: none;
+        }
+        .sample-plaque.on { display: block; }
+
+        .universe {
+            position: absolute;
+            top: -18px;
+            left: -14px;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 8px 16px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 13px;
+            text-transform: uppercase;
+            transform: rotate(-7deg) scale(0);
+            line-height: 1.2;
+        }
+        .universe em { display: block; font-family: Georgia, serif; font-weight: normal; font-size: 11px; text-transform: none; }
+        .universe.show { animation: stickerIn 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes stickerIn {
+            0% { transform: rotate(6deg) scale(0.2); }
+            70% { transform: rotate(-8deg) scale(1.12); }
+            100% { transform: rotate(-7deg) scale(1); }
         }
 
-        .controls {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
+        .ledger { text-align: center; min-height: 58px; }
+        .gen {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(16px, 4.5vw, 22px);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .milestone {
+            font-style: italic;
+            font-size: 15px;
+            color: rgba(32,26,23,0.65);
+            margin-top: 3px;
+            max-width: 92vw;
         }
 
+        .controls { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; }
         button {
-            background: rgba(0,0,0,0.1);
-            border: 2px solid rgba(0,0,0,0.2);
-            color: black;
-            padding: 10px 20px;
-            border-radius: 25px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
             cursor: pointer;
-            font-family: inherit;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        #dupBtn {
+            background: var(--coral);
+            font-size: 18px;
+            padding: 16px 34px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-1.6deg);
+        }
+        #dupBtn:hover { transform: translate(-2px,-2px) rotate(-1.6deg); box-shadow: 6px 6px 0 var(--ink); }
+        #dupBtn:active, #dupBtn.firing { transform: translate(3px,3px) rotate(-1.6deg); box-shadow: 1px 1px 0 var(--ink); }
+        #resetBtn {
+            background: var(--cream);
+            font-size: 11px;
+            padding: 9px 16px;
+            box-shadow: 2px 2px 0 var(--ink);
+            transform: rotate(1.2deg);
+        }
+        #resetBtn:hover { transform: translate(-1px,-1px) rotate(1.2deg); box-shadow: 3px 3px 0 var(--ink); }
+        #resetBtn:active { transform: translate(2px,2px) rotate(1.2deg); box-shadow: 0 0 0 var(--ink); }
+
+        .hint {
+            font-style: italic;
             font-size: 14px;
-            transition: all 0.3s ease;
+            color: rgba(32,26,23,0.55);
+            transition: opacity 1.2s ease;
+            min-height: 1.2em;
+        }
+        .hint.gone { opacity: 0; }
+
+        .tally {
+            position: fixed;
+            left: 14px;
+            bottom: 10px;
+            font-style: italic;
+            font-size: 12px;
+            color: rgba(32,26,23,0.45);
+            pointer-events: none;
         }
 
-        button:hover {
-            background: rgba(0,0,0,0.2);
-            transform: translateY(-2px);
+        @keyframes thunk {
+            0% { transform: translate(0,0); }
+            25% { transform: translate(2px,3px); }
+            50% { transform: translate(-3px,1px); }
+            75% { transform: translate(1px,-2px); }
+            100% { transform: translate(0,0); }
         }
+        body.thunk { animation: thunk 0.22s linear; }
 
-        button:active {
-            transform: translateY(0);
-        }
-
-        .auto-mode {
-            background: rgba(0,0,0,0.3);
-            border-color: rgba(0,0,0,0.5);
-        }
-
-        .pulse {
-            animation: pulse 0.5s ease-in-out;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
+        @media (prefers-reduced-motion: reduce) {
+            .wall-card.pop { animation: none; }
+            body.thunk { animation: none; }
+            .universe.show { animation: none; transform: rotate(-7deg) scale(1); }
+            button, .hint { transition: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="counter" id="counter">Generation: 0</div>
-        <div class="text-display fade-in" id="textDisplay">a</div>
+    <header>
+        <h1>Duplicate</h1>
+        <p>it starts with one a.</p>
+    </header>
+
+    <div class="wall-card" id="wallCard">
+        <div class="universe" id="universe">Universe Full<em>the a's continue regardless</em></div>
+        <canvas id="wall"></canvas>
+        <div class="sample-plaque" id="samplePlaque"></div>
+    </div>
+
+    <div class="ledger">
+        <div class="gen" id="gen"></div>
+        <div class="milestone" id="milestone"></div>
     </div>
 
     <div class="controls">
-        <button id="duplicateBtn">Duplicate</button>
-        <button id="resetBtn">Reset</button>
-        <button id="autoBtn">Auto Mode</button>
+        <button id="dupBtn">Duplicate</button>
+        <button id="resetBtn">Start Over</button>
     </div>
+    <div class="hint" id="hint">hold the button. see where it goes.</div>
+    <div class="tally" id="tally"></div>
 
     <script>
-        class DuplicateEngine {
-            constructor() {
-                this.text = 'a';
-                this.generation = 0;
-                this.isAutoMode = false;
-                this.autoInterval = null;
-                this.baseFontSize = 200;
-                this.minFontSize = 8;
-                
-                this.textDisplay = document.getElementById('textDisplay');
-                this.counter = document.getElementById('counter');
-                this.duplicateBtn = document.getElementById('duplicateBtn');
-                this.resetBtn = document.getElementById('resetBtn');
-                this.autoBtn = document.getElementById('autoBtn');
-                
-                this.setupEventListeners();
-                this.updateDisplay();
+    (() => {
+        const INK = '#201a17';
+        const CORAL = '#f0563e';
+        const CAP = 4096;               // most a's ever drawn per frame
+        const LOG10_2 = Math.log10(2);
+
+        const wall = document.getElementById('wall');
+        const wctx = wall.getContext('2d');
+        const wallCard = document.getElementById('wallCard');
+        const genEl = document.getElementById('gen');
+        const milestoneEl = document.getElementById('milestone');
+        const samplePlaque = document.getElementById('samplePlaque');
+        const universeEl = document.getElementById('universe');
+        const dupBtn = document.getElementById('dupBtn');
+        const hintEl = document.getElementById('hint');
+        const tallyEl = document.getElementById('tally');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        let g = 0;                      // generations; count = 2^g
+        let originalIdx = 0;            // which drawn 'a' is the original
+        let record = 0;
+        try { record = parseInt(localStorage.getItem('duplicate-record'), 10) || 0; } catch (e) {}
+
+        // ---- canvas ----
+        let cssW = 0, cssH = 0;
+        function sizeWall() {
+            cssW = Math.min(680, document.body.clientWidth - 60);
+            cssH = Math.min(360, Math.max(220, window.innerHeight * 0.42));
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            wall.width = Math.round(cssW * dpr);
+            wall.height = Math.round(cssH * dpr);
+            wall.style.width = cssW + 'px';
+            wall.style.height = cssH + 'px';
+            wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function drawWall() {
+            wctx.clearRect(0, 0, cssW, cssH);
+            const count = g > 12 ? CAP : Math.pow(2, g);   // 2^12 = 4096 = CAP
+            const shown = Math.min(count, CAP);
+
+            // grid that fills the card
+            const cell = Math.sqrt((cssW * cssH) / shown);
+            const cols = Math.max(1, Math.floor(cssW / cell));
+            const rows = Math.ceil(shown / cols);
+            const cw = cssW / cols, ch = cssH / Math.max(rows, 1);
+            const fs = Math.max(4, Math.min(cw, ch) * 0.82);
+
+            wctx.font = 'italic ' + fs + 'px Georgia, serif';
+            wctx.textAlign = 'center';
+            wctx.textBaseline = 'middle';
+            for (let i = 0; i < shown; i++) {
+                const x = (i % cols + 0.5) * cw;
+                const y = (Math.floor(i / cols) + 0.5) * ch;
+                wctx.fillStyle = (i === originalIdx % shown && g <= 12) ? CORAL : INK;
+                wctx.fillText('a', x, y);
             }
-            
-            setupEventListeners() {
-                this.duplicateBtn.addEventListener('click', () => this.duplicate());
-                this.resetBtn.addEventListener('click', () => this.reset());
-                this.autoBtn.addEventListener('click', () => this.toggleAutoMode());
-                
-                // Keyboard shortcuts
-                document.addEventListener('keydown', (e) => {
-                    if (e.code === 'Space') {
-                        e.preventDefault();
-                        this.duplicate();
-                    } else if (e.code === 'KeyR') {
-                        e.preventDefault();
-                        this.reset();
-                    } else if (e.code === 'KeyA') {
-                        e.preventDefault();
-                        this.toggleAutoMode();
-                    }
-                });
-            }
-            
-            duplicate() {
-                this.text = this.text + this.text; // Exponential duplication
-                this.generation++;
-                this.updateDisplay();
-                this.addPulseEffect();
-            }
-            
-            reset() {
-                this.text = 'a';
-                this.generation = 0;
-                this.updateDisplay();
-                this.addPulseEffect();
-            }
-            
-            toggleAutoMode() {
-                this.isAutoMode = !this.isAutoMode;
-                
-                if (this.isAutoMode) {
-                    this.autoBtn.textContent = 'Stop Auto';
-                    this.autoBtn.classList.add('auto-mode');
-                    this.startAutoMode();
-                } else {
-                    this.autoBtn.textContent = 'Auto Mode';
-                    this.autoBtn.classList.remove('auto-mode');
-                    this.stopAutoMode();
-                }
-            }
-            
-            startAutoMode() {
-                // Start with faster intervals, then slow down as text gets longer
-                const getInterval = () => {
-                    const baseInterval = 1000; // 1 second base
-                    const slowdownFactor = Math.min(this.generation * 0.1, 3); // Max 3x slower
-                    return baseInterval + (slowdownFactor * 500);
-                };
-                
-                const autoDuplicate = () => {
-                    if (this.isAutoMode) {
-                        this.duplicate();
-                        this.autoInterval = setTimeout(autoDuplicate, getInterval());
-                    }
-                };
-                
-                this.autoInterval = setTimeout(autoDuplicate, getInterval());
-            }
-            
-            stopAutoMode() {
-                if (this.autoInterval) {
-                    clearTimeout(this.autoInterval);
-                    this.autoInterval = null;
-                }
-            }
-            
-            updateDisplay() {
-                this.textDisplay.textContent = this.text;
-                this.counter.textContent = `Generation: ${this.generation}`;
-                
-                // Calculate font size based on text length
-                const textLength = this.text.length;
-                const fontSize = Math.max(
-                    this.minFontSize,
-                    this.baseFontSize / Math.pow(textLength, 0.3) // Gradual decrease
-                );
-                
-                this.textDisplay.style.fontSize = `${fontSize}px`;
-                
-                // Add some visual feedback for very large numbers
-                if (textLength > 1000) {
-                    this.textDisplay.style.opacity = '0.8';
-                } else if (textLength > 10000) {
-                    this.textDisplay.style.opacity = '0.6';
-                } else {
-                    this.textDisplay.style.opacity = '1';
-                }
-            }
-            
-            addPulseEffect() {
-                this.textDisplay.classList.remove('pulse');
-                setTimeout(() => {
-                    this.textDisplay.classList.add('pulse');
-                }, 10);
+
+            if (g > 12) {
+                const ratio = pow2Human(g - 12);
+                samplePlaque.innerHTML = 'representative sample &middot; 1 shown : ' + ratio + ' real';
+                samplePlaque.classList.add('on');
+            } else {
+                samplePlaque.classList.remove('on');
             }
         }
-        
-        // Initialize the duplicate engine when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            new DuplicateEngine();
+
+        // ---- number formatting ----
+        function pow2Human(exp) {
+            if (exp <= 49) return BigInt(2 ** 0 + 0) === 0n ? '' : (2 ** exp).toLocaleString();
+            const digits = exp * LOG10_2;
+            const mant = Math.pow(10, digits - Math.floor(digits)).toFixed(1);
+            return mant + '&times;10<sup>' + Math.floor(digits) + '</sup>';
+        }
+
+        function countLabel() {
+            if (g <= 49) return Math.pow(2, g).toLocaleString() + ' a’s';
+            const digits = g * LOG10_2;
+            const mant = Math.pow(10, digits - Math.floor(digits)).toFixed(2);
+            return '2^' + g + ' ≈ ' + mant + '×10^' + Math.floor(digits) + ' a’s';
+        }
+
+        // ---- deadpan escalation ----
+        const MILESTONES = [
+            [0,   'one a. pristine.'],
+            [1,   'two a’s. it begins.'],
+            [3,   'eight. a word’s worth, if the word were terrible.'],
+            [5,   'thirty-two. a modest crowd.'],
+            [10,  'a paragraph of pure a.'],
+            [14,  '16 KB. an email nobody reads.'],
+            [20,  'one megabyte. a novel with one thing to say.'],
+            [24,  '16 MB. the original is still in there.'],
+            [27,  '134 MB. your phone is warm.'],
+            [30,  'one gigabyte. your RAM has opinions.'],
+            [34,  '17 GB. a boxed set of a.'],
+            [40,  'one terabyte. a hard drive of a.'],
+            [47,  '128 TB. the archive looks away.'],
+            [53,  'nine petabytes. all of wikipedia, but honest.'],
+            [60,  'an exabyte. national-scale a.'],
+            [70,  'a zettabyte. roughly all human data. all of it a.'],
+            [80,  'a yottabyte. the units are embarrassed now.'],
+            [100, 'more a’s than grains of sand. by a lot.'],
+            [133, 'more a’s than atoms in your body.'],
+            [166, 'more a’s than atoms in the earth.'],
+            [200, 'the canvas gave up around generation 12. the a’s are conceptual now.'],
+            [233, 'approaching universal capacity. steady.'],
+            [266, 'one a per atom in the observable universe. and climbing.'],
+            [300, 'the universe declined to comment. the button still works.']
+        ];
+        function milestoneFor(gen) {
+            let m = MILESTONES[0][1];
+            for (const [at, text] of MILESTONES) { if (gen >= at) m = text; else break; }
+            return m;
+        }
+
+        // ---- state ----
+        function updateLedger() {
+            genEl.textContent = 'Generation ' + g;
+            milestoneEl.textContent = milestoneFor(g);
+            tallyEl.textContent = record > 0 ? 'personal record: generation ' + record : '';
+        }
+
+        function duplicate() {
+            g++;
+            if (g > record) {
+                record = g;
+                try { localStorage.setItem('duplicate-record', String(record)); } catch (e) {}
+            }
+            if (g <= 12) originalIdx = Math.floor(Math.random() * Math.pow(2, g));
+            drawWall();
+            updateLedger();
+            hintEl.classList.add('gone');
+
+            if (!reducedMotion.matches) {
+                wallCard.classList.remove('pop');
+                void wallCard.offsetWidth;
+                wallCard.classList.add('pop');
+                if (g % 10 === 0) {
+                    document.body.classList.add('thunk');
+                    setTimeout(() => document.body.classList.remove('thunk'), 250);
+                }
+            }
+            if (g === 266) universeEl.classList.add('show');
+        }
+
+        function reset() {
+            g = 0;
+            originalIdx = 0;
+            universeEl.classList.remove('show');
+            drawWall();
+            updateLedger();
+        }
+
+        // ---- input: press, hold-to-autofire, space ----
+        let holdTimer = 0, fireTimer = 0;
+        function startFiring() {
+            duplicate();
+            dupBtn.classList.add('firing');
+            holdTimer = setTimeout(function tick() {
+                duplicate();
+                fireTimer = setTimeout(tick, 140);
+                holdTimer = fireTimer;
+            }, 420);
+        }
+        function stopFiring() {
+            clearTimeout(holdTimer);
+            clearTimeout(fireTimer);
+            dupBtn.classList.remove('firing');
+        }
+        dupBtn.addEventListener('pointerdown', e => { e.preventDefault(); startFiring(); });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => dupBtn.addEventListener(ev, stopFiring));
+        dupBtn.addEventListener('click', e => e.preventDefault());
+
+        let spaceHeld = false;
+        window.addEventListener('keydown', e => {
+            if (e.code === 'Space' && !spaceHeld) { spaceHeld = true; e.preventDefault(); startFiring(); }
         });
+        window.addEventListener('keyup', e => {
+            if (e.code === 'Space') { spaceHeld = false; stopFiring(); }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', reset);
+        setTimeout(() => hintEl.classList.add('gone'), 10000);
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => { sizeWall(); drawWall(); }, 150);
+        });
+
+        sizeWall();
+        drawWall();
+        updateLedger();
+    })();
     </script>
 </body>
 </html>

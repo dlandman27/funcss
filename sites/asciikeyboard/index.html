@@ -1,59 +1,492 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
-    <title>ASCII Key Tester</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A simple ASCII code viewer that displays the ASCII value when you press a key">
-    <meta name="keywords" content="ASCII, keyboard, character codes, key codes">
-    <meta name="author" content="ASCII Key Tester">
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAGESURBVFiF7ZY9TsNAEIXfrB0UKkQDEg1HoKbkBhyAI1DTcQUKJI7AEWi5AhIFPQfwASiQkGLkv/V+NFCsE2cdx7GjSHnSSONd73wzb3cnwL8DgAYRtYhoZ/6KiNpE1AAQxPRLRNQF8GqMuQshTABMiagK4B7APYBr59xVnudP3vvPKIoWAKYAVsaYhyRJukQ0BvAMoA9gHkXRgzHmKQzDhff+FcCaiLqFAYwxQyJaAHgBsErTdAygBuA2y7JRkiQdpdSYmQdKqaFSqg9gZq0dKKVGzDwwxgyJ6AbAEsBrHMcDADCFAMzsAKy11lNr7QzAB4Baa+08z7MFEY2YeWqtvQOwZuYPrfWUmSfe+zkzz5h5prWeeu8/kyTpMPMHgBURjfcCWGvHAD4BzNM0vQOwcs7NAKyccwvn3EJrPQWwYeYvZh4y89w5NwPwba0deu+/mPkTwBsz9/ZmQEQVImoSUTuKokXZX1IWZQCqAE6+8/8PAL8N8A3KqoXvYuZGkQAAAABJRU5ErkJggg==">
+    <title>ASCII Key Tester</title>
+    <meta name="description" content="Press any key. Its character code gets inspected and the keycap joins the pile.">
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
-            font-family: monospace;
-            background: #f0f0f0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
-        .display {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        #pile {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .desk {
+            position: fixed;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.2rem;
+            pointer-events: none;
+            padding: 1rem;
+        }
+
+        .keycap {
+            width: min(38vmin, 240px);
+            height: min(38vmin, 240px);
+            background: var(--sky);
+            border: 4px solid var(--ink);
+            border-radius: 22px;
+            box-shadow: 8px 8px 0 var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-4deg);
+            visibility: hidden;
+        }
+
+        .keycap.show { visibility: visible; }
+
+        .keycap.pop {
+            animation: thunk 0.34s cubic-bezier(0.2, 1.6, 0.4, 1);
+        }
+
+        @keyframes thunk {
+            0%   { transform: scale(0.2) rotate(14deg); }
+            60%  { transform: scale(1.15) rotate(-7deg); }
+            100% { transform: scale(1) rotate(-4deg); }
+        }
+
+        .keycap span {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: min(20vmin, 128px);
+            line-height: 1;
+            color: var(--cream);
+            -webkit-text-stroke: 4px var(--ink);
+            paint-order: stroke fill;
+            text-transform: none;
+        }
+
+        .keycap span.small {
+            font-size: min(7vmin, 44px);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             text-align: center;
-            font-size: 24px;
         }
 
-        .ascii {
-            font-size: 36px;
+        .plaque {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 0.7rem 1.3rem;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(0.8rem, 2.6vmin, 1.05rem);
+            text-align: center;
+            line-height: 1.55;
+            max-width: min(88vw, 460px);
+            visibility: hidden;
+        }
+
+        .plaque.show { visibility: visible; }
+
+        .plaque .code-row {
+            font-style: normal;
+            font-family: 'Courier New', monospace;
             font-weight: bold;
-            margin: 10px 0;
+            letter-spacing: 0.05em;
         }
 
-        .char {
-            font-size: 24px;
-            color: #666;
+        .plaque .verdict {
+            display: block;
+            margin-top: 2px;
+            color: var(--coral);
+            font-weight: bold;
+        }
+
+        #hint {
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 12%;
+            text-align: center;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(1rem, 3vmin, 1.3rem);
+            opacity: 0.75;
+            z-index: 3;
+            transition: opacity 2.5s ease;
+            pointer-events: none;
+        }
+
+        #hint.gone { opacity: 0; }
+
+        #tally {
+            position: fixed;
+            top: 12px;
+            right: 14px;
+            z-index: 3;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 0.3rem 0.9rem;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.85rem;
+            transform: rotate(2deg);
+            pointer-events: none;
+        }
+
+        #mobiletrap {
+            position: fixed;
+            top: -100px;
+            left: -100px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            border: none;
+            padding: 0;
+        }
+
+        body.shake { animation: jolt 0.22s linear; }
+
+        @keyframes jolt {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-4px, 3px); }
+            50% { transform: translate(4px, -2px); }
+            75% { transform: translate(-3px, -3px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.shake { animation: none; }
+            .keycap.pop { animation: none; }
         }
     </style>
 </head>
 <body>
-    <div class="display">
-        <div id="instruction">Press any key</div>
-        <div id="ascii" class="ascii"></div>
-        <div id="char" class="char"></div>
+    <canvas id="pile"></canvas>
+
+    <div class="desk">
+        <div id="keycap" class="keycap"><span id="glyph"></span></div>
+        <div id="plaque" class="plaque"></div>
     </div>
 
+    <div id="hint">press any key — every specimen gets inspected</div>
+    <div id="tally">keys inspected: <span id="count">0</span></div>
+    <input id="mobiletrap" type="text" autocomplete="off" autocapitalize="off" aria-hidden="true" tabindex="-1">
+
     <script>
-        document.addEventListener('keydown', (event) => {
-            const ascii = event.key.charCodeAt(0);
-            document.getElementById('ascii').textContent = ascii;
-            document.getElementById('char').textContent = event.key;
-        });
+        (() => {
+            const INK = '#201a17';
+            const CREAM = '#fff8ef';
+            const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+
+            const CONTROL_CODES = {
+                'Enter': 13, 'Tab': 9, 'Backspace': 8, 'Escape': 27, 'Delete': 127
+            };
+            const CONTROL_NAMES = {
+                8: 'BS — backspace', 9: 'HT — horizontal tab', 13: 'CR — carriage return',
+                27: 'ESC — escape', 127: 'DEL — delete'
+            };
+            const CONTROL_GLYPHS = {
+                'Enter': '↵', 'Tab': '⇥', 'Backspace': '⌫', 'Escape': '×', 'Delete': '⌦'
+            };
+
+            const keycapEl = document.getElementById('keycap');
+            const glyphEl = document.getElementById('glyph');
+            const plaqueEl = document.getElementById('plaque');
+            const hintEl = document.getElementById('hint');
+            const countEl = document.getElementById('count');
+            const trap = document.getElementById('mobiletrap');
+            const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            let inspected = 0;
+            try { inspected = parseInt(localStorage.getItem('ascii-inspected')) || 0; } catch (e) {}
+            countEl.textContent = inspected;
+
+            // ---------- the pile (canvas physics) ----------
+            const canvas = document.getElementById('pile');
+            const ctx = canvas.getContext('2d');
+            let W = 0, H = 0, dpr = 1;
+            const CAP = 46;              // keycap sprite size (css px)
+            const caps = [];             // {x, y, vx, vy, rot, vr, color, ch, resting}
+            const MAX_CAPS = 300;
+            let colHeights = [];         // stack height per column bucket
+            let running = false;
+
+            function resize() {
+                dpr = Math.min(window.devicePixelRatio || 1, 2);
+                W = window.innerWidth;
+                H = window.innerHeight;
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = W + 'px';
+                canvas.style.height = H + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                colHeights = new Array(Math.ceil(W / CAP)).fill(0);
+                // re-settle resting caps onto fresh floor
+                for (const c of caps) {
+                    if (c.resting) {
+                        const col = bucket(c.x);
+                        colHeights[col] += CAP * 0.82;
+                        c.y = H - colHeights[col] + CAP / 2;
+                    }
+                }
+                drawAll();
+            }
+
+            function bucket(x) {
+                return Math.max(0, Math.min(colHeights.length - 1, Math.floor(x / CAP)));
+            }
+
+            function drawCap(c) {
+                ctx.save();
+                ctx.translate(c.x, c.y);
+                ctx.rotate(c.rot);
+                const s = CAP, r = 9;
+                const path = () => {
+                    ctx.beginPath();
+                    ctx.roundRect(-s / 2, -s / 2, s, s, r);
+                };
+                // hard offset shadow
+                ctx.save(); ctx.translate(2.5, 2.5); path(); ctx.fillStyle = INK; ctx.fill(); ctx.restore();
+                path(); ctx.fillStyle = c.color; ctx.fill();
+                ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.strokeStyle = INK; ctx.stroke();
+                // glyph
+                ctx.font = '900 22px "Arial Black", Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = INK;
+                ctx.strokeText(c.ch, 0, 1);
+                ctx.fillStyle = CREAM;
+                ctx.fillText(c.ch, 0, 1);
+                ctx.restore();
+            }
+
+            function drawAll() {
+                ctx.clearRect(0, 0, W, H);
+                for (const c of caps) drawCap(c);
+            }
+
+            function step() {
+                let anyMoving = false;
+                for (const c of caps) {
+                    if (c.resting) continue;
+                    c.vy += 0.55;                       // gravity
+                    c.vy = Math.min(c.vy, 22);          // terminal velocity
+                    c.x += c.vx;
+                    c.y += c.vy;
+                    c.rot += c.vr;
+                    if (c.x < CAP / 2) { c.x = CAP / 2; c.vx *= -0.5; }
+                    if (c.x > W - CAP / 2) { c.x = W - CAP / 2; c.vx *= -0.5; }
+                    const col = bucket(c.x);
+                    const floorY = H - colHeights[col] - CAP / 2;
+                    if (c.y >= floorY) {
+                        if (Math.abs(c.vy) > 4.5 && !c.toppling) {
+                            c.y = floorY;
+                            c.vy *= -0.35;              // bounce
+                            c.vx *= 0.6;
+                            anyMoving = true;
+                        } else if (c.toppling) {
+                            // toppling caps fall through and get removed below
+                            anyMoving = true;
+                        } else {
+                            c.y = floorY;
+                            c.resting = true;
+                            c.vr = 0;
+                            colHeights[col] += CAP * 0.82;
+                        }
+                    } else {
+                        anyMoving = true;
+                    }
+                }
+                // remove toppled caps that left the screen
+                for (let i = caps.length - 1; i >= 0; i--) {
+                    const c = caps[i];
+                    if (c.toppling && (c.y > H + CAP || c.x < -CAP || c.x > W + CAP)) caps.splice(i, 1);
+                }
+                drawAll();
+                if (anyMoving) {
+                    requestAnimationFrame(step);
+                } else {
+                    running = false;                    // sleep when everything rests
+                }
+            }
+
+            function wake() {
+                if (!running) { running = true; requestAnimationFrame(step); }
+            }
+
+            function pileTooHigh() {
+                let max = 0;
+                for (const h of colHeights) max = Math.max(max, h);
+                return max > H * 0.55;
+            }
+
+            function toppleEverything() {
+                for (const c of caps) {
+                    c.resting = false;
+                    c.toppling = true;
+                    c.vx = (Math.random() - 0.5) * 14;
+                    c.vy = -(6 + Math.random() * 9);
+                    c.vr = (Math.random() - 0.5) * 0.3;
+                }
+                colHeights.fill(0);
+                if (!reduced) {
+                    document.body.classList.remove('shake');
+                    void document.body.offsetWidth;
+                    document.body.classList.add('shake');
+                }
+                wake();
+            }
+
+            function dropCap(ch, color) {
+                if (caps.length >= MAX_CAPS || pileTooHigh()) toppleEverything();
+                const heroRect = keycapEl.getBoundingClientRect();
+                caps.push({
+                    x: heroRect.left + heroRect.width / 2 + (Math.random() - 0.5) * 40,
+                    y: heroRect.top + heroRect.height / 2,
+                    vx: (Math.random() - 0.5) * 7,
+                    vy: -(2 + Math.random() * 3),
+                    rot: (Math.random() - 0.5) * 0.4,
+                    vr: (Math.random() - 0.5) * 0.16,
+                    color, ch, resting: false, toppling: false
+                });
+                wake();
+            }
+
+            // ---------- inspection ----------
+            function pad(s, n) { return s.padStart(n, '0'); }
+
+            function inspect(key) {
+                let ch, code, label = null;
+
+                if (key.length === 1) {
+                    ch = key === ' ' ? '␣' : key;
+                    code = key.charCodeAt(0);
+                    if (key === ' ') label = 'SP — space';
+                } else if (key in CONTROL_CODES) {
+                    code = CONTROL_CODES[key];
+                    ch = key;
+                    label = CONTROL_NAMES[code];
+                } else {
+                    // no ASCII assignment (Shift, F5, ArrowUp...)
+                    showCap(key, true);
+                    plaqueEl.innerHTML =
+                        'specimen: <b>' + escapeHtml(key) + '</b><br>' +
+                        '<span class="code-row">NO ASCII ASSIGNMENT</span>' +
+                        'not a character. inspection waived.';
+                    plaqueEl.classList.add('show');
+                    return;
+                }
+
+                if (code > 127) {
+                    showCap(ch, ch.length > 1);
+                    plaqueEl.innerHTML =
+                        'specimen: <b>' + escapeHtml(ch) + '</b> — code point ' + code + '<br>' +
+                        '<span class="code-row">OUTSIDE ASCII RANGE (0–127)</span>' +
+                        'referred to the Unicode desk.';
+                    plaqueEl.classList.add('show');
+                    dropCap(ch.length > 1 ? '?' : ch, COLORS[code % COLORS.length]);
+                    bumpTally();
+                    return;
+                }
+
+                const color = COLORS[code % COLORS.length];
+                showCap(ch, ch.length > 1, color);
+
+                const counterfeit = Math.random() < 0.03;
+                plaqueEl.innerHTML =
+                    'specimen: <b>' + escapeHtml(ch) + '</b>' + (label ? ' — ' + label : '') + '<br>' +
+                    '<span class="code-row">DEC ' + code +
+                    ' · HEX 0x' + pad(code.toString(16).toUpperCase(), 2) +
+                    ' · BIN ' + pad(code.toString(2), 8) + '</span>' +
+                    (counterfeit ? '<span class="verdict">COUNTERFEIT KEY — REPORTED</span>' : '');
+                plaqueEl.classList.add('show');
+
+                dropCap(key.length === 1 ? ch : (CONTROL_GLYPHS[key] || '?'), color);
+                bumpTally();
+            }
+
+            function showCap(text, small, color) {
+                glyphEl.textContent = text;
+                glyphEl.className = small ? 'small' : '';
+                if (color) keycapEl.style.background = color;
+                keycapEl.classList.add('show');
+                keycapEl.classList.remove('pop');
+                void keycapEl.offsetWidth;
+                keycapEl.classList.add('pop');
+            }
+
+            function bumpTally() {
+                inspected++;
+                countEl.textContent = inspected;
+                try { localStorage.setItem('ascii-inspected', inspected); } catch (e) {}
+            }
+
+            function escapeHtml(s) {
+                return s.replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                })[c]);
+            }
+
+            // ---------- input ----------
+            document.addEventListener('keydown', (e) => {
+                if (e.metaKey || e.ctrlKey) return;
+                hintEl.classList.add('gone');
+                inspect(e.key);
+                if (e.key === 'Tab' || e.key === 'Backspace' || e.key === ' ') e.preventDefault();
+            });
+
+            // mobile: tapping summons the soft keyboard via a hidden input
+            document.addEventListener('pointerdown', () => {
+                if ('ontouchstart' in window) trap.focus({ preventScroll: true });
+            });
+            trap.addEventListener('input', () => {
+                const v = trap.value;
+                if (v) {
+                    hintEl.classList.add('gone');
+                    inspect(v[v.length - 1]);
+                }
+                trap.value = '';
+            });
+
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(resize, 150);
+            });
+
+            resize();
+            setTimeout(() => hintEl.classList.add('gone'), 12000);
+        })();
     </script>
 </body>
 </html>

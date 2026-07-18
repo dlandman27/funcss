@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Quietest Site on the Web</title>
+  <meta name="description" content="0.000 dB and holding. Please do not adjust your volume.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M25 4a21 21 0 100 42 21 21 0 000-42z' fill='%230b0c0e' stroke='%23c9b98a' stroke-width='3'/><path d='M25 25L12 18' stroke='%23c9b98a' stroke-width='3' stroke-linecap='round'/></svg>">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -20,7 +22,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 28px;
+      gap: 22px;
       font-family: Georgia, 'Times New Roman', serif;
       color: #b8b4aa;
       text-align: center;
@@ -49,12 +51,15 @@
       font-variant-numeric: tabular-nums;
       color: #e8e2d2;
       letter-spacing: 0.04em;
+      transition: color 0.6s ease;
     }
 
     #db span {
       font-size: 0.45em;
       color: #7a756a;
     }
+
+    #db.disturbed { color: #c98a8a; transition: none; }
 
     .stats {
       display: flex;
@@ -82,7 +87,7 @@
       border-radius: 999px;
       cursor: pointer;
       transition: border-color 0.3s ease, color 0.3s ease;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     #soundBtn:hover {
@@ -103,6 +108,33 @@
 
     #response.show { opacity: 1; }
 
+    #ledger {
+      width: min(84vw, 440px);
+      min-height: 4.6em;
+      font-size: clamp(11px, 1.5vw, 13px);
+      font-style: italic;
+      color: #5d594f;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      align-items: center;
+    }
+    #ledger .row { animation: rowIn 0.6s ease; }
+    #ledger .row:nth-child(2) { opacity: 0.7; }
+    #ledger .row:nth-child(3) { opacity: 0.45; }
+    #ledger .row:nth-child(4) { opacity: 0.25; }
+    @keyframes rowIn { from { opacity: 0; transform: translateY(-3px); } }
+
+    #ledger .head {
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      font-style: normal;
+      font-size: 10px;
+      color: #45423b;
+      margin-bottom: 2px;
+    }
+
     footer {
       position: fixed;
       bottom: 3vh;
@@ -112,6 +144,10 @@
       font-style: italic;
       color: #52504a;
       letter-spacing: 0.06em;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #ledger .row { animation: none; }
     }
   </style>
 </head>
@@ -141,10 +177,15 @@
     <div>consecutive silent days: <b id="days">0</b></div>
     <div>today's silence: <b id="clock">00:00:00</b></div>
     <div>sounds produced to date: <b>0</b></div>
+    <div>noise incidents on record: <b id="incidentCount">0</b></div>
   </div>
 
   <button id="soundBtn">make a sound</button>
   <div id="response"></div>
+
+  <div id="ledger">
+    <div class="head">incident ledger</div>
+  </div>
 
   <footer>please do not adjust your volume. there is nothing to adjust.</footer>
 
@@ -156,6 +197,11 @@
     const clockEl = document.getElementById('clock');
     const response = document.getElementById('response');
     const needle = document.getElementById('needle');
+    const dbEl = document.getElementById('db');
+    const ledger = document.getElementById('ledger');
+    const incidentCountEl = document.getElementById('incidentCount');
+    const soundBtn = document.getElementById('soundBtn');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     // dial ticks
     const ticks = document.getElementById('ticks');
@@ -185,12 +231,102 @@
       clockEl.textContent = `${pad(Math.floor(secs / 3600))}:${pad(Math.floor((secs % 3600) / 60))}:${pad(secs % 60)}`;
     }
 
-    // the needle rests at zero. occasionally it dreams.
+    // ---- needle: rAF runs only while it has somewhere to settle from ----
     let quiver = 0;
-    function quiverLoop() {
-      quiver = Math.random() < 0.015 ? Math.random() * 0.8 : quiver * 0.92;
+    let rafId = 0;
+    function needleFrame() {
+      quiver *= 0.9;
+      if (Math.abs(quiver) < 0.005) {
+        quiver = 0;
+        needle.setAttribute('transform', 'rotate(0 150 150)');
+        rafId = 0;
+        return;
+      }
       needle.setAttribute('transform', `rotate(${quiver.toFixed(3)} 150 150)`);
-      requestAnimationFrame(quiverLoop);
+      rafId = requestAnimationFrame(needleFrame);
+    }
+    function impulse(deg) {
+      if (reducedMotion.matches) return;
+      quiver = Math.max(quiver, deg);
+      if (!rafId) rafId = requestAnimationFrame(needleFrame);
+    }
+
+    // idle dreams: a barely-visible twitch now and then, no ledger entry
+    setInterval(() => { if (Math.random() < 0.12) impulse(0.5); }, 4000);
+
+    // ---- incidents: the visitor is the only noise source here ----
+    function loadNum(k) { try { return parseInt(localStorage.getItem(k), 10) || 0; } catch (e) { return 0; } }
+    function saveNum(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
+    let incidents = loadNum('quietest-incidents');
+    incidentCountEl.textContent = incidents.toLocaleString();
+
+    let dbTimer = 0;
+    function showDb(v) {
+      dbEl.classList.add('disturbed');
+      dbEl.firstChild.textContent = v.toFixed(3) + ' ';
+      clearTimeout(dbTimer);
+      dbTimer = setTimeout(() => {
+        dbEl.classList.remove('disturbed');
+        dbEl.firstChild.textContent = '0.000 ';
+      }, 1400);
+    }
+
+    function logIncident(cause, db) {
+      incidents++;
+      saveNum('quietest-incidents', incidents);
+      incidentCountEl.textContent = incidents.toLocaleString();
+
+      const now = new Date();
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} — ${cause} ${db.toFixed(3)} dB. recovering.`;
+      const head = ledger.querySelector('.head');
+      head.after(row);
+      while (ledger.children.length > 5) ledger.removeChild(ledger.lastChild);
+
+      showDb(db);
+      impulse(db * 700);
+    }
+
+    // rate-limited listeners — the site notices, but it isn't hysterical
+    let lastIncident = 0;
+    function maybeIncident(cause, db, minGap) {
+      const now = performance.now();
+      if (now - lastIncident < minGap) return;
+      lastIncident = now;
+      logIncident(cause, db);
+    }
+
+    window.addEventListener('pointerdown', (e) => {
+      if (e.target === soundBtn) return;
+      maybeIncident('someone touched something.', 0.002 + Math.random() * 0.002, 4000);
+    });
+    window.addEventListener('keydown', () => {
+      maybeIncident('a key was pressed. we know.', 0.003 + Math.random() * 0.002, 5000);
+    });
+
+    let lastMove = null;
+    window.addEventListener('pointermove', (e) => {
+      if (lastMove) {
+        const dx = e.clientX - lastMove.x, dy = e.clientY - lastMove.y;
+        if (dx * dx + dy * dy > 3600) {
+          maybeIncident('air displacement.', 0.001 + Math.random() * 0.001, 9000);
+        }
+      }
+      lastMove = { x: e.clientX, y: e.clientY };
+    }, { passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        maybeIncident('the door opened.', 0.004, 30000);
+      }
+    });
+
+    // once in a while, something neither of us can explain. once per visit at most.
+    if (Math.random() < 0.04) {
+      setTimeout(() => {
+        logIncident('[unexplained]. do not worry about it.', 0.041);
+      }, 15000 + Math.random() * 30000);
     }
 
     // the button
@@ -209,7 +345,7 @@
     let clicks = 0;
     let responseTimer = null;
 
-    document.getElementById('soundBtn').addEventListener('click', () => {
+    soundBtn.addEventListener('click', () => {
       response.textContent = RESPONSES[clicks % RESPONSES.length];
       response.classList.add('show');
       clicks++;
@@ -219,7 +355,6 @@
 
     tick();
     setInterval(tick, 1000);
-    quiverLoop();
   </script>
 </body>
 </html>

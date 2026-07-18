@@ -4,164 +4,421 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leap Year Checker</title>
+    <title>Leap Year Test</title>
+    <meta name="description" content="Submit a year to the Leap Certification Bureau and get a stamped verdict.">
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            min-height: 100vh;
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --gold: #f7c948;
+            --teal: #2fb0a3;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
-            padding: 20px;
+            min-height: 100%;
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        body {
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #f6f8fd 0%, #f1f4f9 100%);
-            color: #2d3748;
+            min-height: 100vh;
+            padding: 1.2rem;
+            font-family: Georgia, 'Times New Roman', serif;
         }
 
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 2.5rem;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 500px;
-            transition: transform 0.3s ease;
-        }
-
-        .container:hover {
-            transform: translateY(-5px);
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(45deg, #2d3748, #4a5568);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p {
-            color: #718096;
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        input {
-            flex: 1;
-            font-size: 1.1rem;
-            padding: 1rem 1.5rem;
-            border: 2px solid #e2e8f0;
+        .certificate {
+            background: var(--cream);
+            border: 3px solid var(--ink);
             border-radius: 12px;
-            background: white;
-            transition: all 0.3s ease;
+            box-shadow: 8px 8px 0 var(--ink);
+            width: 100%;
+            max-width: 520px;
+            padding: 1.8rem 1.6rem 1.4rem;
+            position: relative;
         }
 
-        input:focus {
-            outline: none;
-            border-color: #4299e1;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
-            transform: none;
+        .certificate::before {
+            content: '';
+            position: absolute;
+            inset: 7px;
+            border: 1px solid var(--ink);
+            border-radius: 7px;
+            pointer-events: none;
         }
 
-        button {
-            font-size: 1.1rem;
-            padding: 1rem 2rem;
+        .bureau {
+            text-align: center;
+            margin-bottom: 1.4rem;
+        }
+
+        .bureau .dept {
+            font-style: italic;
+            font-size: 0.8rem;
+            letter-spacing: 0.12em;
+            opacity: 0.75;
+        }
+
+        .bureau h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(1.3rem, 5.5vw, 1.9rem);
+            margin: 0.25rem 0 0.1rem;
+            letter-spacing: 0.02em;
+        }
+
+        .bureau .form-no {
+            font-size: 0.72rem;
+            font-style: italic;
+            opacity: 0.6;
+        }
+
+        .rule {
             border: none;
-            border-radius: 12px;
-            background: linear-gradient(45deg, #4299e1, #667eea);
-            color: white;
+            border-top: 2px solid var(--ink);
+            margin: 0 1rem 1.3rem;
+        }
+
+        .apply-row {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            align-items: stretch;
+            margin-bottom: 1.2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        #year {
+            width: 9ch;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.6rem;
+            text-align: center;
+            padding: 0.5rem 0.4rem;
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 3px 3px 0 var(--ink);
+            outline: none;
+        }
+
+        #year:focus { background: #fff; }
+
+        /* hide number spinners */
+        #year::-webkit-outer-spin-button,
+        #year::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        #year { -moz-appearance: textfield; appearance: textfield; }
+
+        #apply {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 1rem;
+            letter-spacing: 0.04em;
+            padding: 0.5rem 1.4rem;
+            background: var(--sky);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
+            transform: rotate(-2deg);
+            transition: transform 0.12s, box-shadow 0.12s;
         }
 
-        button:hover {
-            background: linear-gradient(45deg, #3182ce, #5a67d8);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(66, 153, 225, 0.2);
+        #apply:hover {
+            transform: translate(-2px, -2px) rotate(-2deg);
+            box-shadow: 5px 5px 0 var(--ink);
         }
 
-        .result {
-            margin-top: 2rem;
-            font-size: 1.2rem;
-            font-weight: 600;
-            padding: 1rem;
-            border-radius: 12px;
+        #apply:active {
+            transform: translate(2px, 2px) rotate(-2deg);
+            box-shadow: 1px 1px 0 var(--ink);
+        }
+
+        .checklist {
+            list-style: none;
+            margin: 0 auto 0.4rem;
+            padding: 0;
+            max-width: 340px;
+            min-height: 6.4em;
+            font-size: 0.95rem;
+        }
+
+        .checklist li {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.28em 0;
+            border-bottom: 1px dotted rgba(32, 26, 23, 0.35);
             opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
+            transform: translateY(6px);
         }
 
-        .result.show {
-            opacity: 1;
-            transform: translateY(0);
+        .checklist li.in {
+            animation: lineIn 0.25s ease forwards;
         }
 
-        @media (max-width: 480px) {
-            .input-group {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-            }
+        @keyframes lineIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .checklist .q { font-style: italic; }
+
+        .checklist .a {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .stamp-zone {
+            position: relative;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0.4rem 0 0.2rem;
+        }
+
+        .stamp {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(1.6rem, 7vw, 2.4rem);
+            letter-spacing: 0.03em;
+            padding: 0.45em 0.8em;
+            border: 5px double var(--ink);
+            border-radius: 14px;
+            transform: rotate(-8deg);
+            visibility: hidden;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .stamp.leap { color: var(--ink); background: var(--lime); box-shadow: 5px 5px 0 var(--ink); }
+        .stamp.denied { color: var(--cream); background: var(--coral); box-shadow: 5px 5px 0 var(--ink); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
+
+        .stamp.slam {
+            visibility: visible;
+            animation: slam 0.32s cubic-bezier(0.25, 1.4, 0.5, 1) forwards;
+        }
+
+        @keyframes slam {
+            0%   { transform: scale(3.2) rotate(4deg); opacity: 0; }
+            65%  { transform: scale(0.94) rotate(-9deg); opacity: 1; }
+            100% { transform: scale(1) rotate(-8deg); opacity: 1; }
+        }
+
+        .seal {
+            position: absolute;
+            right: -6px;
+            bottom: -14px;
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            box-shadow: 3px 3px 0 var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.56rem;
+            text-transform: uppercase;
+            line-height: 1.25;
+            padding: 10px;
+            transform: rotate(12deg);
+            visibility: hidden;
+        }
+
+        .seal.slam {
+            visibility: visible;
+            animation: sealIn 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) 0.25s backwards;
+        }
+
+        @keyframes sealIn {
+            0%   { transform: scale(0.2) rotate(50deg); }
+            60%  { transform: scale(1.15) rotate(8deg); }
+            100% { transform: scale(1) rotate(12deg); }
+        }
+
+        .footnote {
+            text-align: center;
+            font-style: italic;
+            font-size: 0.78rem;
+            opacity: 0.75;
+            margin-top: 0.9rem;
+            min-height: 1.2em;
+        }
+
+        .ledger {
+            text-align: center;
+            font-style: italic;
+            font-size: 0.72rem;
+            opacity: 0.55;
+            margin-top: 0.5rem;
+        }
+
+        body.shake { animation: jolt 0.22s linear; }
+
+        @keyframes jolt {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-5px, 4px); }
+            50% { transform: translate(5px, -3px); }
+            75% { transform: translate(-3px, -4px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.shake { animation: none; }
+            .stamp.slam { animation: none; visibility: visible; opacity: 1; }
+            .seal.slam { animation: none; visibility: visible; }
+            .checklist li.in { animation: none; opacity: 1; transform: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Leap Year Checker</h1>
-        <p>Enter a year to check if it's a leap year</p>
-        <div class="input-group">
-            <input type="number" id="yearInput" placeholder="Enter year...">
-            <button onclick="checkLeapYear()">Check</button>
+    <div class="certificate">
+        <div class="bureau">
+            <div class="dept">department of calendar affairs</div>
+            <h1>Leap Certification Bureau</h1>
+            <div class="form-no">form LY-366 · rev. 1582</div>
         </div>
-        <div id="result" class="result"></div>
+        <hr class="rule">
+
+        <div class="apply-row">
+            <input id="year" type="number" inputmode="numeric" placeholder="YYYY" aria-label="year under review">
+            <button id="apply">Apply</button>
+        </div>
+
+        <ul id="checklist" class="checklist"></ul>
+
+        <div class="stamp-zone">
+            <div id="stamp" class="stamp"></div>
+            <div id="seal" class="seal">Centennial<br>Exception<br>§400</div>
+        </div>
+
+        <div id="footnote" class="footnote"></div>
+        <div class="ledger">applications processed: <span id="processed">0</span></div>
     </div>
 
     <script>
-        function checkLeapYear() {
-            const year = parseInt(document.getElementById('yearInput').value);
-            const resultDiv = document.getElementById('result');
-            
-            if (isNaN(year)) {
-                resultDiv.style.background = '#FED7D7';
-                resultDiv.style.color = '#C53030';
-                resultDiv.textContent = 'Please enter a valid year!';
-                resultDiv.classList.add('show');
-                return;
+        (() => {
+            const yearInput = document.getElementById('year');
+            const applyBtn = document.getElementById('apply');
+            const checklist = document.getElementById('checklist');
+            const stamp = document.getElementById('stamp');
+            const seal = document.getElementById('seal');
+            const footnote = document.getElementById('footnote');
+            const processedEl = document.getElementById('processed');
+            const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            let processed = 0;
+            try { processed = parseInt(localStorage.getItem('leap-processed')) || 0; } catch (e) {}
+            processedEl.textContent = processed;
+
+            let pending = [];
+
+            function addLine(q, a, delay) {
+                const li = document.createElement('li');
+                li.innerHTML = '<span class="q">' + q + '</span><span class="a">' + a + '</span>';
+                checklist.appendChild(li);
+                pending.push(setTimeout(() => li.classList.add('in'), delay));
             }
 
-            const isLeapYear = (year % 4 === 0) && (year % 100 !== 0 || year % 400 === 0);
-            
-            if (isLeapYear) {
-                resultDiv.style.background = '#C6F6D5';
-                resultDiv.style.color = '#2F855A';
-            } else {
-                resultDiv.style.background = '#BEE3F8';
-                resultDiv.style.color = '#2C5282';
+            function nextLeapYear(y) {
+                let n = y + 1;
+                while (!isLeap(n)) n++;
+                return n;
             }
-            
-            resultDiv.textContent = isLeapYear 
-                ? `${year} is a leap year! 🎉` 
-                : `${year} is not a leap year`;
-            resultDiv.classList.add('show');
-        }
 
-        document.getElementById('yearInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkLeapYear();
+            function isLeap(y) {
+                return (y % 4 === 0) && (y % 100 !== 0 || y % 400 === 0);
             }
-        });
+
+            function clearDesk() {
+                pending.forEach(clearTimeout);
+                pending = [];
+                checklist.innerHTML = '';
+                stamp.className = 'stamp';
+                seal.className = 'seal';
+                footnote.textContent = '';
+            }
+
+            function process() {
+                const raw = yearInput.value.trim();
+                clearDesk();
+
+                if (raw === '' || isNaN(parseInt(raw, 10))) {
+                    footnote.textContent = 'application incomplete. a year is required. this is the Leap Year office.';
+                    return;
+                }
+
+                const y = parseInt(raw, 10);
+                const div4 = y % 4 === 0;
+                const div100 = y % 100 === 0;
+                const div400 = y % 400 === 0;
+                const leap = isLeap(y);
+
+                let t = 150;
+                const STEP = reduced ? 0 : 420;
+
+                addLine('divisible by 4', div4 ? 'YES' : 'NO', t);
+                if (div4) {
+                    t += STEP;
+                    addLine('divisible by 100', div100 ? 'YES' : 'NO', t);
+                    if (div100) {
+                        t += STEP;
+                        addLine('century exemption (§400)', div400 ? 'GRANTED' : 'REFUSED', t);
+                    }
+                }
+                t += STEP;
+                addLine('days in february ' + y, leap ? '29' : '28', t);
+
+                const stampDelay = t + (reduced ? 0 : 500);
+                pending.push(setTimeout(() => {
+                    stamp.textContent = leap ? 'Certified Leap' : 'Application Denied';
+                    stamp.classList.add(leap ? 'leap' : 'denied', 'slam');
+                    if (div400) seal.classList.add('slam');
+                    if (!reduced) {
+                        document.body.classList.remove('shake');
+                        void document.body.offsetWidth;
+                        document.body.classList.add('shake');
+                    }
+
+                    const notes = [];
+                    if (!leap) notes.push('next leap year: ' + nextLeapYear(y) + '. reapply then.');
+                    if (leap) notes.push('february 29, ' + y + ' is hereby authorized.');
+                    if (y < 1582) notes.push('note: predates the Gregorian calendar. processed anyway.');
+                    if (y < 0) notes.push('B.C.E. surcharge applied.');
+                    footnote.textContent = notes.join(' ');
+
+                    processed++;
+                    processedEl.textContent = processed;
+                    try { localStorage.setItem('leap-processed', processed); } catch (e) {}
+                }, stampDelay));
+            }
+
+            applyBtn.addEventListener('click', process);
+            yearInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') process();
+            });
+            yearInput.focus();
+        })();
     </script>
 </body>
 </html>

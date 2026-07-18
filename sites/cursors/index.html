@@ -4,278 +4,354 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSS Cursor Types</title>
-    <meta name="description" content="Explore and preview all CSS cursor types">
-    <meta name="keywords" content="css, cursor, interactive, development">
-    <meta name="author" content="@randomsitesontheweb">
+    <title>The Cursor Petting Zoo</title>
+    <meta name="description" content="Every CSS cursor in its own enclosure — pet them, adopt your favorite.">
     <style>
-        body {
-            padding: 0;
-            background: #f0f0f0;
-            font-family: system-ui, -apple-system, sans-serif;
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
-            min-height: 100vh;
+            background: var(--paper);
+            color: var(--ink);
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            padding: 2rem 1rem;
-            min-height: 100vh;
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            padding: 1.4rem 1rem 3rem;
         }
 
-        .group {
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-
-        .group__heading {
+        header {
             text-align: center;
-            color: #333;
-            margin: 2rem 0;
-            font-size: 2rem;
-            font-weight: 600;
+            margin-bottom: 0.6rem;
         }
 
-        .group__cursors {
+        header .dept {
+            font-style: italic;
+            font-size: 0.8rem;
+            letter-spacing: 0.12em;
+            opacity: 0.7;
+        }
+
+        header h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(1.4rem, 6vw, 2.2rem);
+            margin: 0.25rem 0 0;
+            display: inline-block;
+            background: var(--lime);
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 0.2em 0.6em;
+            transform: rotate(-1.5deg);
+        }
+
+        .notice {
+            text-align: center;
+            font-style: italic;
+            font-size: 0.85rem;
+            opacity: 0.75;
+            margin: 0.9rem auto 1.6rem;
+            max-width: 520px;
+            line-height: 1.5;
+        }
+
+        .wing {
+            max-width: 1100px;
+            margin: 0 auto 1.8rem;
+        }
+
+        .wing-sign {
+            display: inline-block;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.06em;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 0.3rem 1rem;
+            margin-bottom: 0.9rem;
+            transform: rotate(-1.5deg);
+        }
+
+        .pens {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            justify-content: center;
-            padding: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.9rem;
         }
 
-        .cursor {
+        .pen {
+            position: relative;
+            background: var(--pen-color, var(--cream));
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 1.1rem 0.8rem 0.9rem;
+            min-height: 108px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            height: 120px;
-            padding: 1rem;
-            background-color: #ffffff;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        .cursor:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .cursor__title {
-            font-size: 1rem;
-            color: #333;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .cursor__summary {
-            font-size: 0.875rem;
-            color: #666;
+            justify-content: center;
             text-align: center;
+            transform: rotate(var(--tilt, 0deg));
+            transition: transform 0.12s, box-shadow 0.12s;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem 0.5rem;
-            }
-
-            .group__cursors {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                gap: 0.75rem;
-                padding: 0.5rem;
-            }
-
-            .cursor {
-                height: 100px;
-                padding: 0.75rem;
-            }
-
-            .group__heading {
-                font-size: 1.5rem;
-                margin: 1.5rem 0;
-            }
+        .pen:hover {
+            transform: translate(-2px, -2px) rotate(var(--tilt, 0deg));
+            box-shadow: 5px 5px 0 var(--ink);
         }
 
-        /* Define all cursor types */
-        .cursor-default { cursor: default; }
-        .cursor-pointer { cursor: pointer; }
-        .cursor-text { cursor: text; }
-        .cursor-move { cursor: move; }
-        .cursor-crosshair { cursor: crosshair; }
-        .cursor-wait { cursor: wait; }
-        .cursor-help { cursor: help; }
-        .cursor-progress { cursor: progress; }
-        .cursor-not-allowed { cursor: not-allowed; }
-        .cursor-grab { cursor: grab; }
-        .cursor-grabbing { cursor: grabbing; }
-        .cursor-zoom-in { cursor: zoom-in; }
-        .cursor-zoom-out { cursor: zoom-out; }
-        .cursor-col-resize { cursor: col-resize; }
-        .cursor-row-resize { cursor: row-resize; }
-        .cursor-n-resize { cursor: n-resize; }
-        .cursor-e-resize { cursor: e-resize; }
-        .cursor-s-resize { cursor: s-resize; }
-        .cursor-w-resize { cursor: w-resize; }
-        .cursor-ne-resize { cursor: ne-resize; }
-        .cursor-nw-resize { cursor: nw-resize; }
-        .cursor-se-resize { cursor: se-resize; }
-        .cursor-sw-resize { cursor: sw-resize; }
-        .cursor-ew-resize { cursor: ew-resize; }
-        .cursor-ns-resize { cursor: ns-resize; }
-        
-        .cursor-nesw-resize { cursor: nesw-resize; }
-        .cursor-nwse-resize { cursor: nwse-resize; }
-        .cursor-cell { cursor: cell; }
-        .cursor-copy { cursor: copy; }
-        .cursor-alias { cursor: alias; }
-        .cursor-context-menu { cursor: context-menu; }
-        .cursor-no-drop { cursor: no-drop; }
-        .cursor-all-scroll { cursor: all-scroll; }
+        .pen:active {
+            transform: translate(2px, 2px) rotate(var(--tilt, 0deg));
+            box-shadow: 1px 1px 0 var(--ink);
+        }
+
+        .pen .name {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+            word-break: break-all;
+        }
+
+        .pen .bio {
+            font-style: italic;
+            font-size: 0.78rem;
+            line-height: 1.35;
+            opacity: 0.85;
+        }
+
+        .pen .tag {
+            position: absolute;
+            top: -9px;
+            right: -7px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 0.18em 0.6em;
+            transform: rotate(8deg);
+            visibility: hidden;
+        }
+
+        .pen.adopted .tag {
+            visibility: visible;
+            animation: tagIn 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
+        }
+
+        @keyframes tagIn {
+            0%   { transform: scale(0.2) rotate(40deg); }
+            60%  { transform: scale(1.2) rotate(4deg); }
+            100% { transform: scale(1) rotate(8deg); }
+        }
+
+        .pen.escaped {
+            background: var(--paper);
+            border-style: dashed;
+            cursor: none !important;
+        }
+
+        .pen.escaped .name { opacity: 0.4; }
+        .pen.escaped .bio::after { content: 'enclosure found empty at feeding time. do not approach.'; }
+
+        footer {
+            text-align: center;
+            font-style: italic;
+            font-size: 0.78rem;
+            opacity: 0.6;
+            margin-top: 2.5rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .pen.adopted .tag { animation: none; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="group">
-            <h1 class="group__heading">CSS Cursor Types</h1>
-            <div class="group__cursors">
-                <div class="cursor cursor-default">
-                    <div class="cursor__title">default</div>
-                    <div class="cursor__summary">Default cursor</div>
-                </div>
-                <div class="cursor cursor-pointer">
-                    <div class="cursor__title">pointer</div>
-                    <div class="cursor__summary">Clickable element</div>
-                </div>
-                <div class="cursor cursor-text">
-                    <div class="cursor__title">text</div>
-                    <div class="cursor__summary">Text input</div>
-                </div>
-                <div class="cursor cursor-move">
-                    <div class="cursor__title">move</div>
-                    <div class="cursor__summary">Movable element</div>
-                </div>
-                <div class="cursor cursor-crosshair">
-                    <div class="cursor__title">crosshair</div>
-                    <div class="cursor__summary">Precise selection</div>
-                </div>
-                <div class="cursor cursor-wait">
-                    <div class="cursor__title">wait</div>
-                    <div class="cursor__summary">Loading/busy</div>
-                </div>
-                <div class="cursor cursor-help">
-                    <div class="cursor__title">help</div>
-                    <div class="cursor__summary">Help available</div>
-                </div>
-                <div class="cursor cursor-progress">
-                    <div class="cursor__title">progress</div>
-                    <div class="cursor__summary">Background process</div>
-                </div>
-                <div class="cursor cursor-not-allowed">
-                    <div class="cursor__title">not-allowed</div>
-                    <div class="cursor__summary">Action not allowed</div>
-                </div>
-                <div class="cursor cursor-grab">
-                    <div class="cursor__title">grab</div>
-                    <div class="cursor__summary">Can be grabbed</div>
-                </div>
-                <div class="cursor cursor-grabbing">
-                    <div class="cursor__title">grabbing</div>
-                    <div class="cursor__summary">Currently grabbing</div>
-                </div>
-                <div class="cursor cursor-zoom-in">
-                    <div class="cursor__title">zoom-in</div>
-                    <div class="cursor__summary">Can zoom in</div>
-                </div>
-                <div class="cursor cursor-zoom-out">
-                    <div class="cursor__title">zoom-out</div>
-                    <div class="cursor__summary">Can zoom out</div>
-                </div>
-                <div class="cursor cursor-col-resize">
-                    <div class="cursor__title">col-resize</div>
-                    <div class="cursor__summary">Column resizing</div>
-                </div>
-                <div class="cursor cursor-row-resize">
-                    <div class="cursor__title">row-resize</div>
-                    <div class="cursor__summary">Row resizing</div>
-                </div>
-                <div class="cursor cursor-n-resize">
-                    <div class="cursor__title">n-resize</div>
-                    <div class="cursor__summary">North edge resize</div>
-                </div>
-                <div class="cursor cursor-e-resize">
-                    <div class="cursor__title">e-resize</div>
-                    <div class="cursor__summary">East edge resize</div>
-                </div>
-                <div class="cursor cursor-s-resize">
-                    <div class="cursor__title">s-resize</div>
-                    <div class="cursor__summary">South edge resize</div>
-                </div>
-                <div class="cursor cursor-w-resize">
-                    <div class="cursor__title">w-resize</div>
-                    <div class="cursor__summary">West edge resize</div>
-                </div>
-                <div class="cursor cursor-ne-resize">
-                    <div class="cursor__title">ne-resize</div>
-                    <div class="cursor__summary">Northeast resize</div>
-                </div>
-                <div class="cursor cursor-nw-resize">
-                    <div class="cursor__title">nw-resize</div>
-                    <div class="cursor__summary">Northwest resize</div>
-                </div>
-                <div class="cursor cursor-se-resize">
-                    <div class="cursor__title">se-resize</div>
-                    <div class="cursor__summary">Southeast resize</div>
-                </div>
-                <div class="cursor cursor-sw-resize">
-                    <div class="cursor__title">sw-resize</div>
-                    <div class="cursor__summary">Southwest resize</div>
-                </div>
-                <div class="cursor cursor-ew-resize">
-                    <div class="cursor__title">ew-resize</div>
-                    <div class="cursor__summary">East-West resize</div>
-                </div>
-                <div class="cursor cursor-ns-resize">
-                    <div class="cursor__title">ns-resize</div>
-                    <div class="cursor__summary">North-South resize</div>
-                </div>
-                <div class="cursor cursor-nesw-resize">
-                    <div class="cursor__title">nesw-resize</div>
-                    <div class="cursor__summary">NE-SW resize</div>
-                </div>
-                <div class="cursor cursor-nwse-resize">
-                    <div class="cursor__title">nwse-resize</div>
-                    <div class="cursor__summary">NW-SE resize</div>
-                </div>
-                <div class="cursor cursor-cell">
-                    <div class="cursor__title">cell</div>
-                    <div class="cursor__summary">Cell selection</div>
-                </div>
-                <div class="cursor cursor-copy">
-                    <div class="cursor__title">copy</div>
-                    <div class="cursor__summary">Copy operation</div>
-                </div>
-                <div class="cursor cursor-alias">
-                    <div class="cursor__title">alias</div>
-                    <div class="cursor__summary">Create alias/shortcut</div>
-                </div>
-                <div class="cursor cursor-context-menu">
-                    <div class="cursor__title">context-menu</div>
-                    <div class="cursor__summary">Context menu available</div>
-                </div>
-                <div class="cursor cursor-no-drop">
-                    <div class="cursor__title">no-drop</div>
-                    <div class="cursor__summary">Cannot drop here</div>
-                </div>
-                <div class="cursor cursor-all-scroll">
-                    <div class="cursor__title">all-scroll</div>
-                    <div class="cursor__summary">Scroll in any direction</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <header>
+        <div class="dept">municipal cursor sanctuary · gates never close</div>
+        <h1>The Cursor Petting Zoo</h1>
+    </header>
+    <p class="notice" id="notice">
+        thirty-four cursors live here. hover an enclosure to pet its resident.
+        click to adopt one — it follows you around the whole page. click again to return it.
+    </p>
+
+    <div id="zoo"></div>
+
+    <footer id="census"></footer>
+
+    <script>
+        (() => {
+            const WINGS = [
+                {
+                    sign: 'the working animals',
+                    color: '#5aa0db',
+                    pens: [
+                        ['default', 'the common arrow. domesticated centuries ago.'],
+                        ['pointer', 'points at things for a living. never off duty.'],
+                        ['text', 'stands very still between letters.'],
+                        ['move', 'wants everything three pixels to the left.'],
+                        ['crosshair', 'takes aim. has never fired.'],
+                        ['cell', 'lives in a spreadsheet. seems content.'],
+                        ['context-menu', 'always has a suggestion if you ask.'],
+                        ['vertical-text', 'reads top to bottom. refuses to explain why.']
+                    ]
+                },
+                {
+                    sign: 'the waiting room',
+                    color: '#a98fd0',
+                    pens: [
+                        ['wait', 'has been waiting since 1995. very patient.'],
+                        ['progress', 'busy, but will still walk with you.'],
+                        ['help', 'full of answers. nobody asks.']
+                    ]
+                },
+                {
+                    sign: 'the grabbers',
+                    color: '#f47b28',
+                    pens: [
+                        ['grab', 'open paw. wants to hold something.'],
+                        ['grabbing', 'got it. will not let go.'],
+                        ['copy', 'everything it touches, twice.'],
+                        ['alias', 'not the real one. a very good likeness.'],
+                        ['no-drop', 'you may carry things past it, but never leave them.'],
+                        ['not-allowed', 'the zoo\'s only guard. takes it seriously.']
+                    ]
+                },
+                {
+                    sign: 'the resize aviary',
+                    color: '#2fb0a3',
+                    pens: [
+                        ['n-resize', 'pulls north.'],
+                        ['s-resize', 'pulls south.'],
+                        ['e-resize', 'pulls east.'],
+                        ['w-resize', 'pulls west.'],
+                        ['ne-resize', 'northeast, always.'],
+                        ['nw-resize', 'northwest, on principle.'],
+                        ['se-resize', 'southeast, quietly.'],
+                        ['sw-resize', 'southwest, since birth.'],
+                        ['ew-resize', 'torn between east and west.'],
+                        ['ns-resize', 'torn between north and south.'],
+                        ['nesw-resize', 'diagonal. the fancy one.'],
+                        ['nwse-resize', 'the other diagonal. they don\'t speak.'],
+                        ['col-resize', 'herds columns for a living.'],
+                        ['row-resize', 'herds rows. rival family.']
+                    ]
+                },
+                {
+                    sign: 'the optics house',
+                    color: '#ff7fa5',
+                    pens: [
+                        ['zoom-in', 'wants a closer look at you too.'],
+                        ['zoom-out', 'needs some space.'],
+                        ['all-scroll', 'goes everywhere at once. exhausting to watch.']
+                    ]
+                }
+            ];
+
+            const zoo = document.getElementById('zoo');
+            const notice = document.getElementById('notice');
+            const census = document.getElementById('census');
+
+            let adoptedName = null;
+            try { adoptedName = localStorage.getItem('zoo-adopted') || null; } catch (e) {}
+
+            let penCount = 0;
+            const allPens = [];
+
+            // one resident has escaped tonight (6% chance, never the adopted one)
+            const escapee = Math.random() < 0.06;
+
+            WINGS.forEach(w => {
+                const wing = document.createElement('section');
+                wing.className = 'wing';
+                const sign = document.createElement('div');
+                sign.className = 'wing-sign';
+                sign.textContent = w.sign;
+                sign.style.background = w.color;
+                wing.appendChild(sign);
+
+                const pens = document.createElement('div');
+                pens.className = 'pens';
+                w.pens.forEach(([name, bio]) => {
+                    penCount++;
+                    const pen = document.createElement('div');
+                    pen.className = 'pen';
+                    pen.style.cursor = name;
+                    pen.style.setProperty('--tilt', ((penCount * 7919) % 5 - 2) + 'deg');
+                    pen.style.setProperty('--pen-color', 'var(--cream)');
+                    pen.innerHTML =
+                        '<div class="tag">adopted</div>' +
+                        '<div class="name">' + name + '</div>' +
+                        '<div class="bio">' + bio + '</div>';
+                    pen.addEventListener('click', () => toggleAdopt(name, pen));
+                    pens.appendChild(pen);
+                    allPens.push({ name, pen });
+                });
+                wing.appendChild(pens);
+                zoo.appendChild(wing);
+            });
+
+            if (escapee) {
+                const candidates = allPens.filter(p => p.name !== adoptedName);
+                const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                pick.pen.classList.add('escaped');
+                pick.pen.querySelector('.bio').textContent = '';
+            }
+
+            function applyAdoption() {
+                document.body.style.cursor = adoptedName || '';
+                allPens.forEach(({ name, pen }) => {
+                    pen.classList.toggle('adopted', name === adoptedName);
+                });
+                census.textContent = adoptedName
+                    ? 'current adoption: ' + adoptedName + ' · ' + penCount + ' residents on site'
+                    : penCount + ' residents on site · 0 currently adopted';
+            }
+
+            function toggleAdopt(name, pen) {
+                if (pen.classList.contains('escaped')) return;
+                adoptedName = adoptedName === name ? null : name;
+                try {
+                    if (adoptedName) localStorage.setItem('zoo-adopted', adoptedName);
+                    else localStorage.removeItem('zoo-adopted');
+                } catch (e) {}
+                applyAdoption();
+            }
+
+            // touch visitors get a different notice — there is nothing to pet
+            if (matchMedia('(hover: none)').matches) {
+                notice.textContent =
+                    'the residents only appear to visitors with a mouse. ' +
+                    'touch guests are welcome to walk the grounds and read the plaques.';
+            }
+
+            applyAdoption();
+        })();
+    </script>
 </body>
 </html>

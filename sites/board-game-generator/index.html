@@ -5,165 +5,193 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Board Game Generator</title>
+    <meta name="description" content="Generate unique Mario Party-style boards with forks, teleporters, traps, and chaos spaces">
+    <meta name="keywords" content="board game, generator, procedural, party game, dice">
+    <meta name="author" content="@randomsitesontheweb">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='9' cy='9' r='6' fill='%23f0563e' stroke='%23201a17' stroke-width='2'/><circle cx='23' cy='13' r='6' fill='%235aa0db' stroke='%23201a17' stroke-width='2'/><circle cx='13' cy='24' r='6' fill='%23f7c948' stroke='%23201a17' stroke-width='2'/></svg>">
     <style>
         :root {
-            --bg: #080818;
-            --surface: #10102a;
-            --card: #161630;
-            --border: #252550;
-            --accent: #7c6aff;
-            --text: #ddddf5;
-            --dim: #5a5a90;
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Arial, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
             height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
         header {
-            padding: 10px 20px;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
+            padding: 12px 18px 10px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
+            flex-wrap: wrap;
             flex-shrink: 0;
         }
         .logo {
-            font-size: 1.3rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #7c6aff, #ff6b9d);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 1.05rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: var(--coral);
+            color: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 6px 14px;
+            transform: rotate(-1.5deg);
+            text-shadow: 1.5px 1.5px 0 var(--ink);
             white-space: nowrap;
         }
         .board-name-display {
-            font-size: 0.9rem;
-            color: var(--dim);
-            font-style: italic;
+            font: italic 1rem Georgia, 'Times New Roman', serif;
+            opacity: 0.75;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
         .controls {
             display: flex;
-            gap: 10px;
-            padding: 8px 16px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            padding: 8px 18px 14px;
             flex-wrap: wrap;
             align-items: flex-end;
             flex-shrink: 0;
         }
-        .ctrl { display: flex; flex-direction: column; gap: 3px; }
+        .ctrl { display: flex; flex-direction: column; gap: 4px; }
         .ctrl label {
-            font-size: 0.65rem;
-            color: var(--dim);
+            font-size: 0.62rem;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
+            opacity: 0.65;
         }
         input[type=range] {
             width: 110px;
-            accent-color: var(--accent);
+            accent-color: var(--coral);
             cursor: pointer;
             vertical-align: middle;
         }
         select {
-            background: var(--bg);
-            color: var(--text);
-            border: 1px solid var(--border);
-            padding: 4px 8px;
-            border-radius: 6px;
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 5px 8px;
             font-size: 0.82rem;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
         }
         .val-badge {
             display: inline-block;
             min-width: 28px;
             text-align: center;
-            font-weight: 700;
-            color: var(--accent);
+            font-weight: 900;
             font-size: 0.85rem;
         }
         .btn {
-            padding: 6px 18px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 700;
+            padding: 8px 20px;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            font-size: 0.88rem;
+            font-weight: 800;
+            font-family: Arial, sans-serif;
+            color: var(--ink);
             cursor: pointer;
-            transition: filter 0.15s, transform 0.1s;
-            letter-spacing: 0.03em;
             white-space: nowrap;
+            box-shadow: 3px 3px 0 var(--ink);
+            transition: transform 0.06s, box-shadow 0.06s;
         }
+        .btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
         .btn-primary {
-            background: linear-gradient(135deg, #7c6aff, #a855f7);
-            color: white;
+            background: var(--gold);
+            font-family: 'Arial Black', Arial, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transform: rotate(-1.5deg);
         }
-        .btn-secondary {
-            background: var(--bg);
-            color: var(--dim);
-            border: 1px solid var(--border);
-        }
-        .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
-        .btn:active { transform: translateY(0); filter: brightness(0.95); }
+        .btn-primary:hover { transform: rotate(-1.5deg) translate(-2px, -2px); }
+        .btn-primary:active { transform: rotate(-1.5deg) translate(2px, 2px); }
+        .btn-secondary { background: var(--cream); }
         .main {
             display: flex;
             flex: 1;
             overflow: hidden;
+            padding: 0 18px 18px;
+            gap: 16px;
         }
         .canvas-wrap {
             flex: 1;
             display: flex;
-            align-items: center;
+            align-items: stretch;
             justify-content: center;
-            padding: 10px;
             overflow: hidden;
         }
         canvas {
-            border-radius: 10px;
-            border: 1px solid var(--border);
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 6px 6px 0 var(--ink);
+            background: var(--cream);
             display: block;
             max-width: 100%;
             max-height: 100%;
         }
         .sidebar {
-            width: 200px;
-            background: var(--surface);
-            border-left: 1px solid var(--border);
-            padding: 14px;
+            width: 210px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             overflow-y: auto;
             flex-shrink: 0;
         }
-        .sidebar h4 {
+        .card {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 12px 14px;
+        }
+        .card h4 {
+            font-family: 'Arial Black', Arial, sans-serif;
             font-size: 0.62rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
-            color: var(--dim);
-            margin-bottom: 7px;
+            margin-bottom: 8px;
         }
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 8px;
             font-size: 0.78rem;
             margin-bottom: 5px;
         }
         .dot {
-            width: 13px;
-            height: 13px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
             flex-shrink: 0;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 2px solid var(--ink);
+            box-shadow: 1.5px 1.5px 0 var(--ink);
         }
         .stat {
             display: flex;
@@ -171,61 +199,64 @@
             align-items: center;
             font-size: 0.78rem;
             padding: 4px 0;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px dashed rgba(32, 26, 23, 0.25);
         }
-        .stat-val { font-weight: 700; color: var(--accent); }
+        .stat:last-of-type { border-bottom: none; }
+        .stat-val { font-weight: 900; }
         .diff-bar {
-            height: 5px;
-            border-radius: 3px;
-            background: var(--border);
-            margin-top: 7px;
+            height: 12px;
+            border-radius: 999px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
+            margin-top: 8px;
             overflow: hidden;
         }
         .diff-fill {
             height: 100%;
-            border-radius: 3px;
             transition: width 0.5s, background 0.5s;
         }
         .diff-label {
             text-align: center;
-            font-size: 0.72rem;
-            margin-top: 4px;
-            color: var(--dim);
+            font: italic 0.75rem Georgia, serif;
+            margin-top: 5px;
         }
         .hint {
-            color: var(--dim);
-            font-size: 0.72rem;
-            line-height: 1.55;
+            font: italic 0.78rem/1.6 Georgia, 'Times New Roman', serif;
         }
-        .hint strong { color: var(--text); }
+        .hint strong { font-style: normal; font-family: Arial, sans-serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
         #tooltip {
             position: fixed;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 3px 3px 0 var(--ink);
             padding: 7px 12px;
-            font-size: 0.78rem;
+            font: 0.8rem Georgia, serif;
             pointer-events: none;
             display: none;
             z-index: 999;
             white-space: nowrap;
         }
-        @media (max-width: 640px) {
-            .sidebar { display: none; }
+        #tooltip strong { font-family: Arial, sans-serif; }
+        @media (max-width: 720px) {
             body { overflow: auto; height: auto; }
+            .main { flex-direction: column; }
+            .canvas-wrap { height: 58vh; flex: none; }
+            .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; }
+            .sidebar .card { flex: 1 1 45%; }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">Board Generator</div>
-    <div class="board-name-display" id="board-name">Generating...</div>
+    <div class="logo">Board Game Generator</div>
+    <div class="board-name-display" id="board-name"></div>
 </header>
 
 <div class="controls">
     <div class="ctrl">
-        <label>Nodes <span class="val-badge" id="nc-val">30</span></label>
+        <label>Spaces <span class="val-badge" id="nc-val">30</span></label>
         <input type="range" id="nc" min="8" max="60" value="30">
     </div>
     <div class="ctrl">
@@ -265,8 +296,8 @@
             <option value="3">3 pairs</option>
         </select>
     </div>
-    <button class="btn btn-primary" id="gen-btn">⚡ Generate</button>
-    <button class="btn btn-secondary" id="save-btn">💾 PNG</button>
+    <button class="btn btn-primary" id="gen-btn">Generate</button>
+    <button class="btn btn-secondary" id="save-btn">save PNG</button>
 </div>
 
 <div class="main">
@@ -274,18 +305,18 @@
         <canvas id="c"></canvas>
     </div>
     <div class="sidebar">
-        <div>
+        <div class="card">
             <h4>Legend</h4>
-            <div class="legend-item"><div class="dot" style="background:#22c55e"></div>Start</div>
-            <div class="legend-item"><div class="dot" style="background:#3b82f6"></div>Normal</div>
-            <div class="legend-item"><div class="dot" style="background:#f59e0b"></div>Lucky Star</div>
-            <div class="legend-item"><div class="dot" style="background:#ef4444"></div>Trap</div>
-            <div class="legend-item"><div class="dot" style="background:#a855f7"></div>Event</div>
-            <div class="legend-item"><div class="dot" style="background:#06b6d4"></div>Teleporter</div>
-            <div class="legend-item"><div class="dot" style="background:#f97316"></div>Fork</div>
-            <div class="legend-item"><div class="dot" style="background:#ec4899"></div>Chaos</div>
+            <div class="legend-item"><div class="dot" style="background:#b7ce3c"></div>Start</div>
+            <div class="legend-item"><div class="dot" style="background:#fff8ef"></div>Normal</div>
+            <div class="legend-item"><div class="dot" style="background:#f7c948"></div>Lucky Star</div>
+            <div class="legend-item"><div class="dot" style="background:#f0563e"></div>Trap</div>
+            <div class="legend-item"><div class="dot" style="background:#a98fd0"></div>Event</div>
+            <div class="legend-item"><div class="dot" style="background:#5aa0db"></div>Teleporter</div>
+            <div class="legend-item"><div class="dot" style="background:#f47b28"></div>Fork</div>
+            <div class="legend-item"><div class="dot" style="background:#ff7fa5"></div>Chaos</div>
         </div>
-        <div>
+        <div class="card">
             <h4>Board Stats</h4>
             <div class="stat"><span>Spaces</span><span class="stat-val" id="s-total">—</span></div>
             <div class="stat"><span>Lucky</span><span class="stat-val" id="s-lucky">—</span></div>
@@ -294,19 +325,17 @@
             <div class="stat"><span>Chaos</span><span class="stat-val" id="s-chaos">—</span></div>
             <div class="stat"><span>Teleporters</span><span class="stat-val" id="s-tele">—</span></div>
             <div class="stat"><span>Forks</span><span class="stat-val" id="s-forks">—</span></div>
-            <div class="stat"><span>Danger %</span><span class="stat-val" id="s-danger">—</span></div>
-            <div style="margin-top:6px;">
+            <div class="stat"><span>Danger</span><span class="stat-val" id="s-danger">—</span></div>
+            <div style="margin-top:8px;">
                 <h4>Difficulty</h4>
                 <div class="diff-bar"><div class="diff-fill" id="diff-fill"></div></div>
                 <div class="diff-label" id="diff-label"></div>
             </div>
         </div>
-        <div class="hint">
-            <strong>How it works</strong><br>
-            Roll dice to advance. Forks let you choose a path. Teleporters warp you to their pair. Chaos spaces shuffle the board!
-        </div>
-        <div class="hint" style="margin-top:auto;">
-            <strong>Tip:</strong> Hover any node to inspect it.
+        <div class="card hint">
+            <strong>House rules</strong><br>
+            Roll dice to advance. Forks let you choose a path. Teleporters warp you to their twin.
+            Chaos spaces shuffle everyone. Disputes are settled by the eldest player.
         </div>
     </div>
 </div>
@@ -317,25 +346,39 @@
 // ── Canvas setup ──────────────────────────────────────────────────────────────
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
+const INK = '#201a17';
+const CREAM = '#fff8ef';
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+let W = 0, H = 0;
 function resize() {
     const wrap = canvas.parentElement;
-    canvas.width  = Math.max(300, wrap.clientWidth  - 20);
-    canvas.height = Math.max(200, wrap.clientHeight - 20);
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = Math.max(300, wrap.clientWidth - 4);
+    H = Math.max(200, wrap.clientHeight - 4);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 resize();
-window.addEventListener('resize', () => { resize(); if (board) renderOnce(); });
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { resize(); if (board) drawFrame(performance.now()); }, 150);
+});
 
 // ── Type definitions ──────────────────────────────────────────────────────────
 const TYPES = {
-    start:      { color: '#22c55e', glyph: '⚑',  label: 'Start'      },
-    normal:     { color: '#3b82f6', glyph: '',    label: 'Normal'     },
-    lucky:      { color: '#f59e0b', glyph: '★',  label: 'Lucky Star' },
-    trap:       { color: '#ef4444', glyph: '✕',  label: 'Trap'       },
-    event:      { color: '#a855f7', glyph: '?',  label: 'Event'       },
-    teleporter: { color: '#06b6d4', glyph: '↯',  label: 'Teleporter' },
-    fork:       { color: '#f97316', glyph: '⑂',  label: 'Fork'       },
-    chaos:      { color: '#ec4899', glyph: '☠',  label: 'Chaos'      },
+    start:      { color: '#b7ce3c', icon: 'flag',      label: 'Start'      },
+    normal:     { color: '#fff8ef', icon: null,        label: 'Normal'     },
+    lucky:      { color: '#f7c948', icon: 'star',      label: 'Lucky Star' },
+    trap:       { color: '#f0563e', icon: 'x',         label: 'Trap'       },
+    event:      { color: '#a98fd0', icon: 'question',  label: 'Event'      },
+    teleporter: { color: '#5aa0db', icon: 'bolt',      label: 'Teleporter' },
+    fork:       { color: '#f47b28', icon: 'fork',      label: 'Fork'       },
+    chaos:      { color: '#ff7fa5', icon: 'spiral',    label: 'Chaos'      },
 };
 
 // ── Board name generators ─────────────────────────────────────────────────────
@@ -344,14 +387,19 @@ const NOUN = ['Kingdom','Caverns','Ruins','Labyrinth','Summit','Depths','Circuit
 
 let board = null;
 let animId = null;
-let tick = 0;
+let genTime = 0;
+let hoveredId = -1;
 
 // ── Utility ───────────────────────────────────────────────────────────────────
 const rnd  = (a, b) => a + Math.random() * (b - a);
 const rndI = (a, b) => Math.floor(rnd(a, b + 1));
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const dist  = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const pick  = arr => arr[rndI(0, arr.length - 1)];
+const STAGGER = 16, POP = 320;
+function easeOutBack(t) {
+    const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
 
 // ── Position generators ───────────────────────────────────────────────────────
 function posLoop(n, W, H, pad) {
@@ -378,7 +426,6 @@ function posSnake(n, W, H, pad) {
 function posStar(n, W, H, pad) {
     const arms = 5, cx = W/2, cy = H/2, maxR = Math.min(W,H)/2 - pad;
     const pts = [];
-    // center node first
     pts.push({ x: cx + rnd(-10,10), y: cy + rnd(-10,10) });
     const perArm = Math.floor((n-1) / arms);
     for (let arm = 0; arm < arms && pts.length < n; arm++) {
@@ -433,40 +480,32 @@ function genBoard() {
     const forkOpt = document.getElementById('forks').value;
     const teleOpt = document.getElementById('teles').value;
 
-    const W = canvas.width, H = canvas.height, pad = 52;
+    const pad = 52;
 
-    // 1. Positions
     const posFn = { loop: posLoop, snake: posSnake, star: posStar, organic: posOrganic }[shape];
     const positions = posFn(n, W, H, pad);
 
-    // 2. Nodes
     const nodes = positions.map((p, i) => ({
         id: i, x: p.x, y: p.y,
         type: 'normal',
         teleportTo: null,
     }));
 
-    // 3. Main path edges
     const edges = [];
     for (let i = 0; i < n-1; i++) edges.push({ from: i, to: i+1, kind: 'path' });
     if (shape === 'loop') edges.push({ from: n-1, to: 0, kind: 'path' });
 
-    // 4. Forks
     const forkCount = forkOpt === 'auto'
         ? { peaceful: 1, balanced: 2, chaotic: 4 }[vibe]
         : parseInt(forkOpt);
     const forks = buildForks(nodes, edges, n, forkCount);
 
-    // 5. Teleporters
     const teleCount = teleOpt === 'auto'
         ? { peaceful: 1, balanced: 2, chaotic: 3 }[vibe]
         : parseInt(teleOpt);
     const teles = buildTeleporters(nodes, edges, teleCount);
 
-    // 6. Assign space types
     assignTypes(nodes, vibe, forks, teles);
-
-    // 7. Force layout
     forceLayout(nodes, W, H, pad);
 
     return {
@@ -540,89 +579,86 @@ function assignTypes(nodes, vibe, forks, teles) {
 }
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
-function renderOnce() {
-    drawFrame();
-}
-
+// nodes pop in staggered on generate, then the loop stops (no idle animation)
 function startAnim() {
     if (animId) cancelAnimationFrame(animId);
-    function loop() { tick++; drawFrame(); animId = requestAnimationFrame(loop); }
+    genTime = performance.now();
+    const done = genTime + (reducedMotion ? 0 : board.nodes.length * STAGGER + POP + 60);
+    function loop(now) {
+        drawFrame(now);
+        if (now < done) animId = requestAnimationFrame(loop);
+        else animId = null;
+    }
     animId = requestAnimationFrame(loop);
 }
 
-function drawFrame() {
-    const W = canvas.width, H = canvas.height;
+function drawFrame(now) {
     ctx.clearRect(0, 0, W, H);
 
-    // Background
-    const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*0.75);
-    bg.addColorStop(0, '#0e0e24');
-    bg.addColorStop(1, '#06060f');
-    ctx.fillStyle = bg;
+    // paper with a faint dotted grid
+    ctx.fillStyle = CREAM;
     ctx.fillRect(0, 0, W, H);
-
-    // Subtle grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.022)';
-    ctx.lineWidth = 1;
-    for (let x=0; x<W; x+=36) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for (let y=0; y<H; y+=36) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.fillStyle = 'rgba(32, 26, 23, 0.08)';
+    for (let x = 18; x < W; x += 34) {
+        for (let y = 18; y < H; y += 34) {
+            ctx.fillRect(x, y, 2, 2);
+        }
+    }
 
     if (!board) return;
 
-    // Edges
     for (const e of board.edges) drawEdge(e);
-    // Nodes
-    for (const n of board.nodes) drawNode(n);
+    for (const n of board.nodes) drawNode(n, now);
+    drawTitle();
 }
 
 function drawEdge(e) {
     const a = board.nodes[e.from], b = board.nodes[e.to];
     ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
     if (e.kind === 'teleport') {
-        // Curved dashed cyan line
-        ctx.setLineDash([5, 5]);
-        ctx.strokeStyle = '#06b6d4';
-        ctx.lineWidth = 2;
-        ctx.shadowBlur = 10; ctx.shadowColor = '#06b6d4';
         const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
         const nx = -(b.y-a.y), ny = b.x-a.x;
         const len = Math.hypot(nx, ny)||1;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.quadraticCurveTo(mx + nx/len*45, my + ny/len*45, b.x, b.y);
-        ctx.stroke();
-        // Mid arrow
-        const t = 0.5;
         const cpx = mx + nx/len*45, cpy = my + ny/len*45;
+        const curve = () => {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.quadraticCurveTo(cpx, cpy, b.x, b.y);
+        };
+        ctx.setLineDash([7, 6]);
+        curve(); ctx.strokeStyle = INK; ctx.lineWidth = 5.5; ctx.stroke();
+        curve(); ctx.strokeStyle = TYPES.teleporter.color; ctx.lineWidth = 2.75; ctx.stroke();
+        ctx.setLineDash([]);
+        const t = 0.5;
         const arx = (1-t)*(1-t)*a.x + 2*(1-t)*t*cpx + t*t*b.x;
         const ary = (1-t)*(1-t)*a.y + 2*(1-t)*t*cpy + t*t*b.y;
         const drx = 2*(1-t)*(cpx-a.x) + 2*t*(b.x-cpx);
         const dry = 2*(1-t)*(cpy-a.y) + 2*t*(b.y-cpy);
-        ctx.setLineDash([]);
-        drawArrowHead(arx, ary, Math.atan2(dry, drx), '#06b6d4');
+        drawArrowHead(arx, ary, Math.atan2(dry, drx), TYPES.teleporter.color, true);
 
     } else if (e.kind === 'fork') {
-        ctx.setLineDash([9, 5]);
-        ctx.strokeStyle = '#f97316';
-        ctx.lineWidth = 2.5;
-        ctx.shadowBlur = 8; ctx.shadowColor = '#f97316';
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        const line = () => {
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        };
+        ctx.setLineDash([10, 6]);
+        line(); ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.stroke();
+        line(); ctx.strokeStyle = TYPES.fork.color; ctx.lineWidth = 3; ctx.stroke();
         ctx.setLineDash([]);
-        drawArrowHead((a.x+b.x)/2, (a.y+b.y)/2, Math.atan2(b.y-a.y, b.x-a.x), '#f97316');
+        drawArrowHead((a.x+b.x)/2, (a.y+b.y)/2, Math.atan2(b.y-a.y, b.x-a.x), TYPES.fork.color, true);
 
     } else {
-        ctx.setLineDash([]);
-        ctx.strokeStyle = 'rgba(180,180,255,0.18)';
-        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = 'rgba(32, 26, 23, 0.55)';
+        ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        // Arrow at midpoint
-        drawArrowHead((a.x+b.x)/2, (a.y+b.y)/2, Math.atan2(b.y-a.y, b.x-a.x), 'rgba(180,180,255,0.38)');
+        drawArrowHead((a.x+b.x)/2, (a.y+b.y)/2, Math.atan2(b.y-a.y, b.x-a.x), 'rgba(32, 26, 23, 0.55)', false);
     }
     ctx.restore();
 }
 
-function drawArrowHead(x, y, angle, color) {
+function drawArrowHead(x, y, angle, color, outlined) {
     const s = 7;
     ctx.save();
     ctx.translate(x, y); ctx.rotate(angle);
@@ -630,58 +666,139 @@ function drawArrowHead(x, y, angle, color) {
     ctx.moveTo(s, 0); ctx.lineTo(-s, -s*0.55); ctx.lineTo(-s, s*0.55);
     ctx.closePath();
     ctx.fillStyle = color;
-    ctx.shadowBlur = 0;
     ctx.fill();
+    if (outlined) {
+        ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        ctx.strokeStyle = INK; ctx.stroke();
+    }
     ctx.restore();
 }
 
-function drawNode(node) {
-    const t = TYPES[node.type] || TYPES.normal;
-    const R = 17;
-    const pulse = (Math.sin(tick * 0.038 + node.id * 1.3) + 1) / 2;
-    const isSpecial = node.type !== 'normal';
-
-    // Outer glow
-    ctx.shadowBlur = isSpecial ? 18 + pulse * 14 : 7;
-    ctx.shadowColor = t.color;
-
-    // Main circle
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, R, 0, Math.PI*2);
-    const grad = ctx.createRadialGradient(node.x - R*0.3, node.y - R*0.3, 0, node.x, node.y, R);
-    grad.addColorStop(0, lighten(t.color, 0.35));
-    grad.addColorStop(1, t.color);
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Rim
-    ctx.strokeStyle = `rgba(255,255,255,${0.2 + pulse*0.25})`;
-    ctx.lineWidth = 1.8;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Text
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    if (t.glyph) {
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText(t.glyph, node.x, node.y - 4.5);
-        ctx.font = '7.5px sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText(node.id + 1, node.x, node.y + 6);
-    } else {
-        ctx.font = 'bold 9.5px sans-serif';
-        ctx.fillText(node.id + 1, node.x, node.y);
+// hand-drawn ink icons - no emoji, no font glyphs
+function drawIcon(kind) {
+    ctx.strokeStyle = INK;
+    ctx.fillStyle = INK;
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    switch (kind) {
+        case 'flag':
+            ctx.beginPath(); ctx.moveTo(-3, 6); ctx.lineTo(-3, -6); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-3, -6); ctx.lineTo(5, -3.5); ctx.lineTo(-3, -1);
+            ctx.closePath(); ctx.fill();
+            break;
+        case 'star': {
+            ctx.beginPath();
+            for (let i = 0; i < 10; i++) {
+                const r = i % 2 === 0 ? 6.5 : 2.8;
+                const a = -Math.PI / 2 + i * Math.PI / 5;
+                ctx[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(a) * r, Math.sin(a) * r);
+            }
+            ctx.closePath(); ctx.fill();
+            break;
+        }
+        case 'x':
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(-4.5, -4.5); ctx.lineTo(4.5, 4.5); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(4.5, -4.5); ctx.lineTo(-4.5, 4.5); ctx.stroke();
+            break;
+        case 'question':
+            ctx.font = '900 12px "Arial Black", Arial, sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('?', 0, 0.5);
+            break;
+        case 'bolt':
+            ctx.beginPath();
+            ctx.moveTo(1.5, -6.5); ctx.lineTo(-3.5, 1); ctx.lineTo(-0.5, 1);
+            ctx.lineTo(-1.5, 6.5); ctx.lineTo(3.5, -1); ctx.lineTo(0.5, -1);
+            ctx.closePath(); ctx.fill();
+            break;
+        case 'fork':
+            ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(0, 0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-4, -5); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(4, -5); ctx.stroke();
+            break;
+        case 'spiral': {
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            for (let a = 0; a < Math.PI * 3.2; a += 0.25) {
+                const r = 0.6 + a * 0.62;
+                const x = Math.cos(a) * r, y = Math.sin(a) * r;
+                if (a === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            break;
+        }
     }
 }
 
-function lighten(hex, amt) {
-    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-    const lr = Math.min(255, r + Math.round(amt*255));
-    const lg = Math.min(255, g + Math.round(amt*255));
-    const lb = Math.min(255, b + Math.round(amt*255));
-    return `rgb(${lr},${lg},${lb})`;
+function drawNode(node, now) {
+    const t = TYPES[node.type] || TYPES.normal;
+    const R = 17;
+    // staggered pop-in
+    let s = 1;
+    if (!reducedMotion && now) {
+        const u = clamp((now - genTime - node.id * STAGGER) / POP, 0, 1);
+        if (u <= 0) return;
+        s = easeOutBack(u);
+    }
+    const hovered = node.id === hoveredId;
+
+    ctx.save();
+    ctx.translate(node.x, node.y);
+    ctx.scale(s, s);
+    if (hovered) { ctx.translate(-1.5, -1.5); ctx.scale(1.08, 1.08); }
+
+    // sticker treatment: hard ink shadow, flat fill, ink outline
+    ctx.beginPath(); ctx.arc(hovered ? 4 : 2.5, hovered ? 4 : 2.5, R, 0, Math.PI * 2);
+    ctx.fillStyle = INK; ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2);
+    ctx.fillStyle = t.color; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+
+    if (t.icon) {
+        ctx.save();
+        ctx.translate(0, -3);
+        ctx.scale(0.85, 0.85);
+        drawIcon(t.icon);
+        ctx.restore();
+        ctx.fillStyle = INK;
+        ctx.font = 'bold 7.5px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(node.id + 1, 0, 9.5);
+    } else {
+        ctx.fillStyle = INK;
+        ctx.font = '900 10.5px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(node.id + 1, 0, 0.5);
+    }
+    ctx.restore();
+}
+
+// the board's name is lettered onto the board itself, so PNG exports keep it
+function drawTitle() {
+    ctx.save();
+    ctx.translate(16, H - 22);
+    ctx.rotate(-0.022);
+    ctx.font = '900 21px "Arial Black", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = INK;
+    ctx.strokeText(board.name.toUpperCase(), 0, 0);
+    ctx.fillStyle = CREAM;
+    ctx.fillText(board.name.toUpperCase(), 0, 0);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.fillStyle = 'rgba(32, 26, 23, 0.5)';
+    ctx.textAlign = 'right';
+    ctx.fillText('randomsitesontheweb.com', W - 14, H - 12);
+    ctx.restore();
 }
 
 // ── Tooltip ───────────────────────────────────────────────────────────────────
@@ -691,14 +808,19 @@ canvas.addEventListener('mousemove', e => {
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
     const node = board.nodes.find(n => Math.hypot(n.x-mx, n.y-my) < 22);
+    const id = node ? node.id : -1;
+    if (id !== hoveredId) {
+        hoveredId = id;
+        if (!animId) drawFrame(0);
+    }
     if (node) {
         const t = TYPES[node.type] || TYPES.normal;
         let extra = '';
         if (node.type === 'teleporter' && node.teleportTo !== null)
-            extra = `<br><span style="color:#06b6d4">↯ Links to #${node.teleportTo+1}</span>`;
+            extra = `<br><em>warps to #${node.teleportTo+1}</em>`;
         if (node.type === 'fork') {
             const fork = board.forks.find(f => f.from === node.id);
-            if (fork) extra = `<br><span style="color:#f97316">⑂ Shortcut to #${fork.to+1}</span>`;
+            if (fork) extra = `<br><em>shortcut to #${fork.to+1}</em>`;
         }
         tooltip.innerHTML = `<strong>#${node.id+1} — ${t.label}</strong>${extra}`;
         tooltip.style.left = (e.clientX + 14) + 'px';
@@ -713,6 +835,10 @@ canvas.addEventListener('mousemove', e => {
 canvas.addEventListener('mouseleave', () => {
     tooltip.style.display = 'none';
     canvas.style.cursor = 'default';
+    if (hoveredId !== -1) {
+        hoveredId = -1;
+        if (!animId) drawFrame(0);
+    }
 });
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -735,8 +861,9 @@ function updateStats(b) {
     const pct = Math.min(100, dangerPct * 320);
     const fill = document.getElementById('diff-fill');
     fill.style.width = pct + '%';
-    fill.style.background = pct < 25 ? '#22c55e' : pct < 55 ? '#f59e0b' : '#ef4444';
-    document.getElementById('diff-label').textContent = pct < 25 ? 'Easy' : pct < 55 ? 'Medium' : 'Hard';
+    fill.style.background = pct < 25 ? '#b7ce3c' : pct < 55 ? '#f7c948' : '#f0563e';
+    document.getElementById('diff-label').textContent =
+        pct < 25 ? 'a gentle afternoon' : pct < 55 ? 'someone will flip the table' : 'friendships will end';
 }
 
 // ── Controls ──────────────────────────────────────────────────────────────────
@@ -746,9 +873,9 @@ document.getElementById('nc').addEventListener('input', function() {
 
 function doGenerate() {
     board = genBoard();
-    document.getElementById('board-name').textContent = board.name;
+    document.getElementById('board-name').textContent = '"' + board.name + '"';
     updateStats(board);
-    if (!animId) startAnim();
+    startAnim();
 }
 
 document.getElementById('gen-btn').addEventListener('click', doGenerate);
@@ -761,7 +888,6 @@ document.getElementById('save-btn').addEventListener('click', () => {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 doGenerate();
-startAnim();
 </script>
 </body>
 </html>

@@ -1,423 +1,417 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
-    <title>Infinite Pi</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Explore the infinite digits of π (pi) with interactive visualizations and statistics">
-    <meta name="keywords" content="pi, mathematics, visualization, infinite digits, statistics">
-    <meta name="author" content="Your Name">
-    <meta property="og:title" content="Infinite Pi">
-    <meta property="og:description" content="Explore the infinite digits of π (pi) with interactive visualizations and statistics">
-    <meta property="og:type" content="website">
-    <meta name="theme-color" content="#0a0a1f">
+    <title>Pi Digit Distribution</title>
+    <meta name="description" content="A census of the first million digits of π — sweep the count and watch the digits jockey.">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
 
-        * {
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            min-height: 100%;
+            background: var(--paper);
+            color: var(--ink);
         }
-        
+
         body {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            line-height: 1.5;
-            padding: 20px;
-            background: linear-gradient(135deg, #0a0a1f 0%, #1a1a3f 100%);
-            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             min-height: 100vh;
+            padding: 1.2rem 0.8rem 8.5rem;
+            font-family: Georgia, 'Times New Roman', serif;
+            user-select: none;
+            -webkit-user-select: none;
         }
-        #pi-container {
-            word-wrap: break-word;
+
+        header {
+            text-align: center;
+            margin-bottom: 1.2rem;
         }
-        .chart-container {
-            margin: 40px auto;
-            width: 100%;
-            max-width: 800px;
-            height: 400px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+
+        header .dept {
+            font-style: italic;
+            font-size: 0.8rem;
+            letter-spacing: 0.12em;
+            opacity: 0.7;
         }
+
+        header h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(1.3rem, 5.5vw, 2rem);
+            margin: 0.25rem 0 0;
+            display: inline-block;
+            background: var(--sky);
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 0.2em 0.6em;
+            transform: rotate(-1.5deg);
+        }
+
+        #chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: clamp(4px, 1.4vw, 12px);
+            height: min(44vh, 340px);
+            width: min(96vw, 700px);
+            margin-bottom: 0.4rem;
+        }
+
+        .col {
+            flex: 1;
+            max-width: 58px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+            position: relative;
+        }
+
+        .pct {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: clamp(0.55rem, 1.8vw, 0.78rem);
+            margin-bottom: 4px;
+            white-space: nowrap;
+        }
+
         .bar {
-            fill: url(#gradient);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            filter: drop-shadow(0 0 8px rgba(0,188,212,0.3));
+            width: 100%;
+            border: 2px solid var(--ink);
+            border-radius: 7px 7px 3px 3px;
+            box-shadow: 3px 3px 0 var(--ink);
+            min-height: 6px;
+            transition: height 0.12s linear;
         }
-        .bar:hover {
-            fill: url(#gradientHover);
-            filter: drop-shadow(0 0 12px rgba(0,188,212,0.5));
-            cursor: pointer;
+
+        .crown {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-8deg);
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.55rem;
+            padding: 0.15em 0.55em;
+            text-transform: uppercase;
+            visibility: hidden;
+            z-index: 2;
         }
-        .bar-label {
-            fill: #fff;
-            text-anchor: middle;
-            font-size: 16px;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(0,188,212,0.8);
+
+        .crown.on {
+            visibility: visible;
+            animation: pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
+        }
+
+        @keyframes pop {
+            0%   { transform: translateX(-50%) scale(0.2) rotate(20deg); }
+            60%  { transform: translateX(-50%) scale(1.15) rotate(-10deg); }
+            100% { transform: translateX(-50%) scale(1) rotate(-8deg); }
+        }
+
+        .digitchip {
+            margin-top: 8px;
+            width: clamp(24px, 6vw, 36px);
+            height: clamp(24px, 6vw, 36px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(0.8rem, 2.6vw, 1.1rem);
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 2px 2px 0 var(--ink);
+        }
+
+        #plaque {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 0.55rem 1.2rem;
+            font-style: italic;
+            font-size: clamp(0.78rem, 2.6vw, 0.95rem);
+            text-align: center;
+            line-height: 1.5;
+            max-width: min(94vw, 560px);
+            margin-top: 1.4rem;
+        }
+
+        #plaque b { font-style: normal; }
+
+        #feynman {
+            font-style: italic;
+            font-size: 0.78rem;
             opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            transform: translateY(10px);
-        }
-        .bar:hover + .bar-label {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .slider-container {
-            margin: 20px auto 40px auto;
-            width: 100%;
-            max-width: 800px;
+            margin-top: 0.6rem;
+            transition: opacity 1.2s ease;
             text-align: center;
-            background: rgba(255,255,255,0.08);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+            max-width: 90vw;
         }
-        #interval-slider {
-            width: 100%;
-            height: 20px;
-            -webkit-appearance: none;
-            background: linear-gradient(90deg, #00bcd4, #80deea);
-            outline: none;
+
+        #feynman.on { opacity: 0.75; }
+
+        /* ---------- control pill ---------- */
+        #controls {
+            position: fixed;
+            left: 50%;
+            bottom: max(14px, env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            background: rgba(32, 26, 23, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid var(--ink);
             border-radius: 20px;
-            overflow: hidden;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 0.7rem 1.1rem;
+            display: flex;
+            gap: 0.9rem;
+            align-items: center;
+            width: min(94vw, 520px);
+            z-index: 5;
+        }
+
+        #play {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.04em;
+            padding: 0.45rem 1.1rem;
+            background: var(--lime);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
             cursor: pointer;
+            transform: rotate(-2deg);
+            transition: transform 0.12s, box-shadow 0.12s;
+            white-space: nowrap;
         }
-        #interval-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            border: 4px solid #00bcd4;
-            box-shadow: 0 0 15px rgba(0,188,212,0.8);
-            transition: all 0.3s ease;
+
+        #play:hover { transform: translate(-2px, -2px) rotate(-2deg); box-shadow: 5px 5px 0 var(--ink); }
+        #play:active { transform: translate(2px, 2px) rotate(-2deg); box-shadow: 1px 1px 0 var(--ink); }
+
+        .sliderwrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
         }
-        #interval-slider::-moz-range-thumb {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            border: 4px solid #00bcd4;
-            box-shadow: 0 0 15px rgba(0,188,212,0.8);
-            transition: all 0.3s ease;
-        }
-        #interval-slider::-webkit-slider-thumb:hover,
-        #interval-slider::-moz-range-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 0 20px rgba(0,188,212,0.9);
-        }
-        #interval-slider:active::-webkit-slider-thumb,
-        #interval-slider:active::-moz-range-thumb {
-            transform: scale(1.1);
-            background: #00bcd4;
-        }
-        #interval-value {
-            text-align: center;
-            font-size: 1.4em;
-            margin-bottom: 20px;
-            color: #00bcd4;
-            text-shadow: 0 0 10px rgba(0,188,212,0.5);
+
+        #count {
+            color: var(--cream);
+            font-family: 'Courier New', monospace;
             font-weight: bold;
-        }
-        h1 {
-            color: #00bcd4;
+            font-size: 0.82rem;
             text-align: center;
-            font-size: 2.5em;
-            text-shadow: 0 0 20px rgba(0,188,212,0.5);
-            margin-bottom: 40px;
-        }
-        .axis text {
-            fill: #fff;
-            font-size: 14px;
-        }
-        .axis path,
-        .axis line {
-            stroke: rgba(255,255,255,0.3);
-        }
-        .explanation {
-            max-width: 800px;
-            margin: 0 auto 30px auto;
-            padding: 20px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            line-height: 1.6;
-            color: #e0e0e0;
-            font-family: 'Arial', sans-serif;
-            font-size: 16px;
-        }
-        
-        .explanation p {
-            margin: 10px 0;
-            font-size: 0.95em;
-        }
-        
-        .explanation p:first-child {
-            color: #00bcd4;
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-                font-size: 16px;
-            }
-
-            h1 {
-                font-size: 1.8em;
-            }
-
-            .chart-container {
-                height: 300px;
-                padding: 10px;
-                margin: 20px auto;
-            }
-
-            .slider-container {
-                padding: 15px;
-                margin: 15px auto;
-            }
-
-            .explanation {
-                padding: 15px;
-                font-size: 14px;
-                margin: 15px auto;
-            }
-
-            .explanation p {
-                margin: 8px 0;
-            }
-
-            .bar-label {
-                font-size: 12px;
-            }
-
-            .axis text {
-                font-size: 12px;
-            }
-
-            #interval-value {
-                font-size: 1.2em;
-                margin-bottom: 15px;
-            }
-
-            #interval-slider {
-                height: 15px;
-            }
-
-            #interval-slider::-webkit-slider-thumb,
-            #interval-slider::-moz-range-thumb {
-                width: 25px;
-                height: 25px;
-            }
         }
 
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 1.5em;
-            }
-
-            .chart-container {
-                height: 250px;
-            }
+        #n {
+            width: 100%;
+            accent-color: var(--gold);
+            height: 6px;
         }
     </style>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-    <h1>Digit Distribution in π</h1>
-    
-    <div class="explanation">
-        <p>This visualization shows how frequently each digit (0-9) appears in the first N digits of π.</p>
-        <p>In a truly random sequence, each digit would appear approximately 10% of the time. 
-           While π is not random (it's a mathematical constant), its digits appear to be uniformly distributed, 
-           meaning each digit shows up roughly the same number of times as you examine more digits.</p>
-        <p>Use the slider below to explore how the distribution changes as you include more digits in the analysis.</p>
-    </div>
+    <header>
+        <div class="dept">bureau of irrational statistics</div>
+        <h1>The Digit Census of π</h1>
+    </header>
 
-    <div id="chart-container" class="chart-container"></div>
-    
-    <div class="slider-container">
-        <div id="interval-value">1,000 digits</div>
-        <input type="range" id="interval-slider" min="100" max="1000000" step="100" value="1000">
+    <div id="chart"></div>
+    <div id="plaque">the census office is opening its ledgers…</div>
+    <div id="feynman">footnote: positions 762–767 read 999999. the bureau double-checked. π was not joking.</div>
+
+    <div id="controls">
+        <button id="play">Run Census</button>
+        <div class="sliderwrap">
+            <div id="count">1,000 digits</div>
+            <input id="n" type="range" min="0" max="1000" value="250" aria-label="number of digits counted">
+        </div>
     </div>
 
     <script>
-        let digits = '';
-        
-        async function fetchPiDigits() {
-            try {
-                const response = await fetch('pi.txt');
-                digits = await response.text();
-                updateChart();
-            } catch (error) {
-                console.error('Error loading pi digits:', error);
+        (() => {
+            const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28',
+                            '#ff7fa5', '#2fb0a3', '#f7c948', '#cfc8ba', '#fff8ef'];
+            const MIN_N = 100, MAX_N = 1000000;
+
+            const chart = document.getElementById('chart');
+            const plaque = document.getElementById('plaque');
+            const feynman = document.getElementById('feynman');
+            const playBtn = document.getElementById('play');
+            const slider = document.getElementById('n');
+            const countEl = document.getElementById('count');
+
+            let digits = '';
+            const counts = new Array(10).fill(0);
+            let counted = 0;        // how many digits are currently in `counts`
+            let leader = -1;
+            let playing = false;
+            let rafId = null;
+
+            // build the ten columns
+            const cols = [];
+            for (let d = 0; d <= 9; d++) {
+                const col = document.createElement('div');
+                col.className = 'col';
+                col.innerHTML =
+                    '<div class="crown">leader</div>' +
+                    '<div class="pct">–</div>' +
+                    '<div class="bar" style="background:' + COLORS[d] + ';height:6px"></div>' +
+                    '<div class="digitchip">' + d + '</div>';
+                chart.appendChild(col);
+                cols.push({
+                    crown: col.querySelector('.crown'),
+                    pct: col.querySelector('.pct'),
+                    bar: col.querySelector('.bar')
+                });
             }
-        }
 
-        function countDigits(str, interval) {
-
-            console.log(interval, str.length)
-            // Take only the specified interval of digits
-            const digits = str.slice(0, interval);
-            
-            // Initialize counts array with zeros
-            const counts = Array(10).fill(0);
-            
-            // Count each digit
-            for (let digit of digits) {
-                counts[parseInt(digit)]++;
+            // slider is logarithmic: 0..1000 -> 100..1,000,000
+            function sliderToN(v) {
+                return Math.round(MIN_N * Math.pow(MAX_N / MIN_N, v / 1000));
             }
-            
-            // Calculate expected frequency for verification
-            const total = counts.reduce((a, b) => a + b, 0);
-            console.log('Total digits counted:', total, 'Expected:', interval);
-            console.log('Digit frequencies:', counts);
-            
-            return counts;
-        }
+            function nToSlider(n) {
+                return Math.round(1000 * Math.log(n / MIN_N) / Math.log(MAX_N / MIN_N));
+            }
 
-        function updateChart() {
-            const interval = parseInt(document.getElementById('interval-slider').value);
-            document.getElementById('interval-value').textContent = interval.toLocaleString() + ' digits';
-            
-            const digitCounts = countDigits(digits, interval);
-            const total = digitCounts.reduce((a, b) => a + b, 0);
+            // move the running tally to exactly n digits — incremental both ways
+            function setCounted(n) {
+                n = Math.max(MIN_N, Math.min(MAX_N, n));
+                while (counted < n) counts[digits.charCodeAt(counted++) - 48]++;
+                while (counted > n) counts[digits.charCodeAt(--counted) - 48]--;
+            }
 
-            // Clear previous chart
-            d3.select('#chart-container').html('');
+            function render() {
+                const chipZone = 60;   // px reserved under the bars
+                const maxH = chart.clientHeight - chipZone;
+                const max = Math.max(...counts);
+                const min = Math.min(...counts);
+                const span = Math.max(max - min, 1);
 
-            // Make chart responsive
-            const containerWidth = document.getElementById('chart-container').clientWidth;
-            const containerHeight = document.getElementById('chart-container').clientHeight;
+                let lead = 0;
+                for (let d = 1; d <= 9; d++) if (counts[d] > counts[lead]) lead = d;
 
-            // Update margins for smaller screens
-            const margin = {
-                top: containerHeight * 0.075,
-                right: containerWidth * 0.05,
-                bottom: containerHeight * 0.1,
-                left: containerWidth * 0.1
-            };
+                for (let d = 0; d <= 9; d++) {
+                    // zoomed range so the race is visible even at a million digits
+                    const t = (counts[d] - min) / span;
+                    cols[d].bar.style.height = Math.round(maxH * (0.25 + 0.75 * t)) + 'px';
+                    cols[d].pct.textContent = (counts[d] / counted * 100).toFixed(counted > 20000 ? 2 : 1) + '%';
+                    if (d !== lead) cols[d].crown.classList.remove('on');
+                }
+                if (leader !== lead) {
+                    cols[lead].crown.classList.remove('on');
+                    void cols[lead].crown.offsetWidth;
+                }
+                cols[lead].crown.classList.add('on');
+                leader = lead;
 
-            const width = containerWidth - margin.left - margin.right;
-            const height = containerHeight - margin.top - margin.bottom;
+                const sorted = [...counts].sort((a, b) => b - a);
+                const marginVotes = sorted[0] - sorted[1];
+                const runnerUp = counts.indexOf(sorted[1]);
+                plaque.innerHTML =
+                    '<b>' + counted.toLocaleString() + '</b> digits interviewed. ' +
+                    'digit <b>' + lead + '</b> leads with <b>' + counts[lead].toLocaleString() +
+                    '</b> residents — ahead of digit ' + runnerUp + ' by ' + marginVotes.toLocaleString() + '.<br>' +
+                    'in a fair universe each digit holds 10%. the gaps below are magnified for drama.';
 
-            // Create SVG with responsive dimensions
-            const svg = d3.select('#chart-container')
-                .append('svg')
-                .attr('width', '100%')
-                .attr('height', '100%')
-                .attr('viewBox', `0 0 ${containerWidth} ${containerHeight}`)
-                .attr('preserveAspectRatio', 'xMidYMid meet')
-                .append('g')
-                .attr('transform', `translate(${margin.left},${margin.top})`);
+                feynman.classList.toggle('on', counted >= 768);
+                countEl.textContent = counted.toLocaleString() + ' digits';
+            }
 
-            // Define gradients
-            const defs = svg.append("defs");
-            
-            const gradient = defs.append("linearGradient")
-                .attr("id", "gradient")
-                .attr("x1", "0%")
-                .attr("y1", "0%")
-                .attr("x2", "0%")
-                .attr("y2", "100%");
-            gradient.append("stop")
-                .attr("offset", "0%")
-                .attr("stop-color", "#00bcd4");
-            gradient.append("stop")
-                .attr("offset", "100%")
-                .attr("stop-color", "#006064");
+            function jumpTo(n) {
+                setCounted(n);
+                render();
+            }
 
-            const gradientHover = defs.append("linearGradient")
-                .attr("id", "gradientHover")
-                .attr("x1", "0%")
-                .attr("y1", "0%")
-                .attr("x2", "0%")
-                .attr("y2", "100%");
-            gradientHover.append("stop")
-                .attr("offset", "0%")
-                .attr("stop-color", "#4dd0e1");
-            gradientHover.append("stop")
-                .attr("offset", "100%")
-                .attr("stop-color", "#00838f");
+            // ---------- the sweep ----------
+            function sweep() {
+                if (!playing) return;
+                const next = Math.min(MAX_N, Math.max(counted + 1, Math.round(counted * 1.035)));
+                setCounted(next);
+                slider.value = nToSlider(counted);
+                render();
+                if (counted >= MAX_N) {
+                    stopSweep();
+                    plaque.innerHTML += '<br><b>census complete.</b> one million digits accounted for. none missing.';
+                } else {
+                    rafId = requestAnimationFrame(sweep);
+                }
+            }
 
-            // Set up scales with smooth transitions
-            const x = d3.scaleBand()
-                .range([0, width])
-                .padding(0.2)
-                .domain(d3.range(10));
+            function startSweep() {
+                if (counted >= MAX_N) jumpTo(MIN_N);
+                playing = true;
+                playBtn.textContent = 'Pause';
+                rafId = requestAnimationFrame(sweep);
+            }
 
-            const y = d3.scaleLinear()
-                .range([height, 0])
-                .domain([0, d3.max(digitCounts)]);
+            function stopSweep() {
+                playing = false;
+                playBtn.textContent = 'Run Census';
+                cancelAnimationFrame(rafId);
+            }
 
-            // Add bars with animations
-            const bars = svg.selectAll('.bar-group')
-                .data(digitCounts)
-                .enter()
-                .append('g')
-                .attr('class', 'bar-group');
+            playBtn.addEventListener('click', () => playing ? stopSweep() : startSweep());
 
-            bars.append('rect')
-                .attr('class', 'bar')
-                .attr('x', (d, i) => x(i))
-                .attr('width', x.bandwidth())
-                .attr('y', height)
-                .attr('height', 0);
+            slider.addEventListener('input', () => {
+                stopSweep();
+                jumpTo(sliderToN(parseInt(slider.value, 10)));
+            });
 
-            // Add labels for each bar with count and percentage
-            bars.append('text')
-                .attr('class', 'bar-label')
-                .attr('x', (d, i) => x(i) + x.bandwidth() / 2)
-                .attr('y', d => y(d) - 10)
-                .text(d => `${d} (${(d/total * 100).toFixed(1)}%)`);
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(render, 150);
+            });
 
-            // Update bar transitions
-            bars.select('.bar').transition()
-                .duration(1000)
-                .ease(d3.easeElastic)
-                .attr('y', d => y(d))
-                .attr('height', d => height - y(d));
-
-            // Add axes with styling
-            const xAxis = svg.append('g')
-                .attr('class', 'axis')
-                .attr('transform', `translate(0,${height})`)
-                .call(d3.axisBottom(x));
-
-            const yAxis = svg.append('g')
-                .attr('class', 'axis')
-                .call(d3.axisLeft(y));
-        }
-
-        const slider = document.getElementById('interval-slider');
-        slider.addEventListener('input', updateChart);
-        
-        fetchPiDigits();
-
-        // Add window resize handler
-        window.addEventListener('resize', debounce(updateChart, 250));
-
-        // Debounce function to prevent too many resize events
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
+            // ---------- load π ----------
+            fetch('pi.txt')
+                .then(r => {
+                    if (!r.ok) throw new Error(r.status);
+                    return r.text();
+                })
+                .then(t => {
+                    digits = t.replace(/[^0-9]/g, '');
+                    jumpTo(sliderToN(parseInt(slider.value, 10)));
+                })
+                .catch(() => {
+                    plaque.textContent = 'π did not respond to the census. it is irrational like that. refresh to re-issue the summons.';
+                    playBtn.disabled = true;
+                });
+        })();
     </script>
 </body>
 </html>

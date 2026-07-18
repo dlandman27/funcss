@@ -4,313 +4,543 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sliding Puzzle</title>
+    <title>The Restoration</title>
+    <meta name="description" content="The museum's daily painting arrived in pieces. Slide it back together.">
+    <meta name="keywords" content="sliding puzzle, 8 puzzle, art, museum, game">
+    <meta name="author" content="@randomsitesontheweb">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='3' y='3' width='26' height='26' rx='3' fill='%23f7c948' stroke='%23201a17' stroke-width='2'/><rect x='8' y='8' width='16' height='16' fill='%23fff8ef' stroke='%23201a17' stroke-width='1.5'/><circle cx='16' cy='16' r='5' fill='%23f0563e' stroke='%23201a17' stroke-width='1.5'/></svg>">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+        :root {
+            --ink: #201a17;
+            --cream: #fff8ef;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
-            padding: 20px;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: radial-gradient(circle at 50% 32%, #4a3d33 0%, #2a221e 55%, #1d1712 100%);
             min-height: 100vh;
+            padding: 34px 16px 60px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        .app-container {
-            background-color: white;
-            padding: 1rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        #hint {
+            font-style: italic;
+            font-size: 17px;
+            color: var(--cream);
+            opacity: 0.7;
+            margin: 0 0 26px;
             text-align: center;
-            max-width: 95vw;
-            margin: 0 auto;
+            transition: opacity 1.2s ease;
         }
 
-        h1 {
-            color: #1a1a1a;
-            margin-bottom: 1.5rem;
-        }
-
-        .controls {
-            margin-bottom: 1.5rem;
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-
-        #shuffle {
-            background-color: #2196F3;
-        }
-
-        #shuffle:hover {
-            background-color: #1976D2;
-        }
-
-        input[type="file"] {
-            padding: 8px;
-            border: 2px dashed #ccc;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .puzzle-container {
-            width: min(400px, 95vw);
-            height: min(400px, 95vw);
+        .frame {
             position: relative;
-            margin: 20px auto;
-            border-radius: 8px;
+            background: var(--gold);
+            border: 4px solid var(--ink);
+            border-radius: 6px;
+            padding: clamp(10px, 2.5vmin, 18px);
+            box-shadow: 12px 12px 0 #15100d;
+        }
+
+        #board {
+            position: relative;
+            width: min(72vmin, 500px);
+            height: min(72vmin, 500px);
+            border: 3px solid var(--ink);
+            background: #d9d2c4;
             overflow: hidden;
         }
 
-        .puzzle-tile {
+        .tile {
             position: absolute;
-            border: 1px solid #ddd;
-            overflow: hidden;
-            transition: all 0.3s ease;
+            top: 0;
+            left: 0;
+            width: 33.3334%;
+            height: 33.3334%;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.16s cubic-bezier(0.3, 1.4, 0.5, 1);
+            outline: 1.5px solid var(--ink);
+            outline-offset: -1.5px;
+        }
+        .tile canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .tile:hover { filter: brightness(1.07); }
+        #board.no-anim .tile { transition: none; }
+        #board.solved .tile { cursor: default; }
+        #board.solved .tile:hover { filter: none; }
+
+        .tile.arrival canvas {
+            animation: arrive 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
+            transform-origin: center;
+        }
+        @keyframes arrive {
+            0%   { transform: scale(0.2) rotate(20deg); }
+            65%  { transform: scale(1.12) rotate(-3deg); }
+            100% { transform: scale(1) rotate(0deg); }
         }
 
-        .puzzle-tile:hover {
-            transform: scale(1.02);
+        #stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            background: var(--gold);
+            color: var(--ink);
+            border: 3px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 5px 5px 0 var(--ink);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(28px, 7vmin, 52px);
+            letter-spacing: 4px;
+            padding: 8px 22px;
+            transform: translate(-50%, -50%) rotate(-12deg) scale(0);
+            pointer-events: none;
+            z-index: 5;
+        }
+        #stamp.show { animation: stamp-in 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes stamp-in {
+            0%   { transform: translate(-50%, -50%) rotate(-25deg) scale(3); opacity: 0; }
+            60%  { transform: translate(-50%, -50%) rotate(-10deg) scale(0.92); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-12deg) scale(1); opacity: 1; }
         }
 
-        .game-info {
-            margin-top: 1.5rem;
+        .plaque {
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 5px 5px 0 #15100d;
+            transform: rotate(-1deg);
+            margin-top: 30px;
+            padding: 12px 26px 14px;
+            max-width: min(88vw, 420px);
+            text-align: center;
+        }
+        .plaque .title {
+            font-weight: bold;
+            font-size: 19px;
+        }
+        .plaque .medium {
+            font-style: italic;
+            font-size: 13.5px;
+            opacity: 0.75;
+            margin-top: 2px;
+        }
+        .plaque .status {
+            font-style: italic;
+            font-size: 14.5px;
+            margin-top: 8px;
+        }
+        .plaque .tally {
+            font-size: 12px;
+            opacity: 0.6;
+            margin-top: 6px;
+        }
+
+        .links {
+            margin-top: 20px;
             display: flex;
-            justify-content: center;
-            gap: 1rem;
-            font-size: 1rem;
-            color: #666;
-            flex-wrap: wrap;
+            gap: 26px;
         }
-
-        #moves, #timer {
-            background-color: #f8f9fa;
-            padding: 8px 16px;
-            border-radius: 20px;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        .links a {
+            font-style: italic;
+            font-size: 15px;
+            color: var(--cream);
+            opacity: 0.7;
+            cursor: pointer;
+            text-decoration: underline;
         }
+        .links a:hover { opacity: 1; }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-
-            h1 {
-                font-size: 1.5rem;
-                margin-bottom: 1rem;
-            }
-
-            .controls {
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-
-            button {
-                width: 100%;
-                padding: 12px;
-            }
-
-            input[type="file"] {
-                width: 100%;
-                box-sizing: border-box;
-            }
+        body.shake { animation: shake 0.25s linear; }
+        @keyframes shake {
+            0%   { transform: translate(0, 0); }
+            20%  { transform: translate(-6px, 4px); }
+            40%  { transform: translate(5px, -4px); }
+            60%  { transform: translate(-4px, -3px); }
+            80%  { transform: translate(3px, 4px); }
+            100% { transform: translate(0, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            body.shake { animation: none; }
+            .tile { transition: none; }
+            .tile.arrival canvas { animation: none; }
+            #stamp.show { animation: none; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <h1>Sliding Puzzle</h1>
-        <p>Click on a tile to move it. The goal is to arrange the tiles in order.</p>
-        <div class="controls">
-            <input type="file" id="image-input" accept="image/*">
-            <button id="shuffle">Shuffle</button>
-        </div>
-        <div id="puzzle-container" class="puzzle-container">
-            <!-- Tiles will be generated here -->
-        </div>
-        <div class="game-info">
-            <span id="moves">Moves: 0</span>
-            <span id="timer">Time: 00:00</span>
-        </div>
+    <p id="hint">slide the pieces &mdash; the museum apologizes for the inconvenience</p>
 
-        <p>
-            <a href="https://randomsitesontheweb.com">@randomsitesontheweb</a>
-        </p>
+    <div class="frame">
+        <div id="board"></div>
+        <div id="stamp">RESTORED</div>
     </div>
+
+    <div class="plaque">
+        <div class="title" id="title"></div>
+        <div class="medium" id="medium"></div>
+        <div class="status" id="status"></div>
+        <div class="tally" id="tally"></div>
+    </div>
+
+    <div class="links">
+        <a id="rescramble">scramble it again</a>
+        <a id="next">next exhibit &rarr;</a>
+    </div>
+
     <script>
-        let moves = 0;
-        let timer = 0;
-        let timerInterval;
-        let tiles = [];
-        let emptyTile = { row: 3, col: 3 };
-        const GRID_SIZE = 4;
+    (() => {
+        const INK = '#201a17';
+        const CREAM = '#fff8ef';
+        const PALETTE = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
 
-        document.getElementById('shuffle').addEventListener('click', shuffleTiles);
-        document.getElementById('image-input').addEventListener('change', handleImageUpload);
+        const N = 3, S = 720, T = S / N;   // painting px, tile px
+        const board = document.getElementById('board');
+        const stamp = document.getElementById('stamp');
+        const hint = document.getElementById('hint');
 
-        function startGame() {
-            resetGame();
-            createTiles();
-            shuffleTiles();
-            startTimer();
+        // ---------- deterministic daily painting ----------
+        function mulberry32(seed) {
+            return function () {
+                seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+                let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+        const today = Math.floor(Date.now() / 86400000);
+        let exhibitOffset = 0;
+
+        function makeTitle(rng, blank) {
+            if (blank) return ['Untitled (White)', 'graphite on gesso'];
+            const no = () => 2 + Math.floor(rng() * 97);
+            const patterns = [
+                () => 'Composition No. ' + no(),
+                () => 'Untitled No. ' + no(),
+                () => 'Study in ' + ['Coral', 'Teal', 'Gold', 'Sky', 'Plum'][Math.floor(rng() * 5)],
+                () => 'Still Life with ' + ['Circle', 'Arch', 'Three Dots', 'Ribbon', 'Mountain'][Math.floor(rng() * 5)],
+                () => 'The ' + ['Quiet', 'Long', 'Second', 'Borrowed'][Math.floor(rng() * 4)] + ' ' +
+                      ['Afternoon', 'Window', 'Argument', 'Weather'][Math.floor(rng() * 4)]
+            ];
+            return [patterns[Math.floor(rng() * patterns.length)](), 'oil on panel · undated'];
         }
 
-        function resetGame() {
-            moves = 0;
-            timer = 0;
-            updateDisplay();
-            clearInterval(timerInterval);
-            document.getElementById('puzzle-container').innerHTML = '';
+        // one shape, sticker treatment: offset ink shadow, flat fill, ink stroke
+        function stickerShape(g, path, color) {
+            g.save(); g.translate(9, 9);
+            path(g); g.fillStyle = INK; g.fill();
+            g.restore();
+            path(g);
+            g.fillStyle = color; g.fill();
+            g.lineWidth = 5; g.lineJoin = 'round'; g.strokeStyle = INK; g.stroke();
         }
 
-        function createTiles() {
-            const container = document.getElementById('puzzle-container');
-            const imageInput = document.getElementById('image-input');
-            const tileSize = 100;
+        function paintExhibit() {
+            const rng = mulberry32((today * 31 + exhibitOffset) ^ 0x9e3779b9);
+            const blank = rng() < 0.03;
+            const c = document.createElement('canvas');
+            c.width = S; c.height = S;
+            const g = c.getContext('2d');
+            g.fillStyle = CREAM;
+            g.fillRect(0, 0, S, S);
 
-            container.style.position = 'relative';
-            container.style.border = '2px solid #333';
-            container.style.backgroundColor = '#ddd';
-            
-            for (let row = 0; row < GRID_SIZE; row++) {
-                for (let col = 0; col < GRID_SIZE; col++) {
-                    if (row === GRID_SIZE - 1 && col === GRID_SIZE - 1) continue;
-
-                    const tile = document.createElement('div');
-                    tile.className = 'puzzle-tile';
-                    tile.style.width = tileSize + 'px';
-                    tile.style.height = tileSize + 'px';
-                    tile.style.position = 'absolute';
-
-                    if (imageInput.files && imageInput.files[0]) {
-                        const img = document.createElement('img');
-                        img.src = URL.createObjectURL(imageInput.files[0]);
-                        img.style.width = (GRID_SIZE * tileSize) + 'px';
-                        img.style.height = (GRID_SIZE * tileSize) + 'px';
-                        img.style.position = 'absolute';
-                        img.style.left = `-${col * tileSize}px`;
-                        img.style.top = `-${row * tileSize}px`;
-                        tile.appendChild(img);
-                    } else {
-                        tile.style.backgroundColor = '#ddd';
-                        tile.style.display = 'flex';
-                        tile.style.alignItems = 'center';
-                        tile.style.justifyContent = 'center';
-                        tile.style.fontSize = '24px';
-                        tile.textContent = row * GRID_SIZE + col + 1;
-                    }
-
-                    tile.dataset.row = row;
-                    tile.dataset.col = col;
-                    tile.style.left = (col * tileSize) + 'px';
-                    tile.style.top = (row * tileSize) + 'px';
-                    
-                    tile.addEventListener('click', () => moveTile(tile));
-                    container.appendChild(tile);
-                    tiles.push(tile);
+            if (blank) {
+                // minimalism day: faint restorers' pencil marks so it stays playable
+                g.strokeStyle = '#c5bcae';
+                g.fillStyle = '#b9b0a2';
+                g.font = 'italic 26px Georgia, serif';
+                for (let i = 0; i < N * N; i++) {
+                    const x = (i % N) * T, y = Math.floor(i / N) * T;
+                    g.fillText(String(i + 1), x + 16, y + 38);
+                    g.beginPath();
+                    g.moveTo(x + T * 0.3, y + T * (0.5 + rng() * 0.3));
+                    g.quadraticCurveTo(x + T * 0.55, y + T * (0.3 + rng() * 0.4), x + T * 0.8, y + T * (0.5 + rng() * 0.3));
+                    g.lineWidth = 1.5;
+                    g.stroke();
                 }
+                return { canvas: c, titleParts: makeTitle(rng, true), no: 100 + Math.floor(rng() * 899) };
             }
+
+            const col = () => PALETTE[Math.floor(rng() * PALETTE.length)];
+
+            // one wide band across the whole canvas so shapes read across tile seams
+            const bandY = S * (0.25 + rng() * 0.5), bandH = S * (0.1 + rng() * 0.12);
+            stickerShape(g, gg => {
+                gg.beginPath();
+                gg.moveTo(-20, bandY);
+                for (let x = -20; x <= S + 20; x += 40) {
+                    gg.lineTo(x, bandY + Math.sin(x * 0.015 + bandY) * 18);
+                }
+                gg.lineTo(S + 20, bandY + bandH);
+                for (let x = S + 20; x >= -20; x -= 40) {
+                    gg.lineTo(x, bandY + bandH + Math.sin(x * 0.015) * 18);
+                }
+                gg.closePath();
+            }, col());
+
+            // shapes scattered near tile corners so most pieces get distinguishing marks
+            const kinds = ['sun', 'ring', 'mountain', 'block', 'dots', 'arch', 'zigzag'];
+            const cells = [...Array(N * N).keys()];
+            for (let i = cells.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [cells[i], cells[j]] = [cells[j], cells[i]];
+            }
+            const used = cells.slice(0, 6 + Math.floor(rng() * 2));
+            used.forEach((cell, idx) => {
+                const kind = kinds[(idx + Math.floor(rng() * kinds.length)) % kinds.length];
+                // jitter toward a corner of the cell so the shape crosses seams
+                const cx = (cell % N) * T + T * (rng() < 0.5 ? 0.15 : 0.85) + (rng() - 0.5) * 40;
+                const cy = Math.floor(cell / N) * T + T * (rng() < 0.5 ? 0.15 : 0.85) + (rng() - 0.5) * 40;
+                const color = col();
+                const r = T * (0.28 + rng() * 0.22);
+                switch (kind) {
+                    case 'sun':
+                        stickerShape(g, gg => { gg.beginPath(); gg.arc(cx, cy, r, 0, 7); }, color);
+                        break;
+                    case 'ring':
+                        g.beginPath(); g.arc(cx, cy, r, 0, 7);
+                        g.lineWidth = 26; g.strokeStyle = INK; g.stroke();
+                        g.beginPath(); g.arc(cx, cy, r, 0, 7);
+                        g.lineWidth = 14; g.strokeStyle = color; g.stroke();
+                        break;
+                    case 'mountain':
+                        stickerShape(g, gg => {
+                            gg.beginPath();
+                            gg.moveTo(cx - r * 1.2, cy + r * 0.8);
+                            gg.lineTo(cx, cy - r);
+                            gg.lineTo(cx + r * 1.2, cy + r * 0.8);
+                            gg.closePath();
+                        }, color);
+                        break;
+                    case 'block': {
+                        const w = r * 1.6, h = r * (0.7 + rng() * 0.8), rot = (rng() - 0.5) * 0.5;
+                        stickerShape(g, gg => {
+                            gg.save(); gg.translate(cx, cy); gg.rotate(rot);
+                            gg.beginPath();
+                            if (gg.roundRect) gg.roundRect(-w / 2, -h / 2, w, h, 16);
+                            else gg.rect(-w / 2, -h / 2, w, h);
+                            gg.restore();
+                        }, color);
+                        break;
+                    }
+                    case 'dots':
+                        for (let d = 0; d < 3; d++) {
+                            const dx = cx + (d - 1) * r * 0.8, dy = cy + Math.sin(d * 2 + cell) * r * 0.4;
+                            stickerShape(g, gg => { gg.beginPath(); gg.arc(dx, dy, r * 0.22, 0, 7); }, color);
+                        }
+                        break;
+                    case 'arch':
+                        stickerShape(g, gg => {
+                            gg.beginPath();
+                            gg.arc(cx, cy + r * 0.4, r, Math.PI, 0);
+                            gg.closePath();
+                        }, color);
+                        break;
+                    case 'zigzag': {
+                        const zig = gg => {
+                            gg.beginPath();
+                            gg.moveTo(cx - r * 1.3, cy);
+                            for (let z = 1; z <= 4; z++) {
+                                gg.lineTo(cx - r * 1.3 + z * r * 0.65, cy + (z % 2 ? -r * 0.5 : r * 0.5));
+                            }
+                        };
+                        g.lineJoin = 'round'; g.lineCap = 'round';
+                        zig(g); g.lineWidth = 24; g.strokeStyle = INK; g.stroke();
+                        zig(g); g.lineWidth = 12; g.strokeStyle = color; g.stroke();
+                        break;
+                    }
+                }
+            });
+            return { canvas: c, titleParts: makeTitle(rng, false), no: 100 + Math.floor(rng() * 899) };
         }
 
-        function moveTile(tile) {
-            const row = parseInt(tile.dataset.row);
-            const col = parseInt(tile.dataset.col);
+        // ---------- the puzzle ----------
+        let grid, gap, moves, solvedFlag, painting;
 
-            if (isAdjacent(row, col)) {
-                swapTiles(tile, row, col);
-                moves++;
-                updateDisplay();
+        function cellRow(i) { return Math.floor(i / N); }
+        function cellCol(i) { return i % N; }
+
+        function placeTile(tile) {
+            tile.el.style.transform = 'translate(' + cellCol(tile.cell) * 100 + '%,' + cellRow(tile.cell) * 100 + '%)';
+        }
+
+        function moveSingle(cell, countIt) {
+            const tile = grid[cell];
+            if (!tile) return;
+            grid[gap] = tile;
+            grid[cell] = null;
+            tile.cell = gap;
+            gap = cell;
+            placeTile(tile);
+            if (countIt) moves++;
+        }
+
+        function slideRun(cell) {
+            if (solvedFlag) return;
+            const r = cellRow(cell), c = cellCol(cell);
+            const gr = cellRow(gap), gc = cellCol(gap);
+            if (r !== gr && c !== gc) return;
+            let movedAny = false;
+            while (gap !== cell) {
+                const step = r === gr ? (cellCol(gap) < c ? 1 : -1) : (cellRow(gap) < r ? N : -N);
+                moveSingle(gap + step, true);
+                movedAny = true;
+            }
+            if (movedAny) {
+                dismissHint();
+                updateStatus();
                 checkWin();
             }
         }
 
-        function isAdjacent(row, col) {
-            return (
-                (Math.abs(row - emptyTile.row) === 1 && col === emptyTile.col) ||
-                (Math.abs(col - emptyTile.col) === 1 && row === emptyTile.row)
-            );
-        }
-
-        function swapTiles(tile, row, col) {
-            const tileSize = tile.offsetWidth;
-            tile.style.left = (emptyTile.col * tileSize) + 'px';
-            tile.style.top = (emptyTile.row * tileSize) + 'px';
-            tile.dataset.row = emptyTile.row;
-            tile.dataset.col = emptyTile.col;
-            emptyTile.row = row;
-            emptyTile.col = col;
-        }
-
-        function shuffleTiles() {
-            for (let i = 0; i < 1000; i++) {
-                const movableTiles = tiles.filter(tile => 
-                    isAdjacent(parseInt(tile.dataset.row), parseInt(tile.dataset.col))
-                );
-                const randomTile = movableTiles[Math.floor(Math.random() * movableTiles.length)];
-                moveTile(randomTile);
+        function scramble() {
+            board.classList.add('no-anim');
+            let prev = -1;
+            let n = 0;
+            while (n < 160 || isSolved()) {
+                const opts = [];
+                if (cellRow(gap) > 0) opts.push(gap - N);
+                if (cellRow(gap) < N - 1) opts.push(gap + N);
+                if (cellCol(gap) > 0) opts.push(gap - 1);
+                if (cellCol(gap) < N - 1) opts.push(gap + 1);
+                const pick = opts.filter(o => o !== prev);
+                const cell = pick[Math.floor(Math.random() * pick.length)];
+                prev = gap;
+                moveSingle(cell, false);
+                n++;
             }
+            void board.offsetWidth;
+            board.classList.remove('no-anim');
+        }
+
+        function isSolved() {
+            return grid.every((t, i) => (t === null && i === N * N - 1) || (t && t.home === i));
+        }
+
+        function makeTileCanvas(home) {
+            const tc = document.createElement('canvas');
+            tc.width = T; tc.height = T;
+            tc.getContext('2d').drawImage(painting.canvas,
+                cellCol(home) * T, cellRow(home) * T, T, T, 0, 0, T, T);
+            return tc;
+        }
+
+        function buildBoard() {
+            board.innerHTML = '';
+            board.classList.remove('solved');
+            stamp.classList.remove('show');
+            grid = new Array(N * N).fill(null);
+            gap = N * N - 1;
             moves = 0;
-            updateDisplay();
+            solvedFlag = false;
+            for (let home = 0; home < N * N - 1; home++) {
+                const el = document.createElement('div');
+                el.className = 'tile';
+                el.appendChild(makeTileCanvas(home));
+                const tile = { home, cell: home, el };
+                el.addEventListener('click', () => slideRun(tile.cell));
+                grid[home] = tile;
+                board.appendChild(el);
+                placeTile(tile);
+            }
+            scramble();
+            updateStatus();
         }
 
-        function startTimer() {
-            clearInterval(timerInterval);
-            timer = 0;
-            timerInterval = setInterval(() => {
-                timer++;
-                updateDisplay();
-            }, 1000);
+        // ---------- plaque ----------
+        let restorations = 0;
+        try { restorations = parseInt(localStorage.getItem('restoration-count')) || 0; } catch (e) {}
+
+        function updatePlaque() {
+            document.getElementById('title').textContent = painting.titleParts[0];
+            document.getElementById('medium').textContent =
+                painting.titleParts[1] + ' · exhibit no. ' + painting.no;
+            document.getElementById('tally').textContent =
+                restorations > 0 ? 'restorations to date: ' + restorations : '';
         }
 
-        function updateDisplay() {
-            document.getElementById('moves').textContent = `Moves: ${moves}`;
-            const minutes = Math.floor(timer / 60);
-            const seconds = timer % 60;
-            document.getElementById('timer').textContent = 
-                `Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        function updateStatus() {
+            const el = document.getElementById('status');
+            if (solvedFlag) el.textContent = 'restored in ' + moves + ' moves. donations welcome.';
+            else if (moves === 0) el.textContent = 'condition: scrambled';
+            else el.textContent = 'restoration in progress — ' + moves + ' moves';
         }
 
         function checkWin() {
-            const win = tiles.every(tile => {
-                const row = parseInt(tile.dataset.row);
-                const col = parseInt(tile.dataset.col);
-                const value = parseInt(tile.textContent || '0');
-                return value === row * GRID_SIZE + col + 1;
-            });
-
-            if (win) {
-                clearInterval(timerInterval);
-                alert(`Congratulations! You won in ${moves} moves and ${timer} seconds!`);
-            }
+            if (!isSolved()) return;
+            solvedFlag = true;
+            board.classList.add('solved');
+            // the missing piece returns from the conservation lab
+            const el = document.createElement('div');
+            el.className = 'tile arrival';
+            el.appendChild(makeTileCanvas(N * N - 1));
+            el.style.transform = 'translate(' + cellCol(N * N - 1) * 100 + '%,' + cellRow(N * N - 1) * 100 + '%)';
+            board.appendChild(el);
+            restorations++;
+            try { localStorage.setItem('restoration-count', restorations); } catch (e) {}
+            setTimeout(() => {
+                stamp.classList.add('show');
+                document.body.classList.remove('shake');
+                void document.body.offsetWidth;
+                document.body.classList.add('shake');
+            }, 420);
+            updateStatus();
+            updatePlaque();
         }
 
-        function handleImageUpload(event) {
-            const container = document.getElementById('puzzle-container');
-            container.innerHTML = '';
-            tiles = [];
-            startGame();
+        // ---------- hint / links / keys ----------
+        let hinted = false;
+        function dismissHint() {
+            if (!hinted) { hinted = true; hint.style.opacity = '0'; }
         }
+        setTimeout(dismissHint, 10000);
+
+        document.getElementById('rescramble').addEventListener('click', () => {
+            buildBoard();
+            updatePlaque();
+        });
+        document.getElementById('next').addEventListener('click', () => {
+            exhibitOffset++;
+            painting = paintExhibit();
+            buildBoard();
+            updatePlaque();
+        });
+
+        addEventListener('keydown', e => {
+            if (solvedFlag) return;
+            // arrow = the direction a tile slides into the gap
+            const map = { ArrowLeft: 1, ArrowRight: -1, ArrowUp: N, ArrowDown: -N };
+            if (!(e.key in map)) return;
+            const from = gap + map[e.key];
+            if (from < 0 || from >= N * N) return;
+            if (Math.abs(map[e.key]) === 1 && cellRow(from) !== cellRow(gap)) return;
+            e.preventDefault();
+            moveSingle(from, true);
+            dismissHint();
+            updateStatus();
+            checkWin();
+        });
+
+        // ---------- go ----------
+        painting = paintExhibit();
+        buildBoard();
+        updatePlaque();
+    })();
     </script>
 </body>
 </html>
-
