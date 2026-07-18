@@ -4,394 +4,436 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Metadata - RSONW</title>
-    <meta name="description" content="View all available metadata about your device and browser">
-    <meta name="keywords" content="device metadata, browser info, user agent, platform details">
-    <meta name="author" content="Random Sites On The Web">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/metadata/">
-    <meta property="og:title" content="Device Metadata - Browser & System Info">
-    <meta property="og:description" content="View all available metadata about your device and browser">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/metadata/">
-    <meta property="twitter:title" content="Device Metadata - Browser & System Info">
-    <meta property="twitter:description" content="View all available metadata about your device and browser">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
+    <title>About My Device</title>
+    <meta name="description" content="Your device's annual inspection — examined line by line, remarks included, verdict stamped.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='8' y='4' width='34' height='42' rx='4' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><path d='M14 14h16M14 22h22M14 30h18M14 38h20' stroke='%23201a17' stroke-width='3' stroke-linecap='round'/></svg>">
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
+        }
+        * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 20px;
-            font-family: 'Helvetica Neue', sans-serif;
-            background: #FAFAFA;
-            color: #333;
-            line-height: 1.6;
+            min-height: 100vh;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+            padding: 30px 14px 50px;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
+        .form {
+            position: relative;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-0.8deg);
+            width: min(600px, 94vw);
+            padding: 26px 28px 34px;
+        }
+        .form-head { text-align: center; border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 8px; }
+        .form-head h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(19px, 5vw, 24px);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            margin: 0;
+        }
+        .form-head .sub {
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.6);
+            margin-top: 4px;
+        }
+
+        .row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 9px 0 8px;
+            border-bottom: 1px dotted rgba(32, 26, 23, 0.35);
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        .row.in { animation: rowIn 0.28s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
+        @keyframes rowIn {
+            0% { opacity: 0; transform: translateY(6px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .box {
+            width: 15px;
+            height: 15px;
+            border: 2px solid var(--ink);
+            border-radius: 3px;
+            flex-shrink: 0;
+            position: relative;
+            top: 1px;
+        }
+        .box::after {
+            content: '';
+            position: absolute;
+            left: 2px;
+            top: -2px;
+            width: 8px;
+            height: 11px;
+            border-right: 3px solid var(--ink);
+            border-bottom: 3px solid var(--ink);
+            transform: rotate(40deg) scale(0);
+        }
+        .row.in .box::after { animation: checkIn 0.2s ease-out 0.12s forwards; }
+        @keyframes checkIn { to { transform: rotate(40deg) scale(1); } }
+
+        .lab {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            width: 108px;
+        }
+        .val { font-size: 15px; min-width: 0; }
+        .val .v { word-break: break-word; }
+        .val .remark {
+            display: block;
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.6);
+        }
+
+        .form-foot {
+            margin-top: 16px;
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.6);
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stamp {
+            position: absolute;
+            right: 18px;
+            bottom: 44px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(17px, 4.5vw, 24px);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--coral);
+            border: 3px solid var(--coral);
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: inset 0 0 0 2px var(--cream), inset 0 0 0 4px var(--coral);
+            padding: 8px 16px;
+            transform: rotate(-9deg) scale(0);
+            pointer-events: none;
+            background: rgba(255, 248, 239, 0.6);
+        }
+        .stamp.gold { color: #c99a12; border-color: #c99a12; box-shadow: inset 0 0 0 2px var(--cream), inset 0 0 0 4px #c99a12; }
+        .stamp.show { animation: stampIn 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes stampIn {
+            0% { transform: rotate(4deg) scale(2.2); opacity: 0; }
+            65% { transform: rotate(-10deg) scale(0.95); opacity: 1; }
+            100% { transform: rotate(-9deg) scale(1); opacity: 1; }
         }
 
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
+        button.pill {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 14px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            background: var(--coral);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(1.4deg);
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        button.pill:hover { transform: translate(-2px, -2px) rotate(1.4deg); box-shadow: 5px 5px 0 var(--ink); }
+        button.pill:active { transform: translate(2px, 2px) rotate(1.4deg); box-shadow: 1px 1px 0 var(--ink); }
+
+        @keyframes thunk {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, 3px); }
+            50% { transform: translate(-3px, 1px); }
+            75% { transform: translate(1px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+        body.thunk { animation: thunk 0.22s linear; }
+
+        @media (max-width: 480px) {
+            .row { flex-wrap: wrap; }
+            .lab { width: auto; }
+            .val { flex-basis: 100%; padding-left: 27px; }
         }
 
-        .section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 6px;
-        }
-
-        .section h2 {
-            color: #2c3e50;
-            margin-top: 0;
-            border-bottom: 2px solid #e9ecef;
-            padding-bottom: 10px;
-        }
-
-        .metadata-item {
-            margin: 10px 0;
-            padding: 10px;
-            background: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .metadata-label {
-            font-weight: bold;
-            color: #6c757d;
-        }
-
-        .metadata-value {
-            margin-left: 10px;
-            word-break: break-all;
-        }
-
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-
-            .container {
-                padding: 15px;
-            }
-
-            .section {
-                padding: 15px;
-            }
+        @media (prefers-reduced-motion: reduce) {
+            .row.in { animation: none; opacity: 1; transform: none; }
+            .row.in .box::after { animation: none; transform: rotate(40deg) scale(1); }
+            .stamp.show { animation: none; transform: rotate(-9deg) scale(1); opacity: 1; }
+            body.thunk { animation: none; }
+            button.pill { transition: none; }
         }
     </style>
 </head>
 <body>
+    <div class="form">
+        <div class="form-head">
+            <h1>Device Inspection</h1>
+            <div class="sub">form 27-B, annual &middot; subject presented itself voluntarily</div>
+        </div>
+        <div id="rows"></div>
+        <div class="form-foot">
+            <span>inspector: this website</span>
+            <span id="examDate"></span>
+        </div>
+        <div class="stamp" id="stamp">Fit for Browsing</div>
+    </div>
 
-    <h1>About My Device</h1>
-    <div class="container" id="metadata-container"></div>
-
-    <style>
-        .container { padding: 20px; }
-        .section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        .section h2 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        .data-item {
-            margin: 5px 0;
-            padding: 5px;
-        }
-    </style>
+    <button class="pill" id="reBtn">Re-Examine</button>
 
     <script>
-    async function gatherMetadata() {
-        const sections = {
-            browser: {
-                title: "Browser Information",
-                data: {
-                    userAgent: navigator.userAgent,
-                    language: navigator.language,
-                    languages: navigator.languages?.join(', '),
-                    cookieEnabled: navigator.cookieEnabled,
-                    doNotTrack: navigator.doNotTrack,
-                    plugins: Array.from(navigator.plugins).map(p => p.name).join(', '),
-                    mimeTypes: Array.from(navigator.mimeTypes).map(m => m.type).join(', '),
-                    vendor: navigator.vendor,
-                    platform: navigator.platform,
-                    javaEnabled: navigator.javaEnabled(),
-                    pdfViewerEnabled: navigator.pdfViewerEnabled,
-                    webdriver: navigator.webdriver,
+    (() => {
+        const rowsEl = document.getElementById('rows');
+        const stampEl = document.getElementById('stamp');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        document.getElementById('examDate').textContent =
+            'examined ' + new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+        // ---- readings ----
+        function parseUA() {
+            const ua = navigator.userAgent;
+            let browser = 'an unidentified browser';
+            let m;
+            if ((m = ua.match(/Edg\/(\d+)/))) browser = 'Edge ' + m[1];
+            else if ((m = ua.match(/Firefox\/(\d+)/))) browser = 'Firefox ' + m[1];
+            else if ((m = ua.match(/Chrome\/(\d+)/))) browser = 'Chrome ' + m[1];
+            else if (/Safari/.test(ua) && (m = ua.match(/Version\/(\d+)/))) browser = 'Safari ' + m[1];
+            let os = 'an unidentified system', osRemark = 'it is what it is.';
+            if (/Windows/.test(ua)) { os = 'Windows'; osRemark = 'a Windows machine. brave.'; }
+            else if (/iPhone|iPad/.test(ua)) { os = 'iOS'; osRemark = 'a phone, pretending otherwise.'; }
+            else if (/Mac/.test(ua)) { os = 'macOS'; osRemark = 'an Apple product. it knows.'; }
+            else if (/Android/.test(ua)) { os = 'Android'; osRemark = 'an Android. resilient.'; }
+            else if (/Linux/.test(ua)) { os = 'Linux'; osRemark = 'Linux. it chose this life.'; }
+            return { browser, os, osRemark };
+        }
+
+        function gpuName() {
+            try {
+                const gl = document.createElement('canvas').getContext('webgl');
+                if (!gl) return null;
+                const ext = gl.getExtension('WEBGL_debug_renderer_info');
+                let name = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+                name = String(name).replace(/^ANGLE \((.*)\)$/, '$1');
+                if (name.length > 70) name = name.slice(0, 67) + '…';
+                return name;
+            } catch (e) { return null; }
+        }
+
+        function measureFps() {
+            return new Promise(resolve => {
+                let frames = 0;
+                const start = performance.now();
+                function tick(now) {
+                    frames++;
+                    if (now - start < 900) requestAnimationFrame(tick);
+                    else {
+                        const fps = Math.round(frames / ((now - start) / 1000));
+                        resolve(fps >= 58 && fps <= 62 ? 60 : fps);
+                    }
                 }
-            },
-            screen: {
-                title: "Screen & Window",
-                data: {
-                    screenResolution: `${screen.width}x${screen.height}`,
-                    screenColorDepth: `${screen.colorDepth}-bit`,
-                    screenOrientation: screen.orientation?.type,
-                    windowSize: `${window.innerWidth}x${window.innerHeight}`,
-                    devicePixelRatio: window.devicePixelRatio,
-                    screenAvailSize: `${screen.availWidth}x${screen.availHeight}`,
-                }
-            },
-            system: {
-                title: "System Information",
-                data: {
-                    platform: navigator.userAgentData?.platform,
-                    cores: navigator.hardwareConcurrency,
-                    deviceMemory: `${navigator.deviceMemory || 'Unknown'} GB`,
-                    maxTouchPoints: navigator.maxTouchPoints,
-                    oscpu: navigator.oscpu,
-                }
-            },
-            network: {
-                title: "Network Information",
-                data: {
-                    onlineStatus: navigator.onLine,
-                    connectionType: navigator.connection?.effectiveType,
-                    downlinkSpeed: navigator.connection?.downlink,
-                    rtt: navigator.connection?.rtt,
-                    saveData: navigator.connection?.saveData,
-                }
-            },
-            graphics: {
-                title: "Graphics Information",
-                data: await getGraphicsInfo()
-            },
-            media: {
-                title: "Media Capabilities",
-                data: await getMediaCapabilities()
-            },
-            storage: {
-                title: "Storage Information",
-                data: await getStorageInfo()
-            },
-            sensors: {
-                title: "Device Sensors",
-                data: {
-                    accelerometer: 'Accelerometer' in window,
-                    gyroscope: 'Gyroscope' in window,
-                    magnetometer: 'Magnetometer' in window,
-                    ambient: 'AmbientLightSensor' in window,
-                    proximity: 'ProximitySensor' in window,
-                }
-            },
-            time: {
-                title: "Time & Location",
-                data: {
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    timeformat: Intl.DateTimeFormat().resolvedOptions().locale,
-                    geolocation: 'geolocation' in navigator,
-                }
-            },
-            features: {
-                title: "Browser Features & APIs",
-                data: await getFeatureSupport()
-            },
-            performance: {
-                title: "Performance Data",
-                data: {
-                    memory: performance.memory ? {
-                        jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
-                        totalJSHeapSize: performance.memory.totalJSHeapSize,
-                        usedJSHeapSize: performance.memory.usedJSHeapSize
-                    } : 'Not available',
-                    timing: performance.timing ? {
-                        navigationStart: performance.timing.navigationStart,
-                        loadEventEnd: performance.timing.loadEventEnd
-                    } : 'Not available'
-                }
-            },
-            fonts: {
-                title: "Font Information",
-                data: await getFontData()
-            },
-            rendering: {
-                title: "Rendering Capabilities",
-                data: {
-                    requestAnimationFrame: 'requestAnimationFrame' in window,
-                    webAnimations: 'animate' in Element.prototype,
-                    canvas2D: '2d' in document.createElement('canvas').getContext('2d'),
-                    webGL2: !!document.createElement('canvas').getContext('webgl2'),
-                    colorGamut: getColorGamut(),
-                    contrast: matchMedia('(prefers-contrast: high)').matches ? 'high' : 'normal',
-                    reducedMotion: matchMedia('(prefers-reduced-motion)').matches,
-                    hdr: matchMedia('(dynamic-range: high)').matches
-                }
-            },
-            inputDevices: {
-                title: "Input Capabilities",
-                data: {
-                    pointer: matchMedia('(pointer: fine)').matches ? 'fine' : 'coarse',
-                    hover: matchMedia('(hover: hover)').matches ? 'can hover' : 'no hover',
-                    maxTouchPoints: navigator.maxTouchPoints,
-                    gamepad: 'getGamepads' in navigator,
-                    virtualKeyboard: 'virtualKeyboard' in navigator,
-                    keyboard: 'keyboard' in navigator
-                }
-            },
-            powerPreferences: {
-                title: "Power & Battery",
-                data: {
-                    batteryManager: 'getBattery' in navigator,
-                    powerPreference: getSystemPowerPreference(),
-                    saveData: navigator.connection?.saveData || 'unknown'
-                }
+                requestAnimationFrame(tick);
+            });
+        }
+
+        function windowReading() {
+            const pct = Math.min(100, Math.round(innerWidth * innerHeight / (screen.width * screen.height) * 100));
+            return {
+                v: innerWidth + '×' + innerHeight,
+                remark: pct >= 97 ? 'using the whole screen. committed.' : 'using ' + pct + '% of the screen. the rest is decorative.'
+            };
+        }
+
+        function batteryReading(b) {
+            const pct = Math.round(b.level * 100);
+            let remark;
+            if (b.charging && pct === 100) remark = 'full and still charging. anxious.';
+            else if (b.charging) remark = pct + '% and climbing.';
+            else if (pct < 15) remark = pct + '% and falling. godspeed.';
+            else remark = pct + '% and falling.';
+            return { v: pct + '%' + (b.charging ? ', charging' : ''), remark };
+        }
+
+        // ---- the examination ----
+        const ua = parseUA();
+
+        function buildRows() {
+            const cores = navigator.hardwareConcurrency || 0;
+            const mem = navigator.deviceMemory;
+            const touch = navigator.maxTouchPoints || 0;
+            const fine = matchMedia('(pointer: fine)').matches;
+            const hover = matchMedia('(hover: hover)').matches;
+            const conn = navigator.connection;
+            const langs = navigator.languages || [navigator.language];
+            const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+            const gpu = gpuName();
+            const totalPx = screen.width * screen.height;
+
+            return [
+                { id: 'model', lab: 'Make & Model', v: ua.browser + ' on ' + ua.os, remark: ua.osRemark },
+                { id: 'screen', lab: 'Screen', v: screen.width + '×' + screen.height + ' at ' + (window.devicePixelRatio || 1) + '× density',
+                  remark: totalPx > 4000000 ? 'an excessive number of pixels.' : 'all pixels present and accounted for.' },
+                { id: 'window', lab: 'Window', ...windowReading() },
+                { id: 'brain', lab: 'Brain', v: cores ? cores + ' cores' : 'core count withheld',
+                  remark: cores >= 12 ? 'mostly idle. it could be doing so much more.' : cores ? 'they take turns.' : 'a private matter, apparently.' },
+                { id: 'memory', lab: 'Memory', v: mem ? mem + ' GB' : 'undisclosed',
+                  remark: mem ? 'self-reported. we did not open it up.' : 'fair enough. everyone forgets things.' },
+                { id: 'gfx', lab: 'Graphics', v: gpu || 'none detected', remark: gpu ? 'it tries its best.' : 'imagination only.' },
+                { id: 'reflex', lab: 'Reflexes', v: 'measuring…', remark: 'hold still.', async: true },
+                { id: 'touch', lab: 'Touch', v: touch ? 'up to ' + touch + ' fingers' : 'none',
+                  remark: touch ? 'it likes being touched. within reason.' : 'does not wish to be touched.' },
+                { id: 'pointer', lab: 'Motor Skills', v: (fine ? 'fine' : 'broad') + ' pointer' + (hover ? ', can hover' : ''),
+                  remark: fine ? 'excellent fine motor control.' : 'broad gestures only.' },
+                { id: 'conn', lab: 'Connection', v: conn && conn.effectiveType ? '"' + conn.effectiveType + '"' + (conn.downlink ? ', ~' + conn.downlink + ' Mbps' : '') : 'unspecified',
+                  remark: conn && conn.effectiveType ? 'allegedly.' : 'it will not say. respect that.' },
+                { id: 'online', lab: 'Status', v: navigator.onLine ? 'connected' : 'offline',
+                  remark: navigator.onLine ? 'obviously.' : 'and yet, here we are.' },
+                { id: 'battery', lab: 'Battery', v: 'checking…', remark: '', async: true },
+                { id: 'lang', lab: 'Languages', v: langs[0] + (langs.length > 1 ? ' and ' + (langs.length - 1) + ' other' + (langs.length > 2 ? 's' : '') : ''),
+                  remark: langs.length > 3 ? 'a polyglot.' : 'sufficient for the internet.' },
+                { id: 'time', lab: 'Local Time', v: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown',
+                  remark: 'punctual so far.' },
+                { id: 'cookies', lab: 'Cookies', v: navigator.cookieEnabled ? 'accepted' : 'refused',
+                  remark: navigator.cookieEnabled ? 'no self-control.' : 'admirable restraint.' },
+                { id: 'operator', lab: 'Operator', v: navigator.webdriver ? 'an automation' : 'a human',
+                  remark: navigator.webdriver ? 'hello, robot.' : 'probably.' },
+                { id: 'mood', lab: 'Mood', v: dark ? 'prefers the dark' : 'keeps the lights on',
+                  remark: dark ? 'no judgment.' : 'sunny disposition.' },
+                { id: 'storage', lab: 'Storage', v: 'assessing…', remark: '', async: true }
+            ];
+        }
+
+        const cells = {};
+
+        function renderRow(r) {
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.innerHTML =
+                '<div class="box"></div>' +
+                '<div class="lab">' + r.lab + '</div>' +
+                '<div class="val"><span class="v"></span><span class="remark"></span></div>';
+            row.querySelector('.v').textContent = r.v;
+            row.querySelector('.remark').textContent = r.remark;
+            rowsEl.appendChild(row);
+            cells[r.id] = row;
+            return row;
+        }
+
+        function setRow(id, v, remark) {
+            const row = cells[id];
+            if (!row) return;
+            row.querySelector('.v').textContent = v;
+            row.querySelector('.remark').textContent = remark;
+        }
+
+        let examTimers = [];
+
+        function runExam() {
+            examTimers.forEach(clearTimeout);
+            examTimers = [];
+            rowsEl.innerHTML = '';
+            stampEl.classList.remove('show', 'gold');
+            stampEl.textContent = 'Fit for Browsing';
+
+            const rows = buildRows();
+            rows.forEach(renderRow);
+
+            const step = reducedMotion.matches ? 0 : 110;
+            rows.forEach((r, i) => {
+                examTimers.push(setTimeout(() => cells[r.id].classList.add('in'), 200 + i * step));
+            });
+
+            // async findings fill in when ready
+            measureFps().then(fps => {
+                setRow('reflex', fps + ' frames per second',
+                    fps >= 100 ? 'a show-off.' : fps >= 55 ? 'adequate.' : 'sluggish. more sleep, less tabs.');
+            });
+
+            if (navigator.getBattery) {
+                navigator.getBattery().then(b => {
+                    const upd = () => { const r = batteryReading(b); setRow('battery', r.v, r.remark); };
+                    upd();
+                    b.addEventListener('levelchange', upd);
+                    b.addEventListener('chargingchange', upd);
+                }).catch(() => setRow('battery', 'unknowable', 'it keeps its energy private.'));
+            } else {
+                setRow('battery', 'none found', 'it lives on the wall.');
             }
-        };
 
-        displayMetadata(sections);
-    }
-
-    async function getGraphicsInfo() {
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        
-        return {
-            webglVendor: gl?.getParameter(gl.VENDOR),
-            webglRenderer: gl?.getParameter(gl.RENDERER),
-            webglVersion: gl?.getParameter(gl.VERSION),
-            webglShading: gl?.getParameter(gl.SHADING_LANGUAGE_VERSION),
-            maxTextureSize: gl?.getParameter(gl.MAX_TEXTURE_SIZE),
-            maxRenderbufferSize: gl?.getParameter(gl.MAX_RENDERBUFFER_SIZE),
-            extensions: gl?.getSupportedExtensions().join(', '),
-        };
-    }
-
-    async function getMediaCapabilities() {
-        const videoCodecs = ['h264', 'vp8', 'vp9', 'av1'];
-        const audioCodecs = ['aac', 'opus', 'vorbis'];
-        const codecs = {};
-
-        for (const video of videoCodecs) {
-            codecs[`video_${video}`] = await testCodec('video', video);
-        }
-        for (const audio of audioCodecs) {
-            codecs[`audio_${audio}`] = await testCodec('audio', audio);
-        }
-
-        return {
-            ...codecs,
-            audioContext: 'AudioContext' in window,
-            webAudioAPI: 'AudioContext' in window,
-            mediaRecorder: 'MediaRecorder' in window,
-            mediaDevices: 'mediaDevices' in navigator,
-        };
-    }
-
-    async function getStorageInfo() {
-        const estimate = await navigator.storage?.estimate() || {};
-        return {
-            quota: estimate.quota,
-            usage: estimate.usage,
-            persistent: navigator.persistentStorage !== undefined,
-            localStorage: 'localStorage' in window,
-            sessionStorage: 'sessionStorage' in window,
-            indexedDB: 'indexedDB' in window,
-        };
-    }
-
-    async function getFeatureSupport() {
-        return {
-            webRTC: 'RTCPeerConnection' in window,
-            webGL: 'WebGLRenderingContext' in window,
-            webVR: 'getVRDisplays' in navigator,
-            webXR: 'xr' in navigator,
-            bluetooth: 'bluetooth' in navigator,
-            usb: 'usb' in navigator,
-            serial: 'serial' in navigator,
-            nfc: 'nfc' in navigator,
-            battery: 'getBattery' in navigator,
-            credentials: 'credentials' in navigator,
-            permissions: 'permissions' in navigator,
-            presentation: 'presentation' in navigator,
-            speechSynthesis: 'speechSynthesis' in window,
-            speechRecognition: 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window,
-            payment: 'PaymentRequest' in window,
-            bluetooth: 'bluetooth' in navigator,
-            clipboard: 'clipboard' in navigator,
-            share: 'share' in navigator,
-            serviceWorker: 'serviceWorker' in navigator,
-        };
-    }
-
-    async function testCodec(type, codec) {
-        const config = {
-            video: type === 'video' ? {contentType: `video/${codec}`} : undefined,
-            audio: type === 'audio' ? {contentType: `audio/${codec}`} : undefined
-        };
-        try {
-            return await MediaRecorder.isTypeSupported(`${type}/${codec}`);
-        } catch {
-            return false;
-        }
-    }
-
-    async function getFontData() {
-        if (!document.fonts || !document.fonts.check) return 'Font API not supported';
-        
-        const commonFonts = [
-            'Arial', 'Times New Roman', 'Courier New', 'Helvetica',
-            'Calibri', 'Verdana', 'Georgia', 'Palatino',
-            'Garamond', 'Bookman', 'Comic Sans MS', 'Trebuchet MS'
-        ];
-
-        const fontData = {};
-        for (const font of commonFonts) {
-            fontData[font] = await document.fonts.check(`12px "${font}"`);
-        }
-        return fontData;
-    }
-
-    function getColorGamut() {
-        const gamuts = ['srgb', 'p3', 'rec2020'];
-        for (const gamut of gamuts) {
-            if (matchMedia(`(color-gamut: ${gamut})`).matches) {
-                return gamut;
+            if (navigator.storage && navigator.storage.estimate) {
+                navigator.storage.estimate().then(est => {
+                    const gb = v => (v / 1073741824).toFixed(v > 10737418240 ? 0 : 1);
+                    if (est.quota) {
+                        setRow('storage', gb(est.quota) + ' GB offered to this site',
+                            'it is not using ' + (est.usage ? 'much' : 'any') + ' of it.');
+                    } else {
+                        setRow('storage', 'unspecified', 'somewhere in there.');
+                    }
+                }).catch(() => setRow('storage', 'unspecified', 'somewhere in there.'));
+            } else {
+                setRow('storage', 'unspecified', 'somewhere in there.');
             }
+
+            // verdict
+            examTimers.push(setTimeout(() => {
+                if (Math.random() < 0.04) {
+                    stampEl.textContent = 'Exceptional Unit';
+                    stampEl.classList.add('gold');
+                }
+                stampEl.classList.add('show');
+                if (!reducedMotion.matches) {
+                    document.body.classList.add('thunk');
+                    setTimeout(() => document.body.classList.remove('thunk'), 250);
+                }
+            }, 200 + rows.length * step + 500));
         }
-        return 'unknown';
-    }
 
-    function getSystemPowerPreference() {
-        if (matchMedia('(prefers-reduced-data: reduce)').matches) return 'reduced-data';
-        if (matchMedia('(prefers-reduced-transparency: reduce)').matches) return 'reduced-transparency';
-        return 'no-preference';
-    }
+        // ---- live vitals ----
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            if (!cells.window) return;
+            setRow('window', innerWidth + '×' + innerHeight, 'hold still.');
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const r = windowReading();
+                setRow('window', r.v, r.remark);
+            }, 600);
+        });
+        window.addEventListener('online', () => setRow('online', 'connected', 'obviously.'));
+        window.addEventListener('offline', () => setRow('online', 'offline', 'and yet, here we are.'));
 
-    function displayMetadata(sections) {
-        const container = document.getElementById('metadata-container');
-        container.innerHTML = Object.entries(sections)
-            .map(([key, section]) => `
-                <div class="section">
-                    <h2>${section.title}</h2>
-                    ${Object.entries(section.data)
-                        .map(([key, value]) => `
-                            <div class="data-item">
-                                <strong>${key}:</strong> ${value}
-                            </div>
-                        `).join('')}
-                </div>
-            `).join('');
-    }
+        document.getElementById('reBtn').addEventListener('click', runExam);
 
-    // Initialize
-    gatherMetadata();
+        runExam();
+    })();
     </script>
 </body>
 </html>
