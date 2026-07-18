@@ -2012,7 +2012,7 @@
                     name: key + ' arrow',
                     hot: [5, 3],
                     draw: sticker(arrowPath, val),
-                    fx: { trail: 'comet', click: 'burst', color: val, every: 20 },
+                    fx: { trail: 'comet', click: 'confetti', color: val, every: 20 },
                 }));
                 CURSORS.push(
                     { id: 'paintball', name: 'paintball gun', hot: [3, 13], draw: sticker(gunPath, color('--teal', '#2fb0a3')),
@@ -2116,6 +2116,11 @@
                     g.globalAlpha = alpha;
                     g.fillStyle = color;
                     g.fill();
+                    // bold comic outline so it reads on the paper background
+                    g.lineWidth = Math.max(1.2, r * 0.22);
+                    g.lineJoin = 'round';
+                    g.strokeStyle = INK;
+                    g.stroke();
                     g.restore();
                 }
 
@@ -2128,6 +2133,10 @@
                     g.globalAlpha = alpha;
                     g.fillStyle = color;
                     g.fill();
+                    g.lineWidth = Math.max(1.6, 2.2 * 32 / s);   // screen-constant outline
+                    g.lineJoin = 'round';
+                    g.strokeStyle = INK;
+                    g.stroke();
                     g.restore();
                 }
 
@@ -2201,32 +2210,43 @@
                         if (p.vrot) p.rot += p.vrot;
                         const a = Math.min(1, p.life);
                         switch (p.kind) {
-                            case 'dot':
+                            case 'dot': {
                                 fxCtx.globalAlpha = a;
-                                fxCtx.fillStyle = p.color;
+                                const dr = p.r * (0.4 + a * 0.6);
                                 fxCtx.beginPath();
-                                fxCtx.arc(p.x, p.y, p.r * (0.4 + a * 0.6), 0, Math.PI * 2);
+                                fxCtx.arc(p.x, p.y, dr, 0, Math.PI * 2);
+                                fxCtx.fillStyle = p.color;
                                 fxCtx.fill();
+                                if (dr > 1.6) {
+                                    fxCtx.lineWidth = 1.4;
+                                    fxCtx.strokeStyle = INK;
+                                    fxCtx.stroke();
+                                }
                                 break;
+                            }
                             case 'spark':
                                 fxCtx.globalAlpha = a;
-                                fxCtx.fillStyle = `hsl(${p.hue}, 90%, 65%)`;
                                 fxCtx.beginPath();
                                 fxCtx.arc(p.x, p.y, 2 + a * 2.5, 0, Math.PI * 2);
+                                fxCtx.fillStyle = `hsl(${p.hue}, 90%, 60%)`;
                                 fxCtx.fill();
+                                fxCtx.lineWidth = 1.3;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
                                 break;
                             case 'ring':
                                 fxCtx.globalAlpha = a;
-                                fxCtx.strokeStyle = p.color;
-                                fxCtx.lineWidth = p.lw;
                                 fxCtx.beginPath();
-                                fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                                fxCtx.arc(p.x, p.y, Math.max(0.5, p.r), 0, Math.PI * 2);
+                                fxCtx.lineWidth = p.lw + 2.5;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
+                                fxCtx.lineWidth = p.lw;
+                                fxCtx.strokeStyle = p.color;
                                 fxCtx.stroke();
                                 break;
                             case 'wring': {
                                 fxCtx.globalAlpha = a;
-                                fxCtx.strokeStyle = p.color;
-                                fxCtx.lineWidth = p.lw;
                                 fxCtx.beginPath();
                                 for (let k = 0; k <= 26; k++) {
                                     const ang = (Math.PI * 2 * k) / 26;
@@ -2236,6 +2256,11 @@
                                     k === 0 ? fxCtx.moveTo(wx, wy) : fxCtx.lineTo(wx, wy);
                                 }
                                 fxCtx.closePath();
+                                fxCtx.lineWidth = p.lw + 2;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
+                                fxCtx.lineWidth = p.lw;
+                                fxCtx.strokeStyle = p.color;
                                 fxCtx.stroke();
                                 break;
                             }
@@ -2247,27 +2272,31 @@
                                 break;
                             case 'zap':
                                 fxCtx.globalAlpha = a;
-                                fxCtx.strokeStyle = p.color;
-                                fxCtx.lineWidth = p.lw;
                                 fxCtx.lineJoin = 'round';
+                                fxCtx.lineCap = 'round';
                                 fxCtx.beginPath();
                                 p.pts.forEach(([zx, zy], k) =>
                                     k === 0 ? fxCtx.moveTo(zx, zy) : fxCtx.lineTo(zx, zy));
+                                fxCtx.lineWidth = p.lw + 2.2;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
+                                fxCtx.lineWidth = p.lw;
+                                fxCtx.strokeStyle = p.color;
                                 fxCtx.stroke();
                                 break;
                             case 'strike':
-                                // glow pass, then hot core
-                                fxCtx.globalAlpha = a * 0.45;
-                                fxCtx.strokeStyle = ZAP_YELLOW;
-                                fxCtx.lineWidth = 7;
+                                // comic-book bolt: fat ink body, hot gold core
+                                fxCtx.globalAlpha = a;
                                 fxCtx.lineJoin = 'round';
+                                fxCtx.lineCap = 'round';
                                 fxCtx.beginPath();
                                 p.pts.forEach(([zx, zy], k) =>
                                     k === 0 ? fxCtx.moveTo(zx, zy) : fxCtx.lineTo(zx, zy));
+                                fxCtx.lineWidth = 9;
+                                fxCtx.strokeStyle = INK;
                                 fxCtx.stroke();
-                                fxCtx.globalAlpha = a;
-                                fxCtx.strokeStyle = '#fffbe8';
-                                fxCtx.lineWidth = 2.5;
+                                fxCtx.lineWidth = 4.5;
+                                fxCtx.strokeStyle = ZAP_YELLOW;
                                 fxCtx.stroke();
                                 break;
                             case 'flash':
@@ -2292,6 +2321,10 @@
                                 }
                                 fxCtx.closePath();
                                 fxCtx.fill();
+                                fxCtx.lineWidth = 2;
+                                fxCtx.lineJoin = 'round';
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
                                 break;
                             }
                             case 'rect':
@@ -2301,6 +2334,9 @@
                                 fxCtx.globalAlpha = a;
                                 fxCtx.fillStyle = p.color;
                                 fxCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                                fxCtx.lineWidth = 1.4;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
                                 fxCtx.restore();
                                 break;
                             case 'draw': {
