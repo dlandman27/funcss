@@ -4,87 +4,250 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Color Generator</title>
-
-    <!-- Add metadata -->
-    <meta name="description" content="Generate and copy random color codes with a single click">
-    <meta name="keywords" content="color generator, random colors, hex codes">
-    <meta name="author" content="Random Sites On The Web">
+    <title>Random Color</title>
+    <meta name="description" content="A random color, its codes, and a copy button. That's it. That's the site.">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='25' cy='25' r='20' fill='%23ff0000'><animate attributeName='fill' values='%23ff0000;%2300ff00;%230000ff;%23ff0000' dur='4s' repeatCount='indefinite'/></circle></svg>">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/randomcolor/">
-    <meta property="og:title" content="Random Color Generator">
-    <meta property="og:description" content="Generate and copy random color codes with a single click">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/randomcolor/">
-    <meta property="twitter:title" content="Random Color Generator">
-    <meta property="twitter:description" content="Generate and copy random color codes with a single click">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <style>
-        body{
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            padding: 0;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            box-sizing: border-box;
-            text-align: center;
+            font-family: Georgia, 'Times New Roman', serif;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
-        #color{
-            /* Remove the filter: invert(1); line */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            transition: background-color 0.35s ease;
+            cursor: pointer;
+        }
+
+        #hex {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(48px, 12vw, 120px);
+            letter-spacing: 0.02em;
+            line-height: 1;
+            transition: color 0.35s ease;
+            transform: rotate(-1.2deg);
+        }
+
+        .codes {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+            font-size: clamp(13px, 2vw, 17px);
+            font-style: italic;
+            opacity: 0.85;
+            transition: color 0.35s ease;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .buttons { display: flex; gap: 10px; margin-top: 12px; }
+
+        .pill {
+            background: transparent;
+            border: 2px solid currentColor;
+            border-radius: 999px;
+            padding: 11px 24px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 15px;
+            color: inherit;
+            cursor: pointer;
+            transition: transform 0.15s ease, color 0.35s ease;
+        }
+
+        .pill:hover { transform: translate(-2px, -2px) rotate(-1.5deg); }
+        .pill:active { transform: translate(2px, 2px); }
+
+        #history {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .swatch {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 0, 0, 0.55);
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            animation: swatchIn 0.25s cubic-bezier(0.22, 1.6, 0.36, 1);
+        }
+
+        @keyframes swatchIn {
+            from { transform: scale(0.2); }
+            to { transform: scale(1); }
+        }
+
+        .swatch:hover { transform: translateY(-4px) rotate(-4deg); }
+
+        #toast {
+            position: fixed;
+            top: 8vh;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg) scale(0);
+            border: 2px solid currentColor;
+            border-radius: 999px;
+            padding: 9px 22px;
+            font-style: italic;
+            font-size: 15px;
+            pointer-events: none;
+        }
+
+        #toast.show { animation: toastIn 1.6s ease forwards; }
+
+        @keyframes toastIn {
+            0% { transform: translateX(-50%) rotate(-2deg) scale(0); }
+            15% { transform: translateX(-50%) rotate(-2deg) scale(1.08); }
+            22% { transform: translateX(-50%) rotate(-2deg) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        #hint {
+            position: fixed;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-style: italic;
+            font-size: clamp(12px, 1.7vw, 15px);
+            opacity: 0.5;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <script>
-        $(document).ready(function(){
-            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
-            // Convert the hex color to its inverse
-            const inverseColor = '#' + (0xFFFFFF ^ parseInt(randomColor.substring(1), 16)).toString(16).padStart(6, '0');
-            
-            $('body').css('backgroundColor', randomColor);
-            $('#color').text(randomColor);
-            $('#color').css('color', inverseColor); // Set the inverse color for text
-            
-            const safeFonts = ['Arial', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Georgia', 'Garamond', 'Courier New', 'Brush Script MT'];
-            const randomFont = safeFonts[Math.floor(Math.random() * safeFonts.length)];
-            $('#color').css('font-family', randomFont);
-        });
-    </script>
-
-    <div>
-        <h1 id="color"></h1>
-        <button onclick="navigator.clipboard.writeText($('#color').text())">Copy Color</button>
-        <button onclick="location.reload()">New Color</button>
+    <div id="hint">click anywhere for another one &middot; space works too</div>
+    <div id="hex"></div>
+    <div class="codes"><span id="rgb"></span><span id="hsl"></span></div>
+    <div class="buttons">
+        <button class="pill" id="copyBtn">copy hex</button>
+        <button class="pill" id="newBtn">new color</button>
     </div>
-    <style>
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            background-color: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
-            margin: 0 5px;
+    <div id="history"></div>
+    <div id="toast"></div>
+
+    <script>
+        const hexEl = document.getElementById('hex');
+        const rgbEl = document.getElementById('rgb');
+        const hslEl = document.getElementById('hsl');
+        const historyEl = document.getElementById('history');
+        const toast = document.getElementById('toast');
+
+        let current = null;
+        const history = [];
+
+        function randomHex() {
+            // padded properly — no more broken five-digit hex codes
+            return '#' + Math.floor(Math.random() * 0x1000000).toString(16).padStart(6, '0');
         }
-        
-        button:hover {
-            transform: scale(1.05);
-            background-color: rgba(255, 255, 255, 0.3);
+
+        function hexToRgb(hex) {
+            const n = parseInt(hex.slice(1), 16);
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
         }
-    </style>
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h = 0, s = 0;
+            const l = (max + min) / 2;
+            if (max !== min) {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+                else if (max === g) h = ((b - r) / d + 2) / 6;
+                else h = ((r - g) / d + 4) / 6;
+            }
+            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+        }
+
+        // real relative luminance, not "invert the hex" (which fails on greys)
+        function textColorFor(hex) {
+            const [r, g, b] = hexToRgb(hex).map(c => {
+                c /= 255;
+                return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+            });
+            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            return lum > 0.35 ? '#201a17' : '#fff8ef';
+        }
+
+        function apply(hex, skipHistory) {
+            if (current && !skipHistory) pushHistory(current);
+            current = hex;
+            const [r, g, b] = hexToRgb(hex);
+            const [h, s, l] = rgbToHsl(r, g, b);
+            const fg = textColorFor(hex);
+            document.body.style.backgroundColor = hex;
+            document.body.style.color = fg;
+            hexEl.textContent = hex.toUpperCase();
+            rgbEl.textContent = `rgb(${r}, ${g}, ${b})`;
+            hslEl.textContent = `hsl(${h}, ${s}%, ${l}%)`;
+        }
+
+        function pushHistory(hex) {
+            history.unshift(hex);
+            if (history.length > 12) history.pop();
+            historyEl.textContent = '';
+            for (const c of history) {
+                const s = document.createElement('div');
+                s.className = 'swatch';
+                s.style.backgroundColor = c;
+                s.title = c.toUpperCase();
+                s.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    apply(c, true);
+                });
+                historyEl.appendChild(s);
+            }
+        }
+
+        function newColor() { apply(randomHex()); }
+
+        function copy() {
+            navigator.clipboard.writeText(hexEl.textContent)
+                .then(() => showToast(hexEl.textContent + ' copied'))
+                .catch(() => showToast('could not copy'));
+        }
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.remove('show');
+            void toast.offsetWidth;
+            toast.classList.add('show');
+        }
+
+        document.getElementById('copyBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            copy();
+        });
+        document.getElementById('newBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            newColor();
+        });
+        document.body.addEventListener('click', newColor);
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') { e.preventDefault(); newColor(); }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') copy();
+        });
+
+        newColor();
+    </script>
 </body>
 </html>

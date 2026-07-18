@@ -267,7 +267,7 @@
         <div class="clock" id="clock" onclick="toggleClock()">00:00</div>
         <div style="text-align:right">
             <div class="period-label">Status</div>
-            <div class="period-display" id="status" style="font-size:14px;letter-spacing:2px">LIVE</div>
+            <div class="period-display" id="status" style="font-size:14px;letter-spacing:2px">PAUSED</div>
         </div>
     </div>
 
@@ -313,6 +313,33 @@
     let periodIdx = 0;
     const periods = ['1ST', '2ND', '3RD', '4TH', 'OT', '2OT'];
 
+    // the game survives a page refresh
+    function saveGame() {
+        try {
+            localStorage.setItem('scoreboard', JSON.stringify({
+                scores, periodIdx, clockSecs,
+                nameLeft: document.getElementById('nameLeft').value,
+                nameRight: document.getElementById('nameRight').value,
+            }));
+        } catch (e) {}
+    }
+
+    function loadGame() {
+        try {
+            const saved = JSON.parse(localStorage.getItem('scoreboard'));
+            if (!saved) return;
+            scores = saved.scores || scores;
+            periodIdx = saved.periodIdx || 0;
+            clockSecs = saved.clockSecs || 0;
+            document.getElementById('scoreLeft').textContent = scores.left;
+            document.getElementById('scoreRight').textContent = scores.right;
+            document.getElementById('period').textContent = periods[periodIdx];
+            if (saved.nameLeft) document.getElementById('nameLeft').value = saved.nameLeft;
+            if (saved.nameRight) document.getElementById('nameRight').value = saved.nameRight;
+            updateClockDisplay();
+        } catch (e) {}
+    }
+
     // Clock
     let clockSecs = 0;
     let clockRunning = false;
@@ -325,9 +352,11 @@
             clockInterval = setInterval(() => {
                 clockSecs++;
                 updateClockDisplay();
+                if (clockSecs % 5 === 0) saveGame();
             }, 1000);
         } else {
             clearInterval(clockInterval);
+            saveGame();
         }
     }
 
@@ -340,6 +369,7 @@
     function cyclePeriod() {
         periodIdx = (periodIdx + 1) % periods.length;
         document.getElementById('period').textContent = periods[periodIdx];
+        saveGame();
     }
 
     function addScore(side, e) {
@@ -352,12 +382,14 @@
         setTimeout(() => el.classList.remove('bump'), 200);
         spawnPlusOne(e, side);
         flashLeds(side);
+        saveGame();
     }
 
     function subScore(side) {
         if (scores[side] > 0) {
             scores[side]--;
             document.getElementById('score' + capitalize(side)).textContent = scores[side];
+            saveGame();
         }
     }
 
@@ -410,10 +442,15 @@
         clockRunning = false;
         clearInterval(clockInterval);
         updateClockDisplay();
-        document.getElementById('status').textContent = 'LIVE';
+        document.getElementById('status').textContent = 'PAUSED';
         periodIdx = 0;
         document.getElementById('period').textContent = periods[0];
+        saveGame();
     }
+
+    document.getElementById('nameLeft').addEventListener('input', saveGame);
+    document.getElementById('nameRight').addEventListener('input', saveGame);
+    loadGame();
 </script>
 </body>
 </html>

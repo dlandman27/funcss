@@ -4,257 +4,313 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What's My Resolution? - RSONW</title>
-    <meta name="description" content="Find out your screen resolution, viewport dimensions, and safe areas">
-    <meta name="keywords" content="screen resolution, viewport size, device dimensions">
-    <meta name="author" content="Random Sites On The Web">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/whatsmyresolution/">
-    <meta property="og:title" content="What's My Resolution? - Screen Size Tool">
-    <meta property="og:description" content="Find out your screen resolution, viewport dimensions, and safe areas">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/whatsmyresolution/">
-    <meta property="twitter:title" content="What's My Resolution? - Screen Size Tool">
-    <meta property="twitter:description" content="Find out your screen resolution, viewport dimensions, and safe areas">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M40 5H10C7.2 5 5 7.2 5 10v30c0 2.8 2.2 5 5 5h30c2.8 0 5-2.2 5-5V10c0-2.8-2.2-5-5-5zM35 35H15V15h20v20z' fill='%23000000'/></svg>">
+    <title>What's My Resolution?</title>
+    <meta name="description" content="Your screen, measured: resolution, viewport, pixel ratio, refresh rate">
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
         body {
-            margin: 0;
-            padding: 16px;
-            font-family: 'Helvetica Neue', sans-serif;
-            background: #FAFAFA;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            color: #000000;
-            box-sizing: border-box;
-            padding-top: 32px;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        h1 {
-            font-size: 28px;
-            font-weight: 300;
-            margin-bottom: 1rem;
-            text-align: center;
-            color: #000000;
-            letter-spacing: 1px;
-        }
-
-        .dimensions-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
-            padding: 1rem;
-            border: 1px solid #000000;
-            background: #FAFAFA;
-            border-radius: 0;
-            transition: transform 0.2s ease;
-            width: 100%;
-            max-width: 400px;
-            margin: auto;
-            position: relative;
-            z-index: 2;
+            padding: 40px 18px 60px;
+            gap: 22px;
         }
 
-        .dimensions-container:hover {
-            transform: translateY(-4px);
-        }
-
-        .measurement-label {
-            background: #FAFAFA;
-            color: #000000;
-            padding: 8px 12px;
-            border-radius: 0;
-            font-size: 13px;
-            white-space: normal;
-            border: 1px solid #000000;
-            transition: all 0.2s ease;
-            width: 100%;
+        h1 {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(24px, 5.5vw, 46px);
+            transform: rotate(-1.5deg);
+            -webkit-text-stroke: 1.2px var(--ink);
+            paint-order: stroke fill;
+            color: #5aa0db;
+            text-shadow: 4px 4px 0 var(--ink);
             text-align: center;
-            box-sizing: border-box;
-            word-break: break-word;
         }
 
-        .measurement-label:hover {
-            background: #000000;
-            color: #FAFAFA;
+        .subtitle {
+            font-style: italic;
+            font-size: clamp(13px, 1.9vw, 16px);
+            color: rgba(32, 26, 23, 0.55);
+            margin-top: -12px;
+            text-align: center;
         }
 
-        .safe-area {
-            position: fixed;
-            left: 0;
-            right: 0;
-            background: #000000;
-            opacity: 0.05;
-            pointer-events: none;
+        /* the star of the show: live viewport */
+        .hero-card {
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 18px;
+            box-shadow: 8px 8px 0 var(--ink);
+            padding: clamp(20px, 4vw, 36px) clamp(28px, 6vw, 60px);
+            text-align: center;
+            transform: rotate(0.5deg);
         }
 
-        .safe-area-top {
-            top: 0;
-        }
-
-        .safe-area-bottom {
-            bottom: 0;
-        }
-
-        .section-title {
-            font-weight: 400;
-            margin-top: 12px;
-            color: #000000;
-            font-size: 13px;
+        .hero-label {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.2em;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            width: 100%;
-            text-align: left;
+            color: rgba(32, 26, 23, 0.5);
         }
 
-        .screen-lines {
+        #viewport {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(40px, 9vw, 84px);
+            line-height: 1.15;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #viewport.bump { animation: bump 0.25s cubic-bezier(0.22, 1.6, 0.36, 1); }
+
+        @keyframes bump {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.07); }
+            100% { transform: scale(1); }
+        }
+
+        .hero-note {
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.5);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            width: min(94vw, 760px);
+        }
+
+        .card {
+            background: var(--cream);
+            border: 2.5px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 18px 20px;
+            text-align: center;
+            transform: rotate(var(--tilt, 0deg));
+        }
+
+        .card .label {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(32, 26, 23, 0.5);
+            margin-bottom: 6px;
+        }
+
+        .card .value {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(20px, 3.6vw, 30px);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .card .note {
+            font-style: italic;
+            font-size: 12px;
+            color: rgba(32, 26, 23, 0.5);
+            margin-top: 4px;
+        }
+
+        #copyBtn {
+            background: #b7ce3c;
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 11px 26px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        #copyBtn:hover { transform: translate(-2px, -2px) rotate(-1.5deg); }
+        #copyBtn:active { transform: translate(2px, 2px); }
+
+        #toast {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .screen-lines::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                linear-gradient(90deg, transparent 24%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) 26%, transparent 27%) 0 0,
-                linear-gradient(0deg, transparent 24%, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.05) 26%, transparent 27%) 0 0;
-            background-size: 100px 100px;
-        }
-
-        .screen-lines::after {
-            content: '';
-            position: absolute;
-            top: 50%;
+            top: 20px;
             left: 50%;
-            width: 200vmax;
-            height: 200vmax;
-            transform: translate(-50%, -50%);
-            background: conic-gradient(from 0deg at center, transparent 0deg, transparent 30deg, rgba(0,0,0,0.03) 40deg, transparent 50deg);
-            background-size: 100% 100%;
-            animation: rotate 60s linear infinite;
+            transform: translateX(-50%) rotate(-2deg) scale(0);
+            background: #f7c948;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 9px 22px;
+            font-style: italic;
+            font-size: 14px;
+            z-index: 10;
+            pointer-events: none;
         }
 
-        @keyframes rotate {
-            from {
-                transform: translate(-50%, -50%) rotate(0deg);
-            }
-            to {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
-        }
+        #toast.show { animation: toastIn 1.8s ease forwards; }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 12px;
-                padding-top: 24px;
-            }
-
-            .dimensions-container {
-                padding: 0.75rem;
-                gap: 6px;
-            }
-
-            h1 {
-                font-size: 24px;
-                margin-bottom: 0.75rem;
-            }
-
-            .measurement-label {
-                padding: 8px 10px;
-                font-size: 12px;
-            }
-
-            .section-title {
-                font-size: 12px;
-                margin-top: 10px;
-            }
+        @keyframes toastIn {
+            0% { transform: translateX(-50%) rotate(-2deg) scale(0); }
+            15% { transform: translateX(-50%) rotate(-2deg) scale(1.05); }
+            22% { transform: translateX(-50%) rotate(-2deg) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
         }
     </style>
 </head>
 <body>
-    <div class="screen-lines"></div>
-    <div class="dimensions-container">
-        <h1>Device Specs</h1>
-        <div class="section-title">Viewport Size</div>
-        <p>The viewport is the visible area of a web page on your device's screen.</p>
-        <div class="measurement-label" id="widthLabel"></div>
-        <div class="measurement-label" id="heightLabel"></div>
-        
-        <div class="section-title">Screen Resolution</div>
-        <p>The total width and height of your screen, measured in pixels (px). This is your screen's native resolution.</p>
-        <div class="measurement-label" id="screenWidth"></div>
-        <div class="measurement-label" id="screenHeight"></div>
-        
-        <div class="section-title">Additional Info</div>
+    <h1>WHAT'S MY RESOLUTION?</h1>
+    <div class="subtitle">resize the window. it notices.</div>
 
-        <p>Color depth indicates how many colors your screen can display. Most modern screens use 24-bit or 32-bit color.</p>
-        <div class="measurement-label" id="colorDepth"></div>
-        <p>Orientation indicates whether your device is being held vertically (portrait) or horizontally (landscape).</p>
-        <div class="measurement-label" id="orientation"></div>
-
-        <p>The device pixel ratio shows how sharp your screen is. A higher number (above 1) means you have a high-quality screen like those found on newer phones and tablets.</p>
-        <div class="measurement-label" id="pixelRatio"></div>
+    <div class="hero-card">
+        <div class="hero-label">Viewport, right now</div>
+        <div id="viewport">&hellip;</div>
+        <div class="hero-note">the part of the page you can actually see</div>
     </div>
 
-    <div class="safe-area safe-area-top" id="safeAreaTop"></div>
-    <div class="safe-area safe-area-bottom" id="safeAreaBottom"></div>
-    
+    <div class="grid">
+        <div class="card" style="--tilt:-0.7deg">
+            <div class="label">Screen Resolution</div>
+            <div class="value" id="screenRes">&hellip;</div>
+            <div class="note">your monitor's full size</div>
+        </div>
+        <div class="card" style="--tilt:0.6deg">
+            <div class="label">Pixel Ratio</div>
+            <div class="value" id="dpr">&hellip;</div>
+            <div class="note" id="dprNote"></div>
+        </div>
+        <div class="card" style="--tilt:-0.5deg">
+            <div class="label">Refresh Rate</div>
+            <div class="value" id="hz">measuring&hellip;</div>
+            <div class="note">measured live, just now</div>
+        </div>
+        <div class="card" style="--tilt:0.8deg">
+            <div class="label">Color Depth</div>
+            <div class="value" id="depth">&hellip;</div>
+            <div class="note" id="depthNote"></div>
+        </div>
+        <div class="card" style="--tilt:-0.6deg">
+            <div class="label">Orientation</div>
+            <div class="value" id="orient">&hellip;</div>
+            <div class="note">turn your device. go on.</div>
+        </div>
+        <div class="card" style="--tilt:0.5deg">
+            <div class="label">Pixels You Own</div>
+            <div class="value" id="totalPx">&hellip;</div>
+            <div class="note" id="pxNote"></div>
+        </div>
+    </div>
+
+    <button id="copyBtn">copy my specs</button>
+    <div id="toast"></div>
+
     <script>
-        function updateValues() {
-            const widthLabel = document.getElementById('widthLabel');
-            const heightLabel = document.getElementById('heightLabel');
-            const pixelRatio = document.getElementById('pixelRatio');
-            const safeAreaTop = document.getElementById('safeAreaTop');
-            const safeAreaBottom = document.getElementById('safeAreaBottom');
-            const screenWidth = document.getElementById('screenWidth');
-            const screenHeight = document.getElementById('screenHeight');
-            const colorDepth = document.getElementById('colorDepth');
-            const orientation = document.getElementById('orientation');
+        const viewportEl = document.getElementById('viewport');
 
-            widthLabel.textContent = `Viewport Width: ${window.innerWidth}px`;
-            heightLabel.textContent = `Viewport Height: ${window.innerHeight}px`;
-            screenWidth.textContent = `Screen Width: ${window.screen.width}px`;
-            screenHeight.textContent = `Screen Height: ${window.screen.height}px`;
-            colorDepth.textContent = `Color Depth: ${window.screen.colorDepth}-bit`;
-            orientation.textContent = `Orientation: ${screen.orientation ? screen.orientation.type : 'N/A'}`;
-            pixelRatio.textContent = `Device Pixel Ratio: ${window.devicePixelRatio.toFixed(2)}`;
+        function pxVerdict(n) {
+            if (n >= 8000000) return 'an obscene number of pixels.';
+            if (n >= 3500000) return 'a very respectable pixel count.';
+            if (n >= 1800000) return 'a perfectly honest amount of pixels.';
+            return 'every one of them counts.';
+        }
 
-            if (CSS.supports('padding-top: env(safe-area-inset-top)')) {
-                const computedStyle = getComputedStyle(document.documentElement);
-                const topInset = computedStyle.getPropertyValue('env(safe-area-inset-top)');
-                const bottomInset = computedStyle.getPropertyValue('env(safe-area-inset-bottom)');
-                
-                safeAreaTop.style.height = topInset;
-                safeAreaBottom.style.height = bottomInset;
+        function update() {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            viewportEl.textContent = `${vw} × ${vh}`;
+            viewportEl.classList.remove('bump');
+            void viewportEl.offsetWidth;
+            viewportEl.classList.add('bump');
+
+            const sw = window.screen.width;
+            const sh = window.screen.height;
+            document.getElementById('screenRes').textContent = `${sw} × ${sh}`;
+
+            const dpr = window.devicePixelRatio || 1;
+            document.getElementById('dpr').textContent = dpr.toFixed(2) + '×';
+            document.getElementById('dprNote').textContent =
+                dpr > 1.5 ? 'fancy high-density screen' : dpr > 1 ? 'moderately fancy screen' : 'a good honest 1:1 screen';
+
+            document.getElementById('depth').textContent = window.screen.colorDepth + '-bit';
+            document.getElementById('depthNote').textContent =
+                `${Math.pow(2, window.screen.colorDepth).toLocaleString()} possible colors`;
+
+            const o = screen.orientation ? screen.orientation.type.split('-')[0] : (vw > vh ? 'landscape' : 'portrait');
+            document.getElementById('orient').textContent = o.toUpperCase();
+
+            const total = Math.round(sw * dpr) * Math.round(sh * dpr);
+            document.getElementById('totalPx').textContent = total.toLocaleString();
+            document.getElementById('pxNote').textContent = pxVerdict(total);
+        }
+
+        // measure the real refresh rate from frame timings
+        function measureHz() {
+            const samples = [];
+            let last = performance.now();
+            function tick(now) {
+                samples.push(now - last);
+                last = now;
+                if (samples.length < 60) {
+                    requestAnimationFrame(tick);
+                } else {
+                    samples.sort((a, b) => a - b);
+                    const median = samples[Math.floor(samples.length / 2)];
+                    const hz = Math.round(1000 / median);
+                    // snap to common rates when close
+                    const common = [60, 75, 90, 120, 144, 165, 240];
+                    const snapped = common.find(c => Math.abs(hz - c) <= 3) || hz;
+                    document.getElementById('hz').textContent = snapped + ' Hz';
+                }
             }
+            requestAnimationFrame(tick);
         }
 
-        updateValues();
-        window.addEventListener('resize', updateValues);
-        if (screen.orientation) {
-            screen.orientation.addEventListener('change', updateValues);
-        }
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const dpr = window.devicePixelRatio || 1;
+            const spec = [
+                `viewport: ${window.innerWidth} × ${window.innerHeight}`,
+                `screen: ${window.screen.width} × ${window.screen.height}`,
+                `pixel ratio: ${dpr.toFixed(2)}`,
+                `color depth: ${window.screen.colorDepth}-bit`,
+                `refresh: ${document.getElementById('hz').textContent}`,
+            ].join('\n');
+            navigator.clipboard.writeText(spec).then(() => {
+                const t = document.getElementById('toast');
+                t.textContent = 'specs copied';
+                t.classList.remove('show');
+                void t.offsetWidth;
+                t.classList.add('show');
+            });
+        });
+
+        window.addEventListener('resize', update);
+        if (screen.orientation) screen.orientation.addEventListener('change', update);
+        update();
+        measureHz();
     </script>
 </body>
 </html>

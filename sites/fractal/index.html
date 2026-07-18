@@ -4,42 +4,30 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tailwind CSS Fractal</title>
-
-    <!-- Add metadata -->
-    <meta name="description" content="Create and explore interactive color-changing fractals">
-    <meta name="keywords" content="fractal generator, interactive fractals, color patterns">
-    <meta name="author" content="Random Sites On The Web">
+    <title>Fractal</title>
+    <meta name="description" content="Click to split the screen in half, forever. Then shatter it all at once.">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M25 5v20h20v20H25V25H5V5h20z' fill='%233498db'><animate attributeName='fill' values='%233498db;%239b59b6;%23e74c3c;%233498db' dur='4s' repeatCount='indefinite'/></path></svg>">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/fractal/">
-    <meta property="og:title" content="Tailwind CSS Fractal - Interactive Pattern Generator">
-    <meta property="og:description" content="Create and explore interactive color-changing fractals">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/fractal/">
-    <meta property="twitter:title" content="Tailwind CSS Fractal - Interactive Pattern Generator">
-    <meta property="twitter:description" content="Create and explore interactive color-changing fractals">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
 
     <style>
-        * {
-            box-sizing: border-box;
+        *, *::before, *::after { box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --cream: #fff8ef;
         }
+
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
+            font-family: Georgia, 'Times New Roman', serif;
+            -webkit-user-select: none;
+            user-select: none;
         }
+
         .container {
             width: 100vw;
             height: 100vh;
-            margin: 0;
-            padding: 0;
             position: fixed;
             top: 0;
             left: 0;
@@ -49,236 +37,132 @@
         .split {
             float: left;
             position: relative;
-            transition: all 0.3s;
-            box-sizing: border-box;
-            transition: all 0.3s, background-color 0.5s ease-in-out;
+            transition: background-color 0.5s ease-in-out;
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .split:hover {
             cursor: pointer;
             z-index: 100;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
         }
+
+        /* ---- sticker control panel ---- */
 
         .controls {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            top: 16px;
+            right: 16px;
+            background: var(--cream);
+            border: 2.5px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 14px;
             z-index: 1000;
-            min-width: 200px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .dark-mode {
-            color: #ffffff;
-            background: linear-gradient(to bottom right, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8));
-        }
-
-        .dark-mode .controls {
-            background-color: rgba(30, 41, 59, 0.7);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .dark-mode .controls h1 {
-            color: #f1f5f9;
-        }
-
-        .dark-mode .controls h1 a {
-            color: #38bdf8;
-        }
-
-        .dark-mode select {
-            background-color: rgba(30, 41, 59, 0.9);
-            border-color: #475569;
-            color: #f1f5f9;
-        }
-
-        .dark-mode select:hover {
-            border-color: #64748b;
-            background-color: rgba(51, 65, 85, 0.9);
-        }
-
-        .dark-mode select:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
-        }
-
-        .dark-mode .split {
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .dark-mode .split:hover {
-            box-shadow: 0 0 20px rgba(255,255,255,0.1);
-        }
-
-        .controls h1 {
-            margin: 0 0 15px 0;
-            font-family: system-ui, -apple-system, sans-serif;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1e293b;
-            letter-spacing: -0.025em;
-        }
-
-        .controls h1 a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .controls h1 a {
-            color: #0ea5e9;
-            transition: color 0.2s ease;
+            width: 190px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+            transform: rotate(0.8deg);
+        }
+
+        .controls .title {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 0.08em;
+            color: var(--ink);
         }
 
         select {
             width: 100%;
             padding: 8px 12px;
-            font-size: 0.95rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background-color: #f8fafc;
-            color: #1e293b;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 14px;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            background: #f2ede2;
+            color: var(--ink);
             cursor: pointer;
-            font-family: system-ui, -apple-system, sans-serif;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 1em;
-            transition: all 0.2s ease;
-        }
-
-        select:hover {
-            border-color: #cbd5e1;
-            background-color: #f1f5f9;
-        }
-
-        select:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .controls button {
-            margin-top: 10px;
             width: 100%;
             padding: 8px 12px;
-            font-size: 0.95rem;
-            border-radius: 8px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 14px;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            background: var(--cream);
+            color: var(--ink);
+            box-shadow: 2px 2px 0 var(--ink);
             cursor: pointer;
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: all 0.2s ease;
+            transition: transform 0.12s ease;
         }
 
-        .controls button.light-mode {
-            background-color: #f8fafc;
-            color: #1e293b;
-            border: 1px solid #e2e8f0;
-        }
+        .controls button:hover { transform: translate(-1px, -1px) rotate(-1deg); }
+        .controls button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
 
-        .controls button.dark-mode {
-            background-color: rgba(30, 41, 59, 0.9);
-            color: #f8fafc;
-            border: 1px solid #475569;
-        }
-
-        .controls button.light-mode:hover {
-            background-color: #f1f5f9;
-            border-color: #cbd5e1;
-        }
-
-        .controls button.dark-mode:hover {
-            background-color: rgba(51, 65, 85, 0.9);
-            border-color: #64748b;
-        }
-
-        #reverseColors{
-            font-weight: 500;
-            letter-spacing: 0.01em;
-        }
+        #shatterBtn { background: #f0563e; color: var(--cream); }
+        #invertBtn { background: #a98fd0; }
+        #resetBtn { background: #f2ede2; }
 
         .click-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100vw;
-            height: 100vh;
+            position: fixed;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: system-ui, -apple-system, sans-serif;
-            font-size: 1.75rem;
-            color: #1e293b;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(20px, 4vw, 34px);
+            letter-spacing: 0.04em;
+            color: var(--cream);
+            -webkit-text-stroke: 1px var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 4px 4px 0 var(--ink);
             pointer-events: none;
             transition: opacity 0.3s ease;
             text-align: center;
-            font-weight: 600;
-            letter-spacing: 0.025em;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            z-index: 111111;
-        }
-
-        .dark-mode .click-overlay {
-            color: #f1f5f9;
+            z-index: 500;
         }
     </style>
 </head>
-<body style="margin: 0; padding: 0;">
+<body>
     <div class="controls">
-        <h1>
-            <a href="https://tailwindcss.com/docs/customizing-colors">
-                <span>
-                    <div>
-                        <svg width="24" height="24" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M27 0C19.8 0 15.3 3.6 13.5 10.8C16.2 7.2 19.35 5.85 22.95 6.75C25.004 7.263 26.472 8.754 28.097 10.403C30.744 13.09 33.808 16.2 40.5 16.2C47.7 16.2 52.2 12.6 54 5.4C51.3 9 48.15 10.35 44.55 9.45C42.496 8.937 41.028 7.446 39.403 5.797C36.756 3.11 33.692 0 27 0ZM13.5 16.2C6.3 16.2 1.8 19.8 0 27C2.7 23.4 5.85 22.05 9.45 22.95C11.504 23.463 12.972 24.954 14.597 26.603C17.244 29.29 20.308 32.4 27 32.4C34.2 32.4 38.7 28.8 40.5 21.6C37.8 25.2 34.65 26.55 31.05 25.65C28.996 25.137 27.528 23.646 25.903 21.997C23.256 19.31 20.192 16.2 13.5 16.2Z" fill="#38BDF8"/>
-                        </svg>
-                    </div>
-                </span>
-            </a> 
-        </h1>
+        <div class="title">FRACTAL</div>
         <select id="colorScheme">
-            <option value="slate">Slate</option>
-            <option value="gray">Gray</option>
-            <option value="zinc">Zinc</option>
-            <option value="neutral">Neutral</option>
-            <option value="stone">Stone</option>
-            <option value="red">Red</option>
-            <option value="orange">Orange</option>
-            <option value="amber">Amber</option>
-            <option value="yellow">Yellow</option>
-            <option value="lime">Lime</option>
-            <option value="green">Green</option>
-            <option value="emerald">Emerald</option>
-            <option value="teal">Teal</option>
-            <option value="cyan">Cyan</option>
-            <option value="sky">Sky</option>
-            <option value="blue">Blue</option>
-            <option value="indigo">Indigo</option>
-            <option value="violet">Violet</option>
-            <option value="purple">Purple</option>
-            <option value="fuchsia">Fuchsia</option>
-            <option value="pink">Pink</option>
-            <option value="rose">Rose</option>
+            <option value="slate">slate</option>
+            <option value="gray">gray</option>
+            <option value="zinc">zinc</option>
+            <option value="neutral">neutral</option>
+            <option value="stone">stone</option>
+            <option value="red">red</option>
+            <option value="orange">orange</option>
+            <option value="amber">amber</option>
+            <option value="yellow">yellow</option>
+            <option value="lime">lime</option>
+            <option value="green">green</option>
+            <option value="emerald">emerald</option>
+            <option value="teal">teal</option>
+            <option value="cyan">cyan</option>
+            <option value="sky">sky</option>
+            <option value="blue">blue</option>
+            <option value="indigo">indigo</option>
+            <option value="violet">violet</option>
+            <option value="purple">purple</option>
+            <option value="fuchsia">fuchsia</option>
+            <option value="pink">pink</option>
+            <option value="rose">rose</option>
         </select>
-        <button id="reverseColors">
-            <span id="directionText">🌙</span>
-        </button>
+        <button id="shatterBtn">shatter everything</button>
+        <button id="invertBtn">invert</button>
+        <button id="resetBtn">start over</button>
     </div>
-    <div id="clickOverlay" class="click-overlay">Click anywhere to split</div>
+    <div id="clickOverlay" class="click-overlay">CLICK ANYWHERE TO SPLIT</div>
     <div class="container split" id="root"></div>
 
     <script>
@@ -304,38 +188,33 @@
             purple: ['#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc', '#a855f7', '#9333ea', '#7e22ce', '#6b21a8', '#581c87', '#3b0764'],
             fuchsia: ['#fdf4ff', '#fae8ff', '#f5d0fe', '#f0abfc', '#e879f9', '#d946ef', '#c026d3', '#a21caf', '#86198f', '#701a75', '#4a044e'],
             pink: ['#fdf2f8', '#fce7f3', '#fbcfe8', '#f9a8d4', '#f472b6', '#ec4899', '#db2777', '#be185d', '#9d174d', '#831843', '#500724'],
-            rose: ['#fff1f2', '#ffe4e6', '#fecdd3', '#fda4af', '#fb7185', '#f43f5e', '#e11d48', '#be123c', '#9f1239', '#881337', '#4c0519']
+            rose: ['#fff1f2', '#ffe4e6', '#fecdd3', '#fda4af', '#fb7185', '#f43f5e', '#e11d48', '#be123c', '#9f1239', '#881337', '#4c0519'],
         };
 
+        const MAX_DEPTH = 10;
         let currentScheme = 'slate';
         let isReversed = false;
 
         function getColor(depth) {
             const colors = colorSchemes[currentScheme];
-            const index = isReversed ? 
-                (colors.length - 1) - Math.min(depth, colors.length - 1) :
-                Math.min(depth, colors.length - 1);
+            const index = isReversed
+                ? (colors.length - 1) - Math.min(depth, colors.length - 1)
+                : Math.min(depth, colors.length - 1);
             return colors[index];
         }
 
         function split(element) {
             const currentDepth = parseInt(element.dataset.depth) || 0;
-            if (currentDepth >= 9) return; // Limit recursion depth
+            if (currentDepth >= MAX_DEPTH) return;
 
             element.removeEventListener('click', handleClick);
 
             const vertical = currentDepth % 2 === 0;
             const div1 = document.createElement('div');
             const div2 = document.createElement('div');
-
-            div1.className = 'split';
-            div2.className = 'split';
-
-            div1.dataset.depth = currentDepth + 1;
-            div2.dataset.depth = currentDepth + 1;
-
-            div1.style.backgroundColor = 'transparent';
-            div2.style.backgroundColor = 'transparent';
+            div1.className = div2.className = 'split';
+            div1.dataset.depth = div2.dataset.depth = currentDepth + 1;
+            div1.style.backgroundColor = div2.style.backgroundColor = 'transparent';
 
             if (vertical) {
                 div1.style.width = div2.style.width = '50%';
@@ -361,59 +240,59 @@
 
         function handleClick(e) {
             e.stopPropagation();
-            // Remove the overlay text on first click
+            dismissOverlay();
+            split(this);
+        }
+
+        function dismissOverlay() {
             const overlay = document.getElementById('clickOverlay');
             if (overlay) {
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.remove(), 300);
             }
-            split(this);
         }
 
-        function initializeFractal() {
+        function leaves() {
+            return [...document.querySelectorAll('.split')]
+                .filter(el => !el.querySelector('.split') && (parseInt(el.dataset.depth) || 0) < MAX_DEPTH);
+        }
+
+        // split every visible pane at once, with a little stagger wave
+        function shatter() {
+            dismissOverlay();
+            const panes = leaves();
+            panes.forEach((el, i) => {
+                setTimeout(() => split(el), i * 18);
+            });
+        }
+
+        function reset() {
             const root = document.getElementById('root');
+            root.innerHTML = '';
             root.dataset.depth = '0';
             root.style.backgroundColor = getColor(0);
             root.addEventListener('click', handleClick);
         }
 
-        // Handle color scheme changes
         document.getElementById('colorScheme').addEventListener('change', (e) => {
             currentScheme = e.target.value;
-            // Reset and reinitialize
-            const root = document.getElementById('root');
-            root.innerHTML = '';
-            initializeFractal();
+            // recolor in place — don't destroy the pattern you built
+            document.querySelectorAll('.split').forEach(el => {
+                el.style.backgroundColor = getColor(parseInt(el.dataset.depth) || 0);
+            });
         });
 
-        // Add reverse colors button handler
-        document.getElementById('reverseColors').addEventListener('click', () => {
+        document.getElementById('invertBtn').addEventListener('click', () => {
             isReversed = !isReversed;
-            const button = document.getElementById('reverseColors');
-            const directionText = document.getElementById('directionText');
-            
-            if (isReversed) {
-                directionText.textContent = '☀️';
-                button.className = 'dark-mode';
-                document.querySelector('.controls').className = 'controls dark-mode';
-            } else {
-                directionText.textContent = '🌙';
-                button.className = 'light-mode';
-                document.querySelector('.controls').className = 'controls light-mode';
-            }
-            
-            // Reset and reinitialize
-            const root = document.getElementById('root');
-            root.innerHTML = '';
-            initializeFractal();
+            document.querySelectorAll('.split').forEach(el => {
+                el.style.backgroundColor = getColor(parseInt(el.dataset.depth) || 0);
+            });
         });
 
-        // Add initial button class
-        document.getElementById('reverseColors').className = 'light-mode';
+        document.getElementById('shatterBtn').addEventListener('click', shatter);
+        document.getElementById('resetBtn').addEventListener('click', reset);
 
-        // Initialize
-        document.querySelector('.controls').className = 'controls light-mode';
-        initializeFractal();
+        reset();
     </script>
 </body>
 </html>
