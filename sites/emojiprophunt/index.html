@@ -376,6 +376,23 @@
         // ---- round generation ----
         function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+        // hue-neighbors that read as the same color at crowd sizes —
+        // a decoy sharing the target's shape must never wear one of these
+        const CLOSE = {
+            '#f0563e': ['#f47b28', '#ff7fa5'],            // coral ~ orange, pink
+            '#f47b28': ['#f0563e', '#f7c948'],            // orange ~ coral, gold
+            '#ff7fa5': ['#f0563e', '#a98fd0'],            // pink ~ coral, purple
+            '#f7c948': ['#f47b28', '#b7ce3c'],            // gold ~ orange, lime
+            '#b7ce3c': ['#f7c948', '#2fb0a3'],            // lime ~ gold, teal
+            '#2fb0a3': ['#b7ce3c', '#5aa0db'],            // teal ~ lime, sky
+            '#5aa0db': ['#2fb0a3', '#a98fd0'],            // sky ~ teal, purple
+            '#a98fd0': ['#5aa0db', '#ff7fa5']             // purple ~ sky, pink
+        };
+        function clearlyDifferent(hex) {
+            const near = CLOSE[hex] || [];
+            return COLORS.filter(c => c.hex !== hex && !near.includes(c.hex));
+        }
+
         function sameProp(a, b) {
             return a.shape === b.shape && a.color === b.color &&
                 (!!a.mirror === !!b.mirror || SHAPES[a.shape].sym);
@@ -400,14 +417,17 @@
                 do {
                     const roll = Math.random();
                     if (round >= 3 && roll < 0.45) {
-                        // same shape, different color
-                        const c = pick(COLORS.filter(c2 => c2.hex !== target.color));
+                        // same shape, unmistakably different color
+                        const c = pick(clearlyDifferent(target.color));
                         d = { shape: target.shape, color: c.hex, mirror: Math.random() < 0.5 };
                     } else if (useMirrors && roll < 0.72) {
                         // same shape, same color, mirrored
                         d = { shape: target.shape, color: target.color, mirror: !target.mirror };
                     } else {
                         d = { shape: pick(SHAPE_KEYS), color: pick(COLORS).hex, mirror: Math.random() < 0.5 };
+                        if (d.shape === target.shape && d.color !== target.color) {
+                            d.color = pick(clearlyDifferent(target.color)).hex;
+                        }
                     }
                 } while (sameProp(d, target) && ++guard < 20);
                 if (sameProp(d, target)) { d.shape = pick(SHAPE_KEYS.filter(s => s !== target.shape)); }
