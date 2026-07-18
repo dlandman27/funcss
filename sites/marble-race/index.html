@@ -874,6 +874,7 @@
 <body>
     <div class="game-info" id="gameInfo">
         <p>Countries Remaining: <span id="remainingCountries"></span></p>
+        <p style="margin-top:14px;font-size:10px;color:#00ffff">MAP: <span id="mapName" style="display:inline;font-size:10px;color:#ff00ff">—</span></p>
     </div>
 
     <div class="speed-controls">
@@ -918,29 +919,50 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="matter.min.js"></script>
     <script>
         // Fixed game dimensions
         const GAME_WIDTH = 1024;
         const GAME_HEIGHT = 768;
 
+        const { Engine, Render, Runner, World, Bodies, Body, Events } = Matter;
+
+        // Self-contained roster — no API. Flags come from flagcdn with a drawn
+        // fallback disc, so a network failure can never break the race.
+        const COUNTRIES = [
+            ['United States','us'],['Canada','ca'],['Mexico','mx'],['Brazil','br'],['Argentina','ar'],
+            ['Chile','cl'],['Colombia','co'],['Peru','pe'],['Uruguay','uy'],['Ecuador','ec'],
+            ['Bolivia','bo'],['Paraguay','py'],['Venezuela','ve'],['Cuba','cu'],['Jamaica','jm'],
+            ['Panama','pa'],['Costa Rica','cr'],['Guatemala','gt'],['Dominican Republic','do'],
+            ['United Kingdom','gb'],['Ireland','ie'],['France','fr'],['Germany','de'],['Italy','it'],
+            ['Spain','es'],['Portugal','pt'],['Netherlands','nl'],['Belgium','be'],['Switzerland','ch'],
+            ['Austria','at'],['Sweden','se'],['Norway','no'],['Denmark','dk'],['Finland','fi'],
+            ['Iceland','is'],['Poland','pl'],['Czechia','cz'],['Slovakia','sk'],['Hungary','hu'],
+            ['Romania','ro'],['Bulgaria','bg'],['Greece','gr'],['Croatia','hr'],['Serbia','rs'],
+            ['Slovenia','si'],['Ukraine','ua'],['Estonia','ee'],['Latvia','lv'],['Lithuania','lt'],
+            ['Malta','mt'],['Cyprus','cy'],['Luxembourg','lu'],['Russia','ru'],['Turkey','tr'],
+            ['Georgia','ge'],['Armenia','am'],['Azerbaijan','az'],['Kazakhstan','kz'],['Mongolia','mn'],
+            ['Japan','jp'],['China','cn'],['South Korea','kr'],['India','in'],['Pakistan','pk'],
+            ['Bangladesh','bd'],['Sri Lanka','lk'],['Nepal','np'],['Thailand','th'],['Vietnam','vn'],
+            ['Philippines','ph'],['Malaysia','my'],['Singapore','sg'],['Indonesia','id'],['Myanmar','mm'],
+            ['Cambodia','kh'],['Laos','la'],['Australia','au'],['New Zealand','nz'],['Fiji','fj'],
+            ['Papua New Guinea','pg'],['South Africa','za'],['Nigeria','ng'],['Egypt','eg'],['Morocco','ma'],
+            ['Algeria','dz'],['Tunisia','tn'],['Kenya','ke'],['Ethiopia','et'],['Ghana','gh'],
+            ['Senegal','sn'],['Cameroon','cm'],['Ivory Coast','ci'],['Tanzania','tz'],['Uganda','ug'],
+            ['Zambia','zm'],['Zimbabwe','zw'],['Mozambique','mz'],['Angola','ao'],['Saudi Arabia','sa'],
+            ['United Arab Emirates','ae'],['Qatar','qa'],['Kuwait','kw'],['Oman','om'],['Jordan','jo'],
+            ['Lebanon','lb'],['Israel','il'],['Iraq','iq'],['Iran','ir'],['Afghanistan','af'],
+            ['Haiti','ht'],['Honduras','hn'],['El Salvador','sv'],['Nicaragua','ni'],
+            ['Trinidad and Tobago','tt'],['Bahamas','bs'],['Barbados','bb']
+        ].map(([name, code]) => ({ name, code }));
+
         const canvas = document.getElementById('gameCanvas');
-        let allCountries = [];
-        let allRemainingCountries = [];  // Track all countries still in the game
-        let currentRoundCountries = [];  // Track countries in current round
-        let currentMap = 0;
-        let eliminatedCountries = [];
 
-        // Set up Matter.js modules
-        const Engine = Matter.Engine;
-        const Render = Matter.Render;
-        const Runner = Matter.Runner;
-        const World = Matter.World;
-        const Bodies = Matter.Bodies;
-
-        const engine = Engine.create({
-            timing: { timeScale: 0.5 }
-        });
+        // ---- engine / renderer (one runner, no debug overlays) ----
+        const engine = Engine.create();
+        engine.positionIterations = 8;
+        engine.velocityIterations = 6;
+        engine.timing.timeScale = 1;
 
         const render = Render.create({
             canvas: canvas,
@@ -950,709 +972,465 @@
                 height: GAME_HEIGHT,
                 wireframes: false,
                 background: 'transparent',
-                pixelRatio: 1,
-                showVelocity: true,
-                showCollisions: true,
-                showAxes: false,
-                // Style the debug lines
-                wireframeBackground: 'transparent',
-                vectorColor: 'rgba(0, 255, 255, 0.2)',  // Cyan with low opacity
-                collisionColor: 'rgba(255, 0, 255, 0.2)'  // Magenta with low opacity
+                pixelRatio: 1
             }
         });
 
-        class MapBuilder {
-            constructor(width, height) {
-                this.width = width;
-                this.height = height;
-                this.bodies = [];
-                this.movingBodies = [];
-            }
-
-            // Basic wall with neon effect
-            addWall(x, y, width, height, options = {}) {
-                const wall = Bodies.rectangle(x, y, width, height, {
-                    isStatic: true,
-                    render: {
-                        fillStyle: '#000000',
-                        strokeStyle: options.color || '#00ffff',
-                        lineWidth: 2,
-                        shadowColor: options.color || '#00ffff',
-                        shadowBlur: 10
-                    },
-                    ...options
-                });
-                this.bodies.push(wall);
-                return this;
-            }
-
-            // Finish line
-            addFinishLine(y = this.height - 10) {
-                return this.addWall(this.width/2, y, this.width, 20, {
-                    color: '#ff00ff',
-                    label: 'finish'
-                });
-            }
-
-            // Bouncy peg
-            addPeg(x, y, options = {}) {
-                const radius = options.radius || 8;
-                const peg = Bodies.circle(
-                    Math.min(Math.max(x, radius), this.width - radius), // Keep within bounds
-                    Math.min(Math.max(y, radius), this.height - radius), // Keep within bounds
-                    radius, 
-                    {
-                        isStatic: true,
-                        render: {
-                            fillStyle: '#000000',
-                            strokeStyle: options.color || '#00ffff',
-                            lineWidth: 2,
-                            shadowColor: options.color || '#00ffff',
-                            shadowBlur: 10
-                        },
-                        ...options
-                    }
-                );
-                this.bodies.push(peg);
-                return this;
-            }
-
-            // Moving platform
-            addMovingPlatform(x, y, width, height, movement, options = {}) {
-                // Ensure platform stays within bounds
-                x = Math.min(Math.max(x, width/2), this.width - width/2);
-                y = Math.min(Math.max(y, height/2), this.height - height/2);
-                
-                const platform = Bodies.rectangle(x, y, width, height, {
-                    isStatic: true,
-                    render: {
-                        fillStyle: '#000000',
-                        strokeStyle: options.color || '#00ffff',
-                        lineWidth: 2,
-                        shadowColor: options.color || '#00ffff',
-                        shadowBlur: 10
-                    },
-                    ...options
-                });
-                
-                this.bodies.push(platform);
-                this.movingBodies.push({
-                    body: platform,
-                    movement: movement,
-                    originalPos: { x, y } // Store original position for relative movement
-                });
-                
-                return this;
-            }
-
-            // Spinner
-            addSpinner(x, y, width, height, options = {}) {
-                // Ensure spinner stays within bounds
-                x = Math.min(Math.max(x, width/2), this.width - width/2);
-                y = Math.min(Math.max(y, height/2), this.height - height/2);
-                
-                const spinner = Bodies.rectangle(x, y, width, height, {
-                    isStatic: true,
-                    render: {
-                        fillStyle: '#000000',
-                        strokeStyle: options.color || '#ff00ff',
-                        lineWidth: 2,
-                        shadowColor: options.color || '#ff00ff',
-                        shadowBlur: 10
-                    },
-                    ...options
-                });
-                
-                this.bodies.push(spinner);
-                this.movingBodies.push({
-                    body: spinner,
-                    movement: (time) => {
-                        Body.setAngle(spinner, time * (options.speed || 0.002));
-                    }
-                });
-                
-                return this;
-            }
-
-            // Standard boundaries
-            addBoundaries() {
-                // Left wall
-                this.addWall(0, this.height/2, 20, this.height);
-                // Right wall
-                this.addWall(this.width, this.height/2, 20, this.height);
-                return this;
-            }
-
-            // Build and return the map
-            build() {
-                return {
-                    bodies: this.bodies,
-                    update: (time) => {
-                        this.movingBodies.forEach(({body, movement, originalPos}) => {
-                            if (originalPos) {
-                                // Use original position for relative movement
-                                movement(time, body, originalPos);
-                            } else {
-                                movement(time, body);
-                            }
-                        });
-                    }
-                };
-            }
-        }
-
-        const maps = [
-            // Map 1: Plinko Paradise
-            () => {
-                const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
-                
-                builder.addBoundaries()
-                       .addFinishLine();
-
-                // Parameters for peg distribution
-                const margin = 50;  // Distance from walls
-                const topMargin = 100;  // Distance from top
-                const bottomMargin = 200;  // Distance from bottom
-                const columns = 15;  // More columns for fuller width
-                const rows = 8;  // More rows for fuller coverage
-                
-                const horizontalSpacing = (GAME_WIDTH - margin * 2) / (columns - 1);
-                const verticalSpacing = (GAME_HEIGHT - topMargin - bottomMargin) / (rows - 1);
-
-                // Create classic plinko pattern
-                for (let row = 0; row < rows; row++) {
-                    // Offset every other row for zigzag pattern
-                    const offset = row % 2 ? horizontalSpacing/2 : 0;
-                    
-                    for (let col = 0; col < columns; col++) {
-                        const x = margin + col * horizontalSpacing + offset;
-                        const y = topMargin + row * verticalSpacing;
-                        
-                        // Add peg with slight random variation
-                        const jitter = 5; // Reduced jitter for more precise paths
-                        builder.addPeg(
-                            x + (Math.random() - 0.5) * jitter,
-                            y + (Math.random() - 0.5) * jitter
-                        );
-                    }
-                }
-
-                return builder.build();
-            },
-
-            // // Map 2: Angled Platforms
-            // () => {
-            //     const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
-                
-            //     // Add boundaries and finish line
-            //     builder.addBoundaries()
-            //            .addFinishLine();
-
-            //     // Add static angled platforms
-            //     builder.addMovingPlatform(300, 200, 200, 20, () => {}, { angle: Math.PI * 0.1 })
-            //            .addMovingPlatform(700, 300, 200, 20, () => {}, { angle: -Math.PI * 0.1 })
-            //            .addMovingPlatform(500, 400, 200, 20, () => {}, { angle: Math.PI * 0.1 });
-
-            //     // Add static pegs for additional challenge
-            //     builder.addPeg(200, 150)
-            //            .addPeg(400, 150)
-            //            .addPeg(600, 150)
-            //            .addPeg(800, 150)
-            //            .addPeg(300, 350)
-            //            .addPeg(500, 350)
-            //            .addPeg(700, 350);
-
-            //     return builder.build();
-            // },
-
-            // // Map 3: Zigzag Descent
-            // () => {
-            //     const builder = new MapBuilder(GAME_WIDTH, GAME_HEIGHT);
-                
-            //     builder.addBoundaries()
-            //            .addFinishLine();
-
-            //     // Add zigzagging static platforms
-            //     builder.addMovingPlatform(200, 200, 300, 20, () => {}, { angle: Math.PI * 0.1 })
-            //            .addMovingPlatform(800, 300, 300, 20, () => {}, { angle: -Math.PI * 0.1 })
-            //            .addMovingPlatform(200, 400, 300, 20, () => {}, { angle: Math.PI * 0.1 })
-            //            .addMovingPlatform(800, 500, 300, 20, () => {}, { angle: -Math.PI * 0.1 });
-
-            //     // Add guide pegs
-            //     builder.addPeg(500, 150)
-            //            .addPeg(500, 250)
-            //            .addPeg(500, 350)
-            //            .addPeg(500, 450)
-            //            .addPeg(300, 300)
-            //            .addPeg(700, 400);
-
-            //     return builder.build();
-            // }
-        ];
-
-        // Update createMap function to use the new system
-        function createMap() {
-            // Clear existing bodies
-            World.clear(engine.world);
-            
-            // Create new map
-            const mapIndex = Math.floor(Math.random() * maps.length);
-            const currentMap = maps[mapIndex]();
-            
-            World.add(engine.world, currentMap.bodies);
-            
-            return currentMap;
-        }
-
-        // Create runner
         const runner = Runner.create();
-
-        // Start the runner and renderer
         Runner.run(runner, engine);
         Render.run(render);
+        Render.lookAt(render, { min: { x: 0, y: 0 }, max: { x: GAME_WIDTH, y: GAME_HEIGHT } });
 
         function handleResize() {
-            const scale = Math.min(
-                window.innerWidth / GAME_WIDTH,
-                window.innerHeight / GAME_HEIGHT
-            );
-            
+            const scale = Math.min(window.innerWidth / GAME_WIDTH, window.innerHeight / GAME_HEIGHT);
             canvas.style.transform = `scale(${scale})`;
             canvas.style.transformOrigin = 'center center';
         }
-
         window.addEventListener('resize', handleResize);
         handleResize();
 
-        async function loadCountries() {
-            try {
-                const response = await fetch('https://restcountries.com/v3.1/all');
-                allCountries = await response.json();
-                allRemainingCountries = [...allCountries];  // Initialize overall remaining countries
-                
-                // Create circular flag sprites
-                allRemainingCountries = await Promise.all(allRemainingCountries.map(async country => {
-                    if (country.flags && country.flags.png) {
-                        const tempCanvas = document.createElement('canvas');
-                        const ctx = tempCanvas.getContext('2d');
+        // ---- flag marbles ----
+        function fallbackMarble(country, idx) {
+            const size = 64;
+            const c = document.createElement('canvas');
+            c.width = size; c.height = size;
+            const x = c.getContext('2d');
+            x.beginPath(); x.arc(size/2, size/2, size/2 - 2, 0, Math.PI * 2);
+            x.fillStyle = `hsl(${(idx * 47) % 360}, 80%, 45%)`;
+            x.fill();
+            x.lineWidth = 3; x.strokeStyle = '#fff'; x.stroke();
+            x.fillStyle = '#fff';
+            x.font = 'bold 22px monospace';
+            x.textAlign = 'center'; x.textBaseline = 'middle';
+            x.fillText(country.code.toUpperCase(), size/2, size/2 + 1);
+            return c.toDataURL();
+        }
+
+        function marbleSprite(country, idx) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                const bail = setTimeout(() => resolve(fallbackMarble(country, idx)), 6000);
+                img.onload = () => {
+                    clearTimeout(bail);
+                    try {
                         const size = 64;
-                        tempCanvas.width = size;
-                        tempCanvas.height = size;
-                        
-                        const img = await new Promise((resolve) => {
-                            const image = new Image();
-                            image.crossOrigin = "Anonymous";
-                            image.onload = () => resolve(image);
-                            image.src = country.flags.png;
-                        });
-
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
-                        ctx.closePath();
-                        ctx.clip();
-                        
-                        const scale = Math.max(size / img.width, size / img.height);
-                        const x = (size - img.width * scale) / 2;
-                        const y = (size - img.height * scale) / 2;
-                        
-                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                        ctx.restore();
-                        
-                        country.circularFlag = tempCanvas.toDataURL();
+                        const c = document.createElement('canvas');
+                        c.width = size; c.height = size;
+                        const x = c.getContext('2d');
+                        x.save();
+                        x.beginPath(); x.arc(size/2, size/2, size/2 - 2, 0, Math.PI * 2); x.clip();
+                        const s = Math.max(size / img.width, size / img.height);
+                        x.drawImage(img, (size - img.width * s) / 2, (size - img.height * s) / 2,
+                                    img.width * s, img.height * s);
+                        x.restore();
+                        x.beginPath(); x.arc(size/2, size/2, size/2 - 2, 0, Math.PI * 2);
+                        x.lineWidth = 3; x.strokeStyle = '#fff'; x.stroke();
+                        resolve(c.toDataURL());
+                    } catch (e) {
+                        resolve(fallbackMarble(country, idx));
                     }
-                    return country;
-                }));
+                };
+                img.onerror = () => { clearTimeout(bail); resolve(fallbackMarble(country, idx)); };
+                img.src = 'https://flagcdn.com/w80/' + country.code + '.png';
+            });
+        }
 
-                // Keep only 10 random countries
-                allRemainingCountries = shuffleArray(allRemainingCountries).slice(0, 15);
-                
-                createCourse();
-            } catch (error) {
-                console.error('Error loading countries:', error);
+        function flagImg(country, px) {
+            return '<img src="https://flagcdn.com/w' + px + '/' + country.code + '.png" alt="' +
+                   country.name + ' flag" onerror="this.style.visibility=\'hidden\'">';
+        }
+
+        // ---- map builder ----
+        const NEON = { cyan: '#00ffff', magenta: '#ff00ff', yellow: '#ffee00' };
+
+        function neonRender(color) {
+            return {
+                fillStyle: '#000000',
+                strokeStyle: color || NEON.cyan,
+                lineWidth: 2,
+                shadowColor: color || NEON.cyan,
+                shadowBlur: 10
+            };
+        }
+
+        class MapBuilder {
+            constructor() {
+                this.bodies = [];
+                this.movers = [];
+            }
+            addWall(x, y, w, h, opts = {}) {
+                this.bodies.push(Bodies.rectangle(x, y, w, h, {
+                    isStatic: true,
+                    angle: opts.angle || 0,
+                    label: opts.label || 'wall',
+                    render: neonRender(opts.color)
+                }));
+                return this;
+            }
+            addRamp(x, y, w, angle, color) {
+                return this.addWall(x, y, w, 14, { angle, color });
+            }
+            addPeg(x, y, r = 9, color) {
+                this.bodies.push(Bodies.circle(x, y, r, {
+                    isStatic: true,
+                    label: 'peg',
+                    render: neonRender(color)
+                }));
+                return this;
+            }
+            addSpinner(x, y, w, speed, color) {
+                const bar = Bodies.rectangle(x, y, w, 14, {
+                    isStatic: true,
+                    label: 'spinner',
+                    render: neonRender(color || NEON.magenta)
+                });
+                this.bodies.push(bar);
+                this.movers.push(ts => Body.setAngle(bar, ts * speed));
+                this.addPeg(x, y, 6, color || NEON.magenta);
+                return this;
+            }
+            addSweeper(x, y, w, range, hz, phase = 0, color) {
+                const bar = Bodies.rectangle(x, y, w, 14, {
+                    isStatic: true,
+                    label: 'sweeper',
+                    render: neonRender(color || NEON.yellow)
+                });
+                this.bodies.push(bar);
+                this.movers.push(ts =>
+                    Body.setPosition(bar, { x: x + Math.sin(ts * hz + phase) * range, y }));
+                return this;
+            }
+            addBoundaries() {
+                this.addWall(4, GAME_HEIGHT / 2, 8, GAME_HEIGHT * 2);
+                this.addWall(GAME_WIDTH - 4, GAME_HEIGHT / 2, 8, GAME_HEIGHT * 2);
+                return this;
+            }
+            addFinishLine() {
+                // sensor: marbles fall through and off-screen — nothing can rest on it
+                this.bodies.push(Bodies.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 8, GAME_WIDTH, 16, {
+                    isStatic: true,
+                    isSensor: true,
+                    label: 'finish',
+                    render: neonRender(NEON.magenta)
+                }));
+                return this;
+            }
+            build(name) {
+                const movers = this.movers;
+                return { name, bodies: this.bodies, update: ts => movers.forEach(m => m(ts)) };
             }
         }
 
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+        // ---- the maps ----
+        const MAPS = [
+            function plinko() {
+                const b = new MapBuilder().addBoundaries().addFinishLine();
+                const cols = 13, rows = 8, margin = 62, top = 130, bottom = 150;
+                const hs = (GAME_WIDTH - margin * 2) / (cols - 1);
+                const vs = (GAME_HEIGHT - top - bottom) / (rows - 1);
+                for (let r = 0; r < rows; r++) {
+                    const off = r % 2 ? hs / 2 : 0;
+                    for (let c = 0; c < cols; c++) {
+                        const x = margin + c * hs + off;
+                        if (x > GAME_WIDTH - 20) continue;
+                        b.addPeg(x + (Math.random() - 0.5) * 4, top + r * vs + (Math.random() - 0.5) * 4);
+                    }
+                }
+                return b.build('PLINKO PARADISE');
+            },
+            function zigzag() {
+                const b = new MapBuilder().addBoundaries().addFinishLine();
+                b.addRamp(300, 170, 580, 0.17)
+                 .addRamp(GAME_WIDTH - 300, 320, 580, -0.17)
+                 .addRamp(300, 470, 580, 0.17)
+                 .addRamp(GAME_WIDTH - 300, 620, 580, -0.17);
+                b.addPeg(GAME_WIDTH - 120, 240, 10, NEON.magenta)
+                 .addPeg(120, 390, 10, NEON.magenta)
+                 .addPeg(GAME_WIDTH - 120, 540, 10, NEON.magenta)
+                 .addPeg(120, 690, 10, NEON.magenta);
+                return b.build('ZIGZAG DESCENT');
+            },
+            function spinners() {
+                const b = new MapBuilder().addBoundaries().addFinishLine();
+                b.addSpinner(212, 230, 170, 0.0032)
+                 .addSpinner(512, 230, 170, -0.0032)
+                 .addSpinner(812, 230, 170, 0.0032)
+                 .addSpinner(362, 440, 170, -0.0026)
+                 .addSpinner(662, 440, 170, 0.0026)
+                 .addSpinner(212, 630, 150, 0.0038)
+                 .addSpinner(512, 630, 150, -0.0038)
+                 .addSpinner(812, 630, 150, 0.0038);
+                return b.build('SPINNER ALLEY');
+            },
+            function funnels() {
+                const b = new MapBuilder().addBoundaries().addFinishLine();
+                // tier 1: funnel to a center gap
+                b.addRamp(232, 200, 430, 0.30).addRamp(GAME_WIDTH - 232, 200, 430, -0.30);
+                // tier 2: a roof splitting to two side gaps
+                b.addRamp(GAME_WIDTH / 2 - 190, 420, 360, -0.28)
+                 .addRamp(GAME_WIDTH / 2 + 190, 420, 360, 0.28);
+                // tier 3: funnel again
+                b.addRamp(252, 610, 400, 0.26).addRamp(GAME_WIDTH - 252, 610, 400, -0.26);
+                b.addPeg(GAME_WIDTH / 2, 300, 11, NEON.magenta)
+                 .addPeg(120, 520, 10).addPeg(GAME_WIDTH - 120, 520, 10);
+                return b.build('FUNNEL FACTORY');
+            },
+            function pistons() {
+                const b = new MapBuilder().addBoundaries().addFinishLine();
+                b.addSweeper(350, 230, 190, 220, 0.0011, 0)
+                 .addSweeper(680, 400, 190, 220, 0.0013, 2.1)
+                 .addSweeper(400, 570, 190, 240, 0.0009, 4.2);
+                for (let i = 0; i < 5; i++) {
+                    b.addPeg(90 + i * 12, 300 + i * 60, 8)
+                     .addPeg(GAME_WIDTH - 90 - i * 12, 300 + i * 60, 8);
+                }
+                b.addPeg(512, 680, 10, NEON.magenta);
+                return b.build('PISTON PLAZA');
+            },
+            function gauntlet() {
+                const b = new MapBuilder().addBoundaries().addFinishLine();
+                b.addRamp(330, 160, 640, 0.14);
+                b.addSpinner(512, 350, 210, 0.0034);
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c <= r + 3; c++) {
+                        const x = GAME_WIDTH / 2 + (c - (r + 3) / 2) * 90;
+                        b.addPeg(x, 460 + r * 62, 9);
+                    }
+                }
+                b.addSweeper(512, 690, 170, 260, 0.0012, 1, NEON.magenta);
+                return b.build('THE GAUNTLET');
             }
-            return array;
+        ];
+
+        // ---- game state ----
+        let roster = [];            // countries in this game (with sprites)
+        let remaining = [];         // still alive
+        let eliminatedOrder = [];   // most recent first
+        let activeBalls = [];       // Matter bodies in the current round
+        let currentMapObj = null;
+        let mapQueue = [];
+        let roundActive = false;
+        let selectedCount = 16;
+
+        function shuffleArray(a) {
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function nextMap() {
+            if (mapQueue.length === 0) mapQueue = shuffleArray(MAPS.map((_, i) => i));
+            return MAPS[mapQueue.pop()]();
         }
 
         function createCourse() {
-            // Clear existing world and reset engine
-            World.clear(engine.world);
-            
-            // Get current speed from active button
-            const activeSpeed = document.querySelector('.speed-button.active');
-            const speed = parseFloat(activeSpeed.dataset.speed);
-            engine.timing.timeScale = 0.5 * speed;
-            
-            // Randomly select a map
-            currentMap = Math.floor(Math.random() * maps.length);
-            
-            createMap();
+            World.clear(engine.world, false);
+            activeBalls = [];
 
-            // Reset current round with shuffled remaining countries
-            currentRoundCountries = shuffleArray([...allRemainingCountries]);
-            
-            // Create balls with consistent physics properties
-            const ballSize = 15;
-            const ballSpacing = ballSize * 2.2;
-            const maxBallsPerRow = Math.floor(GAME_WIDTH / ballSpacing);
-            
-            currentRoundCountries.forEach((country, index) => {
-                const col = index % maxBallsPerRow;
-                const row = Math.floor(index / maxBallsPerRow);
-                
+            currentMapObj = nextMap();
+            World.add(engine.world, currentMapObj.bodies);
+            document.getElementById('mapName').textContent = currentMapObj.name;
+
+            const order = shuffleArray([...remaining]);
+            const n = order.length;
+            const r = n > 40 ? 10 : n > 24 ? 12 : 15;
+            const spacing = r * 2.4;
+            const cols = Math.min(n, Math.floor((GAME_WIDTH - 140) / spacing));
+
+            order.forEach((country, i) => {
+                const col = i % cols, row = Math.floor(i / cols);
+                const rowCount = Math.min(cols, n - row * cols);
+                const startX = (GAME_WIDTH - (rowCount - 1) * spacing) / 2;
                 const ball = Bodies.circle(
-                    col * ballSpacing + ballSpacing,
-                    row * ballSpacing + 50,
-                    ballSize,
+                    startX + col * spacing + (Math.random() - 0.5) * 3,
+                    36 + row * spacing,
+                    r,
                     {
-                        restitution: 0.8,
-                        friction: 0.001,
-                        density: 0.001,  // Add consistent density
-                        render: {
-                            sprite: {
-                                texture: country.circularFlag,
-                                xScale: ballSize * 2 / 64,
-                                yScale: ballSize * 2 / 64
-                            }
-                        },
-                        label: country.name.common
+                        restitution: 0.7,
+                        friction: 0.005,
+                        frictionAir: 0.0012,
+                        density: 0.002,
+                        label: 'marble',
+                        render: { sprite: { texture: country.sprite, xScale: r * 2 / 64, yScale: r * 2 / 64 } }
                     }
                 );
+                ball.plugin = { country, radius: r, still: 0 };
+                activeBalls.push(ball);
                 World.add(engine.world, ball);
             });
 
-            document.getElementById('remainingCountries').textContent = allRemainingCountries.length;
+            document.getElementById('remainingCountries').textContent = remaining.length;
+            roundActive = true;
         }
 
-        Matter.Events.on(engine, 'collisionStart', (event) => {
-            event.pairs.forEach((pair) => {
-                const bodyA = pair.bodyA;
-                const bodyB = pair.bodyB;
+        // ---- finish detection + anti-stall (position-based: tunnel-proof) ----
+        Events.on(engine, 'beforeUpdate', () => {
+            if (currentMapObj) currentMapObj.update(engine.timing.timestamp);
+        });
 
-                if (
-                    (bodyA.label === 'finish' && bodyB.label && bodyB.label !== 'finish') ||
-                    (bodyB.label === 'finish' && bodyA.label && bodyA.label !== 'finish')
-                ) {
-                    const ballBody = bodyA.label === 'finish' ? bodyB : bodyA;
-                    
-                    // Remove from current round
-                    currentRoundCountries = currentRoundCountries.filter(c => 
-                        c.name.common !== ballBody.label
-                    );
-                    Matter.World.remove(engine.world, ballBody);
-
-                    // Check remaining active balls
-                    const activeBalls = engine.world.bodies.filter(body => 
-                        body.label !== 'finish' && 
-                        !body.isStatic && 
-                        body.label !== 'leftWall' && 
-                        body.label !== 'rightWall' && 
-                        body.label !== 'topWall' && 
-                        body.label !== 'bottomWall'
-                    );
-
+        Events.on(engine, 'afterUpdate', () => {
+            if (!roundActive) return;
+            const dt = engine.timing.lastDelta || 16.7;
+            for (let i = activeBalls.length - 1; i >= 0; i--) {
+                const ball = activeBalls[i];
+                // fully below the sensor line = finished
+                if (ball.position.y - ball.plugin.radius > GAME_HEIGHT) {
+                    activeBalls.splice(i, 1);
+                    World.remove(engine.world, ball);
                     if (activeBalls.length === 0) {
-                        // Add the eliminated country to our tracking array
-                        eliminatedCountries.unshift(ballBody.label);
-                        
-                        if (allRemainingCountries.length <= 1) {
-                            // Game is over, show winner screen
-                            const winner = allRemainingCountries[0];
-                            showWinnerScreen(winner);
-                        } else {
-                            const finishLine = engine.world.bodies.find(body => body.label === 'finish');
-                            if (finishLine) {
-                                finishLine.render.visible = false;
-                                
-                                // Remove from overall game
-                                allRemainingCountries = allRemainingCountries.filter(c => 
-                                    c.name.common !== ballBody.label
-                                );
-                                
-                                // Only proceed if we still have countries
-                                if (allRemainingCountries.length > 0) {
-                                    const eliminationDiv = document.createElement('div');
-                                    eliminationDiv.className = 'elimination-message';
-                                    eliminationDiv.innerHTML = `${ballBody.label} has been eliminated!`;
-                                    document.body.appendChild(eliminationDiv);
-                                    
-                                    // Update the counter immediately
-                                    document.getElementById('remainingCountries').textContent = allRemainingCountries.length;
-
-                                    setTimeout(() => {
-                                        document.body.removeChild(eliminationDiv);
-                                        finishLine.render.visible = true;
-                                        setTimeout(createCourse, 500);
-                                    }, 1500);
-                                }
-                            }
-                        }
-                    } else {
-                        // Update counter for normal eliminations
-                        document.getElementById('remainingCountries').textContent = allRemainingCountries.length;
+                        roundOver(ball.plugin.country);
+                        return;
                     }
+                    continue;
                 }
+                // escaped sideways somehow: teleport back to the top, no ball left behind
+                if (ball.position.x < -60 || ball.position.x > GAME_WIDTH + 60) {
+                    Body.setPosition(ball, { x: GAME_WIDTH / 2, y: 30 });
+                    Body.setVelocity(ball, { x: 0, y: 2 });
+                    continue;
+                }
+                // anti-stall: a marble sitting nearly still gets a kick
+                if (ball.speed < 0.55) {
+                    ball.plugin.still += dt;
+                    if (ball.plugin.still > 2400) {
+                        Body.setVelocity(ball, { x: (Math.random() - 0.5) * 8, y: -6 - Math.random() * 3 });
+                        ball.plugin.still = 0;
+                    }
+                } else {
+                    ball.plugin.still = 0;
+                }
+            }
+        });
+
+        function roundOver(lastCountry) {
+            roundActive = false;
+            remaining = remaining.filter(c => c !== lastCountry);
+            eliminatedOrder.unshift(lastCountry);
+
+            if (remaining.length <= 1) {
+                showWinnerScreen(remaining[0]);
+                return;
+            }
+            const msg = document.createElement('div');
+            msg.className = 'elimination-message';
+            msg.textContent = lastCountry.name + ' has been eliminated!';
+            document.body.appendChild(msg);
+            document.getElementById('remainingCountries').textContent = remaining.length;
+            setTimeout(() => {
+                document.body.removeChild(msg);
+                createCourse();
+            }, 1600);
+        }
+
+        // ---- speed controls ----
+        const SPEED_SCALE = { 1: 1, 2: 1.5, 4: 2.1 };
+        document.querySelectorAll('.speed-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.speed-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                engine.timing.timeScale = SPEED_SCALE[button.dataset.speed] || 1;
             });
         });
 
-        // Add speed control functionality
-        const speedButtons = document.querySelectorAll('.speed-button');
-        speedButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Update active button
-                speedButtons.forEach(btn => btn.classList.remove('active'));
+        // ---- pause ----
+        let isEnginePaused = false;
+        window.toggleEngine = function () {
+            const button = document.getElementById('toggleButton');
+            if (isEnginePaused) {
+                Runner.run(runner, engine);
+                Render.run(render);
+                button.textContent = 'STOP';
+                button.classList.remove('active');
+            } else {
+                Runner.stop(runner);
+                Render.stop(render);
+                button.textContent = 'START';
                 button.classList.add('active');
-                
-                // Update engine speed
-                const speed = parseFloat(button.dataset.speed);
-                engine.timing.timeScale = 0.5 * speed;
-            });
-        });
+            }
+            isEnginePaused = !isEnginePaused;
+        };
+
+        // ---- winner screen ----
+        function ordinal(n) {
+            const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
 
         function showWinnerScreen(winner) {
             const winnerScreen = document.getElementById('winnerScreen');
             const winnerDisplay = document.getElementById('winnerDisplay');
             const rankingsDiv = document.getElementById('rankings');
-            
-            // Clear previous rankings
             rankingsDiv.innerHTML = '';
-            winnerDisplay.innerHTML = '';
-            
-            // Remove winner from eliminated countries if it's there
-            eliminatedCountries = eliminatedCountries.filter(name => name !== winner.name.common);
-            
-            // Show winner first
-            winnerDisplay.innerHTML = `
-                <div class="ranking-item">
-                    <span class="ranking-position">1st</span>
-                    <img src="${winner.flags.png}" alt="${winner.name.common} flag">
-                    <span>${winner.name.common}</span>
-                </div>
-            `;
-            
-            // Show remaining rankings in reverse order (last eliminated = 2nd place)
-            eliminatedCountries.slice().reverse().forEach((countryName, index) => {
-                const country = allCountries.find(c => c.name.common === countryName);
-                const position = index + 2;  // +2 because winner is 1st
-                const suffix = position === 2 ? 'nd' : position === 3 ? 'rd' : 'th';
-                
-                rankingsDiv.innerHTML += `
-                    <div class="ranking-item">
-                        <span class="ranking-position">${position}${suffix}</span>
-                        <img src="${country.flags.png}" alt="${country.name.common} flag">
-                        <span>${country.name.common}</span>
-                    </div>
-                `;
+            winnerDisplay.innerHTML =
+                '<div class="ranking-item">' +
+                '<span class="ranking-position">1st</span>' +
+                flagImg(winner, 40) +
+                '<span>' + winner.name + '</span></div>';
+            eliminatedOrder.forEach((country, i) => {
+                rankingsDiv.innerHTML +=
+                    '<div class="ranking-item">' +
+                    '<span class="ranking-position">' + ordinal(i + 2) + '</span>' +
+                    flagImg(country, 40) +
+                    '<span>' + country.name + '</span></div>';
             });
-            
             winnerScreen.style.display = 'flex';
         }
 
-        async function createCircularFlag(imageUrl) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "Anonymous";
-                
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const size = 64; // Size of the circular flag
-                    canvas.width = size;
-                    canvas.height = size;
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Draw circular clip path
-                    ctx.beginPath();
-                    ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2, true);
-                    ctx.closePath();
-                    ctx.clip();
-                    
-                    // Draw the image
-                    ctx.drawImage(img, 0, 0, size, size);
-                    
-                    resolve(canvas.toDataURL());
-                };
-                
-                img.onerror = () => reject(new Error('Failed to load flag image'));
-                img.src = imageUrl;
-            });
-        }
-
-        let selectedCount = 16;
-
-        function adjustCount(change) {
-            const newCount = selectedCount + change;
-            if (newCount >= 4 && newCount <= 256) {
-                selectedCount = newCount;
+        // ---- setup flow ----
+        window.adjustCount = function (change) {
+            const next = selectedCount + change * 4;
+            if (next >= 4 && next <= 64) {
+                selectedCount = next;
                 document.getElementById('countDisplay').textContent = selectedCount;
-            }
-        }
-
-        async function startGame() {
-            try {
-
-                // Set start button to loading state
-                const startButton = document.getElementById('startButton');
-                startButton.textContent = 'LOADING...';
-                startButton.disabled = true;
-
-                // Load countries if not already loaded
-                if (!allCountries || allCountries.length === 0) {
-                    const response = await fetch('https://restcountries.com/v3.1/all');
-                    allCountries = await response.json();
-                    
-                    // Filter out countries without flags
-                    allCountries = allCountries.filter(country => country.flags && country.flags.png);
-                    
-                    // Create circular flags
-                    allCountries = await Promise.all(allCountries.map(async country => {
-                        try {
-                            country.circularFlag = await createCircularFlag(country.flags.png);
-                            return country;
-                        } catch (error) {
-                            console.error(`Failed to create circular flag for ${country.name.common}`);
-                            return null;
-                        }
-                    }));
-                    
-                    // Remove any countries where flag creation failed
-                    allCountries = allCountries.filter(country => country !== null);
-                }
-
-                // Select countries for the game
-                allRemainingCountries = shuffleArray([...allCountries]).slice(0, selectedCount);
-                
-                // Show contestants screen
-                const contestantsScreen = document.getElementById('contestantsScreen');
-                const contestantsGrid = document.getElementById('contestantsGrid');
-                
-                // Clear previous contestants
-                contestantsGrid.innerHTML = '';
-                
-                // Add all contestants
-                allRemainingCountries.forEach(country => {
-                    const div = document.createElement('div');
-                    div.className = 'contestant-item';
-                    div.innerHTML = `
-                        <img src="${country.flags.png}" alt="${country.name.common} flag">
-                        <span>${country.name.common}</span>
-                    `;
-                    contestantsGrid.appendChild(div);
-                });
-                
-                document.getElementById('startScreen').style.display = 'none';
-                contestantsScreen.style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Error starting game:', error);
-                alert('Failed to start game. Please try again.');
             }
         };
 
-        // Add function to start the first round
-        window.startFirstRound = () => {
+        window.startGame = async function () {
+            const startButton = document.getElementById('startButton');
+            startButton.textContent = 'LOADING...';
+            startButton.disabled = true;
+
+            roster = shuffleArray([...COUNTRIES]).slice(0, selectedCount);
+            const sprites = await Promise.all(roster.map((c, i) => marbleSprite(c, i)));
+            roster.forEach((c, i) => c.sprite = sprites[i]);
+            remaining = [...roster];
+            eliminatedOrder = [];
+
+            const grid = document.getElementById('contestantsGrid');
+            grid.innerHTML = '';
+            roster.forEach(country => {
+                const div = document.createElement('div');
+                div.className = 'contestant-item';
+                div.innerHTML = flagImg(country, 40) + '<span>' + country.name + '</span>';
+                grid.appendChild(div);
+            });
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('contestantsScreen').style.display = 'flex';
+            startButton.textContent = 'VIEW CONTESTANTS';
+            startButton.disabled = false;
+        };
+
+        window.startFirstRound = function () {
             document.getElementById('contestantsScreen').style.display = 'none';
-            
-            // Start the game engine
-            if (!engine.enabled) {
-                Engine.run(engine);
-                Render.run(render);
-            }
-            
-            // Create the first course
+            mapQueue = [];
             createCourse();
         };
 
-        // Show start screen when page loads
+        // start-screen tilt flourish (kept from the original)
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('startScreen').style.display = 'flex';
-        });
-
-        let isEnginePaused = false;
-
-        function toggleEngine() {
-            const button = document.getElementById('toggleButton');
-            
-            if (isEnginePaused) {
-                // Resume engine
-                Engine.run(engine);
-                Render.run(render);
-                button.textContent = 'STOP';
-                button.classList.remove('active');
-            } else {
-                // Stop engine
-                Engine.clear(engine);
-                Render.stop(render);
-                button.textContent = 'START';
-                button.classList.add('active');
-            }
-            
-            isEnginePaused = !isEnginePaused;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('countDisplay').textContent = selectedCount;
             const startContent = document.querySelector('.start-content');
-            
             document.addEventListener('mousemove', (e) => {
+                if (document.getElementById('startScreen').style.display === 'none') return;
                 const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
                 const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
                 startContent.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
             });
-        });
-
-        // Add this function to create obstacles with neon effect
-        function createObstacle(x, y, width, height, angle = 0) {
-            return Bodies.rectangle(x, y, width, height, {
-                isStatic: true,
-                angle: angle,
-                render: {
-                    fillStyle: '#000000',
-                    strokeStyle: '#00ffff',
-                    lineWidth: 2,
-                    shadowColor: '#00ffff',
-                    shadowBlur: 10,
-                    shadowOffsetX: 0,
-                    shadowOffsetY: 0
-                }
-            });
-        }
-
-        // Add this function to create pegs with neon effect
-        function createPeg(x, y) {
-            return Bodies.circle(x, y, 8, {
-                isStatic: true,
-                render: {
-                    fillStyle: '#000000',
-                    strokeStyle: '#00ffff',
-                    lineWidth: 2,
-                    shadowColor: '#00ffff',
-                    shadowBlur: 10,
-                    shadowOffsetX: 0,
-                    shadowOffsetY: 0
-                },
-                chamfer: { radius: 8 },
-                friction: 0.001
-            });
-        }
-
-        // Add this to your existing render setup
-        Render.lookAt(render, {
-            min: { x: 0, y: 0 },
-            max: { x: GAME_WIDTH, y: GAME_HEIGHT }
-        });
-
-        // Optional: Add a post-render effect for extra glow
-        Events.on(render, 'afterRender', () => {
-            const context = render.context;
-            context.globalCompositeOperation = 'screen';
-            context.shadowBlur = 5;
-            context.shadowColor = '#00ffff';
         });
     </script>
 </body>
