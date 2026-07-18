@@ -5,212 +5,511 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brain Rot Engine</title>
+    <meta name="description" content="Configure your rot — how many balls, whether they multiply — then let it run.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='25' cy='25' r='20' fill='none' stroke='%23fff8ef' stroke-width='4'/><circle cx='31' cy='31' r='7' fill='%23f0563e' stroke='%23fff8ef' stroke-width='2'/><rect width='50' height='50' fill='%23201a17' rx='10' style='mix-blend-mode:destination-over'/></svg>">
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #000;
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
         }
-        canvas {
-            border: 2px solid #fff;
-            background: #111;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+        body.running { background: #16120e; overflow: hidden; }
+
+        /* ---- setup ---- */
+        #setup {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 26px 16px 40px;
+        }
+        body.running #setup { display: none; }
+
+        .config {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-0.8deg);
+            width: min(430px, 94vw);
+            padding: 22px 26px 26px;
+        }
+        .config h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(19px, 5vw, 24px);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            text-align: center;
+        }
+        .config .sub {
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.6);
+            text-align: center;
+            margin: 4px 0 16px;
+            border-bottom: 2px solid var(--ink);
+            padding-bottom: 12px;
+        }
+
+        .ctl { margin: 13px 0; }
+        .ctl .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .ctl .lab {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .ctl .val { font-style: italic; font-size: 13px; color: rgba(32, 26, 23, 0.65); }
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--coral);
+            cursor: pointer;
+            height: 22px;
+        }
+
+        .togglerow { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 4px; }
+        .tog {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 8px 14px;
+            cursor: pointer;
+            background: var(--cream);
+            color: rgba(32, 26, 23, 0.5);
+            user-select: none;
+            transition: transform 0.1s ease;
+        }
+        .tog.on { background: var(--gold); color: var(--ink); }
+        .tog:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+        .toglabel {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-top: 14px;
+        }
+
+        #beginBtn {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 18px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink);
+            background: var(--coral);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-1.6deg);
+            padding: 16px 34px;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        #beginBtn:hover { transform: translate(-2px, -2px) rotate(-1.6deg); box-shadow: 6px 6px 0 var(--ink); }
+        #beginBtn:active { transform: translate(3px, 3px) rotate(-1.6deg); box-shadow: 1px 1px 0 var(--ink); }
+
+        .warnnote {
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.55);
+        }
+
+        /* ---- run ---- */
+        #stage { position: fixed; inset: 0; display: none; }
+        body.running #stage { display: block; }
+
+        #pill {
+            position: fixed;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            gap: 14px;
+            background: rgba(32, 26, 23, 0.72);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--cream);
+            border-radius: 999px;
+            padding: 9px 18px;
+            color: var(--cream);
+            z-index: 5;
+            transition: opacity 0.8s ease;
+            max-width: 94vw;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        body.running #pill { display: flex; }
+        #pill.faded { opacity: 0.14; }
+        #stats { font-style: italic; font-size: 13px; white-space: nowrap; }
+        #pill button {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink);
+            background: var(--cream);
+            border: 2px solid var(--cream);
+            border-radius: 999px;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+        #pill button:active { transform: translate(1px, 1px); }
+
+        @media (prefers-reduced-motion: reduce) {
+            #beginBtn, .tog { transition: none; }
         }
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
+    <div id="setup">
+        <div class="config">
+            <h1>Brain Rot Engine</h1>
+            <div class="sub">form R-0T &middot; configure your rot, then begin</div>
+
+            <div class="ctl">
+                <div class="row"><span class="lab">Balls to begin with</span><span class="val" id="v-balls"></span></div>
+                <input type="range" id="c-balls" min="1" max="20" step="1" value="3">
+            </div>
+            <div class="ctl">
+                <div class="row"><span class="lab">Ball size</span><span class="val" id="v-size"></span></div>
+                <input type="range" id="c-size" min="6" max="26" step="1" value="12">
+            </div>
+            <div class="ctl">
+                <div class="row"><span class="lab">Gravity</span><span class="val" id="v-gravity"></span></div>
+                <input type="range" id="c-gravity" min="0" max="80" step="5" value="25">
+            </div>
+            <div class="ctl">
+                <div class="row"><span class="lab">Bounce energy</span><span class="val" id="v-energy"></span></div>
+                <input type="range" id="c-energy" min="85" max="110" step="1" value="101">
+            </div>
+            <div class="ctl">
+                <div class="row"><span class="lab">Trails</span><span class="val" id="v-trails"></span></div>
+                <input type="range" id="c-trails" min="0" max="95" step="5" value="60">
+            </div>
+
+            <div class="toglabel">On every bounce:</div>
+            <div class="togglerow">
+                <div class="tog on" id="t-duplicate">Duplicate</div>
+                <div class="tog" id="t-grow">Grow</div>
+                <div class="tog on" id="t-sound">Blip</div>
+            </div>
+        </div>
+
+        <button id="beginBtn">Begin the Rot</button>
+        <div class="warnnote" id="warnnote">the department caps rot at 400 balls. for everyone's sake.</div>
+    </div>
+
+    <canvas id="stage"></canvas>
+    <div id="pill">
+        <span id="stats"></span>
+        <button id="reconfBtn">Stop the Rot</button>
+        <button id="muteBtn">Sound Off</button>
+    </div>
+
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+    (() => {
+        const CREAM = '#fff8ef';
+        const MAX_BALLS = 400;
 
-        // Set canvas size
-        canvas.width = 800;
-        canvas.height = 600;
+        const stage = document.getElementById('stage');
+        const ctx = stage.getContext('2d');
+        const pill = document.getElementById('pill');
+        const statsEl = document.getElementById('stats');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-        // Physics constants
-        const GRAVITY = 0.4;
-        const BOUNCE_DAMPING = 1.05; // Made slightly more energetic
+        // ---- config ----
+        const sliders = ['balls', 'size', 'gravity', 'energy', 'trails'];
+        const toggles = ['duplicate', 'grow', 'sound'];
 
-        // Effect system
-        const effects = {
-            rainbow: {
-                enabled: true,
-                speed: 2, // Doubled rainbow speed
-                apply: (object) => {
-                    if (!object.hue) object.hue = 0;
-                    object.hue = (object.hue + effects.rainbow.speed) % 360;
-                    return `hsl(${object.hue}, 100%, 50%)`;
-                }
-            },
-            trail: {
-                enabled: true,
-                lifetime: 45, // Increased trail lifetime
-                interval: 2, // Decreased interval for more frequent trails
-                snapshots: [],
-                frameCount: 0,
-                createSnapshot: (object) => {
-                    if (!effects.trail.enabled) return;
-                    if (effects.trail.frameCount % effects.trail.interval === 0) {
-                        effects.trail.snapshots.push({
-                            x: object.x,
-                            y: object.y,
-                            radius: object.radius,
-                            fillColor: object.fillColor,
-                            strokeColor: object.strokeColor,
-                            lifetime: effects.trail.lifetime,
-                            rotation: Math.random() * Math.PI * 2 // Added rotation for more visual interest
-                        });
-                    }
-                    effects.trail.frameCount++;
-                },
-                draw: (ctx) => {
-                    for (let i = effects.trail.snapshots.length - 1; i >= 0; i--) {
-                        const snapshot = effects.trail.snapshots[i];
-                        
-                        ctx.save();
-                        ctx.translate(snapshot.x, snapshot.y);
-                        ctx.rotate(snapshot.rotation);
-                        
-                        ctx.beginPath();
-                        ctx.strokeStyle = snapshot.strokeColor;
-                        ctx.fillStyle = snapshot.fillColor;
-                        ctx.globalAlpha = snapshot.lifetime / effects.trail.lifetime;
-                        ctx.lineWidth = 2;
-                        ctx.arc(0, 0, snapshot.radius * (1 + Math.sin(Date.now() * 0.01) * 0.1), 0, Math.PI * 2); // Added pulsing effect
-                        ctx.fill();
-                        ctx.stroke();
-                        
-                        ctx.restore();
-                        
-                        snapshot.lifetime--;
-                        snapshot.rotation += 0.1; // Rotate trails over time
-                        
-                        if (snapshot.lifetime <= 0) {
-                            effects.trail.snapshots.splice(i, 1);
-                        }
-                    }
-                    ctx.globalAlpha = 1;
-                }
-            },
-            glow: { // Added new glow effect
-                enabled: true,
-                draw: (ctx, object) => {
-                    const gradient = ctx.createRadialGradient(
-                        object.x, object.y, 0,
-                        object.x, object.y, object.radius * 2
-                    );
-                    gradient.addColorStop(0, object.fillColor);
-                    gradient.addColorStop(1, 'transparent');
-                    ctx.fillStyle = gradient;
-                    ctx.beginPath();
-                    ctx.arc(object.x, object.y, object.radius * 2, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
+        function sliderEl(k) { return document.getElementById('c-' + k); }
+        function togEl(k) { return document.getElementById('t-' + k); }
+
+        const VALTEXT = {
+            balls: v => v + (v === 1 ? ' ball' : ' balls'),
+            size: v => v < 11 ? 'small' : v < 19 ? 'medium' : 'large',
+            gravity: v => v === 0 ? 'none. space rules.' : v < 30 ? 'gentle' : v < 60 ? 'earth-like' : 'oppressive',
+            energy: v => v < 100 ? 'loses a little' : v === 100 ? 'perfectly conserved' : 'gains. physics disapproves.',
+            trails: v => v === 0 ? 'none' : v < 40 ? 'short' : v < 75 ? 'long' : 'irresponsible'
         };
 
-        // Game objects
-        const ball = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            radius: 20,
-            dx: 5,
-            dy: 3,
-            strokeWidth: 2,
-            strokeColor: '#fff',
-            fillColor: '#fff',
-            growthRate: 0.5
-        };
+        function refreshVals() {
+            sliders.forEach(k => {
+                document.getElementById('v-' + k).textContent = VALTEXT[k](parseInt(sliderEl(k).value, 10));
+            });
+        }
+        sliders.forEach(k => sliderEl(k).addEventListener('input', refreshVals));
+        toggles.forEach(k => togEl(k).addEventListener('click', () => togEl(k).classList.toggle('on')));
 
-        const container = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            radius: 200,
-            strokeWidth: 16,
-            color: '#fff',
-            rotation: 0 // Added rotation
-        };
-
-        function animate() {
-            // Clear canvas with fade effect
-            ctx.fillStyle = 'rgba(17, 17, 17, 0.3)'; // Creates motion blur
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Rotate container
-            container.rotation += 0.005;
-
-            // Apply effects
-            if (effects.rainbow.enabled) {
-                container.color = effects.rainbow.apply(container);
-                ball.fillColor = effects.rainbow.apply(ball);
-                ball.strokeColor = ball.fillColor;
+        // restore saved config
+        try {
+            const saved = JSON.parse(localStorage.getItem('brainrot-config'));
+            if (saved) {
+                sliders.forEach(k => { if (saved[k] !== undefined) sliderEl(k).value = saved[k]; });
+                toggles.forEach(k => { if (saved[k] !== undefined) togEl(k).classList.toggle('on', saved[k]); });
             }
+        } catch (e) {}
+        refreshVals();
 
-            if (effects.trail.enabled) {
-                effects.trail.createSnapshot(ball);
-                effects.trail.draw(ctx);
-            }
-
-            // Draw container with rotation
-            ctx.save();
-            ctx.translate(container.x, container.y);
-            ctx.rotate(container.rotation);
-            ctx.beginPath();
-            ctx.strokeStyle = container.color;
-            ctx.lineWidth = container.strokeWidth;
-            ctx.arc(0, 0, container.radius, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.restore();
-
-            // Apply physics
-            ball.dy += GRAVITY;
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-
-            // Check for collisions
-            const dx = ball.x - container.x;
-            const dy = ball.y - container.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance + ball.radius > container.radius) {
-                ball.radius += ball.growthRate;
-                
-                const angle = Math.atan2(dy, dx);
-                ball.x = container.x + (container.radius - ball.radius) * Math.cos(angle);
-                ball.y = container.y + (container.radius - ball.radius) * Math.sin(angle);
-                
-                const normalX = Math.cos(angle);
-                const normalY = Math.sin(angle);
-                const dotProduct = ball.dx * normalX + ball.dy * normalY;
-                
-                ball.dx = (ball.dx - 2 * dotProduct * normalX) * BOUNCE_DAMPING;
-                ball.dy = (ball.dy - 2 * dotProduct * normalY) * BOUNCE_DAMPING;
-            }
-
-            // Draw glow effect
-            if (effects.glow.enabled) {
-                effects.glow.draw(ctx, ball);
-            }
-
-            // Draw ball with pulsing effect
-            ctx.beginPath();
-            ctx.strokeStyle = ball.strokeColor;
-            ctx.fillStyle = ball.fillColor;
-            ctx.lineWidth = ball.strokeWidth;
-            const pulseScale = 1 + Math.sin(Date.now() * 0.01) * 0.1;
-            ctx.arc(ball.x, ball.y, ball.radius * pulseScale, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            requestAnimationFrame(animate);
+        function readConfig() {
+            const cfg = {};
+            sliders.forEach(k => cfg[k] = parseInt(sliderEl(k).value, 10));
+            toggles.forEach(k => cfg[k] = togEl(k).classList.contains('on'));
+            return cfg;
         }
 
-        // Start animation
-        animate();
+        // ---- sim state ----
+        let cfg = null;
+        let balls = [];
+        let bounces = 0;
+        let rafId = 0;
+        let running = false;
+        let ringRot = 0;
+        let runStart = 0;
+        let W = 0, H = 0, dpr = 1;
+        let ring = { x: 0, y: 0, r: 0 };
+
+        function sizeStage() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            W = innerWidth; H = innerHeight;
+            stage.width = Math.round(W * dpr);
+            stage.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ring.x = W / 2;
+            ring.y = H / 2;
+            ring.r = Math.min(W, H) * 0.40;
+            // keep balls inside after resize
+            for (const b of balls) {
+                const dx = b.x - ring.x, dy = b.y - ring.y;
+                const d = Math.hypot(dx, dy);
+                const max = ring.r - b.r - 1;
+                if (d > max && d > 0) { b.x = ring.x + dx / d * max; b.y = ring.y + dy / d * max; }
+            }
+            ctx.fillStyle = '#16120e';
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        function spawnBall(x, y, vx, vy, r, hue) {
+            balls.push({ x, y, vx, vy, r, hue, grown: false });
+        }
+
+        function seedBalls() {
+            balls = [];
+            for (let i = 0; i < cfg.balls; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const d = Math.random() * ring.r * 0.5;
+                const va = Math.random() * Math.PI * 2;
+                const sp = 3 + Math.random() * 3;
+                spawnBall(ring.x + Math.cos(a) * d, ring.y + Math.sin(a) * d,
+                          Math.cos(va) * sp, Math.sin(va) * sp,
+                          cfg.size, Math.random() * 360);
+            }
+        }
+
+        // ---- sound ----
+        let actx = null;
+        let soundOn = false;
+        function blip(freq) {
+            if (!soundOn || !actx) return;
+            const t = actx.currentTime;
+            const o = actx.createOscillator();
+            const g = actx.createGain();
+            o.type = 'sine';
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.05, t);
+            g.gain.exponentialRampToValueAtTime(0.0005, t + 0.09);
+            o.connect(g).connect(actx.destination);
+            o.start(t);
+            o.stop(t + 0.1);
+        }
+
+        // ---- physics ----
+        function step() {
+            const g = cfg.gravity / 100;
+            const energy = cfg.energy / 100;
+            let blips = 0;
+            const spawnQueue = [];
+
+            for (const b of balls) {
+                b.vy += g;
+                b.x += b.vx;
+                b.y += b.vy;
+
+                const dx = b.x - ring.x, dy = b.y - ring.y;
+                const d = Math.hypot(dx, dy);
+                if (d + b.r > ring.r) {
+                    bounces++;
+                    const nx = dx / (d || 1), ny = dy / (d || 1);
+                    const max = ring.r - b.r;
+                    b.x = ring.x + nx * max;
+                    b.y = ring.y + ny * max;
+                    const dot = b.vx * nx + b.vy * ny;
+                    b.vx = (b.vx - 2 * dot * nx) * energy;
+                    b.vy = (b.vy - 2 * dot * ny) * energy;
+                    b.hue = (b.hue + 47) % 360;
+
+                    // speed sanity: never let energy gain go supersonic
+                    const sp = Math.hypot(b.vx, b.vy);
+                    const cap = ring.r * 0.11;
+                    if (sp > cap) { b.vx = b.vx / sp * cap; b.vy = b.vy / sp * cap; }
+
+                    if (cfg.grow && !b.grown) {
+                        b.r *= 1.045;
+                        if (b.r >= ring.r * 0.42) { b.r = ring.r * 0.42; b.grown = true; }
+                    }
+                    if (cfg.duplicate && balls.length + spawnQueue.length < MAX_BALLS && Math.random() < 0.35) {
+                        const ja = (Math.random() - 0.5) * 1.2;
+                        const cos = Math.cos(ja), sin = Math.sin(ja);
+                        spawnQueue.push([b.x, b.y, b.vx * cos - b.vy * sin, b.vx * sin + b.vy * cos,
+                                         Math.max(4, b.r * 0.92), (b.hue + 137) % 360]);
+                    }
+                    if (blips < 5) { blip(180 + (26 - Math.min(26, b.r)) * 24 + Math.random() * 40); blips++; }
+                }
+            }
+            for (const s of spawnQueue) spawnBall(...s);
+        }
+
+        // ---- render ----
+        function render() {
+            const fade = cfg.trails === 0 ? 1 : Math.max(0.04, 1 - cfg.trails / 100);
+            ctx.fillStyle = 'rgba(22, 18, 14, ' + fade + ')';
+            ctx.fillRect(0, 0, W, H);
+
+            // ring: cream body + rotating coral arc so the spin reads
+            ctx.lineWidth = Math.max(6, ring.r * 0.045);
+            ctx.strokeStyle = CREAM;
+            ctx.beginPath();
+            ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.strokeStyle = '#f0563e';
+            ctx.beginPath();
+            ctx.arc(ring.x, ring.y, ring.r, ringRot, ringRot + 0.7);
+            ctx.stroke();
+
+            for (const b of balls) {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'hsl(' + b.hue + ', 85%, 60%)';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = CREAM;
+                ctx.stroke();
+            }
+        }
+
+        function fmtSpan(s) {
+            if (s <= 0) return 'gone.';
+            return '0:' + String(s).padStart(2, '0');
+        }
+
+        let statTick = 0;
+        function updateStats() {
+            if (++statTick % 15 !== 0) return;
+            const span = 90 - Math.floor((performance.now() - runStart) / 1000);
+            statsEl.textContent =
+                'balls: ' + balls.length + (balls.length >= MAX_BALLS ? ' (capped)' : '') +
+                ' · bounces: ' + bounces +
+                ' · attention span: ' + fmtSpan(span);
+        }
+
+        function frame() {
+            if (!running) return;
+            ringRot += 0.008;
+            step();
+            render();
+            updateStats();
+            rafId = requestAnimationFrame(frame);
+        }
+
+        // ---- mode switching ----
+        const beginBtn = document.getElementById('beginBtn');
+        const reconfBtn = document.getElementById('reconfBtn');
+        const muteBtn = document.getElementById('muteBtn');
+
+        beginBtn.addEventListener('click', () => {
+            cfg = readConfig();
+            try { localStorage.setItem('brainrot-config', JSON.stringify(cfg)); } catch (e) {}
+
+            soundOn = cfg.sound;
+            if (soundOn && !actx) {
+                try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { soundOn = false; }
+            }
+            if (actx && actx.state === 'suspended') actx.resume();
+            muteBtn.textContent = soundOn ? 'Sound Off' : 'Sound On';
+
+            document.body.classList.add('running');
+            sizeStage();
+            seedBalls();
+            bounces = 0;
+            runStart = performance.now();
+            running = true;
+            unfadePill();
+            rafId = requestAnimationFrame(frame);
+        });
+
+        reconfBtn.addEventListener('click', () => {
+            running = false;
+            cancelAnimationFrame(rafId);
+            document.body.classList.remove('running');
+        });
+
+        muteBtn.addEventListener('click', () => {
+            soundOn = !soundOn;
+            if (soundOn && !actx) {
+                try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { soundOn = false; }
+            }
+            muteBtn.textContent = soundOn ? 'Sound Off' : 'Sound On';
+        });
+
+        // pill fades while you rot
+        let fadeTimer = 0;
+        function unfadePill() {
+            pill.classList.remove('faded');
+            clearTimeout(fadeTimer);
+            fadeTimer = setTimeout(() => pill.classList.add('faded'), 3500);
+        }
+        window.addEventListener('pointermove', () => { if (running) unfadePill(); }, { passive: true });
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => { if (running) sizeStage(); }, 150);
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && running) {
+                cancelAnimationFrame(rafId);
+            } else if (!document.hidden && running) {
+                rafId = requestAnimationFrame(frame);
+            }
+        });
+    })();
     </script>
 </body>
 </html>
