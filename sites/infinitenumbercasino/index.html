@@ -4,249 +4,382 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infinite Numbers</title>
-
-    <!-- Add metadata -->
-    <meta name="description" content="Discover rare and special numbers as you scroll infinitely">
-    <meta name="keywords" content="infinite scroll, number generator, rare numbers">
-    <meta name="author" content="Random Sites On The Web">
+    <title>Infinite Number Casino</title>
+    <meta name="description" content="Scroll through every number. Some of them are worth something.">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><text x='25' y='35' font-family='Arial' font-size='30' fill='%23f1c40f' text-anchor='middle'>∞</text></svg>">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/infinitenumbers/">
-    <meta property="og:title" content="Infinite Numbers - Endless Number Discovery">
-    <meta property="og:description" content="Discover rare and special numbers as you scroll infinitely">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/infinitenumbers/">
-    <meta property="twitter:title" content="Infinite Numbers - Endless Number Discovery">
-    <meta property="twitter:description" content="Discover rare and special numbers as you scroll infinitely">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --cream: #fff8ef;
+            --gold: #f7c948;
+        }
+
+        html {
+            background: #123a24;
+        }
+
         body {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            background-color: #1f1f30; /* Muted blue-grey */
-            background-image: 
-                linear-gradient(45deg, rgba(150, 150, 180, 0.2) 25%, transparent 25%, transparent 75%, rgba(150, 150, 180, 0.2) 75%, rgba(150, 150, 180, 0.2)),
-                linear-gradient(-45deg, rgba(150, 150, 180, 0.2) 25%, transparent 25%, transparent 75%, rgba(150, 150, 180, 0.2) 75%, rgba(150, 150, 180, 0.2));
-            background-size: 24px 24px; /* Adjust diamond size */
-            background-position: 0 0;
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.7);
+            font-family: Georgia, 'Times New Roman', serif;
+            background: radial-gradient(ellipse at top, #1e5c3a 0%, #123a24 60%, #0b2416 100%) fixed;
+            color: var(--cream);
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
-        #numbers-container {
-            font-size: 128px;
+        header {
             text-align: center;
-            line-height: 1.2;
-            font-weight: bold;
-            padding: 20px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.2);
-            font-family: 'Arial Black', sans-serif;
+            padding: 60px 16px 28px;
         }
 
-        .number {
-            display: block;
-            margin-bottom: 20px;
-            opacity: 0;
-            transform: translateY(50px);
-            animation: slideIn 0.5s forwards, shimmer 2s infinite;
-            background: linear-gradient(45deg, #2c2c2c 0%, #1a1a1a 100%);
-            padding: 20px;
-            border-radius: 15px;
-            border: 2px solid #gold;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        h1 {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(26px, 6vw, 52px);
+            transform: rotate(-1.5deg);
+            -webkit-text-stroke: 1.5px var(--ink);
+            paint-order: stroke fill;
+            color: var(--gold);
+            text-shadow: 5px 5px 0 var(--ink);
+            display: inline-block;
         }
 
-        @keyframes slideIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes shimmer {
-            0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
-            50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
-            100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
-        }
-
-        .rarity-text {
-            font-size: 24px;
-            display: block;
-            font-family: 'Arial', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        .subtitle {
+            font-style: italic;
+            font-size: clamp(13px, 2vw, 16px);
+            color: rgba(255, 248, 239, 0.6);
             margin-top: 10px;
         }
 
-        .special-number-common {
-            color: #2ecc71;
-            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-        }
-        
-        .special-number-rare {
-            color: #3498db;
-            text-shadow: 0 0 15px rgba(52, 152, 219, 0.6);
+        /* ---- number cards ---- */
+
+        #numbers {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            padding: 10px 16px 120px;
         }
 
-        .special-number-epic {
-            color: #9b59b6;
-            text-shadow: 0 0 20px rgba(155, 89, 182, 0.7);
-        }
-        
-        .special-number-legendary {
-            color: #ffd700;
-            text-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
-            animation: legendary-pulse 2s infinite;
-        }
-
-        @keyframes legendary-pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        .card {
+            background: var(--cream);
+            color: var(--ink);
+            border: 3px solid var(--ink);
+            border-radius: 16px;
+            box-shadow: 6px 6px 0 var(--ink);
+            padding: 18px 40px;
+            min-width: min(86vw, 300px);
+            text-align: center;
+            transform: rotate(var(--tilt));
+            animation: dealIn 0.35s cubic-bezier(0.22, 1.5, 0.36, 1) both;
         }
 
-        .rarity-guide {
-            position: fixed;
-            right: 20px;
-            top: 20px;
-            background: rgba(0,0,0,0.8);
-            z-index: 1111;
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #ffd700;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        @keyframes dealIn {
+            from { transform: rotate(var(--tilt)) translateY(40px) scale(0.7); opacity: 0; }
+            to { transform: rotate(var(--tilt)) translateY(0) scale(1); opacity: 1; }
         }
 
-        .rarity-guide h2 {
-            color: #ffd700;
-            margin-bottom: 15px;
-            font-size: 24px;
+        .card .num {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(38px, 8vw, 72px);
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .card .tagline {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: clamp(11px, 1.8vw, 14px);
+            font-weight: 900;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            margin-top: 6px;
         }
 
-        .rarity-guide ul {
-            list-style: none;
-            padding: 0;
+        .card .note {
+            font-style: italic;
+            font-size: 14px;
+            margin-top: 4px;
+            color: rgba(32, 26, 23, 0.6);
         }
 
-        .rarity-guide li {
-            margin: 15px 0;
-            font-size: 16px;
-            text-align: left;
+        .card.common { background: #eaf3df; }
+        .card.rare { background: #e3eef8; }
+        .card.epic { background: #ece4f6; }
+
+        .card.legendary {
+            background: linear-gradient(160deg, #fff3cf, #ffe9a8);
+            border-width: 4px;
+            box-shadow: 8px 8px 0 var(--ink), 0 0 40px rgba(247, 201, 72, 0.55);
+            animation: dealIn 0.35s cubic-bezier(0.22, 1.5, 0.36, 1) both, legendaryPulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes legendaryPulse {
+            0%, 100% { scale: 1; }
+            50% { scale: 1.04; }
+        }
+
+        .star { font-family: Georgia, serif; }
+        .c-common { color: #4a7c2f; }
+        .c-rare { color: #2b6cab; }
+        .c-epic { color: #7b4fa8; }
+        .c-legendary { color: #a8760a; }
+
+        /* ---- collection ledger ---- */
+
+        #ledger {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: clamp(10px, 3vw, 26px);
+            padding: 10px 12px;
+            background: rgba(11, 36, 22, 0.92);
+            border-top: 2px solid var(--ink);
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: clamp(10px, 1.7vw, 13px);
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            z-index: 50;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #ledger .lc { color: #8fd3a8; }
+        #ledger .lr { color: #9cc4e8; }
+        #ledger .le { color: #c9aef0; }
+        #ledger .ll { color: var(--gold); }
+        #ledger .lt { color: rgba(255, 248, 239, 0.65); }
+
+        #fx {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        #toast {
+            position: fixed;
+            top: 9vh;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg) scale(0);
+            background: var(--gold);
+            color: var(--ink);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 14px 30px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(15px, 3vw, 24px);
+            text-transform: uppercase;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        #toast.show { animation: toastIn 3s cubic-bezier(0.22, 1.6, 0.36, 1) forwards; }
+
+        @keyframes toastIn {
+            0% { transform: translateX(-50%) rotate(-2deg) scale(0); }
+            12% { transform: translateX(-50%) rotate(-2deg) scale(1.1); }
+            18% { transform: translateX(-50%) rotate(-2deg) scale(1); }
+            85% { transform: translateX(-50%) rotate(-2deg) scale(1); opacity: 1; }
+            100% { opacity: 0; }
         }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #ffd700; margin: 20px 0; font-size: 56px; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);">Lucky Numbers Casino</h1>
-    <p style="text-align: center; color: #fff; font-size: 20px; text-shadow: 0 0 10px rgba(255,255,255,0.3);">Keep scrolling to test your luck!</p>
+    <header>
+        <h1>INFINITE NUMBER CASINO</h1>
+        <div class="subtitle">every number will appear, eventually. some of them are worth something.<br>the house remembers where you stopped.</div>
+    </header>
 
-    <!-- Move rarity guide to floating position -->
-    <div class="rarity-guide">
-        <h2>Rarity Guide</h2>
-        <ul>
-            <li>
-                <span style="color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">✨ LEGENDARY</span>
-                <br>Chance: 0.001%
-            </li>
-            <li>
-                <span style="color: #9b59b6;">💫 EPIC</span>
-                <br>Chance: 0.1%
-            </li>
-            <li>
-                <span style="color: #3498db;">🌟 RARE</span>
-                <br>Chance: 0.33%
-            </li>
-            <li>
-                <span style="color: #2ecc71;">⭐ COMMON</span>
-                <br>Chance: 1%
-            </li>
-        </ul>
-    </div>
-    <div id="numbers-container"></div>
+    <canvas id="fx"></canvas>
+    <div id="numbers"></div>
+    <div id="ledger"></div>
+    <div id="toast"></div>
 
     <script>
-        const container = document.getElementById('numbers-container');
-        let currentNumber = 0;
-        let isGenerating = false;
-        
-        function generateNumbers() {
-            if (isGenerating) return;
-            isGenerating = true;
-            
-            for (let i = 0; i < 20; i++) {
-                const numberElement = document.createElement('div');
-                numberElement.className = 'number';
-                const numberSpan = document.createElement('span');
-                numberSpan.textContent = currentNumber++;
-                numberElement.appendChild(numberSpan);
-                
-                // Add special message for 777
-                if (numberSpan.textContent === '777') {
-                    const message = document.createElement('div');
-                    message.textContent = 'Hi Will Flannigan!';
-                    message.style.fontSize = '24px';
-                    message.style.marginTop = '10px';
-                    message.style.color = 'red';
-                    numberElement.appendChild(message);
-                }
-                
-                const random = Math.random();
-                const rarityText = document.createElement('span');
-                rarityText.className = 'rarity-text';
-                
-                if (random < 1/10000) {
-                    numberSpan.classList.add('special-number-legendary');
-                    rarityText.textContent = '✨ LEGENDARY (0.001%)';
-                    rarityText.style.color = '#f1c40f';
-                } else if (random < 1/1000) {
-                    numberSpan.classList.add('special-number-epic');
-                    rarityText.textContent = '💫 EPIC (0.1%)';
-                    rarityText.style.color = '#9b59b6';
-                } else if (random < 1/300) {
-                    numberSpan.classList.add('special-number-rare');
-                    rarityText.textContent = '🌟 RARE (0.33%)';
-                    rarityText.style.color = '#3498db';
-                } else if (random < 1/100) {
-                    numberSpan.classList.add('special-number-common');
-                    rarityText.textContent = '⭐ COMMON (1%)';
-                    rarityText.style.color = '#2ecc71';
-                }
-                
-                if (rarityText.textContent) {
-                    numberElement.appendChild(rarityText);
-                }
-                
-                container.appendChild(numberElement);
-            }
+        const INK = '#201a17';
+        const CONF_COLORS = ['#f7c948', '#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#ff7fa5'];
+        const jit = (n) => (Math.random() - 0.5) * n;
 
-            isGenerating = false;
+        // ---- persistent casino record ----
+
+        let state = { n: 0, common: 0, rare: 0, epic: 0, legendary: 0, best: null };
+        try {
+            const saved = JSON.parse(localStorage.getItem('numbercasino'));
+            if (saved && typeof saved.n === 'number') state = { ...state, ...saved };
+        } catch (e) {}
+
+        function save() {
+            try { localStorage.setItem('numbercasino', JSON.stringify(state)); } catch (e) {}
         }
 
-        function checkScroll() {
-            const scrollPosition = window.innerHeight + window.scrollY;
-            const documentHeight = document.documentElement.offsetHeight;
-            
-            if (scrollPosition >= documentHeight - 2000) {
-                requestAnimationFrame(generateNumbers);
-            }
+        function renderLedger() {
+            document.getElementById('ledger').innerHTML =
+                `<span class="lt">witnessed: ${state.n.toLocaleString()}</span>` +
+                `<span class="lc">★ common ${state.common}</span>` +
+                `<span class="lr">★ rare ${state.rare}</span>` +
+                `<span class="le">★ epic ${state.epic}</span>` +
+                `<span class="ll">★ legendary ${state.legendary}</span>`;
         }
 
-        // Initial generation
-        generateNumbers();
+        // ---- value-based specials (the number itself matters) ----
 
-        // Add smooth scrolling behavior to the document
-        document.documentElement.style.scrollBehavior = 'smooth';
+        function valueNote(n) {
+            if (n === 69) return 'nice.';
+            if (n === 404) return 'number not found';
+            if (n === 666) return 'we don’t talk about this one';
+            if (n === 777) return 'Hi Will Flannigan!';
+            if (n === 1000) return 'your first thousand. proud of you.';
+            if (n === 10000) return 'ten thousand. please drink water.';
+            if (n === 12345) return 'the password on someone’s luggage';
+            const s = String(n);
+            if (s.length >= 3 && s === [...s].reverse().join('')) return 'a palindrome';
+            if (s.length >= 3 && /^(\d)\1+$/.test(s)) return 'all the same digit. satisfying.';
+            return null;
+        }
 
-        // Listen for scroll events
-        window.addEventListener('scroll', checkScroll, { passive: true });
+        // ---- card generation ----
+
+        const container = document.getElementById('numbers');
+        const observer = new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    observer.unobserve(el);
+                    const r = el.getBoundingClientRect();
+                    const kind = el.dataset.burst;
+                    if (kind === 'legendary') {
+                        burst(r.left + r.width / 2, r.top + r.height / 2, 70);
+                        toast('LEGENDARY: ' + el.dataset.num);
+                    } else if (kind === 'epic') {
+                        burst(r.left + r.width / 2, r.top + r.height / 2, 26);
+                    }
+                }
+            }
+        }, { threshold: 0.4 });
+
+        function makeCard() {
+            const n = state.n;
+            state.n++;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.setProperty('--tilt', jit(3).toFixed(1) + 'deg');
+
+            const roll = Math.random();
+            let rarity = null;
+            if (roll < 1 / 10000) rarity = 'legendary';
+            else if (roll < 1 / 1000) rarity = 'epic';
+            else if (roll < 1 / 300) rarity = 'rare';
+            else if (roll < 1 / 100) rarity = 'common';
+
+            let html = `<div class="num">${n.toLocaleString()}</div>`;
+            if (rarity) {
+                card.classList.add(rarity);
+                html += `<div class="tagline c-${rarity}"><span class="star">★</span> ${rarity}</div>`;
+                state[rarity]++;
+                if (rarity === 'legendary' || rarity === 'epic') {
+                    card.dataset.burst = rarity;
+                    card.dataset.num = n.toLocaleString();
+                    observer.observe(card);
+                }
+                if (rarity === 'legendary') state.best = n;
+            }
+            const note = valueNote(n);
+            if (note) html += `<div class="note">${note}</div>`;
+
+            card.innerHTML = html;
+            container.appendChild(card);
+        }
+
+        let generating = false;
+        function generate() {
+            if (generating) return;
+            generating = true;
+            for (let i = 0; i < 20; i++) makeCard();
+            // keep the DOM from growing forever
+            while (container.children.length > 400) container.firstChild.remove();
+            save();
+            renderLedger();
+            generating = false;
+        }
+
+        window.addEventListener('scroll', () => {
+            const remaining = document.documentElement.offsetHeight - (window.innerHeight + window.scrollY);
+            if (remaining < 2200) generate();
+        }, { passive: true });
+
+        // ---- confetti + toast ----
+
+        const fxCanvas = document.getElementById('fx');
+        const fxCtx = fxCanvas.getContext('2d');
+        const bits = [];
+        let raf = null;
+
+        function sizeFx() {
+            fxCanvas.width = window.innerWidth;
+            fxCanvas.height = window.innerHeight;
+        }
+
+        function burst(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const v = 2 + Math.random() * 6;
+                bits.push({
+                    x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 3, g: 0.14,
+                    w: 5 + Math.random() * 5, h: 3 + Math.random() * 4,
+                    rot: Math.random() * Math.PI, vrot: jit(0.35),
+                    color: CONF_COLORS[(Math.random() * CONF_COLORS.length) | 0],
+                    life: 1, decay: 0.01 + Math.random() * 0.01,
+                });
+            }
+            if (!raf) raf = requestAnimationFrame(loop);
+        }
+
+        function loop() {
+            raf = null;
+            fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            for (let i = bits.length - 1; i >= 0; i--) {
+                const p = bits[i];
+                p.life -= p.decay;
+                if (p.life <= 0) { bits.splice(i, 1); continue; }
+                p.vy += p.g;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rot += p.vrot;
+                fxCtx.save();
+                fxCtx.translate(p.x, p.y);
+                fxCtx.rotate(p.rot);
+                fxCtx.globalAlpha = Math.min(1, p.life * 1.6);
+                fxCtx.fillStyle = p.color;
+                fxCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                fxCtx.lineWidth = 1.3;
+                fxCtx.strokeStyle = INK;
+                fxCtx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                fxCtx.restore();
+            }
+            fxCtx.globalAlpha = 1;
+            if (bits.length) raf = requestAnimationFrame(loop);
+        }
+
+        function toast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('show');
+            void t.offsetWidth;
+            t.classList.add('show');
+        }
+
+        window.addEventListener('resize', sizeFx);
+        sizeFx();
+        renderLedger();
+        generate();
     </script>
 </body>
 </html>

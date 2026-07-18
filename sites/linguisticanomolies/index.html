@@ -1,211 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Linguistic Anomalies</title>
+    <meta name="description" content="Sentences that are grammatically correct but shouldn't be">
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            gap: 20px;
+            padding: 24px;
         }
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            .container {
-                padding: 1rem;
-            }
-            .sentence-box {
-                padding: 1rem;
-                font-size: 1.2rem;
-            }
-            .explanation-box {
-                padding: 1rem;
-            }
-            button {
-                width: 100%;
-                padding: 0.8rem;
-            }
-        }
-        .container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+
         h1 {
-            color: #2c3e50;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(22px, 4.6vw, 40px);
+            transform: rotate(-1.5deg);
+            -webkit-text-stroke: 1.2px var(--ink);
+            paint-order: stroke fill;
+            color: #a98fd0;
+            text-shadow: 4px 4px 0 var(--ink);
             text-align: center;
-            margin-bottom: 2rem;
         }
-        .sentence-box {
-            background-color: #f8f9fa;
-            padding: 2rem;
-            border-radius: 8px;
-            margin: 2rem 0;
+
+        .subtitle {
+            font-style: italic;
+            font-size: clamp(13px, 1.9vw, 16px);
+            color: rgba(32, 26, 23, 0.55);
+            margin-top: -10px;
+        }
+
+        /* specimen card */
+        .card {
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 18px;
+            box-shadow: 8px 8px 0 var(--ink);
+            padding: clamp(24px, 5vw, 44px);
+            max-width: min(92vw, 640px);
+            width: 100%;
             text-align: center;
-            font-size: 1.5rem;
-            min-height: 100px;
+            transform: rotate(0.6deg);
+            position: relative;
+        }
+
+        .tag {
+            position: absolute;
+            top: -14px;
+            left: 24px;
+            transform: rotate(-4deg);
+            background: #f7c948;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 4px 14px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        #sentence {
+            font-size: clamp(20px, 3.6vw, 32px);
+            line-height: 1.5;
+            min-height: 2.5em;
             display: flex;
             align-items: center;
             justify-content: center;
+            animation: pop 0.35s cubic-bezier(0.22, 1.5, 0.36, 1);
         }
-        .explanation-box {
-            background-color: #e9ecef;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-            text-align: center;
+
+        @keyframes pop {
+            from { transform: scale(0.6); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
-        .explanation-box::before {
-            content: "This means:";
+
+        #verdict {
+            margin-top: 10px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #b7ce3c;
+            -webkit-text-stroke: 0.8px var(--ink);
+            paint-order: stroke fill;
+        }
+
+        #explanation {
+            margin-top: 18px;
+            padding: 16px 20px;
+            background: var(--paper);
+            border: 2px dashed rgba(32, 26, 23, 0.4);
+            border-radius: 12px;
+            font-style: italic;
+            font-size: clamp(14px, 2vw, 17px);
+            line-height: 1.65;
+            color: rgba(32, 26, 23, 0.8);
+            display: none;
+            text-align: left;
+        }
+
+        #explanation.show {
             display: block;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
+            animation: pop 0.3s ease;
         }
-        button {
-            display: block;
-            margin: 2rem auto;
-            padding: 1rem 2rem;
-            font-size: 1.2rem;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pill {
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 11px 24px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 15px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: transform 0.15s ease;
         }
-        button:hover {
-            background-color: #2980b9;
-        }
+
+        .pill.primary { background: #a98fd0; }
+        .pill:hover { transform: translate(-2px, -2px) rotate(-1.5deg); }
+        .pill:active { transform: translate(2px, 2px); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Linguistic Anomalies</h1>
-        <div class="sentence-box" id="sentence">
-            Loading...
-        </div>
-        <div class="explanation-box" id="explanation">
-            Loading...
-        </div>
-        <button onclick="generateAnomaly()">Generate New Anomaly</button>
+    <h1>LINGUISTIC ANOMALIES</h1>
+    <div class="subtitle">every one of these is a real, grammatical English sentence</div>
+
+    <div class="card">
+        <div class="tag" id="tag">SPECIMEN</div>
+        <div id="sentence"></div>
+        <div id="verdict">grammatically correct. unfortunately.</div>
+        <div id="explanation"></div>
+    </div>
+
+    <div class="buttons">
+        <button class="pill" id="explainBtn">explain yourself</button>
+        <button class="pill primary" id="nextBtn">another one</button>
     </div>
 
     <script>
-        const anomalies = [
+        // curated: only real, documented anomalies
+        const ANOMALIES = [
             {
-                sentence: "Buffalo buffalo Buffalo buffalo buffalo buffalo Buffalo buffalo",
-                explanation: "This is a grammatically correct sentence meaning: Buffalo (the city) bison that other Buffalo bison bully, themselves bully Buffalo bison."
+                s: 'Buffalo buffalo Buffalo buffalo buffalo buffalo Buffalo buffalo.',
+                t: 'lexical ambiguity',
+                e: 'Bison from Buffalo, NY, that other Buffalo bison bully, themselves bully Buffalo bison. "Buffalo" is a city, an animal, and a verb meaning to intimidate — and English lets you stack all three.',
             },
             {
-                sentence: "Police police Police police police police Police police",
-                explanation: "This means: Police officers from Poland who are policed by other Polish police, themselves police Polish police officers."
+                s: 'The horse raced past the barn fell.',
+                t: 'garden path',
+                e: 'Read it as: the horse [that was] raced past the barn fell. Your brain commits to "raced" as the main verb, then hits "fell" and has to reparse the whole sentence.',
             },
             {
-                sentence: "James James James James James",
-                explanation: "This means: James, who is known by James, knows James."
+                s: 'The old man the boat.',
+                t: 'garden path',
+                e: '"The old" is the subject (old people), and "man" is the verb (to operate). The old people crew the boat. Four words, one ambush.',
             },
             {
-                sentence: "Can can can can can can can can",
-                explanation: "This demonstrates how the word 'can' can be used to explain how 'can' can function as a verb."
+                s: 'The complex houses married and single soldiers and their families.',
+                t: 'garden path',
+                e: '"The complex" (a building) "houses" (verb) the soldiers. Not complex houses that somehow got married.',
             },
             {
-                sentence: "That that that that that that that that",
-                explanation: "This means: The word 'that' that the word 'that' refers to is the word 'that' that 'that' refers to."
+                s: 'More people have been to Russia than I have.',
+                t: 'comparative illusion',
+                e: 'This sentence feels fine and means absolutely nothing. Try to work out what is being compared — there is no coherent reading. Linguists call these Escher sentences.',
             },
             {
-                sentence: "Rose rose rose rose rose rose rose",
-                explanation: "This means: A woman named Rose, who got up, elevated another Rose, who also rose."
+                s: 'Colorless green ideas sleep furiously.',
+                t: 'chomsky, 1957',
+                e: "Perfect grammar, zero meaning. Chomsky built it to prove syntax and sense are different machines — no one had ever said it, everyone agrees it's English, and it describes nothing.",
             },
             {
-                sentence: "Race race race race race race race",
-                explanation: "This means: People from one race racing others from the same race who race others."
+                s: 'The rat the cat the dog chased killed ate the malt.',
+                t: 'center embedding',
+                e: 'Fully grammatical: the dog chased the cat, the cat killed the rat, the rat ate the malt. English allows infinite nesting; your working memory allows about two.',
             },
             {
-                sentence: "Lie lie lie lie lie",
-                explanation: "This means: Lies about lies lie."
+                s: 'James, while John had had "had," had had "had had"; "had had" had had a better effect on the teacher.',
+                t: 'lexical ambiguity',
+                e: 'Two students wrote about a man with a cold. John wrote "had," James wrote "had had" — the past perfect. Eleven hads in a row, all load-bearing.',
             },
             {
-                sentence: "Duck duck duck duck duck",
-                explanation: "This means: Commanding a duck to duck another duck while ducks duck."
+                s: 'That that is is that that is not is not is that it it is.',
+                t: 'punctuation dependency',
+                e: 'With punctuation: That that is, is. That that is not, is not. Is that it? It is. A complete philosophical argument, delivered as a word salad.',
             },
             {
-                sentence: "Fish fish fish fish fish fish",
-                explanation: "This means: Fish that fish for other fish are fished by other fish."
+                s: 'Will Will will Will’s will to Will?',
+                t: 'lexical ambiguity',
+                e: 'Will (person one) — will he bequeath Will’s (person two’s) testament to Will (person three)? One word: a name, a future tense, a verb, and a legal document.',
             },
             {
-                sentence: "Watch watch watch watch watch",
-                explanation: "This means: A watch (object) watches another watch being watched by a watch."
+                s: 'Time flies like an arrow; fruit flies like a banana.',
+                t: 'syntactic ambiguity',
+                e: 'The same three-word shape parses two completely different ways: [time] [flies] [like an arrow] versus [fruit flies] [like] [a banana]. A classic of machine-translation failure.',
             },
             {
-                sentence: "Cry cry cry cry",
-                explanation: "This means: A cry that cries another cry cries."
+                s: 'I never said she stole my money.',
+                t: 'prosodic ambiguity',
+                e: 'Seven words, seven meanings — stress a different word each time you say it. I never said she stole my money. I never SAID she stole my money. I never said SHE stole my money…',
             },
             {
-                sentence: "Run run run run run run",
-                explanation: "This means: Run while others who run make others run."
+                s: 'The man who whistles tunes pianos.',
+                t: 'garden path',
+                e: 'You read "whistles tunes" as verb-object, then "pianos" arrives and forces the real parse: the man [who whistles] tunes pianos.',
             },
             {
-                sentence: "Bang bang bang bang bang bang",
-                explanation: "This means: Gunshots that cause other bangs which bang more bangs."
+                s: 'Fat people eat accumulates.',
+                t: 'garden path',
+                e: 'Not fat people. Fat [that] people eat, accumulates. The missing "that" is fully legal, and fully hostile.',
             },
             {
-                sentence: "Row row row row row",
-                explanation: "This means: To row in a row with others rowing."
+                s: 'Police police Police police police police Police police.',
+                t: 'lexical ambiguity',
+                e: 'Same trick as Buffalo: police from Police (a real town in Poland) whom Police police police, police Police police. Grammatical. Regrettable.',
             },
             {
-                sentence: "Rock rock rock rock rock",
-                explanation: "This means: Rocking rocks that rock more rocks."
+                s: 'This exceeds the maximum length a sentence can be and still be grammatical is false.',
+                t: 'self-reference',
+                e: 'Wait — no it doesn’t. Read it again: "This [claim that] exceeds… is false." It parses. Barely. The sentence is about itself, and it is lying.',
             },
-            {
-                sentence: "Fall fall fall fall fall",
-                explanation: "This means: Fall down as others fall in the fall while causing more to fall."
-            },
-            {
-                sentence: "Set set set set set",
-                explanation: "This means: A set of things that set another set which was set."
-            },
-            {
-                sentence: "Like like like like like like",
-                explanation: "This means: Things like other things that are liked like things."
-            },
-            {
-                sentence: "James while John had had had had had had had had had had had a better effect on the teacher",
-                explanation: "With proper punctuation: James, while John had had 'had,' had had 'had had'; 'had had' had had a better effect on the teacher. This compares the word choice of 'had' vs 'had had' in an English test."
-            },
-            {
-                sentence: "That that that that that refers to is confusing",
-                explanation: "This demonstrates how 'that' can be used multiple times consecutively in English, meaning: The 'that' that refers to that specific thing is confusing."
-            },
-            {
-                sentence: "Will Will will Will's will to Will?",
-                explanation: "This uses 'Will' as both a name and the verb 'will' (to bequeath), meaning: Will (person 1) will bequeath Will's (person 2's) will to Will (person 3)?"
-            }
         ];
 
-        function generateAnomaly() {
-            const randomIndex = Math.floor(Math.random() * anomalies.length);
-            const anomaly = anomalies[randomIndex];
-            
-            // Remove "This means: " from the explanation since we're showing it in CSS
-            let explanation = anomaly.explanation;
-            if (explanation.startsWith("This means: ")) {
-                explanation = explanation.substring("This means: ".length);
+        const sentenceEl = document.getElementById('sentence');
+        const tagEl = document.getElementById('tag');
+        const explanationEl = document.getElementById('explanation');
+        const explainBtn = document.getElementById('explainBtn');
+
+        // shuffled deck so nothing repeats until you've seen them all
+        let deck = [];
+        function draw() {
+            if (!deck.length) {
+                deck = ANOMALIES.map((_, i) => i);
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = (Math.random() * (i + 1)) | 0;
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
             }
-            
-            document.getElementById('sentence').textContent = anomaly.sentence;
-            document.getElementById('explanation').textContent = explanation;
+            return ANOMALIES[deck.pop()];
         }
 
-        // Generate an anomaly when the page loads
-        document.addEventListener('DOMContentLoaded', generateAnomaly);
+        let current = null;
+
+        function show() {
+            current = draw();
+            sentenceEl.textContent = current.s;
+            sentenceEl.style.animation = 'none';
+            void sentenceEl.offsetWidth;
+            sentenceEl.style.animation = '';
+            tagEl.textContent = current.t;
+            explanationEl.classList.remove('show');
+            explainBtn.textContent = 'explain yourself';
+        }
+
+        explainBtn.addEventListener('click', () => {
+            if (explanationEl.classList.contains('show')) {
+                explanationEl.classList.remove('show');
+                explainBtn.textContent = 'explain yourself';
+            } else {
+                explanationEl.textContent = current.e;
+                explanationEl.classList.add('show');
+                explainBtn.textContent = 'okay, hide it';
+            }
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', show);
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === 'Enter') {
+                e.preventDefault();
+                show();
+            }
+        });
+
+        show();
     </script>
 </body>
 </html>

@@ -5,250 +5,307 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falling Keys</title>
+    <meta name="description" content="Type and your keys fall off an invisible keyboard, bounce, and pile up">
     <style>
-        body {
-            margin: 0;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background: #1a1a1a;
-            font-family: Arial, sans-serif;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            font-family: Georgia, 'Times New Roman', serif;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .key {
             position: absolute;
-            color: #fff;
-            font-size: 24px;
-            user-select: none;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            top: 0;
+            left: 0;
+            min-width: 46px;
+            height: 46px;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, var(--cream) 0%, #f0e8d8 100%);
+            border: 2.5px solid var(--ink);
+            border-radius: 9px;
+            box-shadow: 3px 4px 0 var(--ink);
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: 20px;
+            color: var(--color, var(--ink));
+            will-change: transform;
+            pointer-events: none;
         }
+
+        .key.fading { transition: opacity 0.6s ease; opacity: 0; }
 
         .instructions {
             position: fixed;
-            top: 50%;
+            top: 44%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 24px;
+            transform: translate(-50%, -50%) rotate(-1.5deg);
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(24px, 5vw, 44px);
+            color: #5aa0db;
+            -webkit-text-stroke: 1.2px var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 4px 4px 0 var(--ink);
             pointer-events: none;
-            user-select: none;
+            transition: opacity 1s ease;
+        }
+
+        .instructions.hidden { opacity: 0; }
+
+        #stats {
+            position: fixed;
+            bottom: 16px;
+            left: 20px;
+            font-style: italic;
+            font-size: clamp(12px, 1.7vw, 15px);
+            color: rgba(32, 26, 23, 0.5);
+            font-variant-numeric: tabular-nums;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #clear {
+            position: fixed;
+            bottom: 14px;
+            right: 18px;
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 9px 18px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            z-index: 5;
+        }
+
+        #clear:hover { transform: translate(-2px, -2px) rotate(-2deg); }
+        #clear:active { transform: translate(2px, 2px); }
+
+        #mobileInput {
+            position: fixed;
+            opacity: 0;
+            pointer-events: none;
+            top: -100px;
         }
     </style>
 </head>
 <body>
-    <div class="instructions">start typing...</div>
+    <div class="instructions" id="instructions">START TYPING&hellip;</div>
+    <div id="stats"></div>
+    <button id="clear">sweep them up</button>
+    <input id="mobileInput" type="text" autocomplete="off" autocapitalize="none">
+
     <script>
+        const INK = '#201a17';
+        const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#201a17'];
+
+        // each key falls from where it lives on an invisible giant keyboard
+        const ROWS = [
+            ['`1234567890-=', 0],
+            ['qwertyuiop[]', 0.04],
+            ["asdfghjkl;'", 0.07],
+            ['zxcvbnm,./', 0.1],
+        ];
+
+        function qwertyX(ch) {
+            const c = ch.toLowerCase();
+            for (const [row, offset] of ROWS) {
+                const i = row.indexOf(c);
+                if (i !== -1) {
+                    const frac = offset + (i + 0.5) / row.length * (1 - offset * 2);
+                    return frac * window.innerWidth;
+                }
+            }
+            return Math.random() * window.innerWidth;   // space, enter, etc.
+        }
+
+        const KEYMAP = {
+            ' ': 'SPACE', 'Tab': 'TAB', 'Enter': 'ENTER', 'Backspace': 'BKSP',
+            'Delete': 'DEL', 'Escape': 'ESC', 'CapsLock': 'CAPS',
+            'ArrowUp': '↑', 'ArrowDown': '↓', 'ArrowLeft': '←', 'ArrowRight': '→',
+            'Control': 'CTRL', 'Alt': 'ALT', 'Shift': 'SHIFT', 'Meta': 'META',
+        };
+
+        const keys = [];
+        let dropped = 0;
+        const MAX_KEYS = 90;
+
         class FallingKey {
-            constructor(key, x) {
-                this.element = document.createElement('div');
-                this.element.className = 'key';
-                this.element.textContent = key;
-                this.element.style.left = x + 'px';
-                this.element.style.top = '0px';
-                
-                this.x = x;
-                this.y = 0;
-                this.velocityY = 0;
-                this.velocityX = (Math.random() - 0.5) * 2;
-                this.gravity = 0.6;
-                
-                // Add rotation properties
-                this.rotation = Math.random() * 360;
-                this.angularVelocity = (Math.random() - 0.5) * 10;
-                this.rotationalFriction = 0.98;
-                
-                const letterProperties = this.getLetterProperties(key);
-                this.radius = letterProperties.radius;
-                this.bounce = letterProperties.bounce;
-                this.friction = letterProperties.friction;
-                
-                // Apply initial rotation
-                this.element.style.transform = `rotate(${this.rotation}deg)`;
-                document.body.appendChild(this.element);
+            constructor(label, x) {
+                this.el = document.createElement('div');
+                this.el.className = 'key';
+                this.el.textContent = label;
+                this.el.style.setProperty('--color', COLORS[(Math.random() * COLORS.length) | 0]);
+                document.body.appendChild(this.el);
+
+                this.w = this.el.offsetWidth;
+                this.h = this.el.offsetHeight;
+                this.r = Math.max(this.w, this.h) / 2 - 3;
+                this.x = Math.min(window.innerWidth - this.w, Math.max(0, x - this.w / 2));
+                this.y = -this.h - 10;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = 1 + Math.random() * 2;
+                this.rot = (Math.random() - 0.5) * 40;
+                this.vrot = (Math.random() - 0.5) * 8;
+                this.asleep = false;
+                this.calm = 0;
+                this.render();
             }
 
-            getLetterProperties(key) {
-                // Round letters - more bouncy, larger radius
-                const roundLetters = 'oOpPqQbBdD';
-                // Tall letters - less friction, smaller radius
-                const tallLetters = 'ilIjJtT1|';
-                // Wide letters - more friction, larger radius
-                const wideLetters = 'mMwWvV';
-                
-                if (roundLetters.includes(key)) {
-                    return {
-                        radius: 25,
-                        bounce: 0.95,
-                        friction: 0.8
-                    };
-                } else if (tallLetters.includes(key)) {
-                    return {
-                        radius: 15,
-                        bounce: 0.85,
-                        friction: 0.65
-                    };
-                } else if (wideLetters.includes(key)) {
-                    return {
-                        radius: 30,
-                        bounce: 0.75,
-                        friction: 0.85
-                    };
-                }
-                
-                // Default properties for other letters
-                return {
-                    radius: 20,
-                    bounce: 0.9,
-                    friction: 0.75
-                };
-            }
+            cx() { return this.x + this.w / 2; }
+            cy() { return this.y + this.h / 2; }
 
-            checkCollision(other) {
-                const dx = this.x - other.x;
-                const dy = this.y - other.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < this.radius + other.radius) {
-                    // Collision detected - calculate new velocities
-                    const angle = Math.atan2(dy, dx);
-                    const sin = Math.sin(angle);
-                    const cos = Math.cos(angle);
-
-                    // Rotate velocities
-                    const vx1 = this.velocityX * cos + this.velocityY * sin;
-                    const vy1 = this.velocityY * cos - this.velocityX * sin;
-                    const vx2 = other.velocityX * cos + other.velocityY * sin;
-                    const vy2 = other.velocityY * cos - other.velocityX * sin;
-
-                    // Swap the rotated velocities
-                    this.velocityX = vx2 * cos - vy1 * sin;
-                    this.velocityY = vy1 * cos + vx2 * sin;
-                    other.velocityX = vx1 * cos - vy2 * sin;
-                    other.velocityY = vy2 * cos + vx1 * sin;
-
-                    // Apply bounce effect
-                    this.velocityX *= this.bounce;
-                    this.velocityY *= this.bounce;
-                    other.velocityX *= other.bounce;
-                    other.velocityY *= other.bounce;
-
-                    // Prevent sticking by moving apart
-                    const overlap = (this.radius + other.radius - distance) / 2;
-                    const moveX = overlap * cos;
-                    const moveY = overlap * sin;
-                    this.x += moveX;
-                    this.y += moveY;
-                    other.x -= moveX;
-                    other.y -= moveY;
-
-                    // Add rotational energy transfer
-                    const rotationTransfer = (this.angularVelocity + other.angularVelocity) * 0.5;
-                    this.angularVelocity = rotationTransfer * this.bounce;
-                    other.angularVelocity = -rotationTransfer * other.bounce;
-                }
+            render() {
+                this.el.style.transform =
+                    `translate(${this.x}px, ${this.y}px) rotate(${this.rot}deg)`;
             }
 
             update() {
-                this.velocityY += this.gravity;
-                this.y += this.velocityY;
-                this.x += this.velocityX;
+                if (this.asleep) return;
 
-                // Update rotation
-                this.rotation += this.angularVelocity;
-                this.angularVelocity *= this.rotationalFriction;
-                this.element.style.transform = `rotate(${this.rotation}deg)`;
+                this.vy += 0.55;
+                if (this.vy > 16) this.vy = 16;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rot += this.vrot;
+                this.vrot *= 0.985;
 
-                // Bottom boundary with rotation effect
-                if (this.y + this.element.offsetHeight > window.innerHeight) {
-                    this.y = window.innerHeight - this.element.offsetHeight;
-                    this.velocityY = -this.velocityY * this.bounce;
-                    this.velocityX *= this.friction;
-                    // Add some spin on ground impact
-                    this.angularVelocity += this.velocityX * 0.2;
+                // floor
+                const floor = window.innerHeight - this.h;
+                if (this.y >= floor) {
+                    this.y = floor;
+                    this.vy = -this.vy * 0.45;
+                    this.vx *= 0.8;
+                    this.vrot += this.vx * 1.2;
+                    if (Math.abs(this.vy) < 1.2) this.vy = 0;
                 }
 
-                // Side boundaries with rotation effect
-                if (this.x + this.element.offsetWidth > window.innerWidth) {
-                    this.x = window.innerWidth - this.element.offsetWidth;
-                    this.velocityX *= -this.bounce;
-                    this.angularVelocity *= -0.8;
-                }
-                if (this.x < 0) {
-                    this.x = 0;
-                    this.velocityX *= -this.bounce;
-                    this.angularVelocity *= -0.8;
+                // walls
+                if (this.x < 0) { this.x = 0; this.vx = Math.abs(this.vx) * 0.6; this.vrot *= -0.7; }
+                if (this.x > window.innerWidth - this.w) {
+                    this.x = window.innerWidth - this.w;
+                    this.vx = -Math.abs(this.vx) * 0.6;
+                    this.vrot *= -0.7;
                 }
 
-                // Check collisions
-                for (const other of activeKeys) {
-                    if (other !== this) {
-                        this.checkCollision(other);
+                // collisions (circle approximation)
+                for (const other of keys) {
+                    if (other === this) continue;
+                    const dx = this.cx() - other.cx();
+                    const dy = this.cy() - other.cy();
+                    const dist = Math.hypot(dx, dy) || 0.001;
+                    const minDist = this.r + other.r;
+                    if (dist < minDist) {
+                        const nx = dx / dist, ny = dy / dist;
+                        const overlap = (minDist - dist) / 2;
+                        this.x += nx * overlap;
+                        this.y += ny * overlap;
+                        if (!other.asleep) {
+                            other.x -= nx * overlap;
+                            other.y -= ny * overlap;
+                        } else if (Math.abs(this.vy) > 3) {
+                            other.asleep = false;   // a heavy landing wakes the pile
+                            other.calm = 0;
+                        }
+                        // simple bounce along the normal
+                        const rel = this.vx * nx + this.vy * ny;
+                        if (rel < 0) {
+                            this.vx -= rel * nx * 1.4;
+                            this.vy -= rel * ny * 1.4;
+                            this.vrot += (Math.random() - 0.5) * 4;
+                        }
                     }
                 }
 
-                this.element.style.top = this.y + 'px';
-                this.element.style.left = this.x + 'px';
+                // settle
+                const still = Math.abs(this.vx) < 0.25 && Math.abs(this.vy) < 0.6 && Math.abs(this.vrot) < 0.5;
+                this.calm = still ? this.calm + 1 : 0;
+                if (this.calm > 28) {
+                    this.asleep = true;
+                    this.vx = 0; this.vy = 0; this.vrot = 0;
+                }
 
-                return Math.abs(this.velocityY) > 0.05 || 
-                       Math.abs(this.velocityX) > 0.05 || 
-                       Math.abs(this.angularVelocity) > 0.05;
+                this.render();
             }
 
             remove() {
-                document.body.removeChild(this.element);
+                this.el.classList.add('fading');
+                setTimeout(() => this.el.remove(), 600);
             }
         }
 
-        const activeKeys = new Set();
-
-        function createKey(event) {
-            let displayKey = event.key;
-            
-            // Map special keys to display text
-            const keyMap = {
-                ' ': 'SPACE',
-                'Tab': 'TAB',
-                'Enter': 'ENTER',
-                'Backspace': 'BACKSPACE',
-                'Delete': 'DELETE',
-                'Escape': 'ESC',
-                'ArrowUp': '↑',
-                'ArrowDown': '↓',
-                'ArrowLeft': '←',
-                'ArrowRight': '→',
-                'Control': 'CTRL',
-                'Alt': 'ALT',
-                'Shift': 'SHIFT'
-            };
-
-            if (keyMap[displayKey]) {
-                displayKey = keyMap[displayKey];
-                const x = Math.random() * (window.innerWidth - 50);
-                const fallingKey = new FallingKey(displayKey, x);
-                activeKeys.add(fallingKey);
-                event.preventDefault(); // Prevent default behavior for special keys
-            } else if (displayKey.length === 1) { // Handle regular characters
-                const x = Math.random() * (window.innerWidth - 50);
-                const fallingKey = new FallingKey(displayKey, x);
-                activeKeys.add(fallingKey);
+        function drop(label, x) {
+            keys.push(new FallingKey(label, x));
+            dropped++;
+            document.getElementById('stats').textContent =
+                `${dropped.toLocaleString()} keys dropped · ${keys.length} on the floor`;
+            while (keys.length > MAX_KEYS) {
+                keys.shift().remove();
             }
         }
 
-        function update() {
-            for (const key of activeKeys) {
-                const isActive = key.update();
-                if (!isActive) {
-                    key.remove();
-                    activeKeys.delete(key);
-                }
+        document.addEventListener('keydown', (e) => {
+            if (e.metaKey || e.ctrlKey) return;   // don't eat shortcuts
+            let label = null;
+            if (KEYMAP[e.key]) {
+                label = KEYMAP[e.key];
+                e.preventDefault();
+            } else if (e.key.length === 1) {
+                label = e.key === e.key.toLowerCase() ? e.key.toUpperCase() : e.key;
             }
-            requestAnimationFrame(update);
-        }
+            if (!label) return;
+            document.getElementById('instructions').classList.add('hidden');
+            drop(label, qwertyX(e.key));
+        });
 
-        document.removeEventListener('keypress', createKey);
-        document.addEventListener('keydown', createKey);
-        update();
+        // mobile: tapping anywhere summons the keyboard
+        const mobileInput = document.getElementById('mobileInput');
+        document.addEventListener('pointerdown', (e) => {
+            if (e.target.id === 'clear') return;
+            if ('ontouchstart' in window) mobileInput.focus({ preventScroll: true });
+        });
+        mobileInput.addEventListener('input', () => {
+            const ch = mobileInput.value.slice(-1);
+            mobileInput.value = '';
+            if (ch) {
+                document.getElementById('instructions').classList.add('hidden');
+                drop(ch.toUpperCase(), qwertyX(ch));
+            }
+        });
+
+        document.getElementById('clear').addEventListener('click', () => {
+            for (const k of keys) k.remove();
+            keys.length = 0;
+            document.getElementById('stats').textContent =
+                `${dropped.toLocaleString()} keys dropped · 0 on the floor`;
+        });
+
+        function loop() {
+            for (const k of keys) k.update();
+            requestAnimationFrame(loop);
+        }
+        loop();
     </script>
 </body>
 </html>
