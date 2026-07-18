@@ -5,1220 +5,353 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cool (and Uncool) Loaders</title>
-
-    <!-- Add metadata -->
-    <meta name="description" content="A collection of creative loading animations and spinners">
-    <meta name="keywords" content="loading animations, spinners, loaders, CSS animations">
-    <meta name="author" content="Random Sites On The Web">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='25' cy='25' r='20' fill='none' stroke='%23fff' stroke-width='5'><animateTransform attributeName='transform' type='rotate' from='0 25 25' to='360 25 25' dur='1s' repeatCount='indefinite'/></circle></svg>">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/coolloaders/">
-    <meta property="og:title" content="Cool (and Uncool) Loaders - Loading Animation Collection">
-    <meta property="og:description" content="A collection of creative loading animations and spinners">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/coolloaders/">
-    <meta property="twitter:title" content="Cool (and Uncool) Loaders - Loading Animation Collection">
-    <meta property="twitter:description" content="A collection of creative loading animations and spinners">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+    <meta name="description" content="Sixteen loading animations, loading nothing. Stamp each one COOL or UNCOOL. Someone has to.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='25' cy='25' r='18' fill='none' stroke='%23201a17' stroke-width='6'/><path d='M25 7a18 18 0 0114.6 7.5' fill='none' stroke='%23f0563e' stroke-width='6' stroke-linecap='round'/></svg>">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
         }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: #1a1a1a;
-            color: #fff;
-            font-family: system-ui, -apple-system, sans-serif;
             min-height: 100vh;
-            padding: 2rem;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            padding: 30px 16px 60px;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .container {
-            max-width: 1200px;
+        header { text-align: center; margin-bottom: 10px; }
+        h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(22px, 6vw, 34px);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            display: inline-block;
+            transform: rotate(-1.2deg);
+        }
+        header .sub { font-style: italic; font-size: 15px; color: rgba(32,26,23,0.6); margin-top: 6px; }
+        #score { text-align: center; font-style: italic; font-size: 14px; color: rgba(32,26,23,0.6); margin: 10px 0 24px; }
+
+        #banner {
+            display: none;
+            margin: 0 auto 26px;
+            width: fit-content;
+            max-width: 92vw;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-1.5deg) scale(0);
+            padding: 12px 24px;
+            text-align: center;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 15px;
+            text-transform: uppercase;
+        }
+        #banner em {
+            display: block;
+            font-family: Georgia, serif;
+            font-weight: normal;
+            font-size: 13px;
+            text-transform: none;
+        }
+        #banner .again {
+            font-family: Georgia, serif;
+            font-weight: normal;
+            font-style: italic;
+            font-size: 12px;
+            text-decoration: underline;
+            cursor: pointer;
+            text-transform: none;
+        }
+        #banner.show { display: block; animation: popIn 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes popIn {
+            0% { transform: rotate(4deg) scale(0.2); }
+            70% { transform: rotate(-2deg) scale(1.12); }
+            100% { transform: rotate(-1.5deg) scale(1); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 22px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
-        h1 {
-            text-align: center;
-            font-size: 3rem;
-            margin-bottom: 2rem;
-            color: #4ecdc4;
-            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
-        }
-
-        .loader-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .loader-card {
-            background: #2a2a2a;
-            padding: 2rem;
-            border-radius: 1rem;
+        .card {
+            position: relative;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 16px 14px 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .loader-title {
-            margin-bottom: 1rem;
-            color: #ff6b6b;
-        }
-
-        /* Loader 1: The Never-Ending Square */
-        .square-loader {
-            width: 50px;
-            height: 50px;
-            background: #ff6b6b;
-            animation: squareGrow 2s infinite;
-        }
-
-        @keyframes squareGrow {
-            0% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.5) rotate(180deg); }
-            100% { transform: scale(1) rotate(360deg); }
-        }
-
-        /* Loader 2: The Indecisive Dots */
-        .dots-loader {
-            display: flex;
             gap: 8px;
         }
+        .card:nth-child(3n) { transform: rotate(0.6deg); }
+        .card:nth-child(3n+1) { transform: rotate(-0.6deg); }
 
-        .dot {
-            width: 20px;
-            height: 20px;
-            background: #4ecdc4;
-            border-radius: 50%;
-            animation: jumpAndHide 1.5s infinite;
-        }
-
-        .dot:nth-child(2) { animation-delay: 0.2s; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes jumpAndHide {
-            0%, 100% { transform: translateY(0); opacity: 1; }
-            50% { transform: translateY(-20px); opacity: 0.3; }
-        }
-
-        /* Loader 3: The Dramatic Spinner */
-        .dramatic-spinner {
-            width: 60px;
-            height: 60px;
-            border: 8px solid #2a2a2a;
-            border-top: 8px solid #ff6b6b;
-            border-radius: 50%;
-            animation: dramaticSpin 3s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-        }
-
-        @keyframes dramaticSpin {
-            0% { transform: rotate(0deg); }
-            50% { transform: rotate(720deg); }
-            100% { transform: rotate(1080deg); }
-        }
-
-        /* Loader 4: The Procrastinator */
-        .procrastinator {
-            width: 100px;
-            height: 20px;
-            background: #333;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress {
-            width: 30%;
-            height: 100%;
-            background: #4ecdc4;
-            animation: procrastinate 4s infinite;
-        }
-
-        @keyframes procrastinate {
-            0% { transform: translateX(-100%); }
-            30% { transform: translateX(200%); }
-            30.1% { transform: translateX(-100%); }
-            100% { transform: translateX(-100%); }
-        }
-
-        /* Loader 5: The Chaotic Dance */
-        .chaos-loader {
-            width: 40px;
-            height: 40px;
-            position: relative;
-        }
-
-        .chaos-particle {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #ff6b6b;
-            border-radius: 50%;
-            animation: chaos 2s infinite;
-        }
-
-        .chaos-particle:nth-child(2) {
-            animation-delay: 0.4s;
-            background: #4ecdc4;
-        }
-
-        .chaos-particle:nth-child(3) {
-            animation-delay: 0.8s;
-            background: #ffbe0b;
-        }
-
-        @keyframes chaos {
-            0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(30px, -30px); }
-            50% { transform: translate(-30px, 30px); }
-            75% { transform: translate(30px, 30px); }
-        }
-
-        /* Loader 6: The Nervous Rectangle */
-        .nervous-rect {
-            width: 60px;
-            height: 30px;
-            background: #ffbe0b;
-            animation: nervous 0.5s infinite;
-        }
-
-        @keyframes nervous {
-            0%, 100% { transform: skew(0deg); }
-            25% { transform: skew(15deg); }
-            75% { transform: skew(-15deg); }
-        }
-
-        /* Loader 7: The Color Shifter */
-        .color-shifter {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            animation: colorShift 3s infinite;
-        }
-
-        @keyframes colorShift {
-            0% { background: #ff6b6b; transform: scale(1); }
-            33% { background: #4ecdc4; transform: scale(1.2); }
-            66% { background: #ffbe0b; transform: scale(0.8); }
-            100% { background: #ff6b6b; transform: scale(1); }
-        }
-
-        /* Loader 8: The Pulse Ring */
-        .pulse-ring {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            position: relative;
-        }
-
-        .pulse-ring::before {
-            content: '';
-            position: absolute;
+        .stage {
+            height: 96px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 3px solid #4ecdc4;
-            animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(0.5); opacity: 1; }
-            100% { transform: scale(2); opacity: 0; }
+        .plaque { text-align: center; }
+        .plaque .nm {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 13px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
         }
+        .plaque .cap { font-style: italic; font-size: 13px; color: rgba(32,26,23,0.6); margin-top: 2px; }
 
-        /* Loader 9: The DNA Helix */
-        .dna-loader {
-            height: 60px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .dna-strand {
-            width: 4px;
-            height: 20px;
-            background: #4ecdc4;
-            border-radius: 2px;
-            animation: dnaMove 1.5s ease-in-out infinite;
-        }
-
-        .dna-strand:nth-child(even) {
-            animation-delay: 0.75s;
-            background: #ff6b6b;
-        }
-
-        @keyframes dnaMove {
-            0%, 100% { height: 20px; }
-            50% { height: 50px; }
-        }
-
-        /* Loader 10: The Infinity */
-        .infinity-loader {
-            width: 60px;
-            height: 30px;
-            position: relative;
-        }
-
-        .infinity-loader::before,
-        .infinity-loader::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #ff6b6b;
-            border-radius: 50%;
-            animation: infinity 2s linear infinite;
-        }
-
-        .infinity-loader::after {
-            left: 30px;
-            animation-delay: 1s;
-        }
-
-        @keyframes infinity {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(15px); }
-            50% { transform: translateX(30px); }
-            75% { transform: translateX(15px); }
-            100% { transform: translateX(0); }
-        }
-
-        /* Loader 11: The Matrix */
-        .matrix-loader {
-            width: 60px;
-            height: 60px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 4px;
-        }
-
-        .matrix-cell {
-            background: #4ecdc4;
-            opacity: 0.2;
-            animation: matrixFade 2s infinite;
-        }
-
-        @keyframes matrixFade {
-            0%, 100% { opacity: 0.2; }
-            50% { opacity: 1; }
-        }
-
-        /* Loader 12: The Typewriter */
-        .typewriter {
-            width: 80px;
-            height: 20px;
-            border-right: 3px solid #ff6b6b;
-            animation: typing 1s steps(3, end) infinite;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        @keyframes typing {
-            0% { width: 0; }
-            50% { width: 80px; }
-            100% { width: 0; }
-        }
-
-        /* Add these new styles */
-        .code-container {
-            margin-top: 4rem;
-            padding-top: 2rem;
-            border-top: 2px solid #2a2a2a;
-        }
-
-        .code-section {
-            background: #2a2a2a;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .code-section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .code-section-title {
-            color: #4ecdc4;
-            font-size: 1.2rem;
-        }
-
-        .copy-btn {
-            background: #4ecdc4;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            color: #1a1a1a;
+        .verdicts { display: flex; gap: 10px; margin-top: 4px; }
+        .vbtn {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 6px 14px;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            background: var(--cream);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
         }
+        .vbtn.cool { background: var(--gold); }
+        .vbtn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+        .vbtn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
 
-        .copy-btn:hover {
-            background: #ff6b6b;
-            transform: translateY(-2px);
+        .steal {
+            font-style: italic;
+            font-size: 12px;
+            color: rgba(32,26,23,0.5);
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 2px;
+            background: none;
+            border: none;
+            font-family: Georgia, serif;
         }
+        .steal:hover { color: var(--ink); }
 
-        .code-preview {
-            background: #1a1a1a;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 0.9rem;
-            color: #4ecdc4;
-            overflow-x: auto;
-        }
-
-        .success-message {
-            color: #4ecdc4;
-            font-size: 0.8rem;
-            margin-left: 1rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        /* Loader 13: The Ripple */
-        .ripple-loader {
-            width: 50px;
-            height: 50px;
-            position: relative;
-        }
-
-        .ripple-loader div {
+        .stamp {
             position: absolute;
-            border: 4px solid #4ecdc4;
-            border-radius: 50%;
-            animation: ripple 1.5s ease-out infinite;
-            opacity: 0;
+            top: 34px;
+            left: 50%;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 26px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 3px 12px;
+            border: 3px solid;
+            border-radius: 8px;
+            background: rgba(255, 248, 239, 0.72);
+            pointer-events: none;
+            transform: translateX(-50%) rotate(-12deg) scale(0);
+            z-index: 2;
+        }
+        .stamp.cool { color: #c99a12; border-color: #c99a12; box-shadow: inset 0 0 0 2px var(--cream), inset 0 0 0 4px #c99a12; }
+        .stamp.uncool { color: var(--coral); border-color: var(--coral); box-shadow: inset 0 0 0 2px var(--cream), inset 0 0 0 4px var(--coral); }
+        .stamp.show { animation: stampIn 0.3s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes stampIn {
+            0% { transform: translateX(-50%) rotate(2deg) scale(2); opacity: 0; }
+            70% { transform: translateX(-50%) rotate(-13deg) scale(0.94); opacity: 1; }
+            100% { transform: translateX(-50%) rotate(-12deg) scale(1); opacity: 1; }
         }
 
-        .ripple-loader div:nth-child(2) {
-            animation-delay: 0.5s;
-        }
-
-        .ripple-loader div:nth-child(3) {
-            animation-delay: 1s;
-        }
-
-        @keyframes ripple {
-            0% {
-                width: 0;
-                height: 0;
-                opacity: 1;
-            }
-            100% {
-                width: 100%;
-                height: 100%;
-                opacity: 0;
-            }
-        }
-
-        /* Loader 14: The Tetris */
-        .tetris-loader {
-            width: 40px;
-            height: 40px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2px;
-            animation: tetris 2s infinite;
-        }
-
-        .tetris-block {
-            background: #ff6b6b;
-            transform-origin: center;
-        }
-
-        @keyframes tetris {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(90deg); }
-            50% { transform: rotate(180deg); }
-            75% { transform: rotate(270deg); }
-        }
-
-        /* Loader 15: The Heartbeat */
-        .heartbeat-loader {
-            width: 40px;
-            height: 40px;
-            background: #ff6b6b;
-            position: relative;
-            transform: rotate(45deg);
-        }
-
-        .heartbeat-loader::before,
-        .heartbeat-loader::after {
-            content: '';
-            width: 40px;
-            height: 40px;
-            background: #ff6b6b;
-            border-radius: 50%;
-            position: absolute;
-        }
-
-        .heartbeat-loader::before {
-            left: -20px;
-        }
-
-        .heartbeat-loader::after {
-            top: -20px;
-        }
-
-        .heartbeat-loader,
-        .heartbeat-loader::before,
-        .heartbeat-loader::after {
-            animation: heartbeat 1.5s ease infinite;
-        }
-
-        @keyframes heartbeat {
-            0% { transform: scale(0.8); }
-            5% { transform: scale(0.9); }
-            10% { transform: scale(0.8); }
-            15% { transform: scale(1); }
-            50% { transform: scale(0.8); }
-            100% { transform: scale(0.8); }
+        @media (prefers-reduced-motion: reduce) {
+            .stamp.show, #banner.show { animation: none; opacity: 1; }
+            .stamp.show { transform: translateX(-50%) rotate(-12deg) scale(1); }
+            #banner.show { transform: rotate(-1.5deg) scale(1); }
+            .vbtn { transition: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Loading... Maybe?</h1>
-        <div class="loader-grid">
-            <div class="loader-card">
-                <h3 class="loader-title">The Never-Ending Square</h3>
-                <div class="square-loader"></div>
-            </div>
+    <header>
+        <h1>Cool (and Uncool) Loaders</h1>
+        <div class="sub">sixteen loading animations, loading nothing. you are the judge.</div>
+    </header>
+    <div id="score"></div>
+    <div id="banner"></div>
+    <div class="grid" id="grid"></div>
 
-            <div class="loader-card">
-                <h3 class="loader-title">The Indecisive Dots</h3>
-                <div class="dots-loader">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Dramatic Spinner</h3>
-                <div class="dramatic-spinner"></div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Procrastinator</h3>
-                <div class="procrastinator">
-                    <div class="progress"></div>
-                </div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Chaotic Dance</h3>
-                <div class="chaos-loader">
-                    <div class="chaos-particle"></div>
-                    <div class="chaos-particle"></div>
-                    <div class="chaos-particle"></div>
-                </div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Nervous Rectangle</h3>
-                <div class="nervous-rect"></div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Color Shifter</h3>
-                <div class="color-shifter"></div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Pulse Ring</h3>
-                <div class="pulse-ring"></div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The DNA Sequence</h3>
-                <div class="dna-loader">
-                    <div class="dna-strand"></div>
-                    <div class="dna-strand"></div>
-                    <div class="dna-strand"></div>
-                    <div class="dna-strand"></div>
-                    <div class="dna-strand"></div>
-                    <div class="dna-strand"></div>
-                </div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Infinity</h3>
-                <div class="infinity-loader"></div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Matrix</h3>
-                <div class="matrix-loader">
-                    <div class="matrix-cell" style="animation-delay: 0s"></div>
-                    <div class="matrix-cell" style="animation-delay: 0.2s"></div>
-                    <div class="matrix-cell" style="animation-delay: 0.4s"></div>
-                    <div class="matrix-cell" style="animation-delay: 0.6s"></div>
-                    <div class="matrix-cell" style="animation-delay: 0.8s"></div>
-                    <div class="matrix-cell" style="animation-delay: 1s"></div>
-                    <div class="matrix-cell" style="animation-delay: 1.2s"></div>
-                    <div class="matrix-cell" style="animation-delay: 1.4s"></div>
-                    <div class="matrix-cell" style="animation-delay: 1.6s"></div>
-                </div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Typewriter</h3>
-                <div class="typewriter">Loading...</div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Ripple</h3>
-                <div class="ripple-loader">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                </div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Tetris</h3>
-                <div class="tetris-loader">
-                    <div class="tetris-block"></div>
-                    <div class="tetris-block"></div>
-                    <div class="tetris-block"></div>
-                    <div class="tetris-block"></div>
-                </div>
-            </div>
-
-            <div class="loader-card">
-                <h3 class="loader-title">The Heartbeat</h3>
-                <div class="heartbeat-loader"></div>
-            </div>
-        </div>
-        <div class="code-container">
-            <h2 style="text-align: center; margin-bottom: 2rem; color: #4ecdc4;">Implementation Code</h2>
-            
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Never-Ending Square</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'square-loader')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="square-loader">
-<!-- HTML -->
-<div class="square-loader"></div>
-
-/* CSS */
-.square-loader {
-    width: 50px;
-    height: 50px;
-    background: #ff6b6b;
-    animation: squareGrow 2s infinite;
-}
-
-@keyframes squareGrow {
-    0% { transform: scale(1) rotate(0deg); }
-    50% { transform: scale(1.5) rotate(180deg); }
-    100% { transform: scale(1) rotate(360deg); }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Indecisive Dots</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'dots-loader')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="dots-loader">
-<!-- HTML -->
-<div class="dots-loader">
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-</div>
-
-/* CSS */
-.dots-loader {
-    display: flex;
-    gap: 8px;
-}
-
-.dot {
-    width: 20px;
-    height: 20px;
-    background: #4ecdc4;
-    border-radius: 50%;
-    animation: jumpAndHide 1.5s infinite;
-}
-
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes jumpAndHide {
-    0%, 100% { transform: translateY(0); opacity: 1; }
-    50% { transform: translateY(-20px); opacity: 0.3; }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Dramatic Spinner</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'dramatic-spinner')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="dramatic-spinner">
-<!-- HTML -->
-<div class="dramatic-spinner"></div>
-
-/* CSS */
-.dramatic-spinner {
-    width: 60px;
-    height: 60px;
-    border: 8px solid #2a2a2a;
-    border-top: 8px solid #ff6b6b;
-    border-radius: 50%;
-    animation: dramaticSpin 3s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-}
-
-@keyframes dramaticSpin {
-    0% { transform: rotate(0deg); }
-    50% { transform: rotate(720deg); }
-    100% { transform: rotate(1080deg); }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Procrastinator</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'procrastinator')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="procrastinator">
-<!-- HTML -->
-<div class="procrastinator">
-    <div class="progress"></div>
-</div>
-
-/* CSS */
-.procrastinator {
-    width: 100px;
-    height: 20px;
-    background: #333;
-    border-radius: 10px;
-    overflow: hidden;
-    position: relative;
-}
-
-.progress {
-    width: 30%;
-    height: 100%;
-    background: #4ecdc4;
-    animation: procrastinate 4s infinite;
-}
-
-@keyframes procrastinate {
-    0% { transform: translateX(-100%); }
-    30% { transform: translateX(200%); }
-    30.1% { transform: translateX(-100%); }
-    100% { transform: translateX(-100%); }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Chaotic Dance</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'chaos-loader')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="chaos-loader">
-<!-- HTML -->
-<div class="chaos-loader">
-    <div class="chaos-particle"></div>
-    <div class="chaos-particle"></div>
-    <div class="chaos-particle"></div>
-</div>
-
-/* CSS */
-.chaos-loader {
-    width: 40px;
-    height: 40px;
-    position: relative;
-}
-
-.chaos-particle {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: #ff6b6b;
-    border-radius: 50%;
-    animation: chaos 2s infinite;
-}
-
-.chaos-particle:nth-child(2) {
-    animation-delay: 0.4s;
-    background: #4ecdc4;
-}
-
-.chaos-particle:nth-child(3) {
-    animation-delay: 0.8s;
-    background: #ffbe0b;
-}
-
-@keyframes chaos {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(30px, -30px); }
-    50% { transform: translate(-30px, 30px); }
-    75% { transform: translate(30px, 30px); }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Nervous Rectangle</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'nervous-rect')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="nervous-rect">
-<!-- HTML -->
-<div class="nervous-rect"></div>
-
-/* CSS */
-.nervous-rect {
-    width: 60px;
-    height: 30px;
-    background: #ffbe0b;
-    animation: nervous 0.5s infinite;
-}
-
-@keyframes nervous {
-    0%, 100% { transform: skew(0deg); }
-    25% { transform: skew(15deg); }
-    75% { transform: skew(-15deg); }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Color Shifter</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'color-shifter')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="color-shifter">
-<!-- HTML -->
-<div class="color-shifter"></div>
-
-/* CSS */
-.color-shifter {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    animation: colorShift 3s infinite;
-}
-
-@keyframes colorShift {
-    0% { background: #ff6b6b; transform: scale(1); }
-    33% { background: #4ecdc4; transform: scale(1.2); }
-    66% { background: #ffbe0b; transform: scale(0.8); }
-    100% { background: #ff6b6b; transform: scale(1); }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Pulse Ring</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'pulse-ring')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="pulse-ring">
-<!-- HTML -->
-<div class="pulse-ring"></div>
-
-/* CSS */
-.pulse-ring {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    position: relative;
-}
-
-.pulse-ring::before {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 3px solid #4ecdc4;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(0.5); opacity: 1; }
-    100% { transform: scale(2); opacity: 0; }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The DNA Sequence</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'dna-loader')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="dna-loader">
-<!-- HTML -->
-<div class="dna-loader">
-    <div class="dna-strand"></div>
-    <div class="dna-strand"></div>
-    <div class="dna-strand"></div>
-    <div class="dna-strand"></div>
-    <div class="dna-strand"></div>
-    <div class="dna-strand"></div>
-</div>
-
-/* CSS */
-.dna-loader {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.dna-strand {
-    width: 4px;
-    height: 20px;
-    background: #4ecdc4;
-    border-radius: 2px;
-    animation: dnaMove 1.5s ease-in-out infinite;
-}
-
-.dna-strand:nth-child(even) {
-    animation-delay: 0.75s;
-    background: #ff6b6b;
-}
-
-@keyframes dnaMove {
-    0%, 100% { height: 20px; }
-    50% { height: 50px; }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Infinity</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'infinity-loader')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="infinity-loader">
-<!-- HTML -->
-<div class="infinity-loader"></div>
-
-/* CSS */
-.infinity-loader {
-    width: 60px;
-    height: 30px;
-    position: relative;
-}
-
-.infinity-loader::before,
-.infinity-loader::after {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    border: 3px solid #ff6b6b;
-    border-radius: 50%;
-    animation: infinity 2s linear infinite;
-}
-
-.infinity-loader::after {
-    left: 30px;
-    animation-delay: 1s;
-}
-
-@keyframes infinity {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(15px); }
-    50% { transform: translateX(30px); }
-    75% { transform: translateX(15px); }
-    100% { transform: translateX(0); }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Matrix</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'matrix-loader')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="matrix-loader">
-<!-- HTML -->
-<div class="matrix-loader">
-    <div class="matrix-cell" style="animation-delay: 0s"></div>
-    <div class="matrix-cell" style="animation-delay: 0.2s"></div>
-    <div class="matrix-cell" style="animation-delay: 0.4s"></div>
-    <div class="matrix-cell" style="animation-delay: 0.6s"></div>
-    <div class="matrix-cell" style="animation-delay: 0.8s"></div>
-    <div class="matrix-cell" style="animation-delay: 1s"></div>
-    <div class="matrix-cell" style="animation-delay: 1.2s"></div>
-    <div class="matrix-cell" style="animation-delay: 1.4s"></div>
-    <div class="matrix-cell" style="animation-delay: 1.6s"></div>
-</div>
-
-/* CSS */
-.matrix-loader {
-    width: 60px;
-    height: 60px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-}
-
-.matrix-cell {
-    background: #4ecdc4;
-    opacity: 0.2;
-    animation: matrixFade 2s infinite;
-}
-
-@keyframes matrixFade {
-    0%, 100% { opacity: 0.2; }
-    50% { opacity: 1; }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Typewriter</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'typewriter')">Copy Code</button>
-                        <div class="success-message">Copied!</div>
-                    </div>
-                </div>
-                <pre class="code-preview" id="typewriter">
-<!-- HTML -->
-<div class="typewriter">Loading...</div>
-
-/* CSS */
-.typewriter {
-    width: 80px;
-    height: 20px;
-    border-right: 3px solid #ff6b6b;
-    animation: typing 1s steps(3, end) infinite;
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-@keyframes typing {
-    0% { width: 0; }
-    50% { width: 80px; }
-    100% { width: 0; }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Ripple</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'ripple-loader')">Copy Code</button>
-                        <span class="success-message">Copied!</span>
-                    </div>
-                </div>
-                <pre class="code-preview" id="ripple-loader">
-<!-- HTML -->
-<div class="ripple-loader">
-    <div></div>
-    <div></div>
-    <div></div>
-</div>
-
-/* CSS */
-.ripple-loader {
-    width: 50px;
-    height: 50px;
-    position: relative;
-}
-
-.ripple-loader div {
-    position: absolute;
-    border: 4px solid #4ecdc4;
-    border-radius: 50%;
-    animation: ripple 1.5s ease-out infinite;
-    opacity: 0;
-}
-
-.ripple-loader div:nth-child(2) {
-    animation-delay: 0.5s;
-}
-
-.ripple-loader div:nth-child(3) {
-    animation-delay: 1s;
-}
-
-@keyframes ripple {
-    0% {
-        width: 0;
-        height: 0;
-        opacity: 1;
-    }
-    100% {
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-    }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Tetris</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'tetris-loader')">Copy Code</button>
-                        <span class="success-message">Copied!</span>
-                    </div>
-                </div>
-                <pre class="code-preview" id="tetris-loader">
-<!-- HTML -->
-<div class="tetris-loader">
-    <div class="tetris-block"></div>
-    <div class="tetris-block"></div>
-    <div class="tetris-block"></div>
-    <div class="tetris-block"></div>
-</div>
-
-/* CSS */
-.tetris-loader {
-    width: 40px;
-    height: 40px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2px;
-    animation: tetris 2s infinite;
-}
-
-.tetris-block {
-    background: #ff6b6b;
-    transform-origin: center;
-}
-
-@keyframes tetris {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(90deg); }
-    50% { transform: rotate(180deg); }
-    75% { transform: rotate(270deg); }
-}</pre>
-            </div>
-
-            <div class="code-section">
-                <div class="code-section-header">
-                    <h3 class="code-section-title">The Heartbeat</h3>
-                    <div style="display: flex; align-items: center;">
-                        <button class="copy-btn" onclick="copyCode(this, 'heartbeat-loader')">Copy Code</button>
-                        <span class="success-message">Copied!</span>
-                    </div>
-                </div>
-                <pre class="code-preview" id="heartbeat-loader">
-<!-- HTML -->
-<div class="heartbeat-loader"></div>
-
-/* CSS */
-.heartbeat-loader {
-    width: 40px;
-    height: 40px;
-    background: #ff6b6b;
-    position: relative;
-    transform: rotate(45deg);
-}
-
-.heartbeat-loader::before,
-.heartbeat-loader::after {
-    content: '';
-    width: 40px;
-    height: 40px;
-    background: #ff6b6b;
-    border-radius: 50%;
-    position: absolute;
-}
-
-.heartbeat-loader::before {
-    left: -20px;
-}
-
-.heartbeat-loader::after {
-    top: -20px;
-}
-
-.heartbeat-loader,
-.heartbeat-loader::before,
-.heartbeat-loader::after {
-    animation: heartbeat 1.5s ease infinite;
-}
-
-@keyframes heartbeat {
-    0% { transform: scale(0.8); }
-    5% { transform: scale(0.9); }
-    10% { transform: scale(0.8); }
-    15% { transform: scale(1); }
-    50% { transform: scale(0.8); }
-    100% { transform: scale(0.8); }
-}</pre>
-            </div>
-        </div>
-    </div>
     <script>
-        async function copyCode(button, id) {
-            const codeBlock = document.getElementById(id);
-            const successMessage = button.nextElementSibling;
-            
-            try {
-                await navigator.clipboard.writeText(codeBlock.textContent);
-                
-                // Show success message
-                successMessage.style.opacity = '1';
-                button.style.background = '#4ecdc4';
-                button.textContent = 'Copied!';
-                
-                // Reset after 2 seconds
-                setTimeout(() => {
-                    successMessage.style.opacity = '0';
-                    button.style.background = '#4ecdc4';
-                    button.textContent = 'Copy Code';
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy:', err);
-                button.textContent = 'Failed to copy';
-                button.style.background = '#ff6b6b';
+    (() => {
+        const LOADERS = [
+            { id: 'standard', name: 'The Standard', cap: 'respected, never loved.',
+              html: '<div class="l-standard"></div>',
+              css: '.l-standard{width:44px;height:44px;border:5px solid #201a17;border-top-color:#f0563e;border-radius:50%;animation:l-standard-spin 1s linear infinite}\n@keyframes l-standard-spin{to{transform:rotate(360deg)}}' },
+            { id: 'overachiever', name: 'The Overachiever', cap: 'in a tremendous hurry to load nothing.',
+              html: '<div class="l-overachiever"></div>',
+              css: '.l-overachiever{width:44px;height:44px;border:5px solid #201a17;border-top-color:#5aa0db;border-radius:50%;animation:l-over-spin .5s cubic-bezier(.68,-0.55,.27,1.55) infinite}\n@keyframes l-over-spin{to{transform:rotate(360deg)}}' },
+            { id: 'procrastinator', name: 'The Procrastinator', cap: 'reaches 88%, reflects.',
+              html: '<div class="l-procrastinator"><i></i></div>',
+              css: '.l-procrastinator{width:130px;height:20px;background:#fff8ef;border:2px solid #201a17;border-radius:99px;overflow:hidden}\n.l-procrastinator i{display:block;height:100%;background:#b7ce3c;border-right:2px solid #201a17;animation:l-pro 5s infinite}\n@keyframes l-pro{0%{width:0}30%{width:86%}92%{width:88%}97%,100%{width:101%}}' },
+            { id: 'pessimist', name: 'The Pessimist', cap: 'unloading.',
+              html: '<div class="l-pessimist"><i></i></div>',
+              css: '.l-pessimist{width:130px;height:20px;background:#fff8ef;border:2px solid #201a17;border-radius:99px;overflow:hidden}\n.l-pessimist i{display:block;height:100%;background:#f0563e;border-right:2px solid #201a17;animation:l-pes 3s linear infinite}\n@keyframes l-pes{0%{width:101%}100%{width:0}}' },
+            { id: 'dots', name: 'The Dots', cap: 'the third one has given up.',
+              html: '<div class="l-dots"><i></i><i></i><i></i></div>',
+              css: '.l-dots{display:flex;gap:8px}\n.l-dots i{width:16px;height:16px;background:#f7c948;border:2px solid #201a17;border-radius:50%;animation:l-dots-b 1s infinite}\n.l-dots i:nth-child(2){animation-delay:.15s;background:#2fb0a3}\n.l-dots i:nth-child(3){animation-delay:.62s;background:#a98fd0}\n@keyframes l-dots-b{0%,100%{transform:translateY(0)}40%{transform:translateY(-16px)}}' },
+            { id: 'coin', name: 'The Coin Flip', cap: 'heads means it loaded.',
+              html: '<div class="l-coin"></div>',
+              css: '.l-coin{width:40px;height:40px;background:#f7c948;border:2px solid #201a17;border-radius:50%;box-shadow:inset 0 0 0 5px rgba(32,26,23,.18);animation:l-coin-f 1.2s ease-in-out infinite}\n@keyframes l-coin-f{to{transform:rotateY(360deg)}}' },
+            { id: 'hourglass', name: 'The Hourglass', cap: 'flips when it feels ready.',
+              html: '<div class="l-hourglass"></div>',
+              css: '.l-hourglass{width:32px;height:32px;background:#f47b28;border:2px solid #201a17;animation:l-hg 2s ease-in-out infinite}\n@keyframes l-hg{0%,35%{transform:rotate(0)}50%,85%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}' },
+            { id: 'sisyphus', name: 'The Sisyphus', cap: 'almost, every time.',
+              html: '<div class="l-sisyphus"><i></i></div>',
+              css: '.l-sisyphus{position:relative;width:110px;height:60px}\n.l-sisyphus::before{content:"";position:absolute;left:2px;bottom:4px;width:102px;height:3px;background:#201a17;border-radius:2px;transform:rotate(-22deg);transform-origin:left bottom}\n.l-sisyphus i{position:absolute;left:4px;bottom:8px;width:20px;height:20px;background:#5aa0db;border:2px solid #201a17;border-radius:50%;animation:l-sis 2.8s infinite}\n@keyframes l-sis{0%{transform:translate(0,0) rotate(0)}55%{transform:translate(72px,-32px) rotate(540deg);animation-timing-function:ease-out}68%{transform:translate(72px,-32px) rotate(540deg)}82%,100%{transform:translate(0,0) rotate(0)}}' },
+            { id: 'committee', name: 'The Committee', cap: 'circling the issue.',
+              html: '<div class="l-committee"><i></i><i></i><i></i><i></i><i></i></div>',
+              css: '.l-committee{position:relative;width:60px;height:60px}\n.l-committee i{position:absolute;top:50%;left:50%;width:12px;height:12px;margin:-6px;border:2px solid #201a17;border-radius:50%}\n.l-committee i:nth-child(1){background:#f0563e;animation:l-com-a 1.3s linear infinite}\n.l-committee i:nth-child(2){background:#5aa0db;animation:l-com-b 1.8s linear infinite reverse}\n.l-committee i:nth-child(3){background:#b7ce3c;animation:l-com-c 1.1s linear infinite}\n.l-committee i:nth-child(4){background:#f7c948;animation:l-com-a 2.3s linear infinite reverse}\n.l-committee i:nth-child(5){background:#ff7fa5;animation:l-com-b .9s linear infinite}\n@keyframes l-com-a{from{transform:rotate(0) translateX(22px)}to{transform:rotate(360deg) translateX(22px)}}\n@keyframes l-com-b{from{transform:rotate(0) translateX(14px)}to{transform:rotate(360deg) translateX(14px)}}\n@keyframes l-com-c{from{transform:rotate(0) translateX(26px)}to{transform:rotate(360deg) translateX(26px)}}' },
+            { id: 'honest', name: 'The Honest One', cap: 'says what it is.',
+              html: '<div class="l-honest">loading<i>.</i><i>.</i><i>.</i></div>',
+              css: '.l-honest{font-family:Georgia,serif;font-style:italic;font-size:22px;color:#201a17}\n.l-honest i{font-style:normal;opacity:0;animation:l-hon 1.4s infinite}\n.l-honest i:nth-child(2){animation-delay:.2s}\n.l-honest i:nth-child(3){animation-delay:.4s}\n@keyframes l-hon{30%,70%{opacity:1}0%,100%{opacity:0}}' },
+            { id: 'staircase', name: 'The Staircase', cap: 'getting somewhere, step-wise.',
+              html: '<div class="l-staircase"><i></i><i></i><i></i><i></i></div>',
+              css: '.l-staircase{display:flex;align-items:flex-end;gap:5px;height:46px}\n.l-staircase i{width:13px;height:12px;background:#2fb0a3;border:2px solid #201a17;border-radius:3px;animation:l-st 1.2s infinite}\n.l-staircase i:nth-child(2){animation-delay:.15s}\n.l-staircase i:nth-child(3){animation-delay:.3s}\n.l-staircase i:nth-child(4){animation-delay:.45s}\n@keyframes l-st{0%,100%{height:12px}50%{height:42px}}' },
+            { id: 'blinker', name: 'The Blinker', cap: 'on. off. that is the whole act.',
+              html: '<div class="l-blinker"></div>',
+              css: '.l-blinker{width:36px;height:36px;background:#ff7fa5;border:2px solid #201a17;border-radius:6px;animation:l-bl 1s steps(1) infinite}\n@keyframes l-bl{50%{opacity:0}}' },
+            { id: 'finished', name: 'The Finished One', cap: '100% complete. it is lying.',
+              html: '<div class="l-finished"></div>',
+              css: '.l-finished{width:130px;height:20px;background:#b7ce3c;border:2px solid #201a17;border-radius:99px}' },
+            { id: 'nervous', name: 'The Nervous Wreck', cap: 'it knows something we do not.',
+              html: '<div class="l-nervous"></div>',
+              css: '.l-nervous{width:52px;height:28px;background:#f7c948;border:2px solid #201a17;border-radius:4px;animation:l-ner .4s infinite}\n@keyframes l-ner{25%{transform:skewX(14deg)}75%{transform:skewX(-14deg)}}' },
+            { id: 'ouroboros', name: 'The Ouroboros', cap: 'disagrees with itself, forever.',
+              html: '<div class="l-ouroboros"></div>',
+              css: '.l-ouroboros{position:relative;width:54px;height:54px}\n.l-ouroboros::before,.l-ouroboros::after{content:"";position:absolute;border-radius:50%;border:4px solid #201a17}\n.l-ouroboros::before{inset:0;border-top-color:#f0563e;animation:l-our 1.3s linear infinite}\n.l-ouroboros::after{inset:13px;border-top-color:#5aa0db;animation:l-our .9s linear infinite reverse}\n@keyframes l-our{to{transform:rotate(360deg)}}' },
+            { id: 'pulse', name: 'The Pulse', cap: 'medically speaking, fine.',
+              html: '<div class="l-pulse"><i></i></div>',
+              css: '.l-pulse{position:relative;width:60px;height:60px}\n.l-pulse i{position:absolute;inset:19px;background:#f0563e;border:2px solid #201a17;border-radius:50%;animation:l-pu 1.1s infinite}\n.l-pulse::after{content:"";position:absolute;inset:15px;border:3px solid #201a17;border-radius:50%;animation:l-pu-ring 1.1s infinite}\n@keyframes l-pu{0%,30%,100%{transform:scale(1)}15%{transform:scale(1.3)}}\n@keyframes l-pu-ring{0%{transform:scale(.8);opacity:1}70%,100%{transform:scale(1.9);opacity:0}}' }
+        ];
+
+        // inject all loader CSS from the same source the "steal it" links copy
+        const styleTag = document.createElement('style');
+        styleTag.textContent = LOADERS.map(l => l.css).join('\n');
+        document.head.appendChild(styleTag);
+
+        // ---- verdicts ----
+        let verdicts = {};
+        try { verdicts = JSON.parse(localStorage.getItem('coolloaders-verdicts')) || {}; } catch (e) {}
+        function saveVerdicts() {
+            try { localStorage.setItem('coolloaders-verdicts', JSON.stringify(verdicts)); } catch (e) {}
+        }
+
+        const grid = document.getElementById('grid');
+        const scoreEl = document.getElementById('score');
+        const bannerEl = document.getElementById('banner');
+        const stamps = {};
+
+        LOADERS.forEach(l => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML =
+                '<div class="stage">' + l.html + '</div>' +
+                '<div class="plaque"><div class="nm">' + l.name + '</div><div class="cap">' + l.cap + '</div></div>' +
+                '<div class="verdicts">' +
+                '<button class="vbtn cool">Cool</button>' +
+                '<button class="vbtn uncool">Uncool</button>' +
+                '</div>' +
+                '<button class="steal">steal it</button>' +
+                '<div class="stamp"></div>';
+            grid.appendChild(card);
+
+            const stamp = card.querySelector('.stamp');
+            stamps[l.id] = stamp;
+
+            card.querySelector('.vbtn.cool').addEventListener('click', () => judge(l.id, 'cool'));
+            card.querySelector('.vbtn.uncool').addEventListener('click', () => judge(l.id, 'uncool'));
+
+            const stealBtn = card.querySelector('.steal');
+            stealBtn.addEventListener('click', async () => {
+                const snippet = '<!-- ' + l.name + ' -->\n' + l.html + '\n\n<style>\n' + l.css + '\n</style>';
+                try {
+                    await navigator.clipboard.writeText(snippet);
+                    stealBtn.textContent = 'stolen.';
+                } catch (e) {
+                    stealBtn.textContent = 'it resisted.';
+                }
+                setTimeout(() => { stealBtn.textContent = 'steal it'; }, 1600);
+            });
+
+            if (verdicts[l.id]) showStamp(l.id, verdicts[l.id], false);
+        });
+
+        function showStamp(id, verdict, animate) {
+            const stamp = stamps[id];
+            stamp.textContent = verdict;
+            stamp.className = 'stamp ' + verdict;
+            if (animate) {
+                void stamp.offsetWidth;
+                stamp.classList.add('show');
+            } else {
+                stamp.classList.add('show');
             }
         }
+
+        function judge(id, verdict) {
+            if (verdicts[id] === verdict) return;
+            verdicts[id] = verdict;
+            saveVerdicts();
+            showStamp(id, verdict, true);
+            updateScore();
+        }
+
+        function updateScore() {
+            const ids = LOADERS.map(l => l.id);
+            const judged = ids.filter(id => verdicts[id]);
+            const cool = judged.filter(id => verdicts[id] === 'cool').length;
+            const uncool = judged.length - cool;
+            scoreEl.textContent = 'judged ' + judged.length + ' of ' + ids.length + ' · cool ' + cool + ' · uncool ' + uncool;
+
+            if (judged.length === ids.length) {
+                let title, line;
+                if (uncool === 0) { title = 'Easy Crowd'; line = 'they suspect flattery.'; }
+                else if (cool === 0) { title = 'Tough Crowd'; line = 'they will try harder.'; }
+                else { title = 'Judging Complete'; line = 'the loaders thank you for your honesty.'; }
+                bannerEl.innerHTML = title + '<em>' + line + '</em><span class="again">judge again</span>';
+                bannerEl.querySelector('.again').addEventListener('click', () => {
+                    verdicts = {};
+                    saveVerdicts();
+                    bannerEl.classList.remove('show');
+                    Object.values(stamps).forEach(s => s.className = 'stamp');
+                    updateScore();
+                });
+                if (!bannerEl.classList.contains('show')) {
+                    void bannerEl.offsetWidth;
+                    bannerEl.classList.add('show');
+                }
+            } else {
+                bannerEl.classList.remove('show');
+            }
+        }
+
+        updateScore();
+    })();
     </script>
 </body>
 </html>
