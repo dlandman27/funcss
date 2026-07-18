@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Dummy Factory</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #191c23;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: Georgia, 'Times New Roman', serif;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #spotlight {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 42%,
+          rgba(255, 240, 210, 0.09) 0%,
+          transparent 65%),
+        radial-gradient(ellipse at center,
+          transparent 55%,
+          rgba(0, 0, 0, 0.5) 100%);
+    }
+
+    #plaque {
+      text-align: center;
+      max-width: 88vw;
+      z-index: 2;
+    }
+
+    #plaque .factory {
+      font-size: clamp(10px, 1.4vw, 12px);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #6e6a61;
+    }
+
+    #name {
+      font-style: italic;
+      font-size: clamp(18px, 3.4vw, 30px);
+      color: #e3dcc9;
+      margin-top: 8px;
+      min-height: 1.3em;
+    }
+
+    #dossier {
+      font-size: clamp(11px, 1.6vw, 14px);
+      color: #8d887b;
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---- the dummy ---- */
+
+    #dummy {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 6px;
+      z-index: 2;
+      line-height: 1;
+    }
+
+    .part {
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+    }
+
+    .part:hover { transform: scale(1.08); }
+
+    #head { font-size: clamp(64px, 13vmin, 104px); z-index: 3; }
+
+    #torso {
+      position: relative;
+      margin-top: clamp(-18px, -2.4vmin, -10px);
+      display: flex;
+      align-items: center;
+      z-index: 2;
+    }
+
+    #bodyPart { font-size: clamp(110px, 24vmin, 190px); }
+
+    .arm {
+      position: absolute;
+      top: 38%;
+      font-size: clamp(38px, 8vmin, 64px);
+      z-index: 4;
+    }
+
+    #armL { left: clamp(-34px, -6vmin, -18px); transform: scaleX(-1); }
+    #armL:hover { transform: scaleX(-1) scale(1.12); }
+    #armR { right: clamp(-34px, -6vmin, -18px); }
+
+    #feet {
+      display: flex;
+      gap: clamp(6px, 1.6vmin, 14px);
+      margin-top: clamp(-16px, -2vmin, -8px);
+      z-index: 3;
+    }
+
+    #feet .foot { font-size: clamp(40px, 8.5vmin, 66px); display: inline-block; }
+    #footL .foot { transform: scaleX(-1); }
+
+    #shadow {
+      width: clamp(140px, 30vmin, 240px);
+      height: 16px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(0, 0, 0, 0.5), transparent 70%);
+      margin-top: 6px;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.2) rotate(-25deg); }
+      60% { transform: scale(1.18) rotate(6deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .popping { animation: pop 0.4s ease both; }
+    #armL.popping { animation: popL 0.4s ease both; }
+
+    @keyframes popL {
+      0% { transform: scaleX(-1) scale(0.2) rotate(25deg); }
+      60% { transform: scaleX(-1) scale(1.18) rotate(-6deg); }
+      100% { transform: scaleX(-1) scale(1) rotate(0deg); }
+    }
+
+    #assemble {
+      appearance: none;
+      border: 1px solid rgba(230, 215, 185, 0.3);
+      background: rgba(35, 38, 48, 0.8);
+      color: #e3dcc9;
+      font-family: inherit;
+      font-size: clamp(13px, 1.9vw, 16px);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 12px 34px;
+      border-radius: 999px;
+      cursor: pointer;
+      margin-top: 14px;
+      z-index: 2;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    #assemble:hover {
+      border-color: rgba(255, 235, 195, 0.6);
+      background: rgba(48, 52, 66, 0.9);
+    }
+
+    #assemble:active { transform: translateY(1px); }
+
+    #hint {
+      font-style: italic;
+      font-size: clamp(11px, 1.5vw, 13px);
+      color: rgba(180, 172, 155, 0.45);
+      z-index: 2;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="spotlight"></div>
+
+  <div id="plaque">
+    <div class="factory">The Dummy Factory &mdash; Quality Assembly Since Just Now</div>
+    <div id="name"></div>
+    <div id="dossier"></div>
+  </div>
+
+  <div id="dummy">
+    <div id="head" class="part" title="swap head"></div>
+    <div id="torso">
+      <div id="armL" class="part arm" title="swap arms"></div>
+      <div id="bodyPart" class="part" title="swap body"></div>
+      <div id="armR" class="part arm" title="swap arms"></div>
+    </div>
+    <div id="feet">
+      <span id="footL" class="part"><span class="foot"></span></span>
+      <span id="footR" class="part"><span class="foot"></span></span>
+    </div>
+    <div id="shadow"></div>
+  </div>
+
+  <button id="assemble">Assemble</button>
+  <div id="hint">click any part to swap just that part &middot; space for a whole new dummy</div>
+
+  <script>
+    const HEADS = [
+      ['🐻', 'Bear'], ['🦁', 'Lion'], ['🐸', 'Frog'], ['🤖', 'Robot'],
+      ['👽', 'Alien'], ['🎃', 'Pumpkin'], ['💀', 'Skull'], ['🦈', 'Shark'],
+      ['🌻', 'Sunflower'], ['🗿', 'Moai'], ['📺', 'Television'], ['🐙', 'Octopus'],
+      ['🎲', 'Dice'], ['🥸', 'Incognito'], ['🐱', 'Cat'], ['🍩', 'Donut'],
+    ];
+
+    const BODIES = [
+      ['🚁', 'Helicopter'], ['🏎️', 'Race Car'], ['🛒', 'Shopping Cart'],
+      ['🎸', 'Electric Guitar'], ['🥤', 'Soda Cup'], ['🐉', 'Dragon'],
+      ['🖥️', 'Desktop Computer'], ['🧊', 'Ice Cube'], ['🎂', 'Birthday Cake'],
+      ['🛸', 'UFO'], ['🪗', 'Accordion'], ['🚀', 'Rocket'],
+      ['🏛️', 'Municipal Building'], ['⛽', 'Gas Pump'], ['🧺', 'Laundry Basket'],
+    ];
+
+    const ARMS = [
+      ['🦾', 'robot arms'], ['🪝', 'hooks'], ['🌭', 'hot dogs'],
+      ['🖌️', 'paintbrushes'], ['🍴', 'forks'], ['🗡️', 'swords'],
+      ['🪄', 'magic wands'], ['☂️', 'umbrellas'], ['🦞', 'lobster claws'],
+      ['💪', 'regular arms'], ['🥢', 'chopsticks'], ['🍌', 'bananas'],
+    ];
+
+    const FEET = [
+      ['👞', 'clown shoes', 'hue-rotate(320deg) saturate(4)', 1.5],
+      ['👟', 'sneakers', '', 1],
+      ['🛼', 'roller skates', '', 1],
+      ['⛸️', 'ice skates', '', 1],
+      ['🩴', 'flip-flops', '', 1],
+      ['🩰', 'ballet slippers', '', 1],
+      ['🛞', 'wheels', '', 1],
+      ['🧨', 'rocket boots', '', 1],
+      ['🦩', 'flamingo legs', '', 1],
+      ['🥌', 'curling stones', '', 1],
+      ['🥾', 'hiking boots', '', 1],
+    ];
+
+    const REMARKS = [
+      'assembled without supervision',
+      'warranty: void',
+      'balance: improbable',
+      'passed inspection (inspector was distracted)',
+      'do not expose to weather, emotions, or bees',
+      'some assembly errors included at no extra cost',
+      'structurally confident',
+      'returns not accepted',
+      'built to yesterday&rsquo;s standards',
+      'certified street-legal in no jurisdictions',
+      'may contain traces of other dummies',
+      'top speed: debatable',
+    ];
+
+    const TOTAL = HEADS.length * BODIES.length * ARMS.length * FEET.length;
+
+    const nameEl = document.getElementById('name');
+    const dossierEl = document.getElementById('dossier');
+    const headEl = document.getElementById('head');
+    const bodyEl = document.getElementById('bodyPart');
+    const armLEl = document.getElementById('armL');
+    const armREl = document.getElementById('armR');
+    const footL = document.querySelector('#footL .foot');
+    const footR = document.querySelector('#footR .foot');
+
+    const pick = (arr) => arr[(Math.random() * arr.length) | 0];
+    const pickOther = (arr, current) => {
+      let p;
+      do { p = pick(arr); } while (p === current && arr.length > 1);
+      return p;
+    };
+
+    let head, body, arms, feet;
+
+    function pop(el) {
+      el.classList.remove('popping');
+      void el.offsetWidth;   // restart the animation
+      el.classList.add('popping');
+    }
+
+    function apply() {
+      headEl.textContent = head[0];
+      bodyEl.textContent = body[0];
+      armLEl.textContent = arms[0];
+      armREl.textContent = arms[0];
+      footL.textContent = feet[0];
+      footR.textContent = feet[0];
+      for (const f of [footL, footR]) {
+        f.style.filter = feet[2] || '';
+        f.style.scale = feet[3] !== 1 ? String(feet[3]) : '';
+      }
+
+      nameEl.textContent = `${head[1]}-Headed ${body[1]} in ${capFirst(feet[1])}`;
+      const serial = 1000 + ((Math.random() * 9000) | 0);
+      dossierEl.innerHTML =
+        `model no. ${serial} &middot; armament: ${arms[1]} &middot; ${pick(REMARKS)}<br>` +
+        `one of ${TOTAL.toLocaleString()} possible dummies`;
+    }
+
+    const capFirst = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+    function assemble() {
+      head = pickOther(HEADS, head);
+      body = pickOther(BODIES, body);
+      arms = pickOther(ARMS, arms);
+      feet = pickOther(FEET, feet);
+      apply();
+      [headEl, bodyEl, armLEl, armREl, footL.parentElement, footR.parentElement].forEach(pop);
+    }
+
+    // swap a single part
+    headEl.addEventListener('click', () => { head = pickOther(HEADS, head); apply(); pop(headEl); });
+    bodyEl.addEventListener('click', () => { body = pickOther(BODIES, body); apply(); pop(bodyEl); });
+    for (const el of [armLEl, armREl]) {
+      el.addEventListener('click', () => { arms = pickOther(ARMS, arms); apply(); pop(armLEl); pop(armREl); });
+    }
+    for (const el of [footL.parentElement, footR.parentElement]) {
+      el.addEventListener('click', () => {
+        feet = pickOther(FEET, feet);
+        apply();
+        pop(footL.parentElement);
+        pop(footR.parentElement);
+      });
+    }
+
+    document.getElementById('assemble').addEventListener('click', assemble);
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault();
+        assemble();
+      }
+    });
+
+    assemble();
+  </script>
+</body>
+</html>

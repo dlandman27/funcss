@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oddly Specific Horoscopes</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background: #0c0d1a;
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 26px;
+      padding: 40px 18px;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #cfc8e8;
+    }
+
+    #stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header, #signs, #reading { z-index: 1; }
+
+    header { text-align: center; }
+
+    header .label {
+      font-size: clamp(10px, 1.4vw, 12px);
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: #6f6890;
+    }
+
+    header h1 {
+      font-weight: normal;
+      font-style: italic;
+      font-size: clamp(22px, 3.6vw, 34px);
+      color: #e8e2f8;
+      margin-top: 8px;
+    }
+
+    header .date {
+      font-size: clamp(12px, 1.6vw, 14px);
+      color: #8c84ad;
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #signs {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      max-width: 560px;
+      width: min(92vw, 560px);
+    }
+
+    @media (max-width: 480px) {
+      #signs { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    #signs button {
+      appearance: none;
+      border: 1px solid rgba(180, 165, 230, 0.18);
+      background: rgba(30, 28, 52, 0.6);
+      color: #cfc8e8;
+      font-family: inherit;
+      border-radius: 12px;
+      padding: 10px 4px 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+    }
+
+    #signs button .glyph { font-size: clamp(18px, 3vw, 24px); display: block; }
+
+    #signs button .nm {
+      font-size: clamp(9px, 1.3vw, 11px);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8c84ad;
+      display: block;
+      margin-top: 4px;
+    }
+
+    #signs button:hover {
+      border-color: rgba(210, 195, 255, 0.5);
+      background: rgba(45, 42, 78, 0.8);
+      transform: translateY(-2px);
+    }
+
+    #signs button.active {
+      border-color: rgba(240, 220, 160, 0.7);
+      background: rgba(58, 52, 92, 0.9);
+    }
+
+    #signs button.active .nm { color: #e8d9a8; }
+
+    #reading {
+      max-width: min(92vw, 520px);
+      text-align: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+      min-height: 180px;
+    }
+
+    #reading.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #reading .sign-title {
+      font-style: italic;
+      font-size: clamp(17px, 2.6vw, 22px);
+      color: #e8d9a8;
+    }
+
+    #reading .body {
+      margin-top: 14px;
+      font-size: clamp(15px, 2.2vw, 18px);
+      line-height: 1.75;
+      color: #d8d2ee;
+    }
+
+    #reading .extras {
+      margin-top: 16px;
+      font-size: clamp(12px, 1.7vw, 14px);
+      font-style: italic;
+      color: #8c84ad;
+      line-height: 1.9;
+    }
+
+    footer {
+      z-index: 1;
+      font-size: clamp(10px, 1.4vw, 12px);
+      font-style: italic;
+      color: #55507a;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stars"></canvas>
+
+  <header>
+    <div class="label">The Stars Have Reviewed Your File</div>
+    <h1>Oddly Specific Horoscopes</h1>
+    <div class="date" id="today"></div>
+  </header>
+
+  <div id="signs"></div>
+
+  <div id="reading">
+    <div class="sign-title" id="signTitle"></div>
+    <div class="body" id="prophecy"></div>
+    <div class="extras" id="extras"></div>
+  </div>
+
+  <footer>accuracy guaranteed. refunds unavailable in this dimension.</footer>
+
+  <script>
+    const SIGNS = [
+      ['♈', 'Aries'], ['♉', 'Taurus'], ['♊', 'Gemini'], ['♋', 'Cancer'],
+      ['♌', 'Leo'], ['♍', 'Virgo'], ['♎', 'Libra'], ['♏', 'Scorpio'],
+      ['♐', 'Sagittarius'], ['♑', 'Capricorn'], ['♒', 'Aquarius'], ['♓', 'Pisces'],
+    ];
+
+    const OPENERS = [
+      'The stars have reviewed your file.',
+      'The cosmos checked on you twice today. Just to be sure.',
+      'Mercury is in retrograde, which changes nothing for you specifically.',
+      'The universe has your receipt.',
+      'Jupiter noticed. Jupiter always notices.',
+      'The alignment is technically your fault.',
+      'Saturn filed a brief note about you this morning.',
+      'The constellations held a short meeting about this.',
+      'Your chart has been forwarded to the appropriate department.',
+      'The moon read your last text. No comment.',
+    ];
+
+    const PREDICTIONS = [
+      'Today you will stand in front of an open refrigerator for a period the stars describe as &ldquo;too long,&rdquo; looking for something you cannot name.',
+      'At approximately {TIME}, you will walk into a room and forget why. The reason was not important, but it was beautiful.',
+      'You will say &ldquo;let&rsquo;s do this again soon&rdquo; today and the stars have already logged it as a lie.',
+      'A sock will go missing. It is not coming back. Grieve efficiently.',
+      'You will re-read a message you already sent {N} times. It was fine. It remains fine.',
+      'Today you will nod at something you did not hear. The stars heard it. You agreed to nothing important, probably.',
+      'You will open a new browser tab and immediately forget your purpose. The tab will remain open for {N} days as a monument.',
+      'Someone will say your name today in a room you are not in. The stars refuse to say whether it was good.',
+      'You will consider drinking more water at {TIME} and then not do that.',
+      'An unread notification will glow at you today. It is nothing. It is always nothing. You will check it anyway.',
+      'Today you will hold the door for someone slightly too far away, and both of you will carry it for the rest of the day.',
+      'You will unlock your phone, see nothing new, lock it, and unlock it again within {N} seconds. The stars counted.',
+      'A song will get stuck in your head today. You know exactly three words of it. That will not stop you.',
+      'You will make a small pile of things at the bottom of the stairs and walk past it {N} times.',
+      'Today you will wave at someone who was waving at the person behind you. The stars saw. The stars will not tell anyone.',
+      'Leftovers in your refrigerator are approaching a decision. You have roughly {N} hours.',
+      'You will type a whole sentence, delete it, and send &ldquo;sounds good&rdquo; instead. It did not sound good. It sounded fine.',
+      'At {TIME} you will do the little run because a car let you cross. The car was {N} feet away. The run was ceremonial.',
+    ];
+
+    const LUCKY = [
+      'lucky item: the good scissors',
+      'lucky number: 4 (before noon only)',
+      'lucky item: a pen that works on the first try',
+      'lucky time: {TIME}, for about ninety seconds',
+      'lucky item: the shopping cart with four working wheels',
+      'lucky number: whatever comes after 7',
+      'lucky item: exact change',
+      'lucky surface: the cool side of the pillow',
+      'lucky item: a parking spot near the front',
+      'lucky number: 11:11, if you catch it',
+      'lucky item: the last one on the shelf, unexpired',
+    ];
+
+    const WARNINGS = [
+      'avoid: gazebos',
+      'avoid: replying all',
+      'avoid: the phrase &ldquo;quick question&rdquo;',
+      'avoid: shopping while hungry. you know this.',
+      'avoid: checking if the milk is still good using only hope',
+      'avoid: group photos taken on someone else&rsquo;s phone',
+      'avoid: stairs, socks, and confidence in combination',
+      'avoid: reading the comments',
+      'avoid: &ldquo;one more episode&rdquo;',
+      'avoid: telling anyone about this horoscope',
+      'avoid: low-hanging pots and pans',
+    ];
+
+    // ---- Deterministic daily readings ----
+
+    function hash32(n) {
+      n = (n ^ 61) ^ (n >>> 16);
+      n = (n + (n << 3)) | 0;
+      n = n ^ (n >>> 4);
+      n = Math.imul(n, 0x27d4eb2d);
+      n = n ^ (n >>> 15);
+      return n >>> 0;
+    }
+
+    function mulberry(seed) {
+      let a = seed >>> 0;
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    const now = new Date();
+    const dayKey = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+
+    function fillTemplates(str, rng) {
+      return str
+        .replace(/{TIME}/g, () => {
+          const h = 1 + ((rng() * 12) | 0);
+          const m = (rng() * 60) | 0;
+          return `${h}:${String(m).padStart(2, '0')} ${rng() < 0.5 ? 'AM' : 'PM'}`;
+        })
+        .replace(/{N}/g, () => String(2 + ((rng() * 12) | 0)));
+    }
+
+    function readingFor(signIndex) {
+      const rng = mulberry(hash32(dayKey * 31 + signIndex * 7 + 12345));
+      const pickR = (arr) => arr[(rng() * arr.length) | 0];
+      return {
+        opener: pickR(OPENERS),
+        prophecy: fillTemplates(pickR(PREDICTIONS), rng),
+        lucky: fillTemplates(pickR(LUCKY), rng),
+        warning: pickR(WARNINGS),
+      };
+    }
+
+    // ---- UI ----
+
+    const signsEl = document.getElementById('signs');
+    const reading = document.getElementById('reading');
+    const signTitle = document.getElementById('signTitle');
+    const prophecy = document.getElementById('prophecy');
+    const extras = document.getElementById('extras');
+
+    document.getElementById('today').textContent = now.toLocaleDateString(undefined, {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+
+    SIGNS.forEach(([glyph, name], i) => {
+      const b = document.createElement('button');
+      b.innerHTML = `<span class="glyph">${glyph}</span><span class="nm">${name}</span>`;
+      b.addEventListener('click', () => show(i, b));
+      signsEl.appendChild(b);
+    });
+
+    function show(i, btn) {
+      for (const b of signsEl.children) b.classList.remove('active');
+      btn.classList.add('active');
+
+      const r = readingFor(i);
+      reading.classList.remove('show');
+      setTimeout(() => {
+        signTitle.textContent = `${SIGNS[i][0]} ${SIGNS[i][1]}`;
+        prophecy.innerHTML = `${r.opener} ${r.prophecy}`;
+        extras.innerHTML = `${r.lucky}<br>${r.warning}`;
+        reading.classList.add('show');
+      }, 250);
+
+      try { localStorage.setItem('horoscope-sign', i); } catch (e) {}
+    }
+
+    // remember your sign between visits
+    try {
+      const saved = localStorage.getItem('horoscope-sign');
+      if (saved !== null && signsEl.children[+saved]) {
+        signsEl.children[+saved].click();
+      }
+    } catch (e) {}
+
+    // ---- Stars ----
+
+    const canvas = document.getElementById('stars');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+
+    function setupStars() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      stars = Array.from({ length: 140 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.3 + 0.3,
+        p: Math.random() * Math.PI * 2,
+        s: 0.4 + Math.random() * 1.2,
+      }));
+    }
+
+    function twinkle(t) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        const a = 0.25 + 0.5 * (0.5 + 0.5 * Math.sin(t * 0.001 * s.s + s.p));
+        ctx.fillStyle = `rgba(210, 205, 240, ${a})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      requestAnimationFrame(twinkle);
+    }
+
+    window.addEventListener('resize', setupStars);
+    setupStars();
+    requestAnimationFrame(twinkle);
+  </script>
+</body>
+</html>
