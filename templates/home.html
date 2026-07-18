@@ -881,13 +881,8 @@
         }
 
         #featured .rail .site-card {
-            flex: 0 0 240px;
+            flex: 0 0 min(340px, 82vw);
             scroll-snap-align: start;
-        }
-
-        #featured .rail .thumb {
-            height: 104px;
-            font-size: 2.6rem;
         }
 
         #featured .rail::-webkit-scrollbar {
@@ -1508,7 +1503,7 @@
                 if (!featured || !cards.length || document.getElementById(id)) return;
                 const heading = document.createElement('h2');
                 heading.className = 'category-title rail-title';
-                heading.textContent = title;
+                heading.innerHTML = title;   // static strings only (may contain an icon)
                 const rail = document.createElement('div');
                 rail.className = 'rail';
                 rail.id = id;
@@ -1554,11 +1549,11 @@
                         if (!link || link.querySelector('.hot-badge')) return;
                         const chip = document.createElement('div');
                         chip.className = 'hot-badge';
-                        chip.textContent = '🔥 HOT';
+                        chip.innerHTML = '<i class="fas fa-fire" aria-hidden="true"></i> HOT';
                         link.appendChild(chip);
                     });
 
-                    buildRail('railHot', '🔥 Hottest', hotCards);
+                    buildRail('railHot', '<i class="fas fa-fire" aria-hidden="true"></i> Hottest', hotCards);
 
                     document.querySelectorAll('.site-card a').forEach(link => {
                         const slug = (link.getAttribute('href') || '')
