@@ -1,511 +1,517 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
-    <title>Colorle - Color Guessing Game</title>
-    
-    <!-- Add metadata -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A daily color guessing game inspired by Wordle">
-    <meta name="keywords" content="color game, RGB guessing, daily puzzle">
-    <meta name="author" content="Random Sites On The Web">
-    <link rel="icon" type="image/png" href="/favicon.png">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/colorle/">
-    <meta property="og:title" content="Colorle - Daily Color Guessing Game">
-    <meta property="og:description" content="Test your RGB color knowledge with this daily color guessing game">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/colorle/">
-    <meta property="twitter:title" content="Colorle - Daily Color Guessing Game">
-    <meta property="twitter:description" content="Test your RGB color knowledge with this daily color guessing game">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
+    <title>Colorle</title>
+    <meta name="description" content="One color a day. Six tries to mix it. The department rounds generously.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='5' y='5' width='40' height='40' rx='8' fill='%23a98fd0' stroke='%23201a17' stroke-width='3'/><rect x='13' y='13' width='24' height='24' rx='4' fill='%23f0563e' stroke='%23201a17' stroke-width='3'/></svg>">
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: #1a1a1a;
-            margin: 0;
-            padding: 20px;
-            color: #ffffff;
+            gap: 16px;
+            padding: 26px 14px 50px;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .target-color {
-            width: 200px;
-            height: 200px;
-            border-radius: 10px;
-            margin: 20px;
-            box-shadow: 0 4px 16px rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.1);
-        }
-
-        .guess-form {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 10px;
-            display: flex;
-            gap: 10px;
-            margin: 20px;
-        }
-
-        input {
-            padding: 12px;
-            border: 2px solid #333;
-            border-radius: 6px;
-            width: 80px;
-            text-align: center;
-            background: #2a2a2a;
-            color: white;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            outline: none;
-        }
-
-        input:focus {
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
-            background: #333;
-        }
-
-        button {
-            padding: 12px 30px;
-            background: linear-gradient(45deg, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
+        header { text-align: center; }
+        h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(26px, 7vw, 36px);
+            letter-spacing: 0.1em;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            display: inline-block;
+            transform: rotate(-1.5deg);
+        }
+        header .sub { font-style: italic; font-size: 15px; color: rgba(32,26,23,0.6); margin-top: 4px; }
+
+        .card {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+        }
+
+        /* target */
+        .target-card {
             position: relative;
-            overflow: hidden;
-        }
-
-        button:hover {
-            background: linear-gradient(45deg, #45a049, #4CAF50);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
-        }
-
-        button:active {
-            transform: translateY(1px);
-            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.2);
-        }
-
-        button::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255, 255, 255, 0.2),
-                transparent
-            );
-            transition: 0.5s;
-        }
-
-        button:hover::after {
-            left: 100%;
-        }
-
-        button:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #4CAF50;
-        }
-
-        button:focus:not(:focus-visible) {
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-        }
-
-        button:focus-visible {
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #4CAF50;
-        }
-
-        .color-value {
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-family: monospace;
-            min-width: 70px;
+            padding: 14px 16px 12px;
             text-align: center;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            transform: rotate(-1deg);
+            width: min(340px, 92vw);
         }
-
-        .instructions {
-            max-width: 600px;
-            text-align: center;
-            margin: 20px;
-            line-height: 1.6;
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 10px;
-        }
-
-        .guess {
-            display: grid;
-            grid-template-columns: auto repeat(3, 1fr);
-            gap: 10px;
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
+        #targetSwatch {
+            height: 120px;
+            border: 2px solid var(--ink);
             border-radius: 8px;
-            align-items: center;
-            margin-bottom: 1rem;
+        }
+        .target-card .lab {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        #answer { font-style: italic; font-size: 14px; margin-top: 8px; color: rgba(32,26,23,0.65); min-height: 1.2em; }
+
+        .stamp {
+            position: absolute;
+            left: 50%;
+            top: 58px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 26px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            padding: 4px 14px;
+            border: 3px solid;
+            border-radius: 8px;
+            background: rgba(255, 248, 239, 0.75);
+            transform: translateX(-50%) rotate(-9deg) scale(0);
+            pointer-events: none;
+            z-index: 3;
+        }
+        .stamp.win { color: #c99a12; border-color: #c99a12; box-shadow: inset 0 0 0 2px var(--cream), inset 0 0 0 4px #c99a12; }
+        .stamp.lose { color: var(--coral); border-color: var(--coral); box-shadow: inset 0 0 0 2px var(--cream), inset 0 0 0 4px var(--coral); }
+        .stamp.show { animation: stampIn 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes stampIn {
+            0% { transform: translateX(-50%) rotate(3deg) scale(2.1); opacity: 0; }
+            65% { transform: translateX(-50%) rotate(-10deg) scale(0.94); opacity: 1; }
+            100% { transform: translateX(-50%) rotate(-9deg) scale(1); opacity: 1; }
         }
 
-        .guess-number {
-            color: #999;
-            font-size: 14px;
-            font-weight: bold;
-            padding: 0 10px;
-            min-width: 30px;
-            text-align: center;
+        /* mixer */
+        .mixer {
+            width: min(340px, 92vw);
+            padding: 16px 18px 18px;
+            transform: rotate(0.7deg);
         }
-
-        .color-column {
+        .mix-row {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 10px;
+            margin-bottom: 14px;
         }
+        #mixSwatch {
+            width: 44px;
+            height: 44px;
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        #hexInput {
+            flex: 1;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 16px;
+            padding: 8px 10px;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            color: var(--ink);
+            width: 100%;
+            min-width: 0;
+        }
+        #hexInput:focus { outline: none; box-shadow: 2px 2px 0 var(--ink); }
 
-        .color-label {
-            color: #999;
+        .sliders { display: flex; flex-direction: column; gap: 12px; }
+        .srow { display: flex; align-items: center; gap: 10px; }
+        .srow .ch {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 13px;
+            width: 16px;
+        }
+        .srow .num {
+            font-style: italic;
             font-size: 14px;
-            font-weight: bold;
+            width: 34px;
+            text-align: right;
+        }
+        input[type=range] {
+            flex: 1;
+            appearance: none;
+            -webkit-appearance: none;
+            height: 14px;
+            border: 2px solid var(--ink);
+            border-radius: 99px;
+            background: #888;
+            cursor: pointer;
+            min-width: 0;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            box-shadow: 2px 2px 0 var(--ink);
+            cursor: grab;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            box-shadow: 2px 2px 0 var(--ink);
+            cursor: grab;
         }
 
-        /* Red input styling */
-        #redGuess {
-            border-color: #333;
+        .guess-btn-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 10px; }
+        button.pill {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 14px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            background: var(--coral);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(-1.2deg);
+            padding: 11px 24px;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
-        #redGuess:hover {
-            border-color: rgba(255, 80, 80, 0.5);
-        }
-        #redGuess:focus {
-            border-color: #ff5050;
-            box-shadow: 0 0 0 2px rgba(255, 80, 80, 0.3);
-            background: #333;
-        }
+        button.pill.gold { background: var(--gold); transform: rotate(1.2deg); }
+        button.pill:hover { transform: translate(-2px, -2px) rotate(-1.2deg); box-shadow: 5px 5px 0 var(--ink); }
+        button.pill.gold:hover { transform: translate(-2px, -2px) rotate(1.2deg); }
+        button.pill:active { transform: translate(2px, 2px) rotate(-1.2deg); box-shadow: 1px 1px 0 var(--ink); }
+        button.pill:disabled { opacity: 0.4; cursor: default; }
+        #left { font-style: italic; font-size: 14px; color: rgba(32,26,23,0.6); }
 
-        /* Green input styling */
-        #greenGuess {
-            border-color: #333;
-        }
-        #greenGuess:hover {
-            border-color: rgba(80, 255, 80, 0.5);
-        }
-        #greenGuess:focus {
-            border-color: #50ff50;
-            box-shadow: 0 0 0 2px rgba(80, 255, 80, 0.3);
-            background: #333;
-        }
-
-        /* Blue input styling */
-        #blueGuess {
-            border-color: #333;
-        }
-        #blueGuess:hover {
-            border-color: rgba(80, 80, 255, 0.5);
-        }
-        #blueGuess:focus {
-            border-color: #5050ff;
-            box-shadow: 0 0 0 2px rgba(80, 80, 255, 0.3);
-            background: #333;
-        }
-
-        @keyframes celebrate {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        @keyframes rainbow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-
-        @keyframes confetti {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background-color: var(--color);
-            clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%);
-            animation: confetti 2s ease-out forwards;
-            z-index: 1000;
-        }
-
-        .winner {
-            animation: celebrate 0.5s ease-in-out;
-        }
-
-        .rainbow-text {
-            background: linear-gradient(
-                to right,
-                #ff0000,
-                #ff8000,
-                #ffff00,
-                #00ff00,
-                #00ffff,
-                #0000ff,
-                #8000ff,
-                #ff0080
-            );
-            background-size: 200% auto;
-            color: transparent;
-            background-clip: text;
-            -webkit-background-clip: text;
-            animation: rainbow 2s linear infinite;
-            font-size: 2em;
-            font-weight: bold;
-            text-align: center;
-            padding: 20px;
-            text-shadow: none;
-        }
-
-        .modal-overlay {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            animation: fadeIn 0.3s ease-out;
-            justify-content: center;
+        /* guesses */
+        #rows { display: flex; flex-direction: column; gap: 10px; width: min(340px, 92vw); }
+        .grow {
+            padding: 8px 12px 9px;
+            display: grid;
+            grid-template-columns: 44px 1fr 1fr 1fr;
+            gap: 8px;
             align-items: center;
-            opacity: 1;
-            transition: opacity 0.3s ease-out;
+            opacity: 0;
+            transform: translateY(6px) scale(0.97);
+        }
+        .grow.in { animation: rowIn 0.28s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
+        @keyframes rowIn { to { opacity: 1; transform: none; } }
+        .grow .sw {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+        }
+        .cell { display: flex; align-items: center; gap: 5px; justify-content: center; }
+        .cell .v { font-style: italic; font-size: 14px; }
+        .cell svg { display: block; }
+        .grow .remark {
+            grid-column: 1 / -1;
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32,26,23,0.6);
+            text-align: center;
         }
 
-        .modal {
-            background: #2a2a2a;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
-            z-index: 1001;
-            animation: modalPop 0.5s ease-out forwards;
-            max-width: 90%;
-            width: 400px;
-            margin: 20px;
+        .stats { font-style: italic; font-size: 14px; color: rgba(32,26,23,0.6); text-align: center; }
+        #countdown { font-style: italic; font-size: 13px; color: rgba(32,26,23,0.5); }
+        #shareBtn { display: none; }
+        #shareBtn.show { display: inline-block; }
+
+        @keyframes thunk {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, 3px); }
+            50% { transform: translate(-3px, 1px); }
+            75% { transform: translate(1px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+        body.thunk { animation: thunk 0.22s linear; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .stamp.show { animation: none; transform: translateX(-50%) rotate(-9deg) scale(1); opacity: 1; }
+            .grow.in { animation: none; opacity: 1; transform: none; }
+            body.thunk { animation: none; }
+            button.pill { transition: none; }
         }
     </style>
 </head>
 <body>
-    <h1>Colorle</h1>
-    <div class="instructions">
-        Try to guess the RGB values of the color shown below. Enter values between 0-255 for each channel.
-        The background of each guess will be greener the closer you are to the target value.
-    </div>
-    <div id="targetColor" class="target-color"></div>
-    
-    <div class="guess-form">
-        <input type="number" id="redGuess" min="0" max="255" placeholder="Red" onkeydown="handleInput(event, 'redGuess', 'greenGuess')">
-        <input type="number" id="greenGuess" min="0" max="255" placeholder="Green" onkeydown="handleInput(event, 'greenGuess', 'blueGuess')">
-        <input type="number" id="blueGuess" min="0" max="255" placeholder="Blue" onkeydown="handleInput(event, 'blueGuess', null)">
-        <button onclick="makeGuess()">Guess</button>
+    <header>
+        <h1>Colorle</h1>
+        <div class="sub">one color a day. six tries to mix it.</div>
+    </header>
+
+    <div class="card target-card">
+        <div class="lab">Today's Color</div>
+        <div id="targetSwatch"></div>
+        <div id="answer"></div>
+        <div class="stamp" id="stamp"></div>
     </div>
 
-    <div id="guesses" class="guesses"></div>
+    <div class="card mixer">
+        <div class="mix-row">
+            <div id="mixSwatch"></div>
+            <input type="text" id="hexInput" maxlength="7" autocomplete="off" spellcheck="false" aria-label="Hex color guess">
+        </div>
+        <div class="sliders">
+            <div class="srow"><span class="ch">R</span><input type="range" id="sr" min="0" max="255" value="128" aria-label="Red"><span class="num" id="nr">128</span></div>
+            <div class="srow"><span class="ch">G</span><input type="range" id="sg" min="0" max="255" value="128" aria-label="Green"><span class="num" id="ng">128</span></div>
+            <div class="srow"><span class="ch">B</span><input type="range" id="sb" min="0" max="255" value="128" aria-label="Blue"><span class="num" id="nb">128</span></div>
+        </div>
+        <div class="guess-btn-row">
+            <button class="pill" id="guessBtn">Guess</button>
+            <span id="left"></span>
+            <button class="pill gold" id="shareBtn">Brag</button>
+        </div>
+    </div>
+
+    <div id="rows"></div>
+    <div class="stats" id="stats"></div>
+    <div id="countdown"></div>
 
     <script>
-        let targetRed, targetGreen, targetBlue;
-        let guessCount = 0;
+    (() => {
+        const INK = '#201a17';
+        const MAX_GUESSES = 6;
+        const WIN_TOL = 5;   // per-channel; the department rounds generously
+        const CLOSE_TOL = 12;
 
-        function generateRandomColor() {
-            // Get today's date and create a seed
-            const today = new Date();
-            const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-            
-            // Simple seeded random number generator
-            const seededRandom = function() {
-                let t = seed + 0x6D2B79F5;
-                t = Math.imul(t ^ t >>> 15, t | 1);
-                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        // ---- deterministic daily color ----
+        function hashStr(s) {
+            let h = 1779033703 ^ s.length;
+            for (let i = 0; i < s.length; i++) {
+                h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+                h = (h << 13) | (h >>> 19);
+            }
+            return h >>> 0;
+        }
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = (a + 0x6D2B79F5) | 0;
+                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
             };
-
-            // Generate the same value for all RGB channels using the seeded random function
-            targetRed = Math.floor(seededRandom() * 256);
-            targetGreen = Math.floor(seededRandom() * 128);
-            targetBlue = Math.floor(seededRandom() * 192);
-            
-            document.getElementById('targetColor').style.backgroundColor = 
-                `rgb(${targetRed},${targetGreen},${targetBlue})`;
         }
+        const now = new Date();
+        const dayKey = now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0');
+        const rand = mulberry32(hashStr('colorle-' + dayKey));
+        const target = [Math.floor(rand() * 256), Math.floor(rand() * 256), Math.floor(rand() * 256)];
 
-        function calculateAccuracy(guess, target) {
-            const diff = Math.abs(guess - target);
-            return diff / 255;
+        const toHex = c => '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+        const rgb = c => 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+
+        // ---- storage ----
+        function load(key, fallback) {
+            try {
+                const v = localStorage.getItem(key);
+                return v === null ? fallback : JSON.parse(v);
+            } catch (e) { return fallback; }
         }
-
-        function handleInput(event, currentId, nextId) {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent form submission
-                const currentInput = document.getElementById(currentId);
-                const currentValue = parseInt(currentInput.value);
-                
-                // Validate current input
-                if (isNaN(currentValue) || currentValue < 0 || currentValue > 255) {
-                    alert('Please enter a valid number between 0 and 255');
-                    currentInput.focus();
-                    currentInput.select();
-                    return;
-                }
-
-                // Move to next input or submit
-                if (nextId) {
-                    const nextInput = document.getElementById(nextId);
-                    nextInput.focus();
-                    nextInput.select();
-                } else {
-                    makeGuess();
-                    // Reset focus to first input after guess
-                    document.getElementById('redGuess').focus();
-                    document.getElementById('redGuess').select();
-                }
-            }
+        function save(key, v) {
+            try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {}
         }
+        let state = load('colorle-state', null);
+        if (!state || state.date !== dayKey) state = { date: dayKey, guesses: [], done: false, won: false };
+        let stats = load('colorle-stats', { played: 0, wins: 0, streak: 0, lastDate: null });
 
-        function makeGuess() {
-            const redGuess = parseInt(document.getElementById('redGuess').value);
-            const greenGuess = parseInt(document.getElementById('greenGuess').value);
-            const blueGuess = parseInt(document.getElementById('blueGuess').value);
+        // ---- elements ----
+        const targetSwatch = document.getElementById('targetSwatch');
+        const mixSwatch = document.getElementById('mixSwatch');
+        const hexInput = document.getElementById('hexInput');
+        const rowsEl = document.getElementById('rows');
+        const leftEl = document.getElementById('left');
+        const statsEl = document.getElementById('stats');
+        const stampEl = document.getElementById('stamp');
+        const answerEl = document.getElementById('answer');
+        const guessBtn = document.getElementById('guessBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const countdownEl = document.getElementById('countdown');
+        const sliders = ['sr', 'sg', 'sb'].map(id => document.getElementById(id));
+        const nums = ['nr', 'ng', 'nb'].map(id => document.getElementById(id));
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-            if (isNaN(redGuess) || isNaN(greenGuess) || isNaN(blueGuess) ||
-                redGuess < 0 || redGuess > 255 ||
-                greenGuess < 0 || greenGuess > 255 ||
-                blueGuess < 0 || blueGuess > 255) {
-                alert('Please enter valid RGB values (0-255)');
-                return;
-            }
+        targetSwatch.style.background = rgb(target);
 
-            guessCount++;
-            const guessDiv = document.createElement('div');
-            guessDiv.className = 'guess';
-
-            const numberDiv = document.createElement('div');
-            numberDiv.className = 'guess-number';
-            numberDiv.textContent = `#${guessCount}`;
-            guessDiv.appendChild(numberDiv);
-
-            const values = [
-                {label: 'R', value: redGuess, target: targetRed},
-                {label: 'G', value: greenGuess, target: targetGreen},
-                {label: 'B', value: blueGuess, target: targetBlue}
-            ];
-
-            values.forEach(({label, value, target}) => {
-                const difference = calculateAccuracy(value, target);
-                const columnDiv = document.createElement('div');
-                columnDiv.className = 'color-column';
-
-                const labelDiv = document.createElement('div');
-                labelDiv.className = 'color-label';
-                labelDiv.textContent = label;
-
-                const valueDiv = document.createElement('div');
-                valueDiv.className = 'color-value';
-                
-                const hue = 120 * (1 - difference);
-                valueDiv.style.backgroundColor = `hsl(${hue}, 80%, 40%)`;
-                
-                const arrow = value < target ? '↑' : value > target ? '↓' : '✓';
-                valueDiv.textContent = `${value} ${arrow}`;
-                
-                columnDiv.appendChild(labelDiv);
-                columnDiv.appendChild(valueDiv);
-                guessDiv.appendChild(columnDiv);
+        // ---- mixer ----
+        function currentMix() { return sliders.map(s => parseInt(s.value, 10)); }
+        function syncMix(fromHex) {
+            const c = currentMix();
+            mixSwatch.style.background = rgb(c);
+            nums.forEach((n, i) => n.textContent = c[i]);
+            if (!fromHex) hexInput.value = toHex(c);
+            sliders.forEach((s, i) => {
+                const lo = c.slice(); lo[i] = 0;
+                const hi = c.slice(); hi[i] = 255;
+                s.style.background = 'linear-gradient(to right, ' + rgb(lo) + ', ' + rgb(hi) + ')';
             });
+        }
+        sliders.forEach(s => s.addEventListener('input', () => syncMix(false)));
+        hexInput.addEventListener('input', () => {
+            const m = hexInput.value.trim().match(/^#?([0-9a-fA-F]{6})$/);
+            if (!m) return;
+            const v = parseInt(m[1], 16);
+            sliders[0].value = (v >> 16) & 255;
+            sliders[1].value = (v >> 8) & 255;
+            sliders[2].value = v & 255;
+            syncMix(true);
+        });
 
-            document.getElementById('guesses').prepend(guessDiv);
+        // ---- feedback icons (drawn in ink) ----
+        function icon(kind) {
+            const s = 'width="14" height="14" viewBox="0 0 14 14"';
+            if (kind === 'up') return '<svg ' + s + '><path d="M7 2L13 11H1z" fill="' + INK + '"/></svg>';
+            if (kind === 'down') return '<svg ' + s + '><path d="M7 12L1 3h12z" fill="' + INK + '"/></svg>';
+            if (kind === 'close') return '<svg ' + s + '><circle cx="7" cy="7" r="4.5" fill="none" stroke="' + INK + '" stroke-width="2.5"/></svg>';
+            return '<svg ' + s + '><path d="M2 7.5L5.5 11 12 3" fill="none" stroke="' + INK + '" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        }
+        function channelKind(guess, tgt) {
+            const d = tgt - guess;
+            if (d === 0) return 'check';
+            if (Math.abs(d) <= CLOSE_TOL) return 'close';
+            return d > 0 ? 'up' : 'down';
+        }
+        function remark(c) {
+            const dist = Math.abs(c[0] - target[0]) + Math.abs(c[1] - target[1]) + Math.abs(c[2] - target[2]);
+            if (dist === 0) return 'that is the color. exactly.';
+            if (dist <= WIN_TOL * 3) return 'close enough. the department rounds.';
+            if (dist <= 40) return 'uncomfortably close.';
+            if (dist <= 100) return 'warm.';
+            if (dist <= 200) return 'warm-ish. not close.';
+            if (dist <= 380) return 'a different neighborhood.';
+            return 'a different color entirely.';
+        }
 
-            document.getElementById('redGuess').value = '';
-            document.getElementById('greenGuess').value = '';
-            document.getElementById('blueGuess').value = '';
+        function renderRow(c, animate) {
+            const row = document.createElement('div');
+            row.className = 'card grow';
+            const labels = ['R', 'G', 'B'];
+            row.innerHTML =
+                '<div class="sw" style="background:' + rgb(c) + '"></div>' +
+                c.map((v, i) =>
+                    '<div class="cell">' + icon(channelKind(v, target[i])) + '<span class="v">' + v + '</span></div>'
+                ).join('') +
+                '<div class="remark">' + remark(c) + '</div>';
+            rowsEl.prepend(row);
+            if (animate) row.classList.add('in');
+            else { row.classList.add('in'); row.style.animation = 'none'; row.style.opacity = 1; row.style.transform = 'none'; }
+        }
 
-            if (redGuess === targetRed && greenGuess === targetGreen && blueGuess === targetBlue) {
-                // Save that user has played today
-                localStorage.setItem('lastPlayDate', new Date().toDateString());
-                localStorage.setItem('playedToday', 'true');
-                
-                // Small delay to show the last guess before the modal
-                setTimeout(() => {
-                    showWinModal(guessCount);
-                }, 300);
-                return;
+        // ---- game flow ----
+        function isWin(c) { return c.every((v, i) => Math.abs(v - target[i]) <= WIN_TOL); }
+
+        function updateChrome() {
+            leftEl.textContent = state.done ? '' : (MAX_GUESSES - state.guesses.length) + ' left';
+            statsEl.textContent = stats.played > 0
+                ? 'streak ' + stats.streak + ' · played ' + stats.played + ' · matched ' + stats.wins
+                : '';
+            guessBtn.disabled = state.done;
+            if (state.done) shareBtn.classList.add('show');
+        }
+
+        function thunk() {
+            if (reducedMotion.matches) return;
+            document.body.classList.add('thunk');
+            setTimeout(() => document.body.classList.remove('thunk'), 250);
+        }
+
+        function endGame(won, animate) {
+            stampEl.textContent = won ? 'Matched' : 'Close Enough? No.';
+            stampEl.className = 'stamp ' + (won ? 'win' : 'lose');
+            void stampEl.offsetWidth;
+            stampEl.classList.add('show');
+            answerEl.textContent = 'it was ' + toHex(target) + '.';
+            if (animate) thunk();
+        }
+
+        guessBtn.addEventListener('click', () => {
+            if (state.done || state.guesses.length >= MAX_GUESSES) return;
+            const c = currentMix();
+            state.guesses.push(c);
+            renderRow(c, true);
+            const won = isWin(c);
+            if (won || state.guesses.length >= MAX_GUESSES) {
+                state.done = true;
+                state.won = won;
+                stats.played++;
+                if (won) {
+                    stats.wins++;
+                    stats.streak = (stats.lastDate && daysBetween(stats.lastDate, dayKey) === 1) ? stats.streak + 1 : 1;
+                } else {
+                    stats.streak = 0;
+                }
+                stats.lastDate = dayKey;
+                save('colorle-stats', stats);
+                endGame(won, true);
             }
+            save('colorle-state', state);
+            updateChrome();
+        });
 
-            // After clearing inputs, focus and select the red input
-            const redInput = document.getElementById('redGuess');
-            redInput.focus();
-            redInput.select();
+        function daysBetween(a, b) {
+            return Math.round((new Date(b) - new Date(a)) / 86400000);
         }
 
-        function createConfetti() {
-            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-            for (let i = 0; i < 100; i++) {
-                setTimeout(() => {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    confetti.style.setProperty('--color', colors[Math.floor(Math.random() * colors.length)]);
-                    confetti.style.left = Math.random() * 100 + 'vw';
-                    confetti.style.top = -10 + 'px';
-                    document.body.appendChild(confetti);
-                    
-                    // Remove confetti after animation
-                    setTimeout(() => confetti.remove(), 2000);
-                }, i * 20);
+        // ---- share ----
+        function shareText() {
+            const lines = state.guesses.map(c =>
+                c.map((v, i) => {
+                    const k = channelKind(v, target[i]);
+                    return k === 'check' ? '✓' : k === 'close' ? '○' : k === 'up' ? '↑' : '↓';
+                }).join(' ')
+            );
+            const score = state.won ? state.guesses.length + '/' + MAX_GUESSES : 'X/' + MAX_GUESSES;
+            return 'Colorle ' + dayKey + ' — ' + score + '\n' + lines.join('\n') + '\nrandomsitesontheweb.com/sites/colorle';
+        }
+        shareBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(shareText());
+                shareBtn.textContent = 'Copied';
+            } catch (e) {
+                shareBtn.textContent = 'No.';
             }
-        }
+            setTimeout(() => { shareBtn.textContent = 'Brag'; }, 1500);
+        });
 
-        function showWinModal(guessCount) {
-            const modalHtml = `
-                <div class="modal-overlay" id="winModal">
-                    <div class="modal">
-                        <h2>Congratulations!</h2>
-                        <p>You found today's color in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}!</p>
-                        <p>Come back tomorrow for a new color!</p>
-                        <button onclick="closeModal()">Close</button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            createConfetti();
+        // ---- countdown ----
+        function tickCountdown() {
+            const mid = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            const ms = mid - new Date();
+            if (ms <= 0) { countdownEl.textContent = 'a new color exists. refresh.'; return; }
+            const h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000);
+            countdownEl.textContent = 'next color in ' + h + 'h ' + m + 'm';
         }
+        tickCountdown();
+        setInterval(tickCountdown, 30000);
 
-        function closeModal() {
-            const modal = document.getElementById('winModal');
-            if (modal) {
-                modal.style.opacity = '0';
-                setTimeout(() => modal.remove(), 300);
-            }
-        }
-
-        // Initialize game
-        generateRandomColor();
+        // ---- restore ----
+        state.guesses.forEach(c => renderRow(c, false));
+        if (state.done) endGame(state.won, false);
+        syncMix(false);
+        updateChrome();
+    })();
     </script>
 </body>
 </html>

@@ -5,174 +5,502 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Red Light, Green Light</title>
-    <meta name="description" content="A web-based Red Light, Green Light game where players must move forward when the light is green and stop when it's red">
-    <meta name="keywords" content="game, red light green light, browser game, reaction game">
-    <meta name="author" content="@randomsitesontheweb">
-    <meta property="og:title" content="Red Light, Green Light">
-    <meta property="og:description" content="Test your reflexes in this web version of Red Light, Green Light">
-    <meta property="og:type" content="website">
-    <meta name="theme-color" content="#1a1a1a">
+    <meta name="description" content="Hold to walk. Stop on red. The official is watching, and momentum is not your friend.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='14' y='3' width='22' height='44' rx='8' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><circle cx='25' cy='13' r='5' fill='%23f0563e' stroke='%23201a17' stroke-width='2'/><circle cx='25' cy='25' r='5' fill='%23f7c948' stroke='%23201a17' stroke-width='2'/><circle cx='25' cy='37' r='5' fill='%23b7ce3c' stroke='%23201a17' stroke-width='2'/></svg>">
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+        }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
             margin: 0;
+            background: var(--paper);
             overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #1a1a1a;
-            font-family: Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+        }
+        canvas { display: block; width: 100vw; height: 100vh; cursor: pointer; }
+
+        .stamp {
+            position: fixed;
+            top: 44%;
+            left: 50%;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(30px, 9vw, 58px);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 8px 26px;
+            border: 4px solid;
+            border-radius: 12px;
+            background: rgba(255, 248, 239, 0.75);
+            transform: translate(-50%, -50%) rotate(-8deg) scale(0);
+            pointer-events: none;
+            z-index: 5;
+        }
+        .stamp.red { color: var(--coral); border-color: var(--coral); box-shadow: inset 0 0 0 3px var(--cream), inset 0 0 0 6px var(--coral); }
+        .stamp.gold { color: #c99a12; border-color: #c99a12; box-shadow: inset 0 0 0 3px var(--cream), inset 0 0 0 6px #c99a12; }
+        .stamp.teal { color: #1e8a80; border-color: #1e8a80; box-shadow: inset 0 0 0 3px var(--cream), inset 0 0 0 6px #1e8a80; }
+        .stamp.show { animation: stampIn 0.3s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        .stamp.fade { transition: opacity 0.5s ease; opacity: 0; }
+        @keyframes stampIn {
+            0% { transform: translate(-50%, -50%) rotate(3deg) scale(2.4); opacity: 0; }
+            65% { transform: translate(-50%, -50%) rotate(-9deg) scale(0.94); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
         }
 
-        #game-container {
-            position: relative;
-            width: 800px;
-            height: 400px;
-            background: #333;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        #player {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            left: 40px;
-            top: 50%;
-            transform: translateY(-50%);
-            transition: left 0.1s linear;
-        }
-
-        #finish-line {
-            position: absolute;
-            right: 20px;
-            top: 0;
-            width: 5px;
-            height: 100%;
-            background: gold;
-        }
-
-        #status {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .red {
-            background: #ff4444 !important;
-        }
-
-        .green {
-            background: #44ff44 !important;
-        }
-
-        #restart {
-            position: absolute;
-            bottom: 20px;
+        .subline {
+            position: fixed;
+            top: 58%;
             left: 50%;
             transform: translateX(-50%);
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: none;
+            font-style: italic;
+            font-size: clamp(14px, 3.5vw, 17px);
+            color: rgba(32, 26, 23, 0.7);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: center;
+            width: 90vw;
         }
+        .subline.show { opacity: 1; }
 
-        #restart:hover {
-            background: #45a049;
+        .tally {
+            position: fixed;
+            left: 14px;
+            bottom: 10px;
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.5);
+            pointer-events: none;
+            z-index: 5;
+        }
+        .hint {
+            position: fixed;
+            bottom: 26px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-style: italic;
+            font-size: 15px;
+            color: rgba(32, 26, 23, 0.55);
+            pointer-events: none;
+            transition: opacity 1.2s ease;
+            z-index: 5;
+            text-align: center;
+            width: 90vw;
+        }
+        .hint.gone { opacity: 0; }
+
+        @keyframes shake {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(4px, 3px); }
+            40% { transform: translate(-5px, 2px); }
+            60% { transform: translate(3px, -3px); }
+            80% { transform: translate(-2px, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+        body.shake canvas { animation: shake 0.3s linear; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .stamp.show { animation: none; transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
+            body.shake canvas { animation: none; }
+            .hint { transition: none; }
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="player"></div>
-        <div id="finish-line"></div>
-        <div id="status">Get Ready!</div>
-        <button id="restart">Play Again</button>
-    </div>
+    <canvas id="c"></canvas>
+    <div class="stamp" id="stamp"></div>
+    <div class="subline" id="subline"></div>
+    <div class="tally" id="tally"></div>
+    <div class="hint" id="hint">hold anywhere to walk. stop on red.</div>
 
     <script>
-        const player = document.getElementById('player');
-        const container = document.getElementById('game-container');
-        const status = document.getElementById('status');
-        const restartBtn = document.getElementById('restart');
-        
-        let isRed = false;
-        let isGameOver = false;
-        let playerX = 40;
-        
-        function switchLight() {
-            if (isGameOver) return;
-            
-            isRed = !isRed;
-            container.className = isRed ? 'red' : 'green';
-            status.textContent = isRed ? 'RED LIGHT!' : 'GREEN LIGHT!';
-            
-            // Random timing for next switch (2-4 seconds)
-            setTimeout(switchLight, Math.random() * 2000 + 2000);
+    (() => {
+        const INK = '#201a17';
+        const PAPER = '#f2ede2';
+        const CREAM = '#fff8ef';
+        const CORAL = '#f0563e';
+        const GOLD = '#f7c948';
+        const LIME = '#b7ce3c';
+        const SKY = '#5aa0db';
+
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const stampEl = document.getElementById('stamp');
+        const sublineEl = document.getElementById('subline');
+        const tallyEl = document.getElementById('tally');
+        const hintEl = document.getElementById('hint');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        function loadNum(k) { try { return parseFloat(localStorage.getItem(k)) || 0; } catch (e) { return 0; } }
+        function saveNum(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
+        let crossings = loadNum('rlgl-crossings');
+        let elims = loadNum('rlgl-elims');
+        let best = loadNum('rlgl-best'); // 0 = none
+
+        // ---- canvas ----
+        let W = 0, H = 0;
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            W = window.innerWidth; H = window.innerHeight;
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
 
-        function movePlayer(e) {
-            if (isGameOver) return;
-            
-            if (e.key === 'ArrowRight') {
-                if (isRed) {
-                    gameOver();
-                    return;
-                }
-                
-                playerX += 5;
-                player.style.left = playerX + 'px';
-                
-                // Check win condition
-                if (playerX >= container.offsetWidth - 60) {
-                    win();
-                }
+        // ---- course ----
+        const startFrac = 0.08, finishFrac = 0.90;
+        function groundY() { return H * 0.72; }
+        function startX() { return W * startFrac; }
+        function finishX() { return W * finishFrac; }
+
+        // ---- state ----
+        let light = 'green';         // green | amber | red
+        let redAt = 0;
+        const GRACE = 600;           // reaction time + glide; late release still loses
+        let lightTimer = 0;
+
+        let mode = 'play';           // play | caught | shame | finished
+        let x = 0;                   // player x px
+        let v = 0;                   // px/s
+        let holding = false;
+        let walkPhase = 0;
+        let runStarted = false;
+        let runStart = 0;
+        let hopT = -1;               // finish hop animation progress
+
+        // ---- light scheduling ----
+        function setLight(l) {
+            light = l;
+            if (l === 'red') redAt = performance.now();
+            render();
+        }
+        function scheduleLight() {
+            clearTimeout(lightTimer);
+            if (light === 'green') {
+                lightTimer = setTimeout(() => {
+                    if (Math.random() < 0.6) {
+                        setLight('amber');
+                    } else {
+                        setLight('red'); // no warning. the official is like that.
+                    }
+                    scheduleLight();
+                }, 1200 + Math.random() * 2300);
+            } else if (light === 'amber') {
+                lightTimer = setTimeout(() => { setLight('red'); scheduleLight(); }, 250 + Math.random() * 300);
+            } else {
+                lightTimer = setTimeout(() => { setLight('green'); scheduleLight(); }, 1000 + Math.random() * 1500);
             }
         }
 
-        function gameOver() {
-            isGameOver = true;
-            status.textContent = 'Game Over! You moved on red light!';
-            status.style.color = '#ff4444';
-            restartBtn.style.display = 'block';
+        // ---- overlays ----
+        let stampTimer1 = 0, stampTimer2 = 0;
+        function showStamp(text, cls, sub, holdMs) {
+            clearTimeout(stampTimer1); clearTimeout(stampTimer2);
+            stampEl.textContent = text;
+            stampEl.className = 'stamp ' + cls;
+            void stampEl.offsetWidth;
+            stampEl.classList.add('show');
+            sublineEl.textContent = sub;
+            sublineEl.classList.add('show');
+            stampTimer1 = setTimeout(() => {
+                stampEl.classList.add('fade');
+                sublineEl.classList.remove('show');
+            }, holdMs);
         }
 
-        function win() {
-            isGameOver = true;
-            status.textContent = 'You Win!';
-            status.style.color = '#44ff44';
-            restartBtn.style.display = 'block';
+        function updateTally() {
+            let s = 'crossings: ' + crossings + ' · eliminations: ' + elims;
+            if (best > 0) s += ' · best: ' + best.toFixed(1) + 's';
+            tallyEl.textContent = s;
         }
 
-        function restart() {
-            isGameOver = false;
-            playerX = 40;
-            player.style.left = playerX + 'px';
-            status.textContent = 'Get Ready!';
-            status.style.color = 'white';
-            container.className = '';
-            restartBtn.style.display = 'none';
-            isRed = false;
-            
-            setTimeout(switchLight, 1000);
+        function shake() {
+            if (reducedMotion.matches) return;
+            document.body.classList.remove('shake');
+            void document.body.offsetWidth;
+            document.body.classList.add('shake');
         }
 
-        document.addEventListener('keydown', movePlayer);
-        restartBtn.addEventListener('click', restart);
-        
-        // Start the game
-        setTimeout(switchLight, 1000);
+        // ---- outcomes ----
+        function caught() {
+            elims++; saveNum('rlgl-elims', elims);
+            updateTally();
+            shake();
+            if (Math.random() < 0.03) {
+                // mercy. never explain. fresh grace so it doesn't re-catch instantly.
+                showStamp('Seen. Forgiven.', 'teal', 'the official blinked. carry on.', 1600);
+                v = 0;
+                redAt = performance.now() + 800;
+                return;
+            }
+            mode = 'caught';
+            v = 0;
+            showStamp('Eliminated', 'red', 'infraction recorded. return to the start.', 2400);
+            setTimeout(() => { mode = 'shame'; wake(); }, 900);
+        }
+
+        function finished() {
+            mode = 'finished';
+            v = 0;
+            hopT = 0;
+            const t = (performance.now() - runStart) / 1000;
+            crossings++; saveNum('rlgl-crossings', crossings);
+            let sub = 'crossing recorded. ' + t.toFixed(1) + 's.';
+            if (best === 0 || t < best) {
+                best = t; saveNum('rlgl-best', best);
+                sub = 'crossing recorded. ' + t.toFixed(1) + 's. a record.';
+            }
+            updateTally();
+            showStamp('Crossed', 'gold', sub, 2000);
+            setTimeout(() => {
+                x = startX(); v = 0; runStarted = false; mode = 'play'; hopT = -1;
+                render();
+            }, 2300);
+            wake();
+        }
+
+        // ---- physics ----
+        const VMAX = () => Math.max(180, W * 0.16);
+        function update(dt, now) {
+            if (mode === 'play') {
+                if (holding) {
+                    v += (VMAX() - v) * Math.min(1, dt * 8);
+                    if (!runStarted) { runStarted = true; runStart = now; }
+                } else {
+                    v *= Math.exp(-dt * 10); // glide — stopping late is on you
+                    if (v < 1) v = 0;
+                }
+                x += v * dt;
+                walkPhase += v * dt * 0.06;
+                if (x >= finishX()) { x = finishX(); finished(); return; }
+                if (light === 'red' && now - redAt > GRACE && x > startX() + 4 && (holding || v > 8)) {
+                    caught();
+                }
+            } else if (mode === 'shame') {
+                const sp = Math.max(120, W * 0.09);
+                x -= sp * dt;
+                walkPhase += sp * dt * 0.06;
+                if (x <= startX()) {
+                    x = startX();
+                    mode = 'play';
+                    runStarted = false;
+                    v = 0;
+                }
+            } else if (mode === 'finished' && hopT >= 0) {
+                hopT += dt * 3;
+            }
+        }
+
+        // ---- drawing ----
+        function sticker(fn, offset) {
+            ctx.save(); ctx.translate(offset, offset); ctx.fillStyle = INK; fn(); ctx.fill(); ctx.restore();
+        }
+
+        function drawLight() {
+            const s = Math.min(W, H) / 640;
+            const lw = 76 * s, lh = 190 * s;
+            const cx = W / 2, cy = 26 * s;
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(-0.035);
+            // housing with hard shadow
+            const r = 18 * s;
+            const box = (ox, oy) => {
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(-lw / 2 + ox, oy, lw, lh, r);
+                else ctx.rect(-lw / 2 + ox, oy, lw, lh);
+            };
+            box(4 * s, 4 * s); ctx.fillStyle = INK; ctx.fill();
+            box(0, 0); ctx.fillStyle = CREAM; ctx.fill();
+            ctx.lineWidth = 3 * s; ctx.strokeStyle = INK; ctx.stroke();
+            // lamps
+            const lamps = [
+                { c: CORAL, on: light === 'red' },
+                { c: GOLD, on: light === 'amber' },
+                { c: LIME, on: light === 'green' }
+            ];
+            lamps.forEach((l, i) => {
+                const ly = lh * (0.2 + i * 0.3);
+                ctx.beginPath();
+                ctx.arc(0, ly, 20 * s, 0, Math.PI * 2);
+                ctx.fillStyle = l.on ? l.c : 'rgba(32,26,23,0.12)';
+                ctx.fill();
+                ctx.lineWidth = 2.5 * s;
+                ctx.strokeStyle = INK;
+                ctx.stroke();
+                if (l.on) {
+                    ctx.beginPath();
+                    ctx.arc(0, ly, 27 * s, 0, Math.PI * 2);
+                    ctx.lineWidth = 2 * s;
+                    ctx.strokeStyle = l.c;
+                    ctx.stroke();
+                }
+            });
+            ctx.restore();
+        }
+
+        function drawCourse() {
+            const gy = groundY();
+            ctx.strokeStyle = 'rgba(32,26,23,0.45)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 8]);
+            ctx.beginPath();
+            ctx.moveTo(0, gy + 24);
+            ctx.lineTo(W, gy + 24);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // start line
+            ctx.strokeStyle = 'rgba(32,26,23,0.5)';
+            ctx.beginPath();
+            ctx.moveTo(startX(), gy - 46);
+            ctx.lineTo(startX(), gy + 24);
+            ctx.stroke();
+
+            // finish: checkered strip
+            const fx = finishX() + 26;
+            const cell = 9;
+            for (let row = 0; row < 10; row++) {
+                for (let col = 0; col < 2; col++) {
+                    ctx.fillStyle = (row + col) % 2 === 0 ? INK : CREAM;
+                    ctx.fillRect(fx + col * cell, gy - 66 + row * cell, cell, cell);
+                }
+            }
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(fx, gy - 66, cell * 2, cell * 10);
+            ctx.beginPath();
+            ctx.moveTo(fx, gy + 24);
+            ctx.lineTo(fx, gy - 66);
+            ctx.stroke();
+        }
+
+        function drawPlayer() {
+            const gy = groundY();
+            let py = gy;
+            if (hopT >= 0) py -= Math.abs(Math.sin(Math.min(hopT, Math.PI))) * 26;
+            const r = Math.max(15, Math.min(W, H) * 0.028);
+
+            // shadow
+            ctx.beginPath();
+            ctx.ellipse(x, gy + 20, r * 0.9, r * 0.28, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(32,26,23,0.18)';
+            ctx.fill();
+
+            // legs scissor while moving
+            const moving = v > 4 || mode === 'shame';
+            const spread = moving ? Math.sin(walkPhase) * r * 0.55 : 0;
+            ctx.lineWidth = 3.5;
+            ctx.strokeStyle = INK;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x, py - r * 0.2);
+            ctx.lineTo(x - spread, gy + 18);
+            ctx.moveTo(x, py - r * 0.2);
+            ctx.lineTo(x + spread, gy + 18);
+            ctx.stroke();
+
+            // body: sticker treatment
+            const body = () => { ctx.beginPath(); ctx.arc(x, py - r * 0.9, r, 0, Math.PI * 2); };
+            ctx.save(); ctx.translate(2.5, 2.5); body(); ctx.fillStyle = INK; ctx.fill(); ctx.restore();
+            body(); ctx.fillStyle = CORAL; ctx.fill();
+            ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+
+            // eyes: face the finish, or forward-facing dread on red
+            const dir = mode === 'shame' ? -1 : 1;
+            const ex = x + dir * r * 0.35, ey = py - r * 1.05;
+            ctx.fillStyle = INK;
+            ctx.beginPath(); ctx.arc(ex, ey, 2.6, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(ex + dir * r * 0.34, ey, 2.6, 0, Math.PI * 2); ctx.fill();
+
+            // sweat on red, mid-course
+            if (light === 'red' && mode === 'play' && x > startX() + 6) {
+                ctx.beginPath();
+                ctx.arc(x - r * 0.7, py - r * 1.5, 3.5, 0, Math.PI * 2);
+                ctx.fillStyle = SKY;
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = INK;
+                ctx.stroke();
+            }
+        }
+
+        function render() {
+            ctx.fillStyle = PAPER;
+            ctx.fillRect(0, 0, W, H);
+            drawCourse();
+            drawLight();
+            drawPlayer();
+        }
+
+        // ---- loop (sleeps when idle) ----
+        let rafId = 0, lastT = 0;
+        function frame(now) {
+            const dt = Math.min(0.05, (now - lastT) / 1000);
+            lastT = now;
+            update(dt, now);
+            render();
+            const active = holding || v > 0 || mode === 'shame' || (mode === 'finished' && hopT >= 0 && hopT < Math.PI);
+            if (active) rafId = requestAnimationFrame(frame);
+            else rafId = 0;
+        }
+        function wake() {
+            if (!rafId) {
+                lastT = performance.now();
+                rafId = requestAnimationFrame(frame);
+            }
+        }
+
+        // ---- input ----
+        function hold(on) {
+            if (on && mode !== 'play') return;
+            holding = on;
+            if (on) {
+                hintEl.classList.add('gone');
+                wake();
+            }
+        }
+        window.addEventListener('pointerdown', e => { e.preventDefault(); hold(true); });
+        window.addEventListener('pointerup', () => hold(false));
+        window.addEventListener('pointercancel', () => hold(false));
+        window.addEventListener('blur', () => hold(false));
+        window.addEventListener('keydown', e => {
+            if (e.code === 'Space' && !e.repeat) { e.preventDefault(); hold(true); }
+        });
+        window.addEventListener('keyup', e => { if (e.code === 'Space') hold(false); });
+        window.addEventListener('contextmenu', e => e.preventDefault());
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const frac = W ? (x - startX()) / (finishX() - startX()) : 0;
+                resize();
+                x = startX() + Math.max(0, Math.min(1, frac)) * (finishX() - startX());
+                render();
+            }, 150);
+        });
+
+        setTimeout(() => hintEl.classList.add('gone'), 10000);
+
+        // ---- go ----
+        resize();
+        x = startX();
+        updateTally();
+        render();
+        scheduleLight();
+    })();
     </script>
 </body>
 </html>

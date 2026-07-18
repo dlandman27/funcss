@@ -5,239 +5,487 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infinite Tic Tac Toe</title>
-
-    <!-- Add metadata -->
-    <meta name="description" content="Play Tic Tac Toe on an infinite grid with no boundaries">
-    <meta name="keywords" content="infinite tic tac toe, endless game, strategy game">
-    <meta name="author" content="Random Sites On The Web">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M10 10h30v30h-30z' fill='none' stroke='%233498db' stroke-width='2'/><path d='M20 10v30M30 10v30M10 20h30M10 30h30' stroke='%233498db' stroke-width='2'/></svg>">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/infinitetictactoe/">
-    <meta property="og:title" content="Infinite Tic Tac Toe - Boundless Gaming">
-    <meta property="og:description" content="Play Tic Tac Toe on an infinite grid with no boundaries">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/infinitetictactoe/">
-    <meta property="twitter:title" content="Infinite Tic Tac Toe - Boundless Gaming">
-    <meta property="twitter:description" content="Play Tic Tac Toe on an infinite grid with no boundaries">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
+    <meta name="description" content="Tic tac toe on a board that does not end. Five in a row. The computer is patient.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M12 12l26 26M38 12L12 38' stroke='%23f0563e' stroke-width='7' stroke-linecap='round'/><path d='M12 12l26 26M38 12L12 38' stroke='%23201a17' stroke-width='11' stroke-linecap='round' opacity='.25'/></svg>">
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --gold: #f7c948;
         }
-
-        #game-container {
-            position: relative;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body {
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        canvas#board {
+            position: fixed;
+            inset: 0;
             width: 100vw;
             height: 100vh;
-            cursor: pointer;
+            touch-action: none;
+            cursor: crosshair;
         }
 
-        .grid-line {
-            position: absolute;
-            background-color: #ccc;
-        }
-
-        .vertical {
-            width: 1px;
-            height: 100%;
-        }
-
-        .horizontal {
-            width: 100%;
-            height: 1px;
-        }
-
-        .cell {
-            position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .cell.x {
-            color: #e74c3c;  /* Red color for X */
-        }
-
-        .cell.o {
-            color: #3498db;  /* Blue color for O */
-        }
-
-        #status {
+        .scorecard {
             position: fixed;
-            top: 60px;
+            top: 14px;
+            left: 14px;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(-1.5deg);
+            padding: 8px 14px;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .scorecard .t {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .scorecard .s { font-style: italic; font-size: 13px; margin-top: 2px; }
+        .scorecard .turn { font-style: italic; font-size: 12px; color: rgba(32,26,23,0.6); margin-top: 2px; min-height: 1.1em; }
+
+        .hint {
+            position: fixed;
+            bottom: 18px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 1000;
+            font-style: italic;
+            font-size: 15px;
+            color: rgba(32, 26, 23, 0.55);
+            transition: opacity 1.2s ease;
+            pointer-events: none;
+            z-index: 5;
+            text-align: center;
+            width: 92vw;
         }
+        .hint.gone { opacity: 0; }
 
-        #title {
+        .stamp {
             position: fixed;
-            top: 20px;
+            top: 38%;
             left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 1000;
-            font-size: 24px;
-            font-weight: bold;
+            z-index: 6;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(34px, 9vw, 58px);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 8px 26px;
+            border: 4px solid;
+            border-radius: 12px;
+            background: rgba(255, 248, 239, 0.82);
+            transform: translate(-50%, -50%) rotate(-8deg) scale(0);
+            pointer-events: none;
+            text-align: center;
+        }
+        .stamp em {
+            display: block;
+            font-family: Georgia, serif;
+            font-weight: normal;
+            font-style: italic;
+            font-size: 15px;
+            letter-spacing: 0;
+            text-transform: none;
+            color: var(--ink);
+        }
+        .stamp.you { color: #c99a12; border-color: #c99a12; box-shadow: inset 0 0 0 3px rgba(255,248,239,.9), inset 0 0 0 6px #c99a12; }
+        .stamp.it { color: var(--coral); border-color: var(--coral); box-shadow: inset 0 0 0 3px rgba(255,248,239,.9), inset 0 0 0 6px var(--coral); }
+        .stamp.show { animation: stampIn 0.38s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes stampIn {
+            0% { transform: translate(-50%, -50%) rotate(4deg) scale(2.1); opacity: 0; }
+            65% { transform: translate(-50%, -50%) rotate(-9deg) scale(0.95); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
         }
 
-        #retry-button {
-            top: 110px;
+        .again {
+            position: fixed;
+            top: 56%;
+            left: 50%;
+            transform: translateX(-50%) rotate(1.5deg);
+            z-index: 6;
             display: none;
-            position: fixed;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 12px 24px;
             cursor: pointer;
-            z-index: 1000;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
+        .again.show { display: block; }
+        .again:hover { transform: translateX(-50%) translate(-2px, -2px) rotate(1.5deg); box-shadow: 5px 5px 0 var(--ink); }
+        .again:active { transform: translateX(-50%) translate(2px, 2px) rotate(1.5deg); box-shadow: 1px 1px 0 var(--ink); }
 
-        #retry-button:hover {
-            background-color: #45a049;
+        @keyframes thunk {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, 3px); }
+            50% { transform: translate(-3px, 1px); }
+            75% { transform: translate(1px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+        body.thunk { animation: thunk 0.22s linear; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .stamp.show { animation: none; transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
+            body.thunk { animation: none; }
+            .hint, .again { transition: none; }
         }
     </style>
 </head>
 <body>
-    <div id="title">Infinite Tic Tac Toe</div>
-    <div id="status">Current Player: X</div>
-    <button id="retry-button" onclick="resetGame()">Try Again</button>
-    <div id="game-container"></div>
+    <canvas id="board" aria-label="Infinite tic tac toe board"></canvas>
+
+    <div class="scorecard">
+        <div class="t">Infinite Tic Tac Toe</div>
+        <div class="s" id="score">you 0 · it 0</div>
+        <div class="turn" id="turn"></div>
+    </div>
+
+    <div class="hint" id="hint">five in a row wins. the board does not end. you are X — drag to wander.</div>
+    <div class="stamp" id="stamp"></div>
+    <button class="again" id="againBtn">Again</button>
 
     <script>
-        const container = document.getElementById('game-container');
-        const status = document.getElementById('status');
-        const retryButton = document.getElementById('retry-button');
-        const cellSize = 50;
-        let currentPlayer = 'X';
-        let gameBoard = {};
-        let gameActive = true;
+    (() => {
+        const INK = '#201a17';
+        const PAPER = '#f2ede2';
+        const CORAL = '#f0563e';
+        const SKY = '#5aa0db';
+        const HUMAN = 1, AI = 2;
+        const CELL = 56;
 
-        function createGrid() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const turnEl = document.getElementById('turn');
+        const hintEl = document.getElementById('hint');
+        const stampEl = document.getElementById('stamp');
+        const againBtn = document.getElementById('againBtn');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-            // Create vertical lines
-            for (let x = cellSize; x < width; x += cellSize) {
-                const line = document.createElement('div');
-                line.className = 'grid-line vertical';
-                line.style.left = x + 'px';
-                container.appendChild(line);
+        // ---- state ----
+        const board = new Map();       // "x,y" -> HUMAN|AI
+        const anims = new Map();       // "x,y" -> start time (pop-in)
+        let offset = { x: 0, y: 0 };   // screen px of world origin
+        let gameOver = false;
+        let humanTurn = true;
+        let aiTimer = 0;
+        let strike = null;             // {x1,y1,x2,y2,start} in cell coords
+        let lastHumanMove = null;
+
+        let score = { you: 0, it: 0 };
+        try { score = JSON.parse(localStorage.getItem('infinitetictactoe-score')) || score; } catch (e) {}
+        function saveScore() {
+            try { localStorage.setItem('infinitetictactoe-score', JSON.stringify(score)); } catch (e) {}
+        }
+        function showScore() { scoreEl.textContent = 'you ' + score.you + ' · it ' + score.it; }
+
+        const key = (x, y) => x + ',' + y;
+
+        // deterministic per-cell wobble
+        function jit(x, y, salt) {
+            let h = (x * 374761393 + y * 668265263 + salt * 2246822519) | 0;
+            h = Math.imul(h ^ (h >>> 13), 1274126177);
+            h ^= h >>> 16;
+            return ((h >>> 0) / 4294967295 - 0.5);
+        }
+
+        // ---- canvas ----
+        let W = 0, H = 0, dpr = 1;
+        function sizeCanvas() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            W = window.innerWidth; H = window.innerHeight;
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function render(now) {
+            now = now || performance.now();
+            ctx.fillStyle = PAPER;
+            ctx.fillRect(0, 0, W, H);
+
+            // grid
+            ctx.strokeStyle = 'rgba(32, 26, 23, 0.14)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            const sx = ((offset.x % CELL) + CELL) % CELL;
+            const sy = ((offset.y % CELL) + CELL) % CELL;
+            for (let x = sx; x <= W; x += CELL) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+            for (let y = sy; y <= H; y += CELL) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+            ctx.stroke();
+
+            // stones
+            for (const [k, who] of board) {
+                const [cx, cy] = k.split(',').map(Number);
+                const px = offset.x + cx * CELL;
+                const py = offset.y + cy * CELL;
+                if (px < -CELL || py < -CELL || px > W || py > H) continue;
+                let s = 1;
+                const a = anims.get(k);
+                if (a !== undefined) {
+                    const t = Math.min(1, (now - a) / 300);
+                    const c1 = 1.70158, c3 = c1 + 1;
+                    s = 0.2 + 0.8 * (1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2));
+                    if (t >= 1) anims.delete(k);
+                }
+                drawStone(cx, cy, px, py, who, s);
             }
 
-            // Create horizontal lines
-            for (let y = cellSize; y < height; y += cellSize) {
-                const line = document.createElement('div');
-                line.className = 'grid-line horizontal';
-                line.style.top = y + 'px';
-                container.appendChild(line);
+            // winning strike
+            if (strike) {
+                const t = reducedMotion.matches ? 1 : Math.min(1, (now - strike.start) / 380);
+                const x1 = offset.x + (strike.x1 + 0.5) * CELL, y1 = offset.y + (strike.y1 + 0.5) * CELL;
+                const x2 = offset.x + (strike.x2 + 0.5) * CELL, y2 = offset.y + (strike.y2 + 0.5) * CELL;
+                const ex = x1 + (x2 - x1) * t, ey = y1 + (y2 - y1) * t;
+                ctx.strokeStyle = INK;
+                ctx.lineWidth = 7;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(ex, ey);
+                ctx.stroke();
+                if (t < 1) strike.animating = true; else strike.animating = false;
             }
         }
 
-        function handleClick(event) {
-            if (!gameActive) return;
-
-            const rect = container.getBoundingClientRect();
-            const x = Math.floor((event.clientX - rect.left) / cellSize);
-            const y = Math.floor((event.clientY - rect.top) / cellSize);
-            const cellId = `${x},${y}`;
-
-            if (gameBoard[cellId]) return;
-
-            placeMarker(x, y, currentPlayer);
-            gameBoard[cellId] = currentPlayer;
-
-            if (checkWin(x, y)) {
-                status.textContent = `Player ${currentPlayer} wins!`;
-                gameActive = false;
-                retryButton.style.display = 'block';
-                return;
+        function drawStone(cx, cy, px, py, who, scale) {
+            const c = px + CELL / 2, m = py + CELL / 2;
+            ctx.save();
+            ctx.translate(c, m);
+            ctx.scale(scale, scale);
+            ctx.rotate(jit(cx, cy, 7) * 0.16);
+            ctx.lineCap = 'round';
+            const r = CELL * 0.3;
+            if (who === HUMAN) {
+                const j = i => jit(cx, cy, i) * 6;
+                const pts = [
+                    [-r + j(1), -r + j(2), r + j(3), r + j(4)],
+                    [r + j(5), -r + j(6), -r + j(8), r + j(9)]
+                ];
+                for (const [ax, ay, bx, by] of pts) {
+                    ctx.strokeStyle = INK;
+                    ctx.lineWidth = 11;
+                    ctx.beginPath(); ctx.moveTo(ax + 1.5, ay + 1.5); ctx.lineTo(bx + 1.5, by + 1.5); ctx.stroke();
+                    ctx.strokeStyle = CORAL;
+                    ctx.lineWidth = 7;
+                    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+                }
+            } else {
+                const rr = r * (1 + jit(cx, cy, 11) * 0.12);
+                ctx.strokeStyle = INK;
+                ctx.lineWidth = 11;
+                ctx.beginPath(); ctx.arc(1.5, 1.5, rr, 0, Math.PI * 2); ctx.stroke();
+                ctx.strokeStyle = SKY;
+                ctx.lineWidth = 7;
+                ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke();
             }
-
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            status.textContent = `Current Player: ${currentPlayer}`;
+            ctx.restore();
         }
 
-        function placeMarker(x, y, player) {
-            const cell = document.createElement('div');
-            cell.className = `cell ${player.toLowerCase()}`;
-            cell.style.left = (x * cellSize) + 'px';
-            cell.style.top = (y * cellSize) + 'px';
-            cell.style.width = cellSize + 'px';
-            cell.style.height = cellSize + 'px';
-            cell.textContent = player;
-            container.appendChild(cell);
+        // rAF loop that sleeps when nothing animates
+        let rafId = 0;
+        function frame(now) {
+            render(now);
+            if (anims.size > 0 || (strike && strike.animating !== false && now - strike.start < 400)) {
+                rafId = requestAnimationFrame(frame);
+            } else {
+                rafId = 0;
+            }
+        }
+        function wake() { if (!rafId) rafId = requestAnimationFrame(frame); }
+
+        // ---- game logic ----
+        const DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
+
+        function runFrom(x, y, dx, dy, who) {
+            let n = 0;
+            while (board.get(key(x + dx * (n + 1), y + dy * (n + 1))) === who) n++;
+            return n;
         }
 
-        function checkWin(x, y) {
-            const directions = [
-                [[0,-1], [0,1]],  // vertical
-                [[-1,0], [1,0]],  // horizontal
-                [[-1,-1], [1,1]], // diagonal
-                [[-1,1], [1,-1]]  // other diagonal
-            ];
+        function checkWin(x, y, who) {
+            for (const [dx, dy] of DIRS) {
+                const a = runFrom(x, y, dx, dy, who);
+                const b = runFrom(x, y, -dx, -dy, who);
+                if (a + b + 1 >= 5) {
+                    return { x1: x - dx * b, y1: y - dy * b, x2: x + dx * a, y2: y + dy * a };
+                }
+            }
+            return null;
+        }
 
-            for (const direction of directions) {
-                let count = 1;
-                for (const [dx, dy] of direction) {
-                    let i = 1;
-                    while (true) {
-                        const checkX = x + (dx * i);
-                        const checkY = y + (dy * i);
-                        const checkId = `${checkX},${checkY}`;
-                        if (gameBoard[checkId] !== currentPlayer) break;
-                        count++;
-                        i++;
+        function lineScore(count, open) {
+            if (count >= 5) return 1000000;
+            if (count === 4) return open === 2 ? 100000 : open === 1 ? 12000 : 0;
+            if (count === 3) return open === 2 ? 8000 : open === 1 ? 450 : 0;
+            if (count === 2) return open === 2 ? 160 : open === 1 ? 25 : 0;
+            return open === 2 ? 12 : 3;
+        }
+
+        function placementScore(x, y, who) {
+            let total = 0;
+            for (const [dx, dy] of DIRS) {
+                const a = runFrom(x, y, dx, dy, who);
+                const b = runFrom(x, y, -dx, -dy, who);
+                const count = a + b + 1;
+                let open = 0;
+                if (!board.has(key(x + dx * (a + 1), y + dy * (a + 1)))) open++;
+                if (!board.has(key(x - dx * (b + 1), y - dy * (b + 1)))) open++;
+                total += lineScore(count, open);
+            }
+            return total;
+        }
+
+        function aiMove() {
+            if (board.size === 0) return { x: 0, y: 0 };
+            // candidates: empty cells within 2 of any stone
+            const cand = new Map();
+            for (const k of board.keys()) {
+                const [x, y] = k.split(',').map(Number);
+                for (let dx = -2; dx <= 2; dx++) {
+                    for (let dy = -2; dy <= 2; dy++) {
+                        const kk = key(x + dx, y + dy);
+                        if (!board.has(kk)) cand.set(kk, true);
                     }
                 }
-                if (count >= 3) return true;
             }
-            return false;
+            let best = null, bestScore = -Infinity;
+            for (const kk of cand.keys()) {
+                const [x, y] = kk.split(',').map(Number);
+                const s = placementScore(x, y, AI) * 1.05 + placementScore(x, y, HUMAN);
+                const near = lastHumanMove ? -(Math.abs(x - lastHumanMove.x) + Math.abs(y - lastHumanMove.y)) * 0.5 : 0;
+                const total = s + near + Math.random();
+                if (total > bestScore) { bestScore = total; best = { x, y }; }
+            }
+            return best;
         }
 
-        function resetGame() {
-            container.innerHTML = '';
-            gameBoard = {};
-            gameActive = true;
-            currentPlayer = 'X';
-            status.textContent = 'Current Player: X';
-            retryButton.style.display = 'none';
-            createGrid();
+        function place(x, y, who) {
+            board.set(key(x, y), who);
+            anims.set(key(x, y), performance.now());
+            wake();
+            const win = checkWin(x, y, who);
+            if (win) endGame(who, win);
+            return win;
         }
 
-        window.addEventListener('resize', () => {
-            container.innerHTML = '';
-            createGrid();
-            // Redraw existing markers
-            for (const [coord, player] of Object.entries(gameBoard)) {
-                const [x, y] = coord.split(',').map(Number);
-                placeMarker(x, y, player);
+        function endGame(who, win) {
+            gameOver = true;
+            strike = { ...win, start: performance.now() + 250 };
+            wake();
+            score[who === HUMAN ? 'you' : 'it']++;
+            saveScore();
+            showScore();
+            turnEl.textContent = '';
+            setTimeout(() => {
+                stampEl.innerHTML = (who === HUMAN ? 'You Win' : 'It Wins') +
+                    '<em>' + (who === HUMAN ? 'the board remembers.' : 'it does not gloat. much.') + '</em>';
+                stampEl.className = 'stamp ' + (who === HUMAN ? 'you' : 'it');
+                void stampEl.offsetWidth;
+                stampEl.classList.add('show');
+                againBtn.classList.add('show');
+                if (!reducedMotion.matches) {
+                    document.body.classList.add('thunk');
+                    setTimeout(() => document.body.classList.remove('thunk'), 250);
+                }
+            }, 650);
+        }
+
+        function humanPlace(cx, cy) {
+            if (gameOver || !humanTurn || board.has(key(cx, cy))) return;
+            humanTurn = false;
+            lastHumanMove = { x: cx, y: cy };
+            hintEl.classList.add('gone');
+            const won = place(cx, cy, HUMAN);
+            if (won) return;
+            turnEl.textContent = 'its move.';
+            aiTimer = setTimeout(() => {
+                const m = aiMove();
+                const wonAi = place(m.x, m.y, AI);
+                if (!wonAi) {
+                    humanTurn = true;
+                    turnEl.textContent = 'your move.';
+                }
+            }, 380);
+        }
+
+        function newGame() {
+            clearTimeout(aiTimer);
+            board.clear();
+            anims.clear();
+            strike = null;
+            gameOver = false;
+            humanTurn = true;
+            lastHumanMove = null;
+            offset = { x: W / 2 - CELL / 2, y: H / 2 - CELL / 2 };
+            stampEl.className = 'stamp';
+            againBtn.classList.remove('show');
+            turnEl.textContent = 'your move.';
+            render();
+        }
+
+        // ---- input: drag to pan, tap to place ----
+        let down = null, dragging = false;
+        canvas.addEventListener('pointerdown', e => {
+            down = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
+            dragging = false;
+            canvas.setPointerCapture(e.pointerId);
+        });
+        canvas.addEventListener('pointermove', e => {
+            if (!down) return;
+            const dx = e.clientX - down.x, dy = e.clientY - down.y;
+            if (!dragging && Math.hypot(dx, dy) > 7) dragging = true;
+            if (dragging) {
+                offset.x = down.ox + dx;
+                offset.y = down.oy + dy;
+                render();
             }
         });
+        canvas.addEventListener('pointerup', e => {
+            if (down && !dragging) {
+                const cx = Math.floor((e.clientX - offset.x) / CELL);
+                const cy = Math.floor((e.clientY - offset.y) / CELL);
+                humanPlace(cx, cy);
+            }
+            down = null;
+            dragging = false;
+        });
+        canvas.addEventListener('pointercancel', () => { down = null; dragging = false; });
 
-        container.addEventListener('click', handleClick);
-        createGrid();
+        againBtn.addEventListener('click', newGame);
+        setTimeout(() => hintEl.classList.add('gone'), 10000);
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => { sizeCanvas(); render(); }, 150);
+        });
+
+        sizeCanvas();
+        showScore();
+        newGame();
+    })();
     </script>
 </body>
 </html>

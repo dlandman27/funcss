@@ -4,537 +4,582 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Prop Hunt</title>
-    <meta name="description" content="A fun emoji-based hide and seek game where you search for target emojis among decoys">
-    <meta name="keywords" content="emoji game, prop hunt, hide and seek, browser game, emoji hunt">
-    <meta name="author" content="Emoji Prop Hunt">
-    <meta property="og:title" content="Emoji Prop Hunt">
-    <meta property="og:description" content="Can you find the hidden emoji among the decoys? Test your observation skills in this fun browser game!">
-    <meta property="og:type" content="website">
-    <meta name="theme-color" content="#1a1c2c">
+    <title>Prop Hunt</title>
+    <meta name="description" content="One of them is wanted. Find the exact match — the decoys are in on it.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M25 4l5.2 12.4L43 17.6l-9.8 8.9 2.9 13.1L25 32.8l-11.1 6.8 2.9-13.1L7 17.6l12.8-1.2z' fill='%23f7c948' stroke='%23201a17' stroke-width='3' stroke-linejoin='round'/></svg>">
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
+            min-height: 100vh;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1c2c 0%, #2a3c54 100%);
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            color: white;
+            gap: 14px;
+            padding: 18px 12px 30px;
             overflow-x: hidden;
-        }
-
-        #game-container {
-            flex: 1;
-            min-height: 60vh;
-            margin: 10px 0;
-            background: #2a2a2a;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 20px;
-            position: relative;
-        }
-
-        .emoji {
-            font-size: 24px;
-            cursor: pointer;
             user-select: none;
-            transition: transform 0.2s;
-            position: absolute;
-            pointer-events: none;
-            transform-origin: center;
-            opacity: 0.9;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .emoji.target {
-            pointer-events: all !important;
-            cursor: pointer;
-            animation: pulse 1.5s infinite;
-            z-index: 1000;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(var(--scale, 1)) rotate(var(--rotation)); }
-            50% { transform: scale(calc(var(--scale, 1) * 1.1)) rotate(var(--rotation)); }
-            100% { transform: scale(var(--scale, 1)) rotate(var(--rotation)); }
-        }
-
-        #score, #target-display {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 10px 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        #score:hover, #timer-display:hover, #target-display:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-        }
-
-        #score {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        #target-display {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .loader {
-            width: 48px;
-            height: 48px;
-            border: 5px solid #FFF;
-            border-bottom-color: transparent;
-            border-radius: 50%;
-            display: none;
-            margin: 20px auto;
-            animation: rotation 1s linear infinite;
-        }
-
-        @keyframes rotation {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .modal .content {
-            margin: 20px 0;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(52, 73, 94, 1);
+        .topbar {
             display: flex;
+            gap: 18px;
+            align-items: center;
+            flex-wrap: wrap;
             justify-content: center;
-            align-items: center;
-            z-index: 2000;
         }
 
-        .modal {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            padding: 40px;
-            border-radius: 15px;
+        .poster {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-2deg);
+            padding: 10px 18px 12px;
             text-align: center;
-            animation: modalPop 0.3s ease-out;
+        }
+        .poster .wanted {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 17px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--ink);
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+        }
+        .poster canvas { display: block; margin: 0 auto; }
+        .poster .desc {
+            font-style: italic;
+            font-size: 12px;
+            color: rgba(32, 26, 23, 0.65);
+            max-width: 150px;
         }
 
-        @keyframes modalPop {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .modal h2 {
-            margin: 0 0 20px 0;
-            font-size: 32px;
-        }
-
-        .modal .emoji-display {
-            font-size: 48px;
-            margin: 20px 0;
-        }
-
-        #timer-display {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 10px 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .theme-selector {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .theme-button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .theme-button:hover {
-            transform: translateY(-3px);
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .theme-button.active {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
-        }
-
-        .start-screen {
+        .stats {
             text-align: center;
-            padding: 40px;
+            font-style: italic;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .stats .big {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-style: normal;
+            font-size: 22px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
 
-        .theme-selector {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            max-width: 600px;
-            margin: 40px auto;
+        .field-wrap {
+            position: relative;
+            width: min(860px, 96vw);
         }
-
-        .theme-button {
-            padding: 30px;
-            font-size: 18px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .theme-button .emoji-preview {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            font-size: 2.5em;
-            background: linear-gradient(45deg, #3498db, #2ecc71);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-            margin: 10px 0;
-        }
-
-        #game-screen {
-            display: none;
-            min-height: 100vh;
+        canvas#field {
+            display: block;
             width: 100%;
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--ink);
+            cursor: crosshair;
+            touch-action: manipulation;
+        }
+
+        .stamp {
+            position: absolute;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 30px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #c99a12;
+            border: 3px solid #c99a12;
+            border-radius: 8px;
+            box-shadow: inset 0 0 0 2px var(--cream), inset 0 0 0 4px #c99a12;
+            background: rgba(255, 248, 239, 0.75);
+            padding: 2px 12px;
+            pointer-events: none;
+            transform: rotate(-10deg) scale(0);
+            z-index: 3;
+        }
+        .stamp.show { animation: stampIn 0.32s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes stampIn {
+            0% { transform: rotate(4deg) scale(2); opacity: 0; }
+            70% { transform: rotate(-11deg) scale(0.94); opacity: 1; }
+            100% { transform: rotate(-10deg) scale(1); opacity: 1; }
+        }
+
+        .remark {
+            font-style: italic;
+            font-size: 15px;
+            color: rgba(32, 26, 23, 0.6);
+            min-height: 1.3em;
+            text-align: center;
+            transition: opacity 0.8s ease;
+        }
+
+        @keyframes thunk {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, 3px); }
+            50% { transform: translate(-3px, 1px); }
+            75% { transform: translate(1px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+        body.thunk { animation: thunk 0.22s linear; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .stamp.show { animation: none; transform: rotate(-10deg) scale(1); opacity: 1; }
+            body.thunk { animation: none; }
         }
     </style>
 </head>
 <body>
-    <div class="start-screen" id="start-screen">
-        <h1>Emoji Prop Hunt</h1>
-        <h2>Select a Theme</h2>
-        <div class="theme-selector">
-            <button class="theme-button" data-theme="nature">
-                <div class="emoji-preview">🌲 🌺 🦊</div>
-                Nature
-            </button>
-            <button class="theme-button" data-theme="food">
-                <div class="emoji-preview">🍎 🥨 🍕</div>
-                Food
-            </button>
-            <button class="theme-button" data-theme="animals">
-                <div class="emoji-preview">🐈 🦒 🦁</div>
-                Animals
-            </button>
-            <button class="theme-button" data-theme="space">
-                <div class="emoji-preview">⭐ 🌍 🚀</div>
-                Space
-            </button>
-            <button class="theme-button" data-theme="sports">
-                <div class="emoji-preview">⚽ 🎾 🏆</div>
-                Sports
-            </button>
-            <button class="theme-button" data-theme="travel">
-                <div class="emoji-preview">✈️ 🗺️ 🏖️</div>
-                Travel
-            </button>
-            <button class="theme-button" data-theme="music">
-                <div class="emoji-preview">🎸 🎹 🎼</div>
-                Music
-            </button>
-            <button class="theme-button" data-theme="weather">
-                <div class="emoji-preview">☀️ 🌧️ ⛈️</div>
-                Weather
-            </button>
+    <div class="topbar">
+        <div class="poster">
+            <div class="wanted">Wanted</div>
+            <canvas id="posterCanvas" width="110" height="90"></canvas>
+            <div class="desc" id="posterDesc"></div>
+        </div>
+        <div class="stats">
+            <span class="big" id="roundLabel">Round 1</span>
+            <span id="statsLine"></span>
         </div>
     </div>
 
-    <div id="game-screen" style="display: none;">
-        <h1>Emoji Prop Hunt</h1>
-        <div id="score">Score: <span id="score-value">0</span></div>
-        <div id="timer-display">Time: <span id="timer-value">60</span>s</div>
-        <div id="target-display">Find the: <span id="current-target"></span></div>
-        <div id="game-container"></div>
+    <div class="field-wrap">
+        <canvas id="field"></canvas>
+        <div class="stamp" id="stamp">Caught</div>
     </div>
-
-    <div id="round-modal" class="modal-overlay" style="display: none;">
-        <div class="modal">
-            <h2>Round <span id="modal-round">1</span></h2>
-            <div class="content">
-                <div>Find the:</div>
-                <div class="emoji-display"><span id="modal-target"></span></div>
-                <div id="loading-text" style="display: none;">Generating new round...</div>
-                <div class="loader" id="loading-spinner"></div>
-                <div id="start-text">(Click anywhere to start)</div>
-            </div>
-        </div>
-    </div>
+    <div class="remark" id="remark">tap the one on the poster. the exact one.</div>
 
     <script>
-        const themes = {
-            nature: {
-                decoys: ['🌲', '🌳', '🌴', '🌵', '🎄', '🌿', '☘️', '🍀', '🌺', '🌸', '🌼', '🌻', '🍄', '🪴', '🎋', '🎍'],
-                targets: ['🦊', '🐰', '🦁', '🐯', '🐷', '🐸']
-            },
-            food: {
-                decoys: ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🥝', '🍅', '🥕', '🥨', '🥯', '🥖', '🥐'],
-                targets: ['🍔', '🍕', '🌮', '🍦', '🍪', '🎂']
-            },
-            animals: {
-                decoys: ['🐅', '🐆', '🦬', '🦏', '🐪', '🐫', '🦙', '🦌', '🦣', '🐗', '🦗', '🦂', '🐜', '🐛', '🦋', '🐌'],
-                targets: ['🦁', '🐘', '🦒', '🦈', '🐋', '🦭']
-            },
-            space: {
-                decoys: ['🌗', '🌘', '🌙', '🌚', '🌛', '🌜', '🌡️', '🌋', '🌊', '💫', '☄️', '🌠', '🌌', '🌓', '🌔', '🌕'],
-                targets: ['🚀', '🛸', '👾', '🛰️', '🌞', '⭐']
-            },
-            sports: {
-                decoys: ['🎽', '🥋', '🥊', '🎿', '🛷', '🥌', '🎯', '🪀', '🎳', '🎮', '🎲', '🎭', '🎨', '🎪', '🎟️', '🎗️'],
-                targets: ['🏆', '🥇', '🥈', '🥉', '🏅', '🎖️']
-            },
-            travel: {
-                decoys: ['🗺️', '🗿', '🗽', '🗼', '🗻', '🏰', '🏯', '🏛️', '⛩️', '🕌', '🕍', '⛪', '🏙️', '🌄', '🌅', '🌆'],
-                targets: ['✈️', '🚂', '🚢', '🏖️', '🎡', '🎪']
-            },
-            music: {
-                decoys: ['🎵', '🎶', '🎼', '🎹', '🎸', '🎻', '🎺', '🎷', '🪘', '🥁', '🪗', '🎤', '📻', '🎧', '🔔', '🎙️'],
-                targets: ['🎭', '🎪', '🎬', '🎨', '🎩', '🎮']
-            },
-            weather: {
-                decoys: ['🌤️', '🌥️', '🌦️', '🌧️', '🌨️', '🌩️', '🌪️', '🌫️', '🌬️', '🌀', '🌈', '☁️', '⛅', '⛈️', '❄️', '🌊'],
-                targets: ['☀️', '🌙', '⚡', '💧', '🔥', '💨']
-            }
+    (() => {
+        const INK = '#201a17';
+        const CREAM = '#fff8ef';
+        const COLORS = [
+            { hex: '#f0563e', name: 'coral' },
+            { hex: '#5aa0db', name: 'sky' },
+            { hex: '#b7ce3c', name: 'lime' },
+            { hex: '#a98fd0', name: 'purple' },
+            { hex: '#f47b28', name: 'orange' },
+            { hex: '#ff7fa5', name: 'pink' },
+            { hex: '#2fb0a3', name: 'teal' },
+            { hex: '#f7c948', name: 'gold' }
+        ];
+
+        // shape drawing: unit coordinate space roughly [-1, 1]
+        const SHAPES = {
+            star: { sym: true, blurb: 'considered decorative and dangerous',
+                path(c) {
+                    c.beginPath();
+                    for (let i = 0; i < 10; i++) {
+                        const a = -Math.PI / 2 + i * Math.PI / 5;
+                        const r = i % 2 === 0 ? 1 : 0.45;
+                        c[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(a) * r, Math.sin(a) * r);
+                    }
+                    c.closePath();
+                } },
+            heart: { sym: true, blurb: 'armed with feelings',
+                path(c) {
+                    c.beginPath();
+                    c.moveTo(0, 0.95);
+                    c.bezierCurveTo(-1.15, 0.1, -0.85, -0.95, 0, -0.35);
+                    c.bezierCurveTo(0.85, -0.95, 1.15, 0.1, 0, 0.95);
+                    c.closePath();
+                } },
+            flower: { sym: true, blurb: 'blooming without a permit',
+                path(c) {
+                    c.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const a = i * Math.PI / 3;
+                        c.moveTo(0, 0);
+                        c.arc(Math.cos(a) * 0.55, Math.sin(a) * 0.55, 0.45, 0, Math.PI * 2);
+                    }
+                } },
+            mug: { sym: false, blurb: 'last seen holding coffee',
+                path(c) {
+                    c.beginPath();
+                    c.moveTo(-0.7, -0.6);
+                    c.lineTo(0.45, -0.6);
+                    c.lineTo(0.45, 0.7);
+                    c.quadraticCurveTo(0.45, 0.85, 0.25, 0.85);
+                    c.lineTo(-0.5, 0.85);
+                    c.quadraticCurveTo(-0.7, 0.85, -0.7, 0.7);
+                    c.closePath();
+                    c.moveTo(0.45, -0.25);
+                    c.quadraticCurveTo(1.05, -0.35, 1, 0.1);
+                    c.quadraticCurveTo(0.95, 0.5, 0.45, 0.4);
+                } },
+            fish: { sym: false, blurb: 'swims exclusively left',
+                path(c) {
+                    c.beginPath();
+                    c.moveTo(-0.95, 0);
+                    c.quadraticCurveTo(-0.2, -0.75, 0.45, -0.2);
+                    c.quadraticCurveTo(0.7, 0, 0.45, 0.2);
+                    c.quadraticCurveTo(-0.2, 0.75, -0.95, 0);
+                    c.closePath();
+                    c.moveTo(0.45, 0);
+                    c.lineTo(0.95, -0.45);
+                    c.lineTo(0.95, 0.45);
+                    c.closePath();
+                } },
+            bolt: { sym: false, blurb: 'moves fast, stands still',
+                path(c) {
+                    c.beginPath();
+                    c.moveTo(0.25, -1);
+                    c.lineTo(-0.55, 0.15);
+                    c.lineTo(-0.05, 0.15);
+                    c.lineTo(-0.3, 1);
+                    c.lineTo(0.55, -0.2);
+                    c.lineTo(0.05, -0.2);
+                    c.closePath();
+                } },
+            moon: { sym: false, blurb: 'out all night, every night',
+                path(c) {
+                    c.beginPath();
+                    c.arc(0, 0, 0.9, Math.PI * 0.32, Math.PI * 1.68);
+                    c.arc(0.5, 0, 0.62, Math.PI * 1.55, Math.PI * 0.45, true);
+                    c.closePath();
+                } },
+            hat: { sym: false, blurb: 'formal but suspicious',
+                path(c) {
+                    c.beginPath();
+                    c.moveTo(-1, 0.55);
+                    c.lineTo(1, 0.55);
+                    c.lineTo(1, 0.3);
+                    c.lineTo(0.5, 0.3);
+                    c.lineTo(0.5, -0.75);
+                    c.lineTo(0.62, -0.9);
+                    c.lineTo(-0.55, -0.9);
+                    c.lineTo(-0.5, 0.3);
+                    c.lineTo(-1, 0.3);
+                    c.closePath();
+                } }
         };
+        const SHAPE_KEYS = Object.keys(SHAPES);
+        const ASYM_KEYS = SHAPE_KEYS.filter(k => !SHAPES[k].sym);
 
-        let currentTheme = 'nature';
-        let score = 0;
-        let currentTarget;
-        let emojiCount = 10; // Starting number of emojis
-        let timeLeft = 60;
-        let timerInterval;
-        const MAX_ROUNDS = 10;
+        function drawProp(c, shape, color, mirror, x, y, size, rot) {
+            c.save();
+            c.translate(x, y);
+            c.rotate(rot);
+            if (mirror) c.scale(-1, 1);
+            c.scale(size, size);
+            const lw = Math.max(2, size * 0.11) / size;
+            c.save();
+            c.translate(0.09, 0.09);
+            SHAPES[shape].path(c);
+            c.fillStyle = INK;
+            c.fill();
+            c.restore();
+            SHAPES[shape].path(c);
+            c.fillStyle = color;
+            c.fill();
+            c.lineWidth = lw;
+            c.lineJoin = 'round';
+            c.strokeStyle = INK;
+            c.stroke();
+            if (shape === 'fish') {
+                c.beginPath();
+                c.arc(-0.55, -0.12, 0.09, 0, Math.PI * 2);
+                c.fillStyle = INK;
+                c.fill();
+            }
+            c.restore();
+        }
 
-        function showRoundModal(isLoading = false) {
-            const modal = document.getElementById('round-modal');
-            const loadingText = document.getElementById('loading-text');
-            const loadingSpinner = document.getElementById('loading-spinner');
-            const startText = document.getElementById('start-text');
-            
-            document.getElementById('modal-round').textContent = `${score + 1}/${MAX_ROUNDS}`;
-            document.getElementById('modal-target').textContent = currentTarget;
-            
-            const modalContent = modal.querySelector('.content');
-            modalContent.innerHTML = `
-                <div>Find the:</div>
-                <div class="emoji-display"><span id="modal-target">${currentTarget}</span></div>
-                <p>Time remaining: ${timeLeft} seconds</p>
-                <div id="loading-text" style="display: ${isLoading ? 'block' : 'none'}">Generating new round...</div>
-                <div class="loader" id="loading-spinner" style="display: ${isLoading ? 'block' : 'none'}"></div>
-                <div id="start-text" style="display: ${isLoading ? 'none' : 'block'}">(Click anywhere to start)</div>
-            `;
-            
-            if (isLoading) {
-                modal.onclick = null;
-            } else {
-                modal.onclick = function() {
-                    modal.style.display = 'none';
-                    if (score === 0) {
-                        startTimer();
+        // googly eyes for a certain uninvolved bystander
+        function drawGerald(c, x, y, size) {
+            c.save();
+            c.translate(x, y);
+            c.scale(size, size);
+            c.beginPath();
+            c.ellipse(0, 0.1, 0.9, 0.75, 0, 0, Math.PI * 2);
+            c.fillStyle = '#b7ce3c';
+            c.fill();
+            c.lineWidth = 0.12;
+            c.strokeStyle = INK;
+            c.stroke();
+            for (const side of [-1, 1]) {
+                c.beginPath();
+                c.arc(side * 0.3, -0.25, 0.28, 0, Math.PI * 2);
+                c.fillStyle = CREAM;
+                c.fill();
+                c.lineWidth = 0.08;
+                c.stroke();
+                c.beginPath();
+                c.arc(side * 0.3 + 0.05, -0.2, 0.12, 0, Math.PI * 2);
+                c.fillStyle = INK;
+                c.fill();
+            }
+            c.restore();
+        }
+
+        // ---- state ----
+        const field = document.getElementById('field');
+        const fctx = field.getContext('2d');
+        const posterCanvas = document.getElementById('posterCanvas');
+        const pctx = posterCanvas.getContext('2d');
+        const posterDesc = document.getElementById('posterDesc');
+        const roundLabel = document.getElementById('roundLabel');
+        const statsLine = document.getElementById('statsLine');
+        const remark = document.getElementById('remark');
+        const stamp = document.getElementById('stamp');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        function loadNum(k) { try { return parseInt(localStorage.getItem(k), 10) || 0; } catch (e) { return 0; } }
+        function saveNum(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
+
+        let round = 1;
+        let best = loadNum('prophunt-best');
+        let captures = loadNum('prophunt-captures');
+        let missesThisRound = 0;
+        let props = [];        // {shape,color,mirror,x,y,rot,size,isTarget,isGerald,wobble}
+        let target = null;
+        let state = 'playing'; // playing | celebrating
+        let cssW = 0, cssH = 0;
+
+        const MISS_REMARKS = [
+            'that one is innocent.',
+            'close. also no.',
+            'a look-alike. they planned this.',
+            'the wanted one remains at large.',
+            'an honest citizen. apologize.',
+            'wrong. the resemblance is the point.'
+        ];
+
+        // ---- layout ----
+        function sizeField() {
+            const wrap = field.parentElement;
+            const w = wrap.clientWidth;
+            const h = Math.max(300, Math.min(window.innerHeight - 260, w * 0.72));
+            cssW = w; cssH = h;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            field.width = Math.round(w * dpr);
+            field.height = Math.round(h * dpr);
+            field.style.height = h + 'px';
+            fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        // ---- round generation ----
+        function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        function sameProp(a, b) {
+            return a.shape === b.shape && a.color === b.color &&
+                (!!a.mirror === !!b.mirror || SHAPES[a.shape].sym);
+        }
+
+        function makeRound() {
+            missesThisRound = 0;
+            state = 'playing';
+            const useMirrors = round >= 5;
+            const targetShape = useMirrors ? pick(ASYM_KEYS) : pick(SHAPE_KEYS);
+            const targetColor = pick(COLORS);
+            target = { shape: targetShape, color: targetColor.hex, colorName: targetColor.name,
+                       mirror: useMirrors && Math.random() < 0.5 };
+
+            const count = Math.min(230, 13 + (round - 1) * 14);
+            const size = Math.max(13, Math.min(30, Math.sqrt((cssW * cssH) / count) * 0.34));
+
+            props = [];
+            for (let i = 0; i < count - 1; i++) {
+                let d;
+                let guard = 0;
+                do {
+                    const roll = Math.random();
+                    if (round >= 3 && roll < 0.45) {
+                        // same shape, different color
+                        const c = pick(COLORS.filter(c2 => c2.hex !== target.color));
+                        d = { shape: target.shape, color: c.hex, mirror: Math.random() < 0.5 };
+                    } else if (useMirrors && roll < 0.72) {
+                        // same shape, same color, mirrored
+                        d = { shape: target.shape, color: target.color, mirror: !target.mirror };
                     } else {
-                        if (timeLeft <= 0 || score >= MAX_ROUNDS) {
-                            showEndGameModal();
-                        } else {
-                            timerInterval = setInterval(() => {
-                                timeLeft--;
-                                document.getElementById('timer-value').textContent = timeLeft;
-                                
-                                if (timeLeft <= 0 || score >= MAX_ROUNDS) {
-                                    clearInterval(timerInterval);
-                                    showEndGameModal();
-                                }
-                            }, 1000);
-                        }
+                        d = { shape: pick(SHAPE_KEYS), color: pick(COLORS).hex, mirror: Math.random() < 0.5 };
                     }
-                };
+                } while (sameProp(d, target) && ++guard < 20);
+                if (sameProp(d, target)) { d.shape = pick(SHAPE_KEYS.filter(s => s !== target.shape)); }
+                props.push(place(d, size));
             }
-            
-            modal.style.display = 'flex';
+            const t = place({ ...target }, size);
+            t.isTarget = true;
+            props.splice(Math.floor(Math.random() * props.length), 0, t);
+
+            if (Math.random() < 0.03) {
+                const g = place({ shape: 'star', color: '#b7ce3c', mirror: false }, size * 0.62);
+                g.isGerald = true;
+                props.push(g);
+            }
+
+            roundLabel.textContent = 'Round ' + round;
+            updateStats();
+            drawPoster();
+            render();
         }
 
-        function generateGame() {
-            const container = document.getElementById('game-container');
-            
-            // Show loading state in modal
-            showRoundModal(true);
-            
-            // Use setTimeout to allow the loading state to render
-            setTimeout(() => {
-                container.innerHTML = '';
-                currentTarget = themes[currentTheme].targets[Math.floor(Math.random() * themes[currentTheme].targets.length)];
-                document.getElementById('current-target').textContent = currentTarget;
-                
-                const targetPosition = Math.floor(Math.random() * emojiCount);
-                
-                // Generate all emojis
-                for (let i = 0; i < emojiCount; i++) {
-                    const emoji = document.createElement('span');
-                    emoji.className = 'emoji';
-                    
-                    const randomX = Math.random() * (container.offsetWidth - 50);
-                    const randomY = Math.random() * (container.offsetHeight - 50);
-                    
-                    const randomSize = Math.max(8, 24 - (score * 0.5)) + Math.random() * 8; // Reduced size variation
-                    
-                    const randomRotation = -45 + Math.random() * 90;
-                    emoji.style.setProperty('--rotation', `${randomRotation}deg`);
-                    
-                    emoji.style.left = `${randomX}px`;
-                    emoji.style.top = `${randomY}px`;
-                    emoji.style.fontSize = `${randomSize}px`;
-                    
-                    if (i === targetPosition) {
-                        emoji.textContent = currentTarget;
-                        emoji.classList.add('target');
-                        
-                        emoji.onclick = function() {
-                            clearInterval(timerInterval);
-                            score++;
-                            emojiCount = Math.floor(10 * Math.pow(2, score));
-                            document.getElementById('score-value').textContent = score;
-                            
-                            // Check if game should end before generating next round
-                            if (score >= MAX_ROUNDS || timeLeft <= 0) {
-                                showEndGameModal();
-                            } else {
-                                generateGame();
-                            }
-                        };
-                    } else {
-                        emoji.textContent = themes[currentTheme].decoys[Math.floor(Math.random() * themes[currentTheme].decoys.length)];
-                    }
-                    
-                    container.appendChild(emoji);
+        function place(p, size) {
+            const m = size + 6;
+            p.x = m + Math.random() * (cssW - m * 2);
+            p.y = m + Math.random() * (cssH - m * 2);
+            p.rot = (Math.random() - 0.5) * 0.85;
+            p.size = size * (0.9 + Math.random() * 0.2);
+            p.wobble = 0;
+            return p;
+        }
+
+        function drawPoster() {
+            pctx.clearRect(0, 0, posterCanvas.width, posterCanvas.height);
+            drawProp(pctx, target.shape, target.color, target.mirror, 55, 42, 30, -0.08);
+            posterDesc.textContent = 'one ' + target.colorName + ' ' + target.shape + ' — ' + SHAPES[target.shape].blurb + '.';
+        }
+
+        function updateStats() {
+            statsLine.textContent = 'best round ' + best + ' · captures to date: ' + captures +
+                (missesThisRound ? ' · misses: ' + missesThisRound : '');
+        }
+
+        // ---- rendering (rAF sleeps when idle) ----
+        let rafId = 0;
+        let animating = false;
+        let caughtRing = null; // {x,y,r,start}
+
+        function render() {
+            fctx.clearRect(0, 0, cssW, cssH);
+            const now = performance.now();
+            let stillAnimating = false;
+
+            for (const p of props) {
+                let rot = p.rot;
+                if (p.wobble > now) {
+                    rot += Math.sin(now / 30) * 0.22;
+                    stillAnimating = true;
                 }
-                
-                // After generation is complete, update modal to ready state
-                showRoundModal(false);
-            }, 0);
-        }
-
-        function handleTargetClick() {
-            clearInterval(timerInterval);
-            score++;
-            emojiCount = Math.floor(10 * Math.pow(2, score));
-            document.getElementById('score-value').textContent = score;
-            
-            // Check if game should end before generating next round
-            if (score >= MAX_ROUNDS || timeLeft <= 0) {
-                showEndGameModal();
-            } else {
-                generateGame();
+                if (p.isGerald) drawGerald(fctx, p.x, p.y, p.size);
+                else drawProp(fctx, p.shape, p.color, p.mirror, p.x, p.y, p.size, rot);
             }
-        }
 
-        function startTimer() {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer-value').textContent = timeLeft;
-                
-                if (timeLeft <= 0 || score >= MAX_ROUNDS) {
-                    clearInterval(timerInterval);
-                    showEndGameModal();
-                }
-            }, 1000);
-        }
-
-        function showEndGameModal() {
-            const modal = document.getElementById('round-modal');
-            const modalContent = modal.querySelector('.content');
-            
-            // Highlight the target emoji by adding a new class
-            const targetEmoji = document.querySelector('.emoji.target');
-            if (targetEmoji) {
-                targetEmoji.style.setProperty('--scale', '3');
-                targetEmoji.style.transition = 'filter 0.5s ease-out';
-                targetEmoji.style.filter = 'drop-shadow(0 0 10px red)';
-            }
-            
-            // Add 5 second delay before showing the end game modal
-            setTimeout(() => {
-                if (score >= MAX_ROUNDS) {
-                    modalContent.innerHTML = `
-                        <h3>You Win! 🎉</h3>
-                        <p>You completed the game in ${60 - timeLeft} seconds!</p>
-                        <p>Time remaining: ${timeLeft} seconds</p>
-                        <div id="start-text">(Click anywhere to play again)</div>
-                    `;
-                    document.getElementById('modal-round').textContent = `${score}/${MAX_ROUNDS}`;
-                    
-                    modal.onclick = function() {
-                        modal.style.display = 'none';
-                        score = 0;
-                        emojiCount = 10;
-                        timeLeft = 60;
-                        document.getElementById('score-value').textContent = score;
-                        document.getElementById('timer-value').textContent = timeLeft;
-                        generateGame();
-                    };
+            if (caughtRing) {
+                const t = (now - caughtRing.start) / 600;
+                if (t < 1) {
+                    fctx.beginPath();
+                    fctx.arc(caughtRing.x, caughtRing.y, caughtRing.r * (1 + t * 0.6), 0, Math.PI * 2);
+                    fctx.lineWidth = 5;
+                    fctx.strokeStyle = INK;
+                    fctx.stroke();
+                    fctx.lineWidth = 2.5;
+                    fctx.strokeStyle = '#f7c948';
+                    fctx.stroke();
+                    stillAnimating = true;
                 } else {
-                    modalContent.innerHTML = `
-                        <h3>Time's Up! ⏰</h3>
-                        <p>Final Score: ${score}</p
-                            >
-                        <p>Time remaining: ${timeLeft} seconds</p>
-                        <div id="start-text">(Click anywhere to try again)</div>
-                    `;
+                    caughtRing = null;
                 }
-                modal.style.display = 'flex';
-            }, 5000); // 5 second delay
-        }
+            }
 
-        function startGame(theme) {
-            currentTheme = theme;
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'block';
-            score = 0;
-            emojiCount = 10;
-            timeLeft = 60;
-            document.getElementById('score-value').textContent = score;
-            document.getElementById('timer-value').textContent = timeLeft;
-            generateGame();
+            if (stillAnimating) {
+                animating = true;
+                rafId = requestAnimationFrame(render);
+            } else {
+                animating = false;
+                rafId = 0;
+            }
         }
+        function wake() { if (!rafId) rafId = requestAnimationFrame(render); }
 
-        document.querySelectorAll('.theme-button').forEach(button => {
-            button.addEventListener('click', () => {
-                startGame(button.dataset.theme);
-            });
+        // ---- input ----
+        field.addEventListener('pointerdown', e => {
+            if (state !== 'playing') return;
+            const rect = field.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width * cssW;
+            const y = (e.clientY - rect.top) / rect.height * cssH;
+
+            for (let i = props.length - 1; i >= 0; i--) {
+                const p = props[i];
+                const d = Math.hypot(p.x - x, p.y - y);
+                if (d < p.size * 1.2) {
+                    if (p.isTarget) caught(p);
+                    else miss(p);
+                    return;
+                }
+            }
         });
+
+        function thunk() {
+            if (reducedMotion.matches) return;
+            document.body.classList.remove('thunk');
+            void document.body.offsetWidth;
+            document.body.classList.add('thunk');
+        }
+
+        function miss(p) {
+            if (p.isGerald) {
+                remark.textContent = 'that is gerald. gerald is not wanted.';
+                props = props.filter(q => q !== p);
+                render();
+                return;
+            }
+            missesThisRound++;
+            updateStats();
+            remark.textContent = MISS_REMARKS[Math.floor(Math.random() * MISS_REMARKS.length)];
+            p.wobble = performance.now() + 500;
+            thunk();
+            wake();
+        }
+
+        function caught(p) {
+            state = 'celebrating';
+            captures++;
+            if (round > best) { best = round; saveNum('prophunt-best', best); }
+            saveNum('prophunt-captures', captures);
+            remark.textContent = 'got them. round ' + (round + 1) + ' incoming.';
+
+            caughtRing = { x: p.x, y: p.y, r: p.size * 1.3, start: performance.now() };
+            wake();
+            thunk();
+
+            const rect = field.getBoundingClientRect();
+            stamp.style.left = Math.min(Math.max(p.x / cssW * rect.width - 60, 4), rect.width - 130) + 'px';
+            stamp.style.top = Math.min(Math.max(p.y / cssH * rect.height - 50, 4), rect.height - 50) + 'px';
+            stamp.classList.remove('show');
+            void stamp.offsetWidth;
+            stamp.classList.add('show');
+
+            setTimeout(() => {
+                stamp.classList.remove('show');
+                round++;
+                makeRound();
+            }, reducedMotion.matches ? 500 : 950);
+        }
+
+        // ---- resize ----
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const rel = props.map(p => ({ p, rx: p.x / cssW, ry: p.y / cssH }));
+                sizeField();
+                rel.forEach(({ p, rx, ry }) => { p.x = rx * cssW; p.y = ry * cssH; });
+                render();
+            }, 150);
+        });
+
+        setTimeout(() => { remark.style.opacity = '0'; }, 10000);
+        field.addEventListener('pointerdown', () => { remark.style.opacity = '1'; }, { once: false });
+
+        sizeField();
+        makeRound();
+    })();
     </script>
 </body>
 </html>
