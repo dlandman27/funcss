@@ -1178,6 +1178,17 @@
         }
 
         .cursor-panel .trail-row input { accent-color: var(--pink); }
+
+        /* the bomb cursor shakes the whole page when it goes off */
+        @keyframes page-shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-7px, 4px); }
+            40% { transform: translate(6px, -5px); }
+            60% { transform: translate(-5px, -3px); }
+            80% { transform: translate(4px, 3px); }
+        }
+
+        body.page-shake { animation: page-shake 0.32s linear; }
     </style>
 </head>
 <body>
@@ -3072,6 +3083,44 @@
                     x.strokeStyle = INK; x.lineWidth = 1.4; x.stroke();
                 };
 
+                // round bomb with a lit fuse
+                const bombDraw = (x) => {
+                    const body = (g) => { g.beginPath(); g.arc(14, 19, 9.5, 0, Math.PI * 2); };
+                    sticker(body, '#3a3a45')(x);
+                    // glass highlight
+                    x.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    x.lineWidth = 2;
+                    x.beginPath(); x.arc(11.5, 16, 5, Math.PI * 0.9, Math.PI * 1.5); x.stroke();
+                    // fuse
+                    x.strokeStyle = INK;
+                    x.lineWidth = 2.2;
+                    x.lineCap = 'round';
+                    x.beginPath(); x.moveTo(17, 10.5); x.quadraticCurveTo(20, 6, 25, 6); x.stroke();
+                    // spark
+                    drawStarP(x, 26.5, 5.5, 4.5, 0.5, GOLD, 1);
+                };
+
+                // rubber stamp, seen from the side
+                const stampDraw = (x) => {
+                    const base = (g) => {
+                        g.beginPath();
+                        g.moveTo(7, 15); g.lineTo(25, 15); g.lineTo(28, 22); g.lineTo(4, 22);
+                        g.closePath();
+                    };
+                    sticker(base, color('--purple', '#a98fd0'))(x);
+                    // handle
+                    x.strokeStyle = INK; x.lineWidth = 5.5; x.lineCap = 'round';
+                    x.beginPath(); x.moveTo(16, 13); x.lineTo(16, 8); x.stroke();
+                    x.fillStyle = color('--purple', '#a98fd0');
+                    x.beginPath(); x.arc(16, 6.5, 3.6, 0, Math.PI * 2); x.fill();
+                    x.strokeStyle = INK; x.lineWidth = 1.6; x.stroke();
+                    // red ink pad on the bottom
+                    x.fillStyle = '#c0392b';
+                    x.fillRect(4, 22, 24, 4);
+                    x.strokeStyle = INK; x.lineWidth = 1.6;
+                    x.strokeRect(4, 22, 24, 4);
+                };
+
                 // tiny slot machine with a lever
                 const slotDraw = (x) => {
                     const body = (g) => { g.beginPath(); g.rect(3, 9, 22, 16); };
@@ -3102,13 +3151,16 @@
                     draw: sticker(arrowPath, INK, color('--card', '#fff8ef')),
                     fx: { trail: 'comet', click: null, color: INK, every: 20 },
                 }];
-                PALETTE.forEach(([key, val]) => CURSORS.push({
-                    id: 'arrow-' + key,
-                    name: key + ' arrow',
-                    hot: [5, 3],
-                    draw: sticker(arrowPath, val),
-                    fx: { trail: 'comet', click: 'confetti', color: val, every: 20 },
-                }));
+                PALETTE.forEach(([key, val]) => {
+                    if (key === 'orange' || key === 'teal') return;   // close cousins of coral/lime
+                    CURSORS.push({
+                        id: 'arrow-' + key,
+                        name: key + ' arrow',
+                        hot: [5, 3],
+                        draw: sticker(arrowPath, val),
+                        fx: { trail: 'comet', click: 'confetti', color: val, every: 20 },
+                    });
+                });
                 CURSORS.push(
                     { id: 'paintball', name: 'paintball gun', hot: [3, 13], draw: sticker(gunPath, color('--teal', '#2fb0a3')),
                       fx: { trail: 'drips', click: 'paint', color: null, every: 40 } },
@@ -3130,6 +3182,10 @@
                       fx: { trail: 'plusses', click: 'xp', color: GOLD, every: 70 } },
                     { id: 'slot', name: 'slot machine', hot: [14, 17], draw: slotDraw,
                       fx: { trail: 'coins', click: 'slots', color: GOLD, every: 140 } },
+                    { id: 'bomb', name: 'bomb', hot: [14, 19], draw: bombDraw,
+                      fx: { trail: 'fuse', click: 'boom', color: '#3a3a45', every: 60 } },
+                    { id: 'stamp', name: 'rubber stamp', hot: [16, 24], draw: stampDraw,
+                      fx: { trail: 'inkdots', click: 'stamp', color: '#c0392b', every: 70 } },
                     { id: 'dylan', name: 'dylan', hot: [16, 16],
                       draw: (x) => { x.imageSmoothingEnabled = false; x.drawImage(faceImg, 2, 2, 28, 28); },
                       fx: { trail: 'faces', click: 'facePop', color: null, every: 80 } }
@@ -3640,6 +3696,114 @@
                                 fxCtx.restore();
                                 break;
                             }
+                            case 'bomb': {
+                                p.t++;
+                                if (p.t >= p.fuseT) {
+                                    // BOOM
+                                    shakePage();
+                                    push({ kind: 'boomstar', x: p.x, y: p.y, r: 8, vr: 4.2, spikes: 10,
+                                           rot: Math.random() * 6, color: color('--orange', '#f47b28'),
+                                           life: 1, decay: 0.05 });
+                                    push({ kind: 'boomstar', x: p.x, y: p.y, r: 5, vr: 3, spikes: 8,
+                                           rot: Math.random() * 6, color: GOLD, life: 1, decay: 0.055, delay: 2 });
+                                    push({ kind: 'flash', x: p.x, y: p.y, r: 10, vr: 5, a: 0.5,
+                                           color: '#fff3c4', life: 0.5, decay: 0.09 });
+                                    push({ kind: 'ring', x: p.x, y: p.y, r: 6, vr: 4, lw: 3,
+                                           color: INK, life: 0.8, decay: 0.05, delay: 3 });
+                                    for (let k = 0; k < 12; k++) {
+                                        const da = Math.random() * Math.PI * 2;
+                                        const dv = 2 + Math.random() * 4;
+                                        push({ kind: 'rect', x: p.x, y: p.y,
+                                               vx: Math.cos(da) * dv, vy: Math.sin(da) * dv - 2, g: 0.16,
+                                               w: 4 + Math.random() * 4, h: 3 + Math.random() * 3,
+                                               rot: Math.random() * Math.PI, vrot: jit(0.4),
+                                               color: ['#3a3a45', INK, color('--orange', '#f47b28'), '#8a8a95'][(Math.random() * 4) | 0],
+                                               life: 1, decay: 0.02 });
+                                    }
+                                    for (let k = 0; k < 6; k++) {
+                                        push({ kind: 'dot', x: p.x + jit(20), y: p.y + jit(16),
+                                               vy: -0.6 - Math.random() * 0.5, vr: 0.14,
+                                               r: 4 + Math.random() * 4, color: 'rgba(105, 105, 115, 0.5)',
+                                               life: 1, decay: 0.014, delay: 4 + k * 2 });
+                                    }
+                                    p.life = 0;
+                                    break;
+                                }
+                                // sitting there, fuse burning
+                                const wob = 1 + (p.t / p.fuseT) * 0.18;
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.scale(wob, wob);
+                                fxCtx.rotate(jit(0.02) * (p.t / p.fuseT));
+                                fxCtx.beginPath();
+                                fxCtx.arc(0, 1, 9.5, 0, Math.PI * 2);
+                                fxCtx.fillStyle = '#3a3a45';
+                                fxCtx.fill();
+                                fxCtx.lineWidth = 2;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
+                                fxCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+                                fxCtx.beginPath();
+                                fxCtx.arc(-2.5, -2, 5, Math.PI * 0.9, Math.PI * 1.5);
+                                fxCtx.stroke();
+                                // fuse burns down toward the bomb
+                                const burn = 1 - p.t / p.fuseT;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.lineWidth = 2;
+                                fxCtx.lineCap = 'round';
+                                fxCtx.beginPath();
+                                fxCtx.moveTo(3, -7.5);
+                                fxCtx.quadraticCurveTo(3 + 5 * burn, -7.5 - 7 * burn, 3 + 9 * burn, -7.5 - 8 * burn);
+                                fxCtx.stroke();
+                                drawStarP(fxCtx, 3 + 9 * burn, -7.5 - 8 * burn, 3.5 + Math.random() * 2, Math.random() * 3, GOLD, 0.7 + Math.random() * 0.3);
+                                fxCtx.restore();
+                                break;
+                            }
+                            case 'boomstar': {
+                                fxCtx.globalAlpha = a;
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.rotate(p.rot);
+                                fxCtx.beginPath();
+                                for (let k = 0; k < p.spikes * 2; k++) {
+                                    const rr = k % 2 === 0 ? p.r : p.r * 0.55;
+                                    const ang = (Math.PI * k) / p.spikes;
+                                    k === 0 ? fxCtx.moveTo(Math.cos(ang) * rr, Math.sin(ang) * rr)
+                                            : fxCtx.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
+                                }
+                                fxCtx.closePath();
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.fill();
+                                fxCtx.lineWidth = 3;
+                                fxCtx.lineJoin = 'round';
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
+                                fxCtx.restore();
+                                break;
+                            }
+                            case 'stamp': {
+                                p.t++;
+                                const pop2 = p.t < 6 ? 1.7 - (p.t / 6) * 0.7 : 1;
+                                const inAlpha = p.t < 6 ? p.t / 6 : 1;
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.rotate(p.ang);
+                                fxCtx.scale(pop2, pop2);
+                                fxCtx.globalAlpha = Math.min(1, p.life * 1.4) * inAlpha * 0.92;
+                                fxCtx.font = "900 19px 'Segoe UI', system-ui, sans-serif";
+                                fxCtx.textAlign = 'center';
+                                fxCtx.textBaseline = 'middle';
+                                const tw = fxCtx.measureText(p.txt).width;
+                                fxCtx.lineWidth = 3;
+                                fxCtx.strokeStyle = p.color;
+                                fxCtx.strokeRect(-tw / 2 - 10, -17, tw + 20, 34);
+                                fxCtx.lineWidth = 1.2;
+                                fxCtx.strokeRect(-tw / 2 - 6, -13, tw + 12, 26);
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.fillText(p.txt, 0, 1);
+                                fxCtx.restore();
+                                break;
+                            }
                             case 'slot': {
                                 p.t++;
                                 const stops = p.stops;
@@ -3752,7 +3916,31 @@
                         vy: 0.5, g: 0.07, r: 3 + Math.random() * 2,
                         rot: Math.random() * 6, vrot: 0.18, life: 0.9, decay: 0.03,
                     }),
+                    fuse: (x, y, c) => {
+                        push({ kind: 'dot', x: x + jit(6), y: y - 4,
+                               vy: -0.5, vr: 0.06, r: 2, color: 'rgba(110, 110, 120, 0.6)',
+                               life: 0.8, decay: 0.025 });
+                        if (Math.random() < 0.3) {
+                            push({ kind: 'dot', x: x + jit(8), y: y + jit(8),
+                                   vy: -0.3, r: 1.6, color: GOLD, life: 0.6, decay: 0.06 });
+                        }
+                    },
+                    inkdots: (x, y, c) => push({
+                        kind: 'dot', x: x + jit(8), y: y + 8,
+                        vy: 0.4, g: 0.05, r: 1.5 + Math.random(), color: c,
+                        life: 0.8, decay: 0.035,
+                    }),
                 };
+
+                function shakePage() {
+                    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                    document.body.classList.remove('page-shake');
+                    void document.body.offsetWidth;
+                    document.body.classList.add('page-shake');
+                    setTimeout(() => document.body.classList.remove('page-shake'), 380);
+                }
+
+                const STAMP_WORDS = ['APPROVED', 'REJECTED', 'TOP SECRET', 'PAID', 'VOID', 'DENIED', 'URGENT', 'NICE'];
 
                 // ---- click effects, one personality per cursor ----
                 const CLICKS = {
@@ -3908,6 +4096,22 @@
                         push({ kind: 'slot', x, y, t: 0,
                                stops: [22 + jit(4) | 0, 38 + jit(4) | 0, 56 + jit(4) | 0],
                                result, life: 1, decay: 0 });
+                    },
+                    // bomb: short fuse, big comic boom, the page flinches
+                    boom: (x, y) => {
+                        push({ kind: 'bomb', x, y, t: 0, fuseT: 34, life: 1, decay: 0 });
+                    },
+                    // stamp: thunks a word onto the page, sticks around a while
+                    stamp: (x, y) => {
+                        const word = STAMP_WORDS[(Math.random() * STAMP_WORDS.length) | 0];
+                        const ink = Math.random() < 0.75 ? '#c0392b' : '#1d5fa8';
+                        push({ kind: 'stamp', x, y, t: 0, txt: word, color: ink,
+                               ang: jit(0.42), life: 1, decay: 0.0022 });
+                        push({ kind: 'ring', x, y, r: 6, vr: 2, lw: 2, color: ink, life: 0.6, decay: 0.08 });
+                        for (let i = 0; i < 5; i++) {
+                            push({ kind: 'dot', x: x + jit(50), y: y + jit(24),
+                                   r: 1.4, color: ink, life: 0.7, decay: 0.04 });
+                        }
                     },
                     // dylan: dylans, everywhere
                     facePop: (x, y) => {
