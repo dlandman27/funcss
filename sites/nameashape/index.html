@@ -4,203 +4,508 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Shape Generator</title>
-
-    <!-- Add metadata -->
-    <meta name="description" content="Generate and name unique random shapes with this interactive tool">
-    <meta name="keywords" content="shape generator, random shapes, shape naming">
-    <meta name="author" content="Random Sites On The Web">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M25 2L2 25l23 23 23-23L25 2z' fill='%234CAF50'/></svg>">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/nameashape/">
-    <meta property="og:title" content="Random Shape Generator - Name Your Shapes">
-    <meta property="og:description" content="Generate and name unique random shapes with this interactive tool">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/nameashape/">
-    <meta property="twitter:title" content="Random Shape Generator - Name Your Shapes">
-    <meta property="twitter:description" content="Generate and name unique random shapes with this interactive tool">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
+    <title>Name a Shape</title>
+    <meta name="description" content="A shape appears under the spotlight. Name it. Take its portrait.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M25 4L46 20 38 45H12L4 20z' fill='%23f0563e' stroke='%23201a17' stroke-width='3' stroke-linejoin='round'/></svg>">
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
+        }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
             margin: 0;
-            padding: 20px;
             min-height: 100vh;
-            background-color: #f0f0f0;
+            background:
+                radial-gradient(circle at 50% 34%, rgba(255, 248, 239, 0.16), rgba(255, 248, 239, 0.05) 38%, transparent 62%),
+                #262019;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 14px;
+            padding: 24px 16px 32px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--cream);
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
-        canvas {
-            border: 1px solid #333;
-            margin: 20px;
-            background: white;
+
+        canvas#stage {
+            width: min(78vw, 44vh, 480px);
+            height: min(78vw, 44vh, 480px);
+            display: block;
+            user-select: none;
         }
+
+        .plaque {
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-1.2deg);
+            padding: 14px 22px 16px;
+            width: min(420px, 92vw);
+            text-align: center;
+        }
+        .plaque .specimen {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+        }
+        .plaque input {
+            display: block;
+            width: 100%;
+            margin: 8px 0 6px;
+            padding: 4px 2px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px dotted var(--ink);
+            border-radius: 0;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(20px, 5vw, 26px);
+            text-align: center;
+            color: var(--ink);
+            outline: none;
+        }
+        .plaque input::placeholder { color: rgba(32, 26, 23, 0.35); font-style: italic; }
+        .plaque .medium {
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.65);
+        }
+
         .controls {
-            margin-bottom: 20px;
             display: flex;
-            gap: 10px;
-            align-items: center;
+            gap: 18px;
             flex-wrap: wrap;
-        }
-        .name-container {
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        label {
-            font-size: 16px;
-            font-family: Arial, sans-serif;
-        }
-        input {
-            padding: 8px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 200px;
+            justify-content: center;
+            margin-top: 6px;
         }
         button {
-            padding: 10px 20px;
-            margin: 0 10px;
-            font-size: 16px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 12px 22px;
             cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
-        button:hover {
-            background-color: #45a049;
+        button.new { background: var(--coral); transform: rotate(-2deg); }
+        button.portrait { background: var(--gold); transform: rotate(1.5deg); }
+        button:hover { transform: translate(-2px, -2px) rotate(-2deg); box-shadow: 5px 5px 0 var(--ink); }
+        button.portrait:hover { transform: translate(-2px, -2px) rotate(1.5deg); }
+        button:active { transform: translate(2px, 2px) rotate(-2deg); box-shadow: 1px 1px 0 var(--ink); }
+        button.portrait:active { transform: translate(2px, 2px) rotate(1.5deg); }
+
+        .hint {
+            font-style: italic;
+            font-size: 15px;
+            color: rgba(255, 248, 239, 0.6);
+            transition: opacity 1.2s ease;
+            min-height: 1.2em;
         }
-        @keyframes flash {
-            0% { background-color: rgba(255, 255, 255, 0); }
-            50% { background-color: rgba(255, 255, 255, 0.8); }
-            100% { background-color: rgba(255, 255, 255, 0); }
+        .hint.gone { opacity: 0; }
+
+        .tally {
+            position: fixed;
+            left: 14px;
+            bottom: 10px;
+            font-style: italic;
+            font-size: 12px;
+            color: rgba(255, 248, 239, 0.4);
+            pointer-events: none;
         }
 
         .flash {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             pointer-events: none;
             z-index: 9999;
         }
+        @keyframes flash {
+            0% { background: rgba(255, 255, 255, 0); }
+            18% { background: rgba(255, 255, 255, 0.9); }
+            100% { background: rgba(255, 255, 255, 0); }
+        }
+        .flash.on { animation: flash 0.5s ease-out; }
 
-        .flash-animation {
-            animation: flash 0.5s ease-out;
+        @keyframes thunk {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, 3px); }
+            50% { transform: translate(-3px, 1px); }
+            75% { transform: translate(1px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+        body.thunk { animation: thunk 0.22s linear; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .flash.on { animation: none; }
+            body.thunk { animation: none; }
+            button, .hint { transition: none; }
         }
     </style>
 </head>
 <body>
-    <h1 style="font-family: Arial, sans-serif; color: #333; margin-bottom: 1rem;">
-        Name A Shape!
-    </h1>
-    <p style="font-family: Arial, sans-serif; color: #666; margin-bottom: 2rem; text-align: center; max-width: 600px;">
-        Generate random shapes, give them names, and save them as images. Perfect for when you need inspiration or just want to have fun with geometry!
-    </p>
+    <canvas id="stage" aria-label="The shape, under a spotlight"></canvas>
 
-    <div class="controls">
-        <button onclick="generateShape()" aria-label="Generate new random shape">
-            <span>🔄</span>
-            Generate New Shape
-        </button>
+    <div class="plaque">
+        <div class="specimen" id="specimen">Specimen No. 1</div>
+        <input type="text" id="shapeName" maxlength="60" autocomplete="off"
+               placeholder="it needs a name" aria-label="Name for the shape">
+        <div class="medium" id="medium">pigment on paper</div>
     </div>
 
-    <canvas id="shapeCanvas" width="500" height="500" aria-label="Random shape display area"></canvas>
+    <div class="controls">
+        <button class="new" id="newBtn">New Shape</button>
+        <button class="portrait" id="portraitBtn">Take Its Portrait</button>
+    </div>
 
-    <div class="name-container">
-        <label for="shapeName">Name the shape:</label>
-        <input 
-            type="text" 
-            id="shapeName" 
-            name="shapeName"
-            placeholder="Give your shape a name"
-            value=""
-            aria-label="Enter name for your shape">
-        </div>
-        <button style="margin-top: 2rem" onclick="saveShape()" aria-label="Download shape image">
-            <span>📸</span>
-            Get a pic of your shape!
-        </button>
-
-    <div id="flashEffect" class="flash"></div>
+    <div class="hint" id="hint">name it, then take its portrait</div>
+    <div class="tally" id="tally"></div>
+    <div class="flash" id="flash"></div>
 
     <script>
-        const canvas = document.getElementById('shapeCanvas');
-        const ctx = canvas.getContext('2d');
+    (() => {
+        const INK = '#201a17';
+        const CREAM = '#fff8ef';
+        const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
 
-        function generateShape() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            const points = Math.floor(Math.random() * 8) + 3;
-            ctx.fillStyle = `hsl(${Math.random() * 360}, 70%, 50%)`;
-            
-            ctx.beginPath();
-            for (let i = 0; i < points; i++) {
-                const angle = (i / points) * Math.PI * 2;
-                const radius = 100 + Math.random() * 100;
-                const x = canvas.width/2 + Math.cos(angle) * radius;
-                const y = canvas.height/2 + Math.sin(angle) * radius;
-                
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
+        const stage = document.getElementById('stage');
+        const ctx = stage.getContext('2d');
+        const nameInput = document.getElementById('shapeName');
+        const specimenEl = document.getElementById('specimen');
+        const mediumEl = document.getElementById('medium');
+        const hintEl = document.getElementById('hint');
+        const tallyEl = document.getElementById('tally');
+        const flashEl = document.getElementById('flash');
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        // ---- persistent tallies ----
+        function loadNum(key) {
+            try { return parseInt(localStorage.getItem(key), 10) || 0; } catch (e) { return 0; }
+        }
+        function saveNum(key, v) {
+            try { localStorage.setItem(key, String(v)); } catch (e) {}
+        }
+        let specimenNo = loadNum('nameashape-specimen');
+        let portraits = loadNum('nameashape-portraits');
+
+        function updateTally() {
+            tallyEl.textContent = portraits > 0 ? 'portraits taken to date: ' + portraits : '';
+        }
+
+        // ---- canvas sizing ----
+        let cssSize = 0;
+        function setupCanvas() {
+            const rect = stage.getBoundingClientRect();
+            cssSize = rect.width;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            stage.width = Math.round(cssSize * dpr);
+            stage.height = Math.round(cssSize * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        // ---- shape model ----
+        let shape = null;
+
+        function makeShape() {
+            const n = 3 + Math.floor(Math.random() * 8);
+            const pts = [];
+            for (let i = 0; i < n; i++) {
+                const base = (i / n) * Math.PI * 2;
+                const jitter = (Math.random() - 0.5) * (Math.PI * 2 / n) * 0.6;
+                pts.push({ ang: base + jitter, rad: 0.5 + Math.random() * 0.5 });
+            }
+            const s = {
+                pts,
+                color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                smooth: Math.random() < 0.35,
+                rot: (Math.random() - 0.5) * 0.35,
+                eyes: null
+            };
+            if (Math.random() < 0.04) {
+                // it is alive. never mention this.
+                let cx = 0, cy = 0;
+                for (const p of pts) { cx += Math.cos(p.ang) * p.rad; cy += Math.sin(p.ang) * p.rad; }
+                cx /= n; cy /= n;
+                const avgRad = pts.reduce((a, p) => a + p.rad, 0) / n;
+                s.eyes = { cx, cy: cy - avgRad * 0.12, sep: avgRad * 0.22, r: avgRad * 0.11 };
+            }
+            return s;
+        }
+
+        function vertices(s, scale) {
+            return s.pts.map(p => {
+                const a = p.ang + s.rot;
+                return { x: Math.cos(a) * p.rad * scale, y: Math.sin(a) * p.rad * scale };
+            });
+        }
+
+        function tracePath(c, verts, smooth) {
+            c.beginPath();
+            if (smooth) {
+                const mids = verts.map((v, i) => {
+                    const w = verts[(i + 1) % verts.length];
+                    return { x: (v.x + w.x) / 2, y: (v.y + w.y) / 2 };
+                });
+                c.moveTo(mids[0].x, mids[0].y);
+                for (let i = 1; i <= verts.length; i++) {
+                    const v = verts[i % verts.length];
+                    const m = mids[i % verts.length];
+                    c.quadraticCurveTo(v.x, v.y, m.x, m.y);
+                }
+            } else {
+                c.moveTo(verts[0].x, verts[0].y);
+                for (let i = 1; i < verts.length; i++) c.lineTo(verts[i].x, verts[i].y);
+            }
+            c.closePath();
+        }
+
+        // Draws the shape (sticker treatment) centered at cx,cy at the given scale.
+        // pupil: {x,y} pupil offset in [-1,1] units, or null for centered.
+        function drawShape(c, s, cx, cy, scale, pupil, blink) {
+            const verts = vertices(s, scale);
+            const off = scale * 0.045;
+            const lw = Math.max(3, scale * 0.028);
+
+            c.save();
+            c.translate(cx, cy);
+
+            c.save();
+            c.translate(off, off);
+            tracePath(c, verts, s.smooth);
+            c.fillStyle = INK;
+            c.fill();
+            c.restore();
+
+            tracePath(c, verts, s.smooth);
+            c.fillStyle = s.color;
+            c.fill();
+            c.lineWidth = lw;
+            c.lineJoin = 'round';
+            c.strokeStyle = INK;
+            c.stroke();
+
+            if (s.eyes) {
+                const e = s.eyes;
+                const ex = e.cx * scale, ey = e.cy * scale;
+                const sep = e.sep * scale, r = e.r * scale;
+                for (const side of [-1, 1]) {
+                    const x = ex + side * sep;
+                    c.beginPath();
+                    c.arc(x, ey, r, 0, Math.PI * 2);
+                    c.fillStyle = CREAM;
+                    c.fill();
+                    c.lineWidth = Math.max(2, r * 0.22);
+                    c.strokeStyle = INK;
+                    c.stroke();
+                    if (blink) {
+                        c.beginPath();
+                        c.moveTo(x - r * 0.7, ey);
+                        c.lineTo(x + r * 0.7, ey);
+                        c.lineWidth = Math.max(2, r * 0.25);
+                        c.stroke();
+                    } else {
+                        const px = pupil ? pupil.x * r * 0.42 : 0;
+                        const py = pupil ? pupil.y * r * 0.42 : 0;
+                        c.beginPath();
+                        c.arc(x + px, ey + py, r * 0.42, 0, Math.PI * 2);
+                        c.fillStyle = INK;
+                        c.fill();
+                    }
                 }
             }
-            ctx.closePath();
-            ctx.fill();
+            c.restore();
         }
 
-        function saveShape() {
-            const nameInput = document.getElementById('shapeName');
-            const fileName = nameInput.value.trim() || 'i-didnt-wanna-name-my-shape';
-            
-            // Save current canvas state
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            // Add name to canvas temporarily
-            addNameToCanvas();
-            
-            // Trigger flash effect
-            const flash = document.getElementById('flashEffect');
-            flash.classList.add('flash-animation');
-            
-            // Remove animation class after it completes
-            setTimeout(() => {
-                flash.classList.remove('flash-animation');
-            }, 500);
-            
-            // Download file
+        // ---- rendering / animation (rAF sleeps when idle) ----
+        let popStart = 0;
+        let popping = false;
+        let blinking = false;
+        let rafId = 0;
+        let pointer = null;
+
+        function easeOutBack(t) {
+            const c1 = 1.70158, c3 = c1 + 1;
+            return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+        }
+
+        function pupilOffset() {
+            if (!pointer || !shape || !shape.eyes) return null;
+            const rect = stage.getBoundingClientRect();
+            const dx = pointer.x - (rect.left + rect.width / 2);
+            const dy = pointer.y - (rect.top + rect.height / 2);
+            const d = Math.hypot(dx, dy) || 1;
+            return { x: dx / d, y: dy / d };
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, cssSize, cssSize);
+            if (!shape) return;
+            let scale = cssSize * 0.42;
+            if (popping) {
+                const t = Math.min(1, (performance.now() - popStart) / 420);
+                scale *= 0.2 + 0.8 * easeOutBack(t);
+                if (t >= 1) popping = false;
+            }
+            drawShape(ctx, shape, cssSize / 2, cssSize / 2, scale, pupilOffset(), blinking);
+        }
+
+        function frame() {
+            render();
+            if (popping) rafId = requestAnimationFrame(frame);
+            else rafId = 0;
+        }
+        function wake() {
+            if (!rafId) rafId = requestAnimationFrame(frame);
+        }
+
+        // eyes follow the pointer — single redraws, no loop
+        let followQueued = false;
+        window.addEventListener('pointermove', (e) => {
+            pointer = { x: e.clientX, y: e.clientY };
+            if (shape && shape.eyes && !popping && !followQueued) {
+                followQueued = true;
+                requestAnimationFrame(() => { followQueued = false; render(); });
+            }
+        }, { passive: true });
+
+        // occasional blink, only while the shape has eyes
+        let blinkTimer = 0;
+        function scheduleBlink() {
+            clearTimeout(blinkTimer);
+            if (!shape || !shape.eyes) return;
+            blinkTimer = setTimeout(() => {
+                blinking = true;
+                render();
+                setTimeout(() => {
+                    blinking = false;
+                    render();
+                    scheduleBlink();
+                }, 130);
+            }, 2200 + Math.random() * 3800);
+        }
+
+        // ---- actions ----
+        const MEDIUMS = [
+            'pigment on paper', 'crayon on drywall', 'ink, mostly', 'mixed feelings on paper',
+            'flat color, hard shadow', 'geometry, uncredited', 'polygon, found'
+        ];
+
+        function newShape(first) {
+            shape = makeShape();
+            specimenNo++;
+            saveNum('nameashape-specimen', specimenNo);
+            specimenEl.textContent = 'Specimen No. ' + specimenNo;
+            mediumEl.textContent = MEDIUMS[Math.floor(Math.random() * MEDIUMS.length)];
+            if (!first) nameInput.value = '';
+            blinking = false;
+            if (reducedMotion.matches) {
+                popping = false;
+                render();
+            } else {
+                popping = true;
+                popStart = performance.now();
+                wake();
+                if (!first) {
+                    document.body.classList.remove('thunk');
+                    void document.body.offsetWidth;
+                    document.body.classList.add('thunk');
+                }
+            }
+            scheduleBlink();
+        }
+
+        function sanitizeFilename(name) {
+            const s = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            return s || 'i-didnt-wanna-name-my-shape';
+        }
+
+        function takePortrait() {
+            if (!shape) return;
+            const name = nameInput.value.trim();
+            const W = 1000, H = 1240;
+            const off = document.createElement('canvas');
+            off.width = W; off.height = H;
+            const c = off.getContext('2d');
+
+            c.fillStyle = CREAM;
+            c.fillRect(0, 0, W, H);
+
+            // thin double frame, like a museum tag
+            c.strokeStyle = INK;
+            c.lineWidth = 6;
+            c.strokeRect(28, 28, W - 56, H - 56);
+            c.lineWidth = 2;
+            c.strokeRect(44, 44, W - 88, H - 88);
+
+            drawShape(c, shape, W / 2, 470, 340, null, false);
+
+            c.fillStyle = INK;
+            c.textAlign = 'center';
+
+            c.font = 'italic 56px Georgia, "Times New Roman", serif';
+            c.fillText(name || 'untitled', W / 2, 950, W - 160);
+
+            c.font = '900 26px "Arial Black", Arial, sans-serif';
+            const spec = ('SPECIMEN NO. ' + specimenNo).split('').join(' ');
+            c.fillText(spec, W / 2, 1020);
+
+            c.font = 'italic 26px Georgia, "Times New Roman", serif';
+            const date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+            c.fillStyle = 'rgba(32, 26, 23, 0.65)';
+            c.fillText(mediumEl.textContent + ' · acquired ' + date, W / 2, 1068);
+
+            flashEl.classList.remove('on');
+            void flashEl.offsetWidth;
+            flashEl.classList.add('on');
+
             const link = document.createElement('a');
-            link.download = fileName.endsWith('.png') ? fileName : `${fileName}.png`;
-            link.href = canvas.toDataURL();
+            link.download = sanitizeFilename(name) + '.png';
+            link.href = off.toDataURL('image/png');
             link.click();
-            
-            // Restore canvas
-            ctx.putImageData(imageData, 0, 0);
+
+            portraits++;
+            saveNum('nameashape-portraits', portraits);
+            updateTally();
         }
 
-        function addNameToCanvas() {
-            const shapeName = document.getElementById('shapeName').value.trim();
-            ctx.fillStyle = 'black';
-            ctx.font = '20px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(shapeName, canvas.width/2, canvas.height - 20);
-        }
+        // ---- hint fades on first interaction or after 10s ----
+        function dismissHint() { hintEl.classList.add('gone'); }
+        setTimeout(dismissHint, 10000);
+        nameInput.addEventListener('input', dismissHint, { once: true });
+        document.getElementById('newBtn').addEventListener('pointerdown', dismissHint, { once: true });
 
-        // Generate initial shape
-        generateShape();
+        document.getElementById('newBtn').addEventListener('click', () => newShape(false));
+        document.getElementById('portraitBtn').addEventListener('click', takePortrait);
+        nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') takePortrait(); });
+
+        // debounced resize
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => { setupCanvas(); render(); }, 150);
+        });
+
+        setupCanvas();
+        updateTally();
+        newShape(true);
+    })();
     </script>
 </body>
 </html>
