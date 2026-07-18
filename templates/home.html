@@ -1997,6 +1997,57 @@
                     x.closePath();
                 };
 
+                // wooden crate
+                const cratePath = (x) => { x.beginPath(); x.rect(5, 6, 22, 22); };
+                const crateDraw = (x) => {
+                    sticker(cratePath, color('--orange', '#f47b28'))(x);
+                    x.strokeStyle = INK;
+                    x.lineWidth = 1.4;
+                    x.beginPath();
+                    x.moveTo(5, 6); x.lineTo(27, 28);
+                    x.moveTo(27, 6); x.lineTo(5, 28);
+                    x.stroke();
+                };
+
+                // RPG sword, tip at top-left
+                const swordDraw = (x) => {
+                    const blade = (g) => {
+                        g.beginPath();
+                        g.moveTo(4, 3); g.lineTo(9, 3); g.lineTo(22, 16); g.lineTo(17, 21);
+                        g.closePath();
+                    };
+                    sticker(blade, '#d9dde3')(x);
+                    x.lineCap = 'round';
+                    x.strokeStyle = INK; x.lineWidth = 5;
+                    x.beginPath(); x.moveTo(15, 24); x.lineTo(24, 15); x.stroke();
+                    x.strokeStyle = GOLD; x.lineWidth = 2.4;
+                    x.beginPath(); x.moveTo(15, 24); x.lineTo(24, 15); x.stroke();
+                    x.strokeStyle = INK; x.lineWidth = 4.5;
+                    x.beginPath(); x.moveTo(21.5, 20.5); x.lineTo(27, 26); x.stroke();
+                    x.strokeStyle = color('--purple', '#a98fd0'); x.lineWidth = 2.2;
+                    x.beginPath(); x.moveTo(21.5, 20.5); x.lineTo(27, 26); x.stroke();
+                };
+
+                // tiny slot machine with a lever
+                const slotDraw = (x) => {
+                    const body = (g) => { g.beginPath(); g.rect(3, 9, 22, 16); };
+                    sticker(body, color('--coral', '#f0563e'))(x);
+                    x.fillStyle = '#fff8ef';
+                    x.fillRect(6, 13, 16, 8);
+                    x.strokeStyle = INK;
+                    x.lineWidth = 1.2;
+                    x.strokeRect(6, 13, 16, 8);
+                    x.beginPath();
+                    x.moveTo(11.3, 13); x.lineTo(11.3, 21);
+                    x.moveTo(16.6, 13); x.lineTo(16.6, 21);
+                    x.stroke();
+                    x.lineWidth = 2;
+                    x.beginPath(); x.moveTo(25, 13); x.lineTo(29, 7); x.stroke();
+                    x.fillStyle = GOLD;
+                    x.beginPath(); x.arc(29, 6, 2.5, 0, Math.PI * 2); x.fill();
+                    x.lineWidth = 1.2; x.stroke();
+                };
+
                 // every cursor brings its own trail + click burst. The first —
                 // the site's black arrow — is the default, and clicks with it
                 // keep the page's comic splat (fx.click: null = splat handles it).
@@ -2029,6 +2080,12 @@
                       fx: { trail: 'rainbow', click: 'poof', color: null, every: 24 } },
                     { id: 'target', name: 'crosshair', hot: [16, 16], draw: (x) => targetDraw(x, color('--lime', '#b7ce3c')),
                       fx: { trail: 'pings', click: 'lock', color: color('--lime', '#b7ce3c'), every: 260 } },
+                    { id: 'block', name: 'crate', hot: [16, 16], draw: crateDraw,
+                      fx: { trail: 'cubes', click: 'dropBlock', color: color('--orange', '#f47b28'), every: 90 } },
+                    { id: 'xp', name: 'sword', hot: [4, 3], draw: swordDraw,
+                      fx: { trail: 'plusses', click: 'xp', color: GOLD, every: 70 } },
+                    { id: 'slot', name: 'slot machine', hot: [14, 17], draw: slotDraw,
+                      fx: { trail: 'coins', click: 'slots', color: GOLD, every: 140 } },
                     { id: 'dylan', name: 'dylan', hot: [16, 16],
                       draw: (x) => { x.imageSmoothingEnabled = false; x.drawImage(faceImg, 2, 2, 28, 28); },
                       fx: { trail: 'faces', click: 'facePop', color: null, every: 80 } }
@@ -2192,6 +2249,53 @@
 
                 const blobBumps = () =>
                     Array.from({ length: 12 }, () => 0.6 + Math.random() * 0.8);
+
+                // slot reel symbols, drawn tiny
+                const SYMBOLS = [
+                    (g, x, y, s) => drawStarP(g, x, y, s * 0.55, 0, GOLD, 1),
+                    (g, x, y, s) => drawHeartP(g, x, y, s * 1.05, color('--coral', '#f0563e'), 1),
+                    (g, x, y, s) => {   // bolt
+                        g.save(); g.translate(x, y); g.scale(s / 30, s / 30); g.translate(-16, -16);
+                        boltPath(g);
+                        g.fillStyle = ZAP_YELLOW; g.fill();
+                        g.lineWidth = 2.4; g.lineJoin = 'round'; g.strokeStyle = INK; g.stroke();
+                        g.restore();
+                    },
+                    (g, x, y, s) => {   // diamond
+                        g.beginPath();
+                        g.moveTo(x, y - s * 0.55); g.lineTo(x + s * 0.45, y);
+                        g.lineTo(x, y + s * 0.55); g.lineTo(x - s * 0.45, y);
+                        g.closePath();
+                        g.fillStyle = color('--sky', '#5aa0db'); g.fill();
+                        g.lineWidth = 1.4; g.strokeStyle = INK; g.stroke();
+                    },
+                    (g, x, y, s) => {   // coin
+                        g.beginPath(); g.arc(x, y, s * 0.5, 0, Math.PI * 2);
+                        g.fillStyle = GOLD; g.fill();
+                        g.lineWidth = 1.4; g.strokeStyle = INK; g.stroke();
+                        g.beginPath(); g.arc(x, y, s * 0.28, 0, Math.PI * 2); g.stroke();
+                    },
+                ];
+
+                // where a falling crate lands: on the floor, or on settled crates
+                function crateFloor(p) {
+                    let floor = window.innerHeight - 4;
+                    for (const q of particles) {
+                        if (q.kind !== 'block' || q === p || !q.settled) continue;
+                        const overlap = Math.min(p.x + p.s / 2, q.x + q.s / 2)
+                                      - Math.max(p.x - p.s / 2, q.x - q.s / 2);
+                        if (overlap > p.s * 0.35) {
+                            const top = q.y - q.s / 2;
+                            if (top >= p.y + p.s / 2 - 6) floor = Math.min(floor, top);
+                        }
+                    }
+                    return floor;
+                }
+
+                // ---- XP ledger for the sword ----
+                let xpTotal = 0;
+                try { xpTotal = parseInt(localStorage.getItem('home-xp'), 10) || 0; } catch (err) {}
+                const xpLevel = (n) => Math.floor(Math.sqrt(n / 25));
 
                 function fxLoop() {
                     fxRaf = null;
@@ -2382,6 +2486,126 @@
                                     fxCtx.restore();
                                 }
                                 break;
+                            case 'block': {
+                                if (!p.settled) {
+                                    const floor = crateFloor(p);
+                                    if (p.y + p.s / 2 >= floor) {
+                                        p.y = floor - p.s / 2;
+                                        if (Math.abs(p.vy) > 1.4) {
+                                            p.vy = -p.vy * 0.3;   // small bounce
+                                        } else {
+                                            p.vy = 0; p.vx = 0; p.g = 0;
+                                            p.settled = true;
+                                        }
+                                    }
+                                } else {
+                                    p.rot *= 0.75;                // settle upright
+                                    p.timer = (p.timer || 0) + 1;
+                                    if (p.timer > 540) p.decay = 0.02;  // crumbles after ~9s
+                                }
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.rotate(p.rot);
+                                fxCtx.globalAlpha = Math.min(1, p.life);
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s);
+                                fxCtx.lineWidth = 2;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.strokeRect(-p.s / 2, -p.s / 2, p.s, p.s);
+                                fxCtx.beginPath();
+                                fxCtx.moveTo(-p.s / 2, -p.s / 2); fxCtx.lineTo(p.s / 2, p.s / 2);
+                                fxCtx.moveTo(p.s / 2, -p.s / 2); fxCtx.lineTo(-p.s / 2, p.s / 2);
+                                fxCtx.lineWidth = 1.2;
+                                fxCtx.stroke();
+                                fxCtx.restore();
+                                break;
+                            }
+                            case 'text': {
+                                fxCtx.globalAlpha = a;
+                                const fs = p.size * (1 + (1 - p.life) * 0.15);
+                                fxCtx.font = `800 ${fs}px 'Segoe UI', system-ui, sans-serif`;
+                                fxCtx.textAlign = 'center';
+                                fxCtx.textBaseline = 'middle';
+                                fxCtx.lineWidth = Math.max(3, fs * 0.18);
+                                fxCtx.lineJoin = 'round';
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.strokeText(p.txt, p.x, p.y);
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.fillText(p.txt, p.x, p.y);
+                                break;
+                            }
+                            case 'plus':
+                                fxCtx.globalAlpha = a;
+                                fxCtx.lineCap = 'round';
+                                fxCtx.beginPath();
+                                fxCtx.moveTo(p.x - p.s, p.y); fxCtx.lineTo(p.x + p.s, p.y);
+                                fxCtx.moveTo(p.x, p.y - p.s); fxCtx.lineTo(p.x, p.y + p.s);
+                                fxCtx.lineWidth = 4.4;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
+                                fxCtx.lineWidth = 2.2;
+                                fxCtx.strokeStyle = p.color;
+                                fxCtx.stroke();
+                                break;
+                            case 'coin': {
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.scale(Math.max(0.15, Math.abs(Math.cos(p.rot || 0))), 1); // flip spin
+                                fxCtx.globalAlpha = a;
+                                fxCtx.beginPath();
+                                fxCtx.arc(0, 0, p.r, 0, Math.PI * 2);
+                                fxCtx.fillStyle = GOLD;
+                                fxCtx.fill();
+                                fxCtx.lineWidth = 1.6;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.stroke();
+                                fxCtx.beginPath();
+                                fxCtx.arc(0, 0, p.r * 0.55, 0, Math.PI * 2);
+                                fxCtx.stroke();
+                                fxCtx.restore();
+                                break;
+                            }
+                            case 'slot': {
+                                p.t++;
+                                const stops = p.stops;
+                                const allStopped = p.t >= stops[2];
+                                if (!p.done && allStopped) {
+                                    p.done = true;
+                                    const [r1, r2, r3] = p.result;
+                                    if (r1 === r2 && r2 === r3) {
+                                        push({ kind: 'text', txt: 'JACKPOT!', x: p.x, y: p.y - 62,
+                                               vy: -0.8, size: 26, color: GOLD, life: 1, decay: 0.015 });
+                                        for (let k = 0; k < 14; k++) {
+                                            push({ kind: 'coin', x: p.x, y: p.y - 40,
+                                                   vx: jit(4.5), vy: -2 - Math.random() * 3, g: 0.12,
+                                                   r: 4 + Math.random() * 3, rot: Math.random() * 6, vrot: 0.2 + Math.random() * 0.2,
+                                                   life: 1, decay: 0.012 });
+                                        }
+                                    }
+                                }
+                                if (p.t > stops[2] + 80) p.decay = 0.05;
+
+                                // machine body
+                                const bw = 92, bh = 42, bx = p.x - bw / 2, by = p.y - 66;
+                                fxCtx.globalAlpha = Math.min(1, p.life);
+                                fxCtx.fillStyle = color('--coral', '#f0563e');
+                                fxCtx.fillRect(bx, by, bw, bh);
+                                fxCtx.lineWidth = 2.5;
+                                fxCtx.strokeStyle = INK;
+                                fxCtx.strokeRect(bx, by, bw, bh);
+                                for (let k = 0; k < 3; k++) {
+                                    const cx2 = bx + 10 + k * 26, cy2 = by + 8;
+                                    fxCtx.fillStyle = '#fff8ef';
+                                    fxCtx.fillRect(cx2, cy2, 22, 26);
+                                    fxCtx.lineWidth = 1.6;
+                                    fxCtx.strokeRect(cx2, cy2, 22, 26);
+                                    let sym;
+                                    if (p.t >= stops[k]) sym = p.result[k];
+                                    else sym = ((p.t / 3) | 0) * 7 + k * 3;   // spinning blur
+                                    SYMBOLS[sym % SYMBOLS.length](fxCtx, cx2 + 11, cy2 + 13, 15);
+                                }
+                                break;
+                            }
                         }
                     }
                     fxCtx.globalAlpha = 1;
@@ -2433,6 +2657,22 @@
                         kind: 'imgp', x: x + jit(12), y: y + jit(12),
                         vy: -0.3, s: 12 + Math.random() * 6,
                         rot: jit(0.6), vrot: jit(0.08), life: 0.9, decay: 0.025,
+                    }),
+                    cubes: (x, y, c) => push({
+                        kind: 'rect', x: x + jit(8), y: y + jit(8),
+                        vy: 0.3, g: 0.08, w: 5, h: 5,
+                        rot: Math.random() * Math.PI, vrot: jit(0.2),
+                        color: c, life: 0.9, decay: 0.03,
+                    }),
+                    plusses: (x, y, c) => push({
+                        kind: 'plus', x: x + jit(14), y: y + jit(10),
+                        vy: -0.6, s: 3 + Math.random() * 2.5,
+                        color: c, life: 0.9, decay: 0.03,
+                    }),
+                    coins: (x, y, c) => push({
+                        kind: 'coin', x: x + jit(10), y: y + 6,
+                        vy: 0.5, g: 0.07, r: 3 + Math.random() * 2,
+                        rot: Math.random() * 6, vrot: 0.18, life: 0.9, decay: 0.03,
                     }),
                 };
 
@@ -2537,6 +2777,59 @@
                         push({ kind: 'ring', x, y, r: 44, vr: -2.4, lw: 1.5, color: c, life: 1, decay: 0.05, delay: 4 });
                         push({ kind: 'dot', x, y, r: 3, color: c, life: 1, decay: 0.015, delay: 12 });
                         push({ kind: 'flash', x, y, r: 5, vr: 1.2, a: 0.4, color: c, life: 0.5, decay: 0.1, delay: 14 });
+                    },
+                    // crate: drops a physics block that stacks and settles
+                    dropBlock: (x, y, c) => {
+                        const settled = particles.filter(q => q.kind === 'block' && q.settled);
+                        if (settled.length > 34) settled[0].decay = 0.03;   // oldest crumbles
+                        const colors = [c, color('--coral', '#f0563e'), color('--sky', '#5aa0db'),
+                                        color('--lime', '#b7ce3c'), color('--purple', '#a98fd0')];
+                        push({ kind: 'block', x, y,
+                               vx: jit(0.6), vy: 0.5, g: 0.32,
+                               s: 22 + Math.random() * 16,
+                               rot: jit(0.5), color: colors[(Math.random() * colors.length) | 0],
+                               life: 1, decay: 0 });
+                    },
+                    // sword: +XP, with the occasional LEVEL UP
+                    xp: (x, y, c) => {
+                        const r = Math.random();
+                        const gain = r < 0.7 ? 1 : r < 0.9 ? 5 : r < 0.98 ? 25 : 100;
+                        const looks = { 1: ['#5aa0db', 15], 5: ['#b7ce3c', 18], 25: [GOLD, 22], 100: ['#f0563e', 28] };
+                        const before = xpLevel(xpTotal);
+                        xpTotal += gain;
+                        try { localStorage.setItem('home-xp', String(xpTotal)); } catch (err) {}
+                        push({ kind: 'text', txt: '+' + gain + ' XP', x: x + jit(10), y: y - 14,
+                               vy: -1.1, size: looks[gain][1], color: looks[gain][0], life: 1, decay: 0.018 });
+                        if (gain >= 25) {
+                            for (let i = 0; i < 6; i++) {
+                                push({ kind: 'plus', x: x + jit(40), y: y + jit(30),
+                                       vy: -0.8, s: 3 + Math.random() * 3, color: GOLD,
+                                       life: 1, decay: 0.03, delay: i * 3 });
+                            }
+                        }
+                        const after = xpLevel(xpTotal);
+                        if (after > before) {
+                            push({ kind: 'text', txt: 'LEVEL ' + after + '!', x, y: y - 52,
+                                   vy: -0.5, size: 32, color: GOLD, life: 1, decay: 0.012 });
+                            CLICKS.confetti(x, y, GOLD);
+                        }
+                    },
+                    // slot machine: three reels, staggered stops, jackpots rain coins
+                    slots: (x, y) => {
+                        const jackpot = Math.random() < 0.12;
+                        let result;
+                        if (jackpot) {
+                            const s = (Math.random() * SYMBOLS.length) | 0;
+                            result = [s, s, s];
+                        } else {
+                            result = [0, 0, 0].map(() => (Math.random() * SYMBOLS.length) | 0);
+                            if (result[0] === result[1] && result[1] === result[2]) {
+                                result[2] = (result[2] + 1) % SYMBOLS.length;
+                            }
+                        }
+                        push({ kind: 'slot', x, y, t: 0,
+                               stops: [22 + jit(4) | 0, 38 + jit(4) | 0, 56 + jit(4) | 0],
+                               result, life: 1, decay: 0 });
                     },
                     // dylan: dylans, everywhere
                     facePop: (x, y) => {
