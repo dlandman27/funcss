@@ -1,143 +1,463 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
-    <title>Welcome Back!</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Add metadata -->
-    <meta name="description" content="See when you last visited and get a personalized greeting">
-    <meta name="keywords" content="welcome back, visitor tracking, personalized greeting">
-    <meta name="author" content="Random Sites On The Web">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M25 2C12.3 2 2 12.3 2 25s10.3 23 23 23 23-10.3 23-23S37.7 2 25 2zm0 4c10.5 0 19 8.5 19 19s-8.5 19-19 19S6 35.5 6 25 14.5 6 25 6z' fill='%23e73c7e'/></svg>">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/welcomeback/">
-    <meta property="og:title" content="Welcome Back - Personalized Greetings">
-    <meta property="og:description" content="See when you last visited and get a personalized greeting">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/welcomeback/">
-    <meta property="twitter:title" content="Welcome Back - Personalized Greetings">
-    <meta property="twitter:description" content="See when you last visited and get a personalized greeting">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+    <title>Welcome Back</title>
+    <meta name="description" content="A time card that knows exactly how long you were gone. Stamped, punched, on file.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='4' y='12' width='42' height='26' rx='6' fill='%23f0563e' stroke='%23201a17' stroke-width='3'/></svg>">
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
+        }
+        * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 0;
             min-height: 100vh;
+            background: var(--paper);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        canvas#wall {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .card {
+            position: relative;
+            z-index: 2;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-1.4deg);
+            width: min(460px, 94vw);
+            padding: 22px 26px 26px;
+            text-align: center;
+            cursor: default;
+        }
+        .dept {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+        }
+        .dept small {
+            display: block;
+            font-family: Georgia, serif;
+            font-weight: normal;
+            font-style: italic;
+            font-size: 12px;
+            letter-spacing: 0;
+            text-transform: none;
+            color: rgba(32, 26, 23, 0.6);
+            margin-top: 3px;
+        }
+        .rule {
+            border: none;
+            border-top: 2px solid var(--ink);
+            margin: 12px 0 0;
+        }
+
+        .bigstamp {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(34px, 9vw, 52px);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            color: var(--coral);
+            -webkit-text-stroke: 2px var(--ink);
+            paint-order: stroke fill;
+            transform: rotate(-4deg) scale(0);
+            display: inline-block;
+            margin: 18px 0 6px;
+            line-height: 0.95;
+        }
+        .bigstamp.in { animation: stampIn 0.38s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes stampIn {
+            0% { transform: rotate(8deg) scale(2.4); opacity: 0; }
+            60% { transform: rotate(-5deg) scale(0.94); opacity: 1; }
+            100% { transform: rotate(-4deg) scale(1); opacity: 1; }
+        }
+
+        .ledger {
+            font-style: italic;
+            font-size: clamp(15px, 4vw, 17px);
+            line-height: 1.55;
+            margin: 10px 0 4px;
+        }
+        .ledger .aside { color: rgba(32, 26, 23, 0.6); font-size: 14px; }
+
+        .punchrow {
             display: flex;
             justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-            color: white;
-            text-align: center;
+            gap: 9px;
+            margin: 16px 0 6px;
+            flex-wrap: wrap;
+        }
+        .punch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid var(--ink);
+            background: transparent;
+        }
+        .punch.hit {
+            background: var(--ink);
+            box-shadow: inset 0 0 0 3px var(--cream), inset 0 0 0 26px var(--ink);
+        }
+        .punch.fresh { transform: scale(0); }
+        .punch.fresh.in { animation: punchIn 0.3s cubic-bezier(0.2, 1.6, 0.4, 1) 0.55s forwards; }
+        @keyframes punchIn {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+        .punchlabel {
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.6);
         }
 
-        @keyframes gradient {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
+        .fullsticker {
+            position: absolute;
+            top: -16px;
+            right: -14px;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(8deg);
+            padding: 8px 14px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 13px;
+            text-transform: uppercase;
+            display: none;
+        }
+        .fullsticker em {
+            display: block;
+            font-family: Georgia, serif;
+            font-weight: normal;
+            font-size: 11px;
+            text-transform: none;
+        }
+        .fullsticker.show { display: block; }
+
+        .hint {
+            position: relative;
+            z-index: 2;
+            margin-top: 22px;
+            font-style: italic;
+            font-size: 15px;
+            color: rgba(32, 26, 23, 0.55);
+            transition: opacity 1.2s ease;
+            pointer-events: none;
+        }
+        .hint.gone { opacity: 0; }
+
+        .tally {
+            position: fixed;
+            left: 14px;
+            bottom: 10px;
+            z-index: 2;
+            font-style: italic;
+            font-size: 12px;
+            color: rgba(32, 26, 23, 0.45);
+            pointer-events: none;
         }
 
-        .container {
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            transform: translateY(20px);
-            opacity: 0;
-            animation: fadeIn 1s ease forwards;
-            margin: 1rem;
-            max-width: 90%;
+        @keyframes thunk {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, 3px); }
+            50% { transform: translate(-3px, 1px); }
+            75% { transform: translate(1px, -2px); }
+            100% { transform: translate(0, 0); }
         }
+        body.thunk { animation: thunk 0.22s linear; }
 
-        @keyframes fadeIn {
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        h1 {
-            font-size: 3.5em;
-            margin-bottom: 0.5em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        p {
-            font-size: 1.5em;
-            opacity: 0.9;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5em;
-            }
-            
-            p {
-                font-size: 1.2em;
-            }
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 2em;
-            }
-            
-            .container {
-                padding: 1.5rem;
-            }
+        @media (prefers-reduced-motion: reduce) {
+            .bigstamp { transform: rotate(-4deg) scale(1); }
+            .bigstamp.in { animation: none; }
+            .punch.fresh { transform: scale(1); }
+            .punch.fresh.in { animation: none; }
+            body.thunk { animation: none; }
+            .hint { transition: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 id="greeting">Welcome!</h1>
-        <p id="lastVisit"></p>
+    <canvas id="wall" aria-label="Paper wall — click to stamp it"></canvas>
+
+    <div class="card" id="card">
+        <div class="fullsticker" id="fullSticker">Card Full<em>reward: the feeling</em></div>
+        <div class="dept">Official Visitor Time Card<small>dept. of comings &amp; goings</small></div>
+        <hr class="rule">
+        <div><span class="bigstamp" id="bigStamp">Welcome Back</span></div>
+        <div class="ledger" id="ledger"></div>
+        <div class="punchrow" id="punchRow"></div>
+        <div class="punchlabel" id="punchLabel"></div>
     </div>
 
+    <div class="hint" id="hint">the stamp works anywhere on the paper</div>
+    <div class="tally" id="tally"></div>
+
     <script>
-        function formatDate(date) {
-            const options = {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            return new Date(date).toLocaleDateString(undefined, options);
+    (() => {
+        const INK = '#201a17';
+        const CORAL = '#f0563e';
+        const GOLD = '#f7c948';
+
+        const wall = document.getElementById('wall');
+        const wctx = wall.getContext('2d');
+        const bigStamp = document.getElementById('bigStamp');
+        const ledger = document.getElementById('ledger');
+        const punchRow = document.getElementById('punchRow');
+        const punchLabel = document.getElementById('punchLabel');
+        const fullSticker = document.getElementById('fullSticker');
+        const hintEl = document.getElementById('hint');
+        const tallyEl = document.getElementById('tally');
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        function load(key, fallback) {
+            try {
+                const v = localStorage.getItem(key);
+                return v === null ? fallback : JSON.parse(v);
+            } catch (e) { return fallback; }
+        }
+        function save(key, v) {
+            try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {}
         }
 
-        window.onload = function() {
-            const lastVisit = localStorage.getItem('lastVisit');
-            const greetingElement = document.getElementById('greeting');
-            const lastVisitElement = document.getElementById('lastVisit');
+        // ---- the record ----
+        // A reload within GRACE doesn't count as a new visit — otherwise
+        // "gone for" resets to zero every time and nothing accumulates.
+        const GRACE = 30 * 60 * 1000;
+        const now = Date.now();
+        const lastVisit = load('welcomeback-last', null);
+        const firstVisit = load('welcomeback-first', null) || now;
+        const gap = lastVisit ? now - lastVisit : 0;
+        const isFirst = !lastVisit;
+        const isRealReturn = !isFirst && gap >= GRACE;
+        let visits = load('welcomeback-visits', 0);
+        let longest = load('welcomeback-longest', 0);
+        if (isFirst || isRealReturn) visits += 1;
+        if (isRealReturn && gap > longest) longest = gap;
+        save('welcomeback-last', now);
+        save('welcomeback-first', firstVisit);
+        save('welcomeback-visits', visits);
+        save('welcomeback-longest', longest);
 
-            if (lastVisit) {
-                greetingElement.textContent = 'Welcome Back!';
-                lastVisitElement.textContent = `Your last visit was on ${formatDate(lastVisit)}`;
-            } else {
-                greetingElement.textContent = 'Welcome!';
-                lastVisitElement.textContent = 'This is your first time here!';
+        // ---- copy ----
+        function formatGap(ms) {
+            const units = [
+                ['year', 31536000000], ['month', 2592000000], ['day', 86400000],
+                ['hour', 3600000], ['minute', 60000], ['second', 1000]
+            ];
+            const parts = [];
+            let rest = Math.max(ms, 1000);
+            for (const [name, len] of units) {
+                const n = Math.floor(rest / len);
+                if (n > 0) {
+                    parts.push(n + ' ' + name + (n === 1 ? '' : 's'));
+                    rest -= n * len;
+                }
+                if (parts.length === 2) break;
             }
+            return parts.join(', ') || '1 second';
+        }
 
-            localStorage.setItem('lastVisit', new Date().toString());
-        };
+        function asideFor(ms) {
+            if (ms < 60000) return 'we kept everything exactly as you left it.';
+            if (ms < 3600000) return 'hardly enough time to miss you. we managed.';
+            if (ms < 86400000) return 'the page did not move while you were out.';
+            if (ms < 604800000) return 'your seat was held.';
+            return 'we assumed the worst. glad to be wrong.';
+        }
+
+        const firstSeen = new Date(firstVisit).toLocaleDateString(undefined,
+            { year: 'numeric', month: 'long', day: 'numeric' });
+
+        const longestLine = longest > 0
+            ? '<br>longest absence on record: ' + formatGap(longest)
+            : '';
+
+        if (isFirst) {
+            bigStamp.textContent = 'First Visit';
+            ledger.innerHTML =
+                'no prior record of you exists.<br>' +
+                '<span class="aside">this card fixes that.</span><br>' +
+                'visit no. 1 &middot; on file as of today';
+        } else if (isRealReturn) {
+            bigStamp.textContent = 'Welcome Back';
+            ledger.innerHTML =
+                'gone for: <strong>' + formatGap(gap) + '</strong><br>' +
+                '<span class="aside">' + asideFor(gap) + '</span><br>' +
+                'visit no. ' + visits + ' &middot; on file since ' + firstSeen +
+                longestLine;
+        } else {
+            bigStamp.textContent = 'Never Left';
+            ledger.innerHTML =
+                'gone for: <strong>' + formatGap(gap) + '</strong><br>' +
+                '<span class="aside">that does not count as leaving. no punch.</span><br>' +
+                'still visit no. ' + visits + ' &middot; on file since ' + firstSeen +
+                longestLine;
+        }
+
+        // ---- punch card ----
+        const cardNo = Math.floor((visits - 1) / 10) + 1;
+        const punches = ((visits - 1) % 10) + 1;
+        const freshPunch = isFirst || isRealReturn;
+        for (let i = 0; i < 10; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'punch';
+            if (i < punches - 1) dot.classList.add('hit');
+            if (i === punches - 1) {
+                dot.classList.add('hit');
+                if (freshPunch) dot.classList.add('fresh');
+            }
+            punchRow.appendChild(dot);
+        }
+        punchLabel.textContent = 'card ' + cardNo + ' · ' + punches + '/10 punches';
+        if (punches === 10) fullSticker.classList.add('show');
+
+        // stamp + punch thunk in shortly after load
+        setTimeout(() => {
+            bigStamp.classList.add('in');
+            punchRow.querySelector('.fresh')?.classList.add('in');
+            if (!reducedMotion.matches) {
+                document.body.classList.add('thunk');
+                setTimeout(() => document.body.classList.remove('thunk'), 250);
+            }
+        }, 400);
+
+        // ---- the wall of stamps (persistent, click anywhere) ----
+        let stamps = load('welcomeback-stamps', []);
+
+        function setupWall() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            wall.width = Math.round(innerWidth * dpr);
+            wall.height = Math.round(innerHeight * dpr);
+            wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        // scale=1 full size; kind: 'back' coral, 'vip' gold
+        function drawStamp(c, s, scale) {
+            const x = s.x * innerWidth, y = s.y * innerHeight;
+            const color = s.k === 'vip' ? GOLD : CORAL;
+            c.save();
+            c.translate(x, y);
+            c.rotate(s.r);
+            c.scale(scale, scale);
+            c.globalAlpha = 0.92;
+            c.strokeStyle = color;
+            c.fillStyle = color;
+            c.lineWidth = 3;
+            const w = 150, h = 62;
+            c.beginPath();
+            if (c.roundRect) c.roundRect(-w / 2, -h / 2, w, h, 10);
+            else c.rect(-w / 2, -h / 2, w, h);
+            c.stroke();
+            c.lineWidth = 1.5;
+            c.beginPath();
+            if (c.roundRect) c.roundRect(-w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 6);
+            else c.rect(-w / 2 + 5, -h / 2 + 5, w - 10, h - 10);
+            c.stroke();
+            c.textAlign = 'center';
+            c.font = '900 19px "Arial Black", Arial, sans-serif';
+            if (s.k === 'vip') {
+                c.fillText('V I P', 0, -3);
+                c.font = '900 13px "Arial Black", Arial, sans-serif';
+                c.fillText('GUEST', 0, 15);
+            } else {
+                c.fillText('WELCOME', 0, -3);
+                c.fillText('BACK', 0, 17);
+            }
+            c.restore();
+        }
+
+        function renderWall() {
+            wctx.clearRect(0, 0, innerWidth, innerHeight);
+            for (const s of stamps) drawStamp(wctx, s, 1);
+        }
+
+        function updateTally() {
+            tallyEl.textContent = stamps.length > 0 ? 'stamps on record: ' + stamps.length : '';
+        }
+
+        // pop-in animation for a newly placed stamp, then the loop sleeps
+        let animStamp = null;
+        let animStart = 0;
+        let rafId = 0;
+        function frame() {
+            const t = Math.min(1, (performance.now() - animStart) / 260);
+            const c1 = 1.70158, c3 = c1 + 1;
+            const ease = 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+            renderWall();
+            if (animStamp) drawStamp(wctx, animStamp, 1.6 - 0.6 * ease);
+            if (t < 1) {
+                rafId = requestAnimationFrame(frame);
+            } else {
+                if (animStamp) { stamps.push(animStamp); animStamp = null; }
+                renderWall();
+                rafId = 0;
+            }
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.card')) return;
+            hintEl.classList.add('gone');
+            const s = {
+                x: e.clientX / innerWidth,
+                y: e.clientY / innerHeight,
+                r: (Math.random() - 0.5) * 0.7,
+                k: Math.random() < 0.04 ? 'vip' : 'back'
+            };
+            if (reducedMotion.matches || rafId) {
+                if (animStamp) { stamps.push(animStamp); animStamp = null; }
+                stamps.push(s);
+                renderWall();
+            } else {
+                animStamp = s;
+                animStart = performance.now();
+                rafId = requestAnimationFrame(frame);
+            }
+            if (stamps.length > 200) stamps = stamps.slice(-200);
+            save('welcomeback-stamps', stamps.concat(animStamp ? [animStamp] : []).slice(-200));
+            updateTally();
+        });
+
+        setTimeout(() => hintEl.classList.add('gone'), 10000);
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => { setupWall(); renderWall(); }, 150);
+        });
+
+        setupWall();
+        renderWall();
+        updateTally();
+    })();
     </script>
 </body>
 </html>
