@@ -2107,22 +2107,28 @@
                 );
 
                 const urlCache = {};
-                function cursorUrl(cursor) {
-                    if (!urlCache[cursor.id]) {
+                function cursorUrl(cursor, size) {
+                    size = size || 32;
+                    const key = cursor.id + '@' + size;
+                    if (!urlCache[key]) {
                         const c = document.createElement('canvas');
-                        c.width = 32;
-                        c.height = 32;
-                        cursor.draw(c.getContext('2d'));
+                        c.width = size;
+                        c.height = size;
+                        const g = c.getContext('2d');
+                        g.scale(size / 32, size / 32);
+                        cursor.draw(g);
                         const url = c.toDataURL('image/png');
                         // don't cache the face until the portrait has loaded
                         if (cursor.id === 'dylan' && !faceImg.complete) return url;
-                        urlCache[cursor.id] = url;
+                        urlCache[key] = url;
                     }
-                    return urlCache[cursor.id];
+                    return urlCache[key];
                 }
 
                 faceImg.addEventListener('load', () => {
-                    delete urlCache.dylan;
+                    for (const k of Object.keys(urlCache)) {
+                        if (k.indexOf('dylan@') === 0) delete urlCache[k];
+                    }
                     if (currentCursor && currentCursor.id === 'dylan') applyCursor(currentCursor);
                 });
 
@@ -2133,8 +2139,14 @@
                         style.id = 'custom-cursor-style';
                         document.head.appendChild(style);
                     }
+                    // regular size everywhere; grown version over anything clickable
+                    const HOVER = 44;
+                    const hf = HOVER / 32;
                     style.textContent =
-                        `* { cursor: url("${cursorUrl(cursor)}") ${cursor.hot[0]} ${cursor.hot[1]}, auto !important; }`;
+                        `* { cursor: url("${cursorUrl(cursor)}") ${cursor.hot[0]} ${cursor.hot[1]}, auto !important; }\n` +
+                        `a, a *, button, button *, input, select, textarea, label, [role="button"] {` +
+                        ` cursor: url("${cursorUrl(cursor, HOVER)}") ` +
+                        `${Math.round(cursor.hot[0] * hf)} ${Math.round(cursor.hot[1] * hf)}, pointer !important; }`;
                     btn.innerHTML = `<img src="${cursorUrl(cursor)}" alt="">`;
                     currentCursor = cursor;
                     // cursors without their own click burst leave clicks to the comic splat
@@ -2295,20 +2307,25 @@
                 // where a falling crate lands: on the floor, or on other crates.
                 // Compared against where the crate STARTED this frame, so a
                 // fast-moving block can't tunnel through a surface between frames.
+                // Returns the landing height and which crate is doing the supporting.
                 function crateFloor(p) {
                     let floor = window.innerHeight - 4;
+                    let support = null;   // null = the ground, always stable
                     const prevBottom = p.y + p.s / 2 - (p.vy || 0);
                     for (const q of particles) {
                         if (q.kind !== 'block' || q === p) continue;
                         if (!q.settled && Math.abs(q.vy || 0) > 2.5) continue;  // still falling fast
                         const overlap = Math.min(p.x + p.s / 2, q.x + q.s / 2)
                                       - Math.max(p.x - p.s / 2, q.x - q.s / 2);
-                        if (overlap > Math.min(p.s, q.s) * 0.3) {
+                        if (overlap > Math.min(p.s, q.s) * 0.2) {
                             const top = q.y - q.s / 2;
-                            if (top >= prevBottom - 6) floor = Math.min(floor, top);
+                            if (top >= prevBottom - 6 && top < floor) {
+                                floor = top;
+                                support = q;
+                            }
                         }
                     }
-                    return floor;
+                    return { floor, support };
                 }
 
                 // ---- XP ledger for the sword ----
@@ -2508,20 +2525,29 @@
                             case 'block': {
                                 if (!p.settled) {
                                     if (p.vy > 13) p.vy = 13;   // terminal velocity
-                                    const floor = crateFloor(p);
+                                    p.vx = (p.vx || 0) * 0.99;
+                                    const { floor, support } = crateFloor(p);
                                     if (p.y + p.s / 2 >= floor) {
                                         p.y = floor - p.s / 2;
-                                        if (Math.abs(p.vy) > 1.4) {
+                                        // hanging past the edge of its support? it falls over.
+                                        let tipDir = 0;
+                                        if (support) {
+                                            if (p.x < support.x - support.s / 2 + 2) tipDir = -1;
+                                            else if (p.x > support.x + support.s / 2 - 2) tipDir = 1;
+                                        }
+                                        if (tipDir !== 0) {
+                                            p.vy = 0.4;
+                                            p.vx = tipDir * (1 + Math.random() * 0.7);
+                                            p.vrot = tipDir * 0.07;
+                                        } else if (Math.abs(p.vy) > 1.4) {
                                             p.vy = -p.vy * 0.3;   // small bounce
                                         } else {
-                                            p.vy = 0; p.vx = 0; p.g = 0;
+                                            p.vy = 0; p.vx = 0; p.vrot = 0; p.g = 0;
                                             p.settled = true;
                                         }
                                     }
                                 } else {
-                                    p.rot *= 0.75;                // settle upright
-                                    p.timer = (p.timer || 0) + 1;
-                                    if (p.timer > 540) p.decay = 0.02;  // crumbles after ~9s
+                                    p.rot *= 0.75;                // settle flat
                                 }
                                 fxCtx.save();
                                 fxCtx.translate(p.x, p.y);
@@ -2629,7 +2655,10 @@
                         }
                     }
                     fxCtx.globalAlpha = 1;
-                    if (particles.length) fxRaf = requestAnimationFrame(fxLoop);
+                    // settled crates are a still life — stop animating until
+                    // something new happens (push() restarts the loop)
+                    const allStatic = particles.every(q => q.kind === 'block' && q.settled && !q.decay);
+                    if (particles.length && !allStatic) fxRaf = requestAnimationFrame(fxLoop);
                 }
 
                 // ---- trails, one flavor per cursor ----
@@ -2798,10 +2827,10 @@
                         push({ kind: 'dot', x, y, r: 3, color: c, life: 1, decay: 0.015, delay: 12 });
                         push({ kind: 'flash', x, y, r: 5, vr: 1.2, a: 0.4, color: c, life: 0.5, decay: 0.1, delay: 14 });
                     },
-                    // crate: drops a physics block that stacks and settles
+                    // crate: drops a physics block that stacks, topples, and stays
                     dropBlock: (x, y, c) => {
                         const settled = particles.filter(q => q.kind === 'block' && q.settled);
-                        if (settled.length > 34) settled[0].decay = 0.03;   // oldest crumbles
+                        if (settled.length >= 200) settled[0].decay = 0.03;   // oldest crumbles
                         const colors = [c, color('--coral', '#f0563e'), color('--sky', '#5aa0db'),
                                         color('--lime', '#b7ce3c'), color('--purple', '#a98fd0')];
                         push({ kind: 'block', x, y,
