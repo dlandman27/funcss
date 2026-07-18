@@ -4,98 +4,222 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Water Ripples</title>
+    <title>Drips</title>
 
-    <!-- Add metadata -->
-    <meta name="description" content="Create mesmerizing water ripple effects with every click">
+    <meta name="description" content="A quiet pool of real water. Touch it.">
     <meta name="keywords" content="water ripples, animation, interactive effects">
     <meta name="author" content="Random Sites On The Web">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='25' cy='25' r='20' fill='none' stroke='%231e90ff' stroke-width='4'><animate attributeName='r' from='0' to='20' dur='1.5s' begin='0s' repeatCount='indefinite'/></circle></svg>">
-    
-    <!-- Open Graph / Facebook -->
+
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://randomsitesontheweb.com/sites/drips/">
-    <meta property="og:title" content="Water Ripples - Interactive Effect">
-    <meta property="og:description" content="Create mesmerizing water ripple effects with every click">
+    <meta property="og:title" content="Drips">
+    <meta property="og:description" content="A quiet pool of real water. Touch it.">
     <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
 
-    <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/drips/">
-    <meta property="twitter:title" content="Water Ripples - Interactive Effect">
-    <meta property="twitter:description" content="Create mesmerizing water ripple effects with every click">
+    <meta property="twitter:title" content="Drips">
+    <meta property="twitter:description" content="A quiet pool of real water. Touch it.">
     <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
 
     <style>
-        body {
-            margin: 0;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background: #1e90ff;
-            cursor: pointer;
+            background: #0d4f8a;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
-        .ripple {
-            position: absolute;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            animation: rippleEffect 2s ease-out;
-            pointer-events: none;
+        #pool {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
         }
 
-        @keyframes rippleEffect {
-            0% {
-                width: 0;
-                height: 0;
-                opacity: 0.8;
-                transform: translate(-50%, -50%);
-            }
-            100% {
-                width: 500px;
-                height: 500px;
-                opacity: 0;
-                transform: translate(-50%, -50%);
-            }
-        }
-
-        .instruction-text {
+        #hint {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.8);
-            font-family: Arial, sans-serif;
-            font-size: 24px;
+            left: 0;
+            right: 0;
+            bottom: 7vh;
+            text-align: center;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(15px, 2.2vw, 19px);
+            color: rgba(220, 240, 255, 0.6);
+            letter-spacing: 0.05em;
             pointer-events: none;
+            transition: opacity 2.5s ease;
         }
+
+        #hint.hidden { opacity: 0; }
     </style>
 </head>
 <body>
-    <div class="instruction-text">Click anywhere</div>
-    <script>
-        document.addEventListener('click', function(e) {
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-            ripple.style.left = e.clientX + 'px';
-            ripple.style.top = e.clientY + 'px';
-            document.body.appendChild(ripple);
+    <canvas id="pool"></canvas>
+    <div id="hint">it's water. you know what to do.</div>
 
-            // Create multiple ripples with different sizes and timings
-            for (let i = 1; i < 4; i++) {
-                const delayedRipple = ripple.cloneNode();
-                delayedRipple.style.animationDelay = `${i * 0.2}s`;
-                document.body.appendChild(delayedRipple);
+    <script>
+        const canvas = document.getElementById('pool');
+        const ctx = canvas.getContext('2d');
+        const hint = document.getElementById('hint');
+
+        // ---- wave-equation water surface ----
+
+        let W, H;                 // display size
+        let gw, gh;               // sim grid size
+        let cur, prev;            // height fields
+        let img, simCanvas, sctx;
+        let baseR, baseG, baseB;  // per-row base water color (deeper toward the bottom)
+
+        const DAMPING = 0.986;
+        const SIM_SCALE = 3.5;    // display pixels per sim cell
+
+        function setup() {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = W;
+            canvas.height = H;
+
+            gw = Math.max(80, Math.round(W / SIM_SCALE));
+            gh = Math.max(60, Math.round(H / SIM_SCALE));
+            cur = new Float32Array(gw * gh);
+            prev = new Float32Array(gw * gh);
+
+            simCanvas = document.createElement('canvas');
+            simCanvas.width = gw;
+            simCanvas.height = gh;
+            sctx = simCanvas.getContext('2d');
+            img = sctx.createImageData(gw, gh);
+
+            // deep pool gradient, precomputed per row
+            baseR = new Uint8Array(gh);
+            baseG = new Uint8Array(gh);
+            baseB = new Uint8Array(gh);
+            for (let y = 0; y < gh; y++) {
+                const t = y / gh;
+                baseR[y] = 16 + t * 6;
+                baseG[y] = 92 - t * 34;
+                baseB[y] = 158 - t * 48;
             }
 
-            // Clean up ripples after animation
-            setTimeout(() => {
-                ripple.remove();
-                document.querySelectorAll('.ripple').forEach(r => {
-                    if (r.style.animationDelay && parseFloat(r.style.animationDelay) + 2 < Date.now() / 1000) {
-                        r.remove();
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+        }
+
+        function step() {
+            // classic two-buffer ripple: neighbors average minus where it was
+            for (let y = 1; y < gh - 1; y++) {
+                const row = y * gw;
+                for (let x = 1; x < gw - 1; x++) {
+                    const i = row + x;
+                    prev[i] = ((cur[i - 1] + cur[i + 1] + cur[i - gw] + cur[i + gw]) / 2 - prev[i]) * DAMPING;
+                }
+            }
+            const t = prev; prev = cur; cur = t;
+        }
+
+        function render() {
+            const data = img.data;
+            for (let y = 1; y < gh - 1; y++) {
+                const row = y * gw;
+                for (let x = 1; x < gw - 1; x++) {
+                    const i = row + x;
+                    // slope of the surface = light. sun sits up and to the left.
+                    const sx = cur[i + 1] - cur[i - 1];
+                    const sy = cur[i + gw] - cur[i - gw];
+                    const light = sx * 4 + sy * 3;
+                    const idx = i * 4;
+                    data[idx]     = baseR[y] + light * 6 + (light > 2 ? light * 14 : 0);
+                    data[idx + 1] = baseG[y] + light * 10 + (light > 2 ? light * 12 : 0);
+                    data[idx + 2] = baseB[y] + light * 14 + (light > 2 ? light * 10 : 0);
+                    data[idx + 3] = 255;
+                }
+            }
+            sctx.putImageData(img, 0, 0);
+            ctx.drawImage(simCanvas, 0, 0, W, H);
+        }
+
+        // ---- disturbing the water ----
+
+        function splash(px, py, radius, strength) {
+            const cx = Math.round(px / W * gw);
+            const cy = Math.round(py / H * gh);
+            const r2 = radius * radius;
+            for (let y = Math.max(1, cy - radius); y <= Math.min(gh - 2, cy + radius); y++) {
+                for (let x = Math.max(1, cx - radius); x <= Math.min(gw - 2, cx + radius); x++) {
+                    const dx = x - cx, dy = y - cy;
+                    const d2 = dx * dx + dy * dy;
+                    if (d2 < r2) {
+                        cur[x + y * gw] -= strength * (1 - Math.sqrt(d2) / radius);
                     }
-                });
-            }, 2000);
+                }
+            }
+        }
+
+        // ---- ambient drips from somewhere above ----
+
+        let nextDrip = performance.now() + 1200;
+
+        function maybeDrip(now) {
+            if (now < nextDrip) return;
+            nextDrip = now + 1400 + Math.random() * 3200;
+            const x = W * (0.08 + Math.random() * 0.84);
+            const y = H * (0.08 + Math.random() * 0.84);
+            const big = Math.random() < 0.15;
+            splash(x, y, big ? 6 : 3, big ? 26 : 12);
+        }
+
+        // ---- input ----
+
+        let down = false;
+        let lastX = 0, lastY = 0;
+
+        canvas.addEventListener('pointerdown', (e) => {
+            down = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            splash(e.clientX, e.clientY, 5, 30);   // a proper plunk
+            hint.classList.add('hidden');
+            canvas.setPointerCapture(e.pointerId);
         });
+
+        canvas.addEventListener('pointermove', (e) => {
+            const dist = Math.hypot(e.clientX - lastX, e.clientY - lastY);
+            if (dist < 3) return;
+            // skimming the surface: gentle wake; dragging: deeper wake
+            splash(e.clientX, e.clientY, down ? 4 : 2, down ? 14 : 2.5);
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+
+        canvas.addEventListener('pointerup', () => { down = false; });
+        canvas.addEventListener('pointercancel', () => { down = false; });
+
+        // ---- loop ----
+
+        function frame(now) {
+            maybeDrip(now);
+            step();
+            render();
+            requestAnimationFrame(frame);
+        }
+
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(setup, 200);
+        });
+
+        setup();
+        requestAnimationFrame(frame);
+        setTimeout(() => hint.classList.add('hidden'), 9000);
     </script>
 </body>
 </html>
