@@ -1064,12 +1064,15 @@
                     isStatic: true,
                     angle: opts.angle || 0,
                     label: opts.label || 'wall',
+                    friction: opts.friction !== undefined ? opts.friction : 0.1,
+                    frictionStatic: opts.frictionStatic !== undefined ? opts.frictionStatic : 0.5,
                     render: neonRender(opts.color)
                 }));
                 return this;
             }
             addRamp(x, y, w, angle, color) {
-                return this.addWall(x, y, w, 14, { angle, color });
+                // frictionless so marbles always keep rolling — no mid-ramp stalls
+                return this.addWall(x, y, w, 14, { angle, color, friction: 0, frictionStatic: 0 });
             }
             addPeg(x, y, r = 9, color) {
                 this.bodies.push(Bodies.circle(x, y, r, {
@@ -1123,10 +1126,11 @@
         }
 
         // ---- the maps ----
+        // Everything starts below y=310 — the mixing drum owns the top of the course.
         const MAPS = [
             function plinko() {
                 const b = new MapBuilder().addBoundaries().addFinishLine();
-                const cols = 13, rows = 8, margin = 62, top = 130, bottom = 150;
+                const cols = 13, rows = 7, margin = 62, top = 330, bottom = 90;
                 const hs = (GAME_WIDTH - margin * 2) / (cols - 1);
                 const vs = (GAME_HEIGHT - top - bottom) / (rows - 1);
                 for (let r = 0; r < rows; r++) {
@@ -1141,67 +1145,117 @@
             },
             function zigzag() {
                 const b = new MapBuilder().addBoundaries().addFinishLine();
-                b.addRamp(300, 170, 580, 0.17)
-                 .addRamp(GAME_WIDTH - 300, 320, 580, -0.17)
-                 .addRamp(300, 470, 580, 0.17)
-                 .addRamp(GAME_WIDTH - 300, 620, 580, -0.17);
-                b.addPeg(GAME_WIDTH - 120, 240, 10, NEON.magenta)
-                 .addPeg(120, 390, 10, NEON.magenta)
-                 .addPeg(GAME_WIDTH - 120, 540, 10, NEON.magenta)
-                 .addPeg(120, 690, 10, NEON.magenta);
+                b.addRamp(300, 350, 580, 0.15)
+                 .addRamp(GAME_WIDTH - 300, 490, 580, -0.15)
+                 .addRamp(300, 630, 580, 0.15);
+                b.addPeg(GAME_WIDTH - 120, 420, 10, NEON.magenta)
+                 .addPeg(120, 560, 10, NEON.magenta)
+                 .addPeg(GAME_WIDTH - 120, 700, 10, NEON.magenta);
                 return b.build('ZIGZAG DESCENT');
             },
             function spinners() {
                 const b = new MapBuilder().addBoundaries().addFinishLine();
-                b.addSpinner(212, 230, 170, 0.0032)
-                 .addSpinner(512, 230, 170, -0.0032)
-                 .addSpinner(812, 230, 170, 0.0032)
-                 .addSpinner(362, 440, 170, -0.0026)
-                 .addSpinner(662, 440, 170, 0.0026)
-                 .addSpinner(212, 630, 150, 0.0038)
-                 .addSpinner(512, 630, 150, -0.0038)
-                 .addSpinner(812, 630, 150, 0.0038);
+                b.addSpinner(212, 360, 170, 0.0032)
+                 .addSpinner(512, 360, 170, -0.0032)
+                 .addSpinner(812, 360, 170, 0.0032)
+                 .addSpinner(362, 520, 170, -0.0026)
+                 .addSpinner(662, 520, 170, 0.0026)
+                 .addSpinner(212, 670, 150, 0.0038)
+                 .addSpinner(512, 670, 150, -0.0038)
+                 .addSpinner(812, 670, 150, 0.0038);
                 return b.build('SPINNER ALLEY');
             },
             function funnels() {
                 const b = new MapBuilder().addBoundaries().addFinishLine();
                 // tier 1: funnel to a center gap
-                b.addRamp(232, 200, 430, 0.30).addRamp(GAME_WIDTH - 232, 200, 430, -0.30);
+                b.addRamp(232, 370, 430, 0.28).addRamp(GAME_WIDTH - 232, 370, 430, -0.28);
                 // tier 2: a roof splitting to two side gaps
-                b.addRamp(GAME_WIDTH / 2 - 190, 420, 360, -0.28)
-                 .addRamp(GAME_WIDTH / 2 + 190, 420, 360, 0.28);
+                b.addRamp(GAME_WIDTH / 2 - 185, 530, 350, -0.26)
+                 .addRamp(GAME_WIDTH / 2 + 185, 530, 350, 0.26);
                 // tier 3: funnel again
-                b.addRamp(252, 610, 400, 0.26).addRamp(GAME_WIDTH - 252, 610, 400, -0.26);
-                b.addPeg(GAME_WIDTH / 2, 300, 11, NEON.magenta)
-                 .addPeg(120, 520, 10).addPeg(GAME_WIDTH - 120, 520, 10);
+                b.addRamp(252, 670, 400, 0.24).addRamp(GAME_WIDTH - 252, 670, 400, -0.24);
+                b.addPeg(GAME_WIDTH / 2, 450, 11, NEON.magenta)
+                 .addPeg(120, 610, 10).addPeg(GAME_WIDTH - 120, 610, 10);
                 return b.build('FUNNEL FACTORY');
             },
             function pistons() {
                 const b = new MapBuilder().addBoundaries().addFinishLine();
-                b.addSweeper(350, 230, 190, 220, 0.0011, 0)
-                 .addSweeper(680, 400, 190, 220, 0.0013, 2.1)
-                 .addSweeper(400, 570, 190, 240, 0.0009, 4.2);
+                b.addSweeper(350, 360, 190, 220, 0.0011, 0)
+                 .addSweeper(680, 500, 190, 220, 0.0013, 2.1)
+                 .addSweeper(400, 640, 190, 240, 0.0009, 4.2);
                 for (let i = 0; i < 5; i++) {
-                    b.addPeg(90 + i * 12, 300 + i * 60, 8)
-                     .addPeg(GAME_WIDTH - 90 - i * 12, 300 + i * 60, 8);
+                    b.addPeg(90 + i * 12, 380 + i * 62, 8)
+                     .addPeg(GAME_WIDTH - 90 - i * 12, 380 + i * 62, 8);
                 }
-                b.addPeg(512, 680, 10, NEON.magenta);
+                b.addPeg(512, 720, 10, NEON.magenta);
                 return b.build('PISTON PLAZA');
             },
             function gauntlet() {
                 const b = new MapBuilder().addBoundaries().addFinishLine();
-                b.addRamp(330, 160, 640, 0.14);
-                b.addSpinner(512, 350, 210, 0.0034);
-                for (let r = 0; r < 3; r++) {
-                    for (let c = 0; c <= r + 3; c++) {
-                        const x = GAME_WIDTH / 2 + (c - (r + 3) / 2) * 90;
-                        b.addPeg(x, 460 + r * 62, 9);
+                // a forced sequence: funnel -> spinner under the gap -> full-width
+                // peg field -> sweeper. nobody skips the gauntlet.
+                b.addRamp(217, 360, 420, 0.28).addRamp(GAME_WIDTH - 217, 360, 420, -0.28);
+                b.addSpinner(512, 500, 230, 0.0034);
+                for (let r = 0; r < 2; r++) {
+                    const off = r % 2 ? 47 : 0;
+                    for (let x = 110 + off; x <= GAME_WIDTH - 110; x += 94) {
+                        b.addPeg(x, 590 + r * 56, 9);
                     }
                 }
-                b.addSweeper(512, 690, 170, 260, 0.0012, 1, NEON.magenta);
+                b.addSweeper(512, 706, 170, 280, 0.0012, 1, NEON.magenta);
                 return b.build('THE GAUNTLET');
             }
         ];
+
+        // ---- the mixing drum: fairness before the drop ----
+        const DRUM = { x: GAME_WIDTH / 2, y: 155, r: 125 };
+        const MIX_MS = 1900;
+        let drumParts = [];
+        let mixing = false;
+        let mixStart = 0;
+        let drumAngle = 0;
+
+        function buildDrum() {
+            drumParts = [];
+            const segs = 16;
+            const segW = (2 * Math.PI * DRUM.r) / segs + 8;
+            for (let i = 0; i < segs; i++) {
+                const a = (i / segs) * Math.PI * 2;
+                const part = Bodies.rectangle(
+                    DRUM.x + Math.cos(a) * DRUM.r, DRUM.y + Math.sin(a) * DRUM.r, segW, 12,
+                    { isStatic: true, label: 'drum', friction: 0.05, render: neonRender(NEON.cyan) });
+                part.plugin = { baseAngle: a, kind: 'seg' };
+                drumParts.push(part);
+            }
+            for (let i = 0; i < 4; i++) {
+                const a = (i / 4) * Math.PI * 2 + 0.4;
+                const fin = Bodies.rectangle(
+                    DRUM.x + Math.cos(a) * DRUM.r * 0.6, DRUM.y + Math.sin(a) * DRUM.r * 0.6,
+                    DRUM.r * 0.6, 10,
+                    { isStatic: true, label: 'drum', render: neonRender(NEON.magenta) });
+                fin.plugin = { baseAngle: a, kind: 'fin' };
+                drumParts.push(fin);
+            }
+            World.add(engine.world, drumParts);
+            mixing = true;
+            mixStart = engine.timing.timestamp;
+            drumAngle = Math.random() * Math.PI * 2;
+        }
+
+        function updateDrum() {
+            drumAngle += (engine.timing.lastDelta || 16.7) * 0.0035;
+            for (const p of drumParts) {
+                const a = p.plugin.baseAngle + drumAngle;
+                const rad = p.plugin.kind === 'seg' ? DRUM.r : DRUM.r * 0.6;
+                Body.setPosition(p, { x: DRUM.x + Math.cos(a) * rad, y: DRUM.y + Math.sin(a) * rad });
+                Body.setAngle(p, a + (p.plugin.kind === 'seg' ? Math.PI / 2 : 0));
+            }
+            if (engine.timing.timestamp - mixStart > MIX_MS) {
+                World.remove(engine.world, drumParts);
+                drumParts = [];
+                mixing = false;
+            }
+        }
 
         // ---- game state ----
         let roster = [];            // countries in this game (with sprites)
@@ -1234,23 +1288,22 @@
             World.add(engine.world, currentMapObj.bodies);
             document.getElementById('mapName').textContent = currentMapObj.name;
 
+            // everyone starts locked in the drum — spun hard, then dropped
             const order = shuffleArray([...remaining]);
             const n = order.length;
             const r = n > 40 ? 10 : n > 24 ? 12 : 15;
-            const spacing = r * 2.4;
-            const cols = Math.min(n, Math.floor((GAME_WIDTH - 140) / spacing));
 
             order.forEach((country, i) => {
-                const col = i % cols, row = Math.floor(i / cols);
-                const rowCount = Math.min(cols, n - row * cols);
-                const startX = (GAME_WIDTH - (rowCount - 1) * spacing) / 2;
+                // golden-angle spiral packs them evenly inside the drum
+                const rr = Math.sqrt((i + 0.5) / n) * (DRUM.r - r - 16);
+                const a = i * 2.39996;
                 const ball = Bodies.circle(
-                    startX + col * spacing + (Math.random() - 0.5) * 3,
-                    36 + row * spacing,
+                    DRUM.x + Math.cos(a) * rr,
+                    DRUM.y + Math.sin(a) * rr,
                     r,
                     {
                         restitution: 0.7,
-                        friction: 0.005,
+                        friction: 0.002,
                         frictionAir: 0.0012,
                         density: 0.002,
                         label: 'marble',
@@ -1261,6 +1314,7 @@
                 activeBalls.push(ball);
                 World.add(engine.world, ball);
             });
+            buildDrum();
 
             document.getElementById('remainingCountries').textContent = remaining.length;
             roundActive = true;
@@ -1269,10 +1323,23 @@
         // ---- finish detection + anti-stall (position-based: tunnel-proof) ----
         Events.on(engine, 'beforeUpdate', () => {
             if (currentMapObj) currentMapObj.update(engine.timing.timestamp);
+            if (mixing) updateDrum();
         });
 
+        // last marble standing: slam the gate shut and end the round early
+        function closeGate(trapped) {
+            roundActive = false;
+            const finish = engine.world.bodies.find(b => b.label === 'finish');
+            if (finish) {
+                finish.isSensor = false;
+                finish.render.strokeStyle = '#ff2244';
+                finish.render.shadowColor = '#ff2244';
+            }
+            setTimeout(() => roundOver(trapped.plugin.country), 1100);
+        }
+
         Events.on(engine, 'afterUpdate', () => {
-            if (!roundActive) return;
+            if (!roundActive || mixing) return;
             const dt = engine.timing.lastDelta || 16.7;
             for (let i = activeBalls.length - 1; i >= 0; i--) {
                 const ball = activeBalls[i];
@@ -1280,6 +1347,10 @@
                 if (ball.position.y - ball.plugin.radius > GAME_HEIGHT) {
                     activeBalls.splice(i, 1);
                     World.remove(engine.world, ball);
+                    if (activeBalls.length === 1) {
+                        closeGate(activeBalls[0]);
+                        return;
+                    }
                     if (activeBalls.length === 0) {
                         roundOver(ball.plugin.country);
                         return;
@@ -1288,15 +1359,17 @@
                 }
                 // escaped sideways somehow: teleport back to the top, no ball left behind
                 if (ball.position.x < -60 || ball.position.x > GAME_WIDTH + 60) {
-                    Body.setPosition(ball, { x: GAME_WIDTH / 2, y: 30 });
+                    Body.setPosition(ball, { x: GAME_WIDTH / 2, y: 320 });
                     Body.setVelocity(ball, { x: 0, y: 2 });
                     continue;
                 }
-                // anti-stall: a marble sitting nearly still gets a kick
-                if (ball.speed < 0.55) {
+                // anti-stall: only a truly parked marble gets a nudge, and a
+                // gentle sideways one — no more popping off ramps
+                if (ball.speed < 0.25) {
                     ball.plugin.still += dt;
-                    if (ball.plugin.still > 2400) {
-                        Body.setVelocity(ball, { x: (Math.random() - 0.5) * 8, y: -6 - Math.random() * 3 });
+                    if (ball.plugin.still > 3000) {
+                        const dir = ball.position.x > GAME_WIDTH / 2 ? -1 : 1;
+                        Body.setVelocity(ball, { x: dir * (2.5 + Math.random() * 2), y: -2.5 });
                         ball.plugin.still = 0;
                     }
                 } else {
