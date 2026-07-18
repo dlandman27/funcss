@@ -4,138 +4,329 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- @index.html -->
-    <!-- @description Track how many times you've visited this page -->
-    <!-- @author Random Sites On The Web -->
-
-    <!-- Add metadata -->
-    <meta name="description" content="Track how many times you've visited this page">
-    <meta name="keywords" content="visit counter, page visits, web analytics, visit tracker">
-    <meta name="author" content="Random Sites On The Web">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='5' y='5' width='40' height='40' rx='5' fill='%234CAF50'/><text x='25' y='32' font-family='Arial' font-size='20' fill='%23fff' text-anchor='middle'>📊</text></svg>">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://randomsitesontheweb.com/sites/howmanytimeswasihere/">
-    <meta property="og:title" content="How Many Times Was I Here? - Visit Counter">
-    <meta property="og:description" content="Track how many times you've visited this page">
-    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/howmanytimeswasihere/">
-    <meta property="twitter:title" content="How Many Times Was I Here? - Visit Counter">
-    <meta property="twitter:description" content="Track how many times you've visited this page">
-    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
-    <title>How Many Times Was I Here?</title>
+    <title>Visit Counter</title>
+    <meta name="description" content="An official odometer of your visits to this exact page. Unique visitors: 1.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='3' y='14' width='13' height='22' rx='3' fill='%23201a17'/><rect x='18' y='14' width='13' height='22' rx='3' fill='%23201a17'/><rect x='33' y='14' width='13' height='22' rx='3' fill='%23201a17'/><rect x='3' y='14' width='43' height='22' rx='3' fill='none' stroke='%23f0563e' stroke-width='3'/></svg>">
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
+            --digit-h: clamp(58px, 14vw, 84px);
+            --digit-w: clamp(40px, 10vw, 60px);
+        }
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            background: var(--paper);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
+            gap: 26px;
+            padding: 24px 16px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .sign {
+            position: relative;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--ink);
+            transform: rotate(-1deg);
+            padding: 26px 30px 22px;
+            text-align: center;
+            max-width: 94vw;
+        }
+        .official {
+            position: absolute;
+            top: -15px;
+            left: -14px;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(-7deg);
+            padding: 7px 14px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .signtitle {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(15px, 4vw, 19px);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        .odo {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+        .digit {
+            width: var(--digit-w);
+            height: var(--digit-h);
+            background: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 2px rgba(255, 248, 239, 0.12);
+        }
+        .strip {
+            will-change: transform;
+        }
+        .strip span {
+            display: block;
+            height: var(--digit-h);
+            line-height: var(--digit-h);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: calc(var(--digit-h) * 0.62);
+            color: var(--cream);
             text-align: center;
         }
 
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2rem;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            max-width: 80%;
-            width: 500px;
+        .stats {
+            font-style: italic;
+            font-size: clamp(14px, 3.6vw, 16px);
+            margin-top: 18px;
+            line-height: 1.5;
+        }
+        .footnote {
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.6);
+            margin-top: 6px;
+            min-height: 1.2em;
         }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .visit-count {
-            font-size: 4rem;
-            font-weight: bold;
-            margin: 1rem 0;
-            color: #4CAF50;
-            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-        }
-
-        .message {
-            font-size: 1.2rem;
-            margin: 1rem 0;
-            opacity: 0.9;
-        }
-
-        button {
-            background: #4CAF50;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            color: white;
-            font-size: 1rem;
+        button.again {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            background: var(--coral);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(1.6deg);
+            padding: 15px 28px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
+        button.again:hover { transform: translate(-2px, -2px) rotate(1.6deg); box-shadow: 6px 6px 0 var(--ink); }
+        button.again:active { transform: translate(3px, 3px) rotate(1.6deg); box-shadow: 1px 1px 0 var(--ink); }
 
-        button:hover {
-            background: #45a049;
-            transform: translateY(-2px);
+        .hint {
+            font-style: italic;
+            font-size: 15px;
+            color: rgba(32, 26, 23, 0.55);
+            transition: opacity 1.2s ease;
+            min-height: 1.2em;
+            pointer-events: none;
+        }
+        .hint.gone { opacity: 0; }
+
+        @keyframes thunk {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, 3px); }
+            50% { transform: translate(-3px, 1px); }
+            75% { transform: translate(1px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+        body.thunk { animation: thunk 0.22s linear; }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.thunk { animation: none; }
+            .hint, button.again { transition: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Visit Counter</h1>
-        <div class="visit-count" id="visitCount">1</div>
-        <p class="message" id="message">This is your first time here!</p>
-        <!-- <button onclick="resetCount()">Reset Count</button> -->
+    <div class="sign">
+        <div class="official">Official Count</div>
+        <div class="signtitle">Visits to This Page</div>
+        <div class="odo" id="odo"></div>
+        <div class="stats">unique visitors: 1 &middot; that visitor: you &middot; market share: 100%</div>
+        <div class="footnote" id="footnote"></div>
     </div>
 
+    <button class="again" id="againBtn">I Was Here Again</button>
+    <div class="hint" id="hint">the sign trusts you</div>
+
     <script>
-        function getVisitCount() {
-            return parseInt(localStorage.getItem('visitCount')) || 0;
+    (() => {
+        const odoEl = document.getElementById('odo');
+        const footnoteEl = document.getElementById('footnote');
+        const againBtn = document.getElementById('againBtn');
+        const hintEl = document.getElementById('hint');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        function loadNum(key) {
+            try { return parseInt(localStorage.getItem(key), 10) || 0; } catch (e) { return 0; }
+        }
+        function saveNum(key, v) {
+            try { localStorage.setItem(key, String(v)); } catch (e) {}
         }
 
-        function updateVisitCount() {
-            let count = getVisitCount() + 1;
-            localStorage.setItem('visitCount', count);
-            
-            const countElement = document.getElementById('visitCount');
-            const messageElement = document.getElementById('message');
-            
-            countElement.textContent = count;
-            
-            if (count === 1) {
-                messageElement.textContent = "This is your first time here!";
-            } else if (count === 2) {
-                messageElement.textContent = "Welcome back for the second time!";
-            } else if (count === 10) {
-                messageElement.textContent = "Wow! 10 visits! You must really like it here!";
-            } else if (count === 50) {
-                messageElement.textContent = "50 visits! You're practically family now!";
-            } else if (count === 100) {
-                messageElement.textContent = "100 visits! You deserve a medal! 🏅";
-            } else {
-                messageElement.textContent = `You've been here ${count} times!`;
+        let count = loadNum('visitcounter-count');
+        let manual = loadNum('visitcounter-manual');
+        const prev = count;
+        count += 1;
+        saveNum('visitcounter-count', count);
+
+        // ---- odometer ----
+        let columns = [];
+
+        function digitHeight() {
+            return odoEl.querySelector('.digit').getBoundingClientRect().height;
+        }
+
+        function buildOdo(n) {
+            const needed = Math.max(4, String(n).length);
+            if (columns.length === needed) return;
+            odoEl.innerHTML = '';
+            columns = [];
+            for (let i = 0; i < needed; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'digit';
+                const strip = document.createElement('div');
+                strip.className = 'strip';
+                // 0-9 plus a leading 0 again, so 9 rolls forward into 0
+                for (let d = 0; d <= 10; d++) {
+                    const s = document.createElement('span');
+                    s.textContent = String(d % 10);
+                    strip.appendChild(s);
+                }
+                cell.appendChild(strip);
+                odoEl.appendChild(cell);
+                columns.push(strip);
             }
         }
 
-        function resetCount() {
-            localStorage.removeItem('visitCount');
-            updateVisitCount();
+        // Position every column for a (possibly fractional) value, real-odometer
+        // style: a digit only rolls while everything below it is carrying.
+        function renderValue(v) {
+            const h = digitHeight();
+            const n = columns.length;
+            for (let i = 0; i < n; i++) {
+                const p = Math.pow(10, n - 1 - i);
+                const d = Math.floor(v / p) % 10;
+                const lower = v % p;
+                const carry = Math.max(0, lower - (p - 1));
+                const pos = d + carry;
+                columns[i].style.transform = 'translateY(' + (-pos * h) + 'px)';
+            }
         }
 
-        // Update count when page loads
-        updateVisitCount();
+        // ---- animation (rAF sleeps when idle) ----
+        let rafId = 0;
+        let anim = null; // {from, to, start, dur, done}
+
+        function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+        function frame() {
+            const t = Math.min(1, (performance.now() - anim.start) / anim.dur);
+            renderValue(anim.from + (anim.to - anim.from) * easeOutCubic(t));
+            if (t < 1) {
+                rafId = requestAnimationFrame(frame);
+            } else {
+                rafId = 0;
+                const done = anim.done;
+                anim = null;
+                if (done) done();
+            }
+        }
+
+        function rollTo(from, to, dur, done) {
+            buildOdo(Math.max(from, to));
+            if (reducedMotion.matches) {
+                renderValue(to);
+                if (done) done();
+                return;
+            }
+            if (rafId) cancelAnimationFrame(rafId);
+            anim = { from, to, start: performance.now(), dur, done };
+            rafId = requestAnimationFrame(frame);
+        }
+
+        function settleThunk() {
+            if (reducedMotion.matches) return;
+            document.body.classList.add('thunk');
+            setTimeout(() => document.body.classList.remove('thunk'), 250);
+        }
+
+        function updateFootnote() {
+            if (manual > 0) {
+                footnoteEl.textContent = '* includes ' + manual + ' self-reported visit' + (manual === 1 ? '' : 's');
+            }
+        }
+
+        // ---- arrival roll ----
+        buildOdo(count);
+        renderValue(Math.max(0, prev));
+        updateFootnote();
+
+        setTimeout(() => {
+            rollTo(prev, count, 900 + Math.min(1200, (count - prev) * 60), () => {
+                settleThunk();
+                // sometimes the department double-checks. never explain this.
+                if (!reducedMotion.matches && Math.random() < 0.03 && count > 1) {
+                    setTimeout(() => {
+                        rollTo(count, count - 1, 700, () => {
+                            setTimeout(() => {
+                                rollTo(count - 1, count, 700, () => {
+                                    settleThunk();
+                                    footnoteEl.textContent = 'counted twice, to be sure.';
+                                });
+                            }, 500);
+                        });
+                    }, 800);
+                }
+            });
+        }, 350);
+
+        // ---- self-reporting ----
+        let busy = false;
+        againBtn.addEventListener('click', () => {
+            if (busy) return;
+            busy = true;
+            hintEl.classList.add('gone');
+            const from = count;
+            count += 1;
+            manual += 1;
+            saveNum('visitcounter-count', count);
+            saveNum('visitcounter-manual', manual);
+            rollTo(from, count, 600, () => {
+                settleThunk();
+                updateFootnote();
+                busy = false;
+            });
+        });
+
+        setTimeout(() => hintEl.classList.add('gone'), 10000);
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => { if (!anim) renderValue(count); }, 150);
+        });
+    })();
     </script>
 </body>
 </html>
