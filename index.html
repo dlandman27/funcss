@@ -3007,22 +3007,43 @@
                     x.stroke();
                 };
 
-                const CURSORS = [
-                    { id: 'default', name: 'back to normal' },
-                    { id: 'arrow-coral', name: 'coral arrow', hot: [5, 3], draw: sticker(arrowPath, color('--coral', '#ff6b57')) },
-                    { id: 'arrow-sky', name: 'sky arrow', hot: [5, 3], draw: sticker(arrowPath, color('--sky', '#5bc0eb')) },
-                    { id: 'arrow-lime', name: 'lime arrow', hot: [5, 3], draw: sticker(arrowPath, color('--lime', '#9bc53d')) },
-                    { id: 'arrow-purple', name: 'purple arrow', hot: [5, 3], draw: sticker(arrowPath, color('--purple', '#9d6be9')) },
-                    { id: 'arrow-orange', name: 'orange arrow', hot: [5, 3], draw: sticker(arrowPath, color('--orange', '#ff9f1c')) },
-                    { id: 'arrow-pink', name: 'pink arrow', hot: [5, 3], draw: sticker(arrowPath, color('--pink', '#ff7eb9')) },
-                    { id: 'arrow-teal', name: 'teal arrow', hot: [5, 3], draw: sticker(arrowPath, color('--teal', '#2ec4b6')) },
-                    { id: 'star', name: 'gold star', hot: [16, 16], draw: sticker(starPath, '#f7c948') },
-                    { id: 'heart', name: 'heart', hot: [16, 16], draw: sticker(heartPath, color('--coral', '#ff6b57')) },
-                    { id: 'bolt', name: 'lightning bolt', hot: [16, 16], draw: sticker(boltPath, color('--orange', '#ff9f1c')) },
-                    { id: 'pencil', name: 'pencil', hot: [6, 26], draw: sticker(pencilPath, color('--sky', '#5bc0eb')) },
-                    { id: 'wand', name: 'magic wand', hot: [24, 8], draw: (x) => wandDraw(x, color('--purple', '#9d6be9')) },
-                    { id: 'target', name: 'crosshair', hot: [16, 16], draw: (x) => targetDraw(x, color('--lime', '#9bc53d')) },
+                const PALETTE = [
+                    ['coral', color('--coral', '#f0563e')],
+                    ['sky', color('--sky', '#5aa0db')],
+                    ['lime', color('--lime', '#b7ce3c')],
+                    ['purple', color('--purple', '#a98fd0')],
+                    ['orange', color('--orange', '#f47b28')],
+                    ['pink', color('--pink', '#ff7fa5')],
+                    ['teal', color('--teal', '#2fb0a3')],
                 ];
+                const GOLD = '#f7c948';
+                const GRAPHITE = '#3a3733';
+                const ZAP_YELLOW = '#ffd94a';
+
+                // every cursor brings its own trail + click burst (the default
+                // keeps the page's comic click splat)
+                const CURSORS = [{ id: 'default', name: 'back to normal' }];
+                PALETTE.forEach(([key, val]) => CURSORS.push({
+                    id: 'arrow-' + key,
+                    name: key + ' arrow',
+                    hot: [5, 3],
+                    draw: sticker(arrowPath, val),
+                    fx: { trail: 'comet', click: 'burst', color: val, every: 20 },
+                }));
+                CURSORS.push(
+                    { id: 'star', name: 'gold star', hot: [16, 16], draw: sticker(starPath, GOLD),
+                      fx: { trail: 'stars', click: 'starBurst', color: GOLD, every: 55 } },
+                    { id: 'heart', name: 'heart', hot: [16, 16], draw: sticker(heartPath, color('--coral', '#f0563e')),
+                      fx: { trail: 'hearts', click: 'heartBurst', color: color('--coral', '#f0563e'), every: 90 } },
+                    { id: 'bolt', name: 'lightning bolt', hot: [16, 16], draw: sticker(boltPath, color('--orange', '#f47b28')),
+                      fx: { trail: 'zaps', click: 'zapBurst', color: ZAP_YELLOW, every: 45 } },
+                    { id: 'pencil', name: 'pencil', hot: [6, 26], draw: sticker(pencilPath, color('--sky', '#5aa0db')),
+                      fx: { trail: 'pencil', click: 'scribble', color: GRAPHITE, every: 8 } },
+                    { id: 'wand', name: 'magic wand', hot: [24, 8], draw: (x) => wandDraw(x, color('--purple', '#a98fd0')),
+                      fx: { trail: 'rainbow', click: 'rainbowBurst', color: null, every: 24 } },
+                    { id: 'target', name: 'crosshair', hot: [16, 16], draw: (x) => targetDraw(x, color('--lime', '#b7ce3c')),
+                      fx: { trail: 'pings', click: 'ping', color: color('--lime', '#b7ce3c'), every: 260 } }
+                );
 
                 const urlCache = {};
                 function cursorUrl(cursor) {
@@ -3041,6 +3062,8 @@
                     if (!cursor || cursor.id === 'default') {
                         if (style) style.remove();
                         btn.innerHTML = '<i class="fas fa-arrow-pointer"></i>';
+                        currentCursor = null;
+                        window.__customCursorActive = false;   // the comic splat takes clicks again
                         return;
                     }
                     if (!style) {
@@ -3051,67 +3074,275 @@
                     style.textContent =
                         `* { cursor: url("${cursorUrl(cursor)}") ${cursor.hot[0]} ${cursor.hot[1]}, auto !important; }`;
                     btn.innerHTML = `<img src="${cursorUrl(cursor)}" alt="">`;
+                    currentCursor = cursor;
+                    window.__customCursorActive = true;        // suppress the comic splat
                 }
 
-                // sparkle trail
+                // ---- effect engine: shared overlay canvas + typed particles ----
                 let trailOn = false;
-                let trailCanvas = null, trailCtx = null;
-                const sparks = [];
-                let trailRaf = null;
+                let currentCursor = null;
+                let fxCanvas = null, fxCtx = null, fxRaf = null;
+                const particles = [];
+                const jit = (n) => (Math.random() - 0.5) * n;
 
-                function setTrail(on) {
-                    trailOn = on;
-                    if (on && !trailCanvas) {
-                        trailCanvas = document.createElement('canvas');
-                        trailCanvas.style.cssText =
+                function ensureFx() {
+                    if (!fxCanvas) {
+                        fxCanvas = document.createElement('canvas');
+                        fxCanvas.style.cssText =
                             'position:fixed;inset:0;pointer-events:none;z-index:9998;';
-                        document.body.appendChild(trailCanvas);
-                        trailCtx = trailCanvas.getContext('2d');
+                        document.body.appendChild(fxCanvas);
+                        fxCtx = fxCanvas.getContext('2d');
                         const size = () => {
-                            trailCanvas.width = window.innerWidth;
-                            trailCanvas.height = window.innerHeight;
+                            fxCanvas.width = window.innerWidth;
+                            fxCanvas.height = window.innerHeight;
                         };
                         size();
                         window.addEventListener('resize', size);
                     }
-                    if (trailCanvas) trailCanvas.style.display = on ? '' : 'none';
-                    if (on && !trailRaf) trailLoop();
+                    if (!fxRaf) fxRaf = requestAnimationFrame(fxLoop);
                 }
 
-                let lastSpark = 0;
-                document.addEventListener('mousemove', (e) => {
-                    if (!trailOn) return;
-                    const now = performance.now();
-                    if (now - lastSpark < 24) return;
-                    lastSpark = now;
-                    sparks.push({
-                        x: e.clientX + (Math.random() - 0.5) * 10,
-                        y: e.clientY + (Math.random() - 0.5) * 10,
+                function push(p) {
+                    particles.push(p);
+                    if (particles.length > 400) particles.splice(0, particles.length - 400);
+                    ensureFx();
+                }
+
+                function setTrail(on) { trailOn = on; }
+
+                function drawStarP(g, x, y, r, rot, color, alpha) {
+                    g.save();
+                    g.translate(x, y);
+                    g.rotate(rot);
+                    g.beginPath();
+                    for (let i = 0; i < 10; i++) {
+                        const rr = i % 2 === 0 ? r : r * 0.42;
+                        const a = -Math.PI / 2 + (Math.PI * i) / 5;
+                        i === 0 ? g.moveTo(Math.cos(a) * rr, Math.sin(a) * rr)
+                                : g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+                    }
+                    g.closePath();
+                    g.globalAlpha = alpha;
+                    g.fillStyle = color;
+                    g.fill();
+                    g.restore();
+                }
+
+                function drawHeartP(g, x, y, s, color, alpha) {
+                    g.save();
+                    g.translate(x, y);
+                    g.scale(s / 32, s / 32);
+                    g.translate(-16, -16);
+                    heartPath(g);
+                    g.globalAlpha = alpha;
+                    g.fillStyle = color;
+                    g.fill();
+                    g.restore();
+                }
+
+                function zagPoints(x, y, angle, segs, segLen) {
+                    const pts = [[x, y]];
+                    let px = x, py = y, a = angle;
+                    for (let i = 0; i < segs; i++) {
+                        a += jit(1.1);
+                        px += Math.cos(a) * segLen * (0.7 + Math.random() * 0.6);
+                        py += Math.sin(a) * segLen * (0.7 + Math.random() * 0.6);
+                        pts.push([px, py]);
+                    }
+                    return pts;
+                }
+
+                function fxLoop() {
+                    fxRaf = null;
+                    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+                        if (p.delay > 0) { p.delay--; continue; }
+                        p.life -= p.decay;
+                        if (p.life <= 0) { particles.splice(i, 1); continue; }
+                        p.x += p.vx || 0;
+                        p.y += p.vy || 0;
+                        if (p.sway) p.x += Math.sin(p.life * 9 + p.phase) * p.sway;
+                        if (p.vr) p.r += p.vr;
+                        if (p.vrot) p.rot += p.vrot;
+                        const a = Math.min(1, p.life);
+                        switch (p.kind) {
+                            case 'dot':
+                                fxCtx.globalAlpha = a;
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.beginPath();
+                                fxCtx.arc(p.x, p.y, p.r * (0.4 + a * 0.6), 0, Math.PI * 2);
+                                fxCtx.fill();
+                                break;
+                            case 'spark':
+                                fxCtx.globalAlpha = a;
+                                fxCtx.fillStyle = `hsl(${p.hue}, 90%, 65%)`;
+                                fxCtx.beginPath();
+                                fxCtx.arc(p.x, p.y, 2 + a * 2.5, 0, Math.PI * 2);
+                                fxCtx.fill();
+                                break;
+                            case 'ring':
+                                fxCtx.globalAlpha = a;
+                                fxCtx.strokeStyle = p.color;
+                                fxCtx.lineWidth = p.lw;
+                                fxCtx.beginPath();
+                                fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                                fxCtx.stroke();
+                                break;
+                            case 'wring': {
+                                fxCtx.globalAlpha = a;
+                                fxCtx.strokeStyle = p.color;
+                                fxCtx.lineWidth = p.lw;
+                                fxCtx.beginPath();
+                                for (let k = 0; k <= 26; k++) {
+                                    const ang = (Math.PI * 2 * k) / 26;
+                                    const rr = p.r + Math.sin(ang * 5 + p.rot) * 2.5;
+                                    const wx = p.x + Math.cos(ang) * rr;
+                                    const wy = p.y + Math.sin(ang) * rr;
+                                    k === 0 ? fxCtx.moveTo(wx, wy) : fxCtx.lineTo(wx, wy);
+                                }
+                                fxCtx.closePath();
+                                fxCtx.stroke();
+                                break;
+                            }
+                            case 'star':
+                                drawStarP(fxCtx, p.x, p.y, p.r, p.rot, p.color, a);
+                                break;
+                            case 'heart':
+                                drawHeartP(fxCtx, p.x, p.y, p.s, p.color, a);
+                                break;
+                            case 'zap':
+                                fxCtx.globalAlpha = a;
+                                fxCtx.strokeStyle = p.color;
+                                fxCtx.lineWidth = p.lw;
+                                fxCtx.lineJoin = 'round';
+                                fxCtx.beginPath();
+                                p.pts.forEach(([zx, zy], k) =>
+                                    k === 0 ? fxCtx.moveTo(zx, zy) : fxCtx.lineTo(zx, zy));
+                                fxCtx.stroke();
+                                break;
+                        }
+                    }
+                    fxCtx.globalAlpha = 1;
+                    if (particles.length) fxRaf = requestAnimationFrame(fxLoop);
+                }
+
+                // ---- trails, one flavor per cursor ----
+                const TRAILS = {
+                    rainbow: (x, y, c) => push({
+                        kind: 'spark', x: x + jit(10), y: y + jit(10),
                         vy: -0.2 - Math.random() * 0.5,
-                        hue: (now / 8) % 360,
-                        life: 1,
-                    });
-                    if (sparks.length > 120) sparks.shift();
+                        hue: (performance.now() / 8) % 360, life: 1, decay: 0.02,
+                    }),
+                    comet: (x, y, c) => push({
+                        kind: 'dot', x: x + jit(6), y: y + jit(6),
+                        vx: jit(0.7), vy: jit(0.7),
+                        r: 2 + Math.random() * 2, color: c, life: 0.9, decay: 0.03,
+                    }),
+                    stars: (x, y, c) => push({
+                        kind: 'star', x: x + jit(10), y: y + jit(10),
+                        vy: 0.35, r: 2.5 + Math.random() * 2.5,
+                        rot: Math.random() * Math.PI, vrot: jit(0.18),
+                        color: c, life: 1, decay: 0.02,
+                    }),
+                    hearts: (x, y, c) => push({
+                        kind: 'heart', x: x + jit(10), y,
+                        vy: -0.5 - Math.random() * 0.4,
+                        s: 7 + Math.random() * 5, sway: 0.5, phase: Math.random() * 6,
+                        color: c, life: 1, decay: 0.018,
+                    }),
+                    zaps: (x, y, c) => push({
+                        kind: 'zap', x: 0, y: 0,
+                        pts: zagPoints(x + jit(8), y + jit(8), Math.random() * Math.PI * 2, 3, 5),
+                        color: c, lw: 1.8, life: 0.6, decay: 0.06,
+                    }),
+                    pencil: (x, y, c) => push({
+                        kind: 'dot', x, y, r: 1.4, color: c, life: 1.2, decay: 0.015,
+                    }),
+                    pings: (x, y, c) => push({
+                        kind: 'ring', x, y, r: 2, vr: 0.5, lw: 1.5,
+                        color: c, life: 0.7, decay: 0.025,
+                    }),
+                };
+
+                // ---- click bursts, one flavor per cursor ----
+                const CLICKS = {
+                    burst: (x, y, c) => {
+                        push({ kind: 'ring', x, y, r: 4, vr: 1.6, lw: 2.5, color: c, life: 1, decay: 0.05 });
+                        for (let i = 0; i < 10; i++) {
+                            const a = (Math.PI * 2 * i) / 10 + jit(0.3);
+                            const v = 1.5 + Math.random() * 2;
+                            push({ kind: 'dot', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+                                   r: 2 + Math.random() * 2, color: c, life: 1, decay: 0.04 });
+                        }
+                    },
+                    rainbowBurst: (x, y) => {
+                        for (let i = 0; i < 16; i++) {
+                            const a = (Math.PI * 2 * i) / 16 + jit(0.3);
+                            const v = 1.2 + Math.random() * 2.4;
+                            push({ kind: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.4,
+                                   hue: (i * 360) / 16, life: 1, decay: 0.03 });
+                        }
+                    },
+                    starBurst: (x, y, c) => {
+                        push({ kind: 'ring', x, y, r: 4, vr: 1.4, lw: 2, color: c, life: 0.9, decay: 0.05 });
+                        for (let i = 0; i < 8; i++) {
+                            const a = (Math.PI * 2 * i) / 8 + jit(0.3);
+                            const v = 1.4 + Math.random() * 1.8;
+                            push({ kind: 'star', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+                                   r: 3 + Math.random() * 3, rot: Math.random() * Math.PI, vrot: jit(0.3),
+                                   color: c, life: 1, decay: 0.035 });
+                        }
+                    },
+                    heartBurst: (x, y, c) => {
+                        for (let i = 0; i < 9; i++) {
+                            const a = -Math.PI / 2 + jit(2.4);
+                            const v = 1 + Math.random() * 1.8;
+                            push({ kind: 'heart', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.6,
+                                   s: 6 + Math.random() * 7, sway: 0.3, phase: Math.random() * 6,
+                                   color: c, life: 1, decay: 0.03 });
+                        }
+                    },
+                    zapBurst: (x, y, c) => {
+                        push({ kind: 'ring', x, y, r: 3, vr: 2.2, lw: 2, color: c, life: 0.7, decay: 0.07 });
+                        for (let i = 0; i < 6; i++) {
+                            const a = (Math.PI * 2 * i) / 6 + jit(0.4);
+                            push({ kind: 'zap', x: 0, y: 0, pts: zagPoints(x, y, a, 4, 8),
+                                   color: c, lw: 2, life: 0.7, decay: 0.07 });
+                        }
+                    },
+                    scribble: (x, y, c) => {
+                        push({ kind: 'wring', x, y, r: 6, vr: 1.1, lw: 2, rot: Math.random() * 6,
+                               color: c, life: 1, decay: 0.05 });
+                        for (let i = 0; i < 6; i++) {
+                            const a = Math.random() * Math.PI * 2;
+                            const v = 0.8 + Math.random() * 1.4;
+                            push({ kind: 'dot', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+                                   r: 1.5, color: c, life: 0.9, decay: 0.045 });
+                        }
+                    },
+                    ping: (x, y, c) => {
+                        for (let i = 0; i < 3; i++) {
+                            push({ kind: 'ring', x, y, r: 3, vr: 1.5, lw: 2,
+                                   color: c, life: 1, decay: 0.035, delay: i * 7 });
+                        }
+                    },
+                };
+
+                let lastTrail = 0;
+                document.addEventListener('mousemove', (e) => {
+                    if (!trailOn || !currentCursor || !currentCursor.fx) return;
+                    const now = performance.now();
+                    if (now - lastTrail < currentCursor.fx.every) return;
+                    lastTrail = now;
+                    TRAILS[currentCursor.fx.trail](e.clientX, e.clientY, currentCursor.fx.color);
                 }, { passive: true });
 
-                function trailLoop() {
-                    trailRaf = requestAnimationFrame(trailLoop);
-                    if (!trailCtx) return;
-                    trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
-                    for (let i = sparks.length - 1; i >= 0; i--) {
-                        const s = sparks[i];
-                        s.life -= 0.02;
-                        s.y += s.vy;
-                        if (s.life <= 0) { sparks.splice(i, 1); continue; }
-                        trailCtx.globalAlpha = s.life;
-                        trailCtx.fillStyle = `hsl(${s.hue}, 90%, 65%)`;
-                        const r = 2 + s.life * 2.5;
-                        trailCtx.beginPath();
-                        trailCtx.arc(s.x, s.y, r, 0, Math.PI * 2);
-                        trailCtx.fill();
-                    }
-                    trailCtx.globalAlpha = 1;
-                }
+                document.addEventListener('pointerdown', (e) => {
+                    if (!currentCursor || !currentCursor.fx) return;
+                    if (e.target.closest('.cursor-panel') || e.target.closest('.cursor-btn')) return;
+                    CLICKS[currentCursor.fx.click](e.clientX, e.clientY, currentCursor.fx.color);
+                });
 
                 // build the picker — each option previews its actual cursor image
                 CURSORS.forEach(cursor => {
@@ -3183,6 +3414,8 @@
             const pick = () => COLORS[Math.floor(Math.random() * COLORS.length)];
 
             document.addEventListener('pointerdown', function (e) {
+                // custom cursors bring their own click bursts
+                if (window.__customCursorActive) return;
                 const splat = document.createElement('div');
                 splat.className = 'click-splat';
                 splat.style.left = e.clientX + 'px';
