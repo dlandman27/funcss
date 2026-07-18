@@ -32,9 +32,15 @@ Example: `/add-to-index timemeters "Time Meters" "Progress bars for the day, wee
      "section": "<category>",
      "visible": true,
      "random": true,
-     "icon": null
+     "icon": null,
+     "created": "<today, YYYY-MM-DD>"
    }
    ```
+
+   `created` is required (the build fails without it). For a site that already existed
+   in git before being indexed, use its first commit date:
+   `git log --diff-filter=A --reverse --format=%as -- sites/<folder-name>/ | head -1`.
+   Cards newer than 21 days get a "NEW!" sticker on the homepage automatically.
 
 5. **Run `npm run build`** — regenerates `index.html`. The build validates the catalog and
    fails with a clear message if the entry is malformed.

@@ -38,12 +38,15 @@ function validateCatalog(catalog) {
     if (site.visible && !(typeof site.description === 'string' && site.description.trim())) {
       throw new Error(`visible site needs a non-empty description: ${site.slug}`);
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(site.created || '')) {
+      throw new Error(`created must be YYYY-MM-DD: ${site.slug}`);
+    }
   }
 }
 
 function renderCard(site, sectionTitle) {
   return [
-    `                <div class="site-card" data-categories="${site.section}">`,
+    `                <div class="site-card" data-categories="${site.section}" data-created="${site.created}">`,
     `                    <a href="${site.slug}/">`,
     `                        <h2>${escapeHtml(site.name)}</h2>`,
     `                        <p>${escapeHtml(site.description)}</p>`,

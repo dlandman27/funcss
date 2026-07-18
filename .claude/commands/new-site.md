@@ -38,9 +38,13 @@ Example: `/new-site typeracer "Type Racer" "Race against the clock to type a ran
      "section": "<category>",
      "visible": true,
      "random": true,
-     "icon": null
+     "icon": null,
+     "created": "<today, YYYY-MM-DD>"
    }
    ```
+
+   `created` is required — the build fails without it. Cards newer than 21 days get a
+   "NEW!" sticker on the homepage automatically.
 
    Then run `npm run build` to regenerate `index.html`.
 

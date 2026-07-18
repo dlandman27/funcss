@@ -11,9 +11,9 @@ const CATALOG = {
     { key: 'fun', title: 'Fun & Interactive' },
   ],
   sites: [
-    { slug: 'prefixsuffix', name: 'Prefix & Suffix', description: 'Practice prefixes', section: 'educational', visible: true, random: true, icon: null },
-    { slug: 'hidden-one', name: 'Hidden', description: '', section: 'fun', visible: false, random: true, icon: null },
-    { slug: 'doodle', name: 'Doodle', description: 'Draw things', section: 'fun', visible: true, random: false, icon: null },
+    { slug: 'prefixsuffix', name: 'Prefix & Suffix', description: 'Practice prefixes', section: 'educational', visible: true, random: true, icon: null, created: '2025-01-15' },
+    { slug: 'hidden-one', name: 'Hidden', description: '', section: 'fun', visible: false, random: true, icon: null, created: '2025-02-02' },
+    { slug: 'doodle', name: 'Doodle', description: 'Draw things', section: 'fun', visible: true, random: false, icon: null, created: '2025-03-09' },
   ],
 };
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -62,6 +62,31 @@ test('validateCatalog rejects visible site with empty description', () => {
   const c = clone(CATALOG);
   c.sites[0].description = '  ';
   assert.throws(() => validateCatalog(c), /description/);
+});
+
+test('renderCard emits data-created', () => {
+  const html = renderCard(CATALOG.sites[0], 'Educational');
+  assert.match(html, /data-created="2025-01-15"/);
+});
+
+test('validateCatalog rejects missing or malformed created', () => {
+  const c = clone(CATALOG);
+  delete c.sites[0].created;
+  assert.throws(() => validateCatalog(c), /created must be YYYY-MM-DD/);
+  const c2 = clone(CATALOG);
+  c2.sites[0].created = '15/01/2025';
+  assert.throws(() => validateCatalog(c2), /created must be YYYY-MM-DD/);
+});
+
+test('generated homepage includes the new-site badge logic', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const root = path.join(__dirname, '..');
+  const template = fs.readFileSync(path.join(root, 'templates', 'home.html'), 'utf8');
+  const html = generateHtml(template, clone(CATALOG));
+  assert.ok(html.includes("badge.className = 'new-badge'"), 'homepage should render .new-badge elements');
+  assert.ok(html.includes('data-created'), 'cards should carry data-created');
+  assert.ok(html.includes('value="newest"'), 'sort dropdown should offer Newest First');
 });
 
 test('validateCatalog rejects invalid slug and non-boolean flags', () => {

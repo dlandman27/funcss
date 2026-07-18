@@ -814,6 +814,29 @@
             transform: rotate(-3deg) scale(1.08);
         }
 
+        /* "★ NEW!" sticker — top-left, gold, for recently added sites */
+        .site-card .new-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 2;
+            background: #f7c948;
+            color: var(--ink);
+            border: var(--border);
+            border-radius: 999px;
+            padding: 4px 11px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            transform: rotate(-6deg);
+            box-shadow: 3px 3px 0 var(--ink);
+            transition: transform 0.15s ease;
+        }
+
+        .site-card:hover .new-badge {
+            transform: rotate(4deg) scale(1.12);
+        }
+
         .category {
             display: none;
         }
@@ -1031,6 +1054,7 @@
                 </div>
                 <select id="sortSelect">
                     <option value="default">Default Order</option>
+                    <option value="newest">Newest First</option>
                     <option value="az">A-Z</option>
                     <option value="za">Z-A</option>
                     <option value="lza">L-Z then A-K</option>
@@ -1382,6 +1406,24 @@
                 });
             });
 
+            // ---- "NEW!" stickers for recently added sites ---------------------
+            // Computed client-side from data-created, so stickers expire on
+            // their own without a rebuild.
+            const NEW_FOR_DAYS = 21;
+            siteCards.forEach(card => {
+                const created = card.dataset.created;
+                if (!created) return;
+                const age = (Date.now() - new Date(created + 'T00:00:00')) / 86400000;
+                if (age >= 0 && age < NEW_FOR_DAYS) {
+                    const badge = document.createElement('div');
+                    badge.className = 'new-badge';
+                    badge.textContent = '★ NEW!';
+                    badge.title = 'added ' + created;
+                    const link = card.querySelector('a');
+                    if (link) link.appendChild(badge);
+                }
+            });
+
             // ---- Play counts (live, from /api/counts) -------------------------
             fetch('/api/counts')
                 .then(r => (r.ok ? r.json() : null))
@@ -1505,7 +1547,12 @@
                         const titleA = a.querySelector('h2').textContent.toUpperCase();
                         const titleB = b.querySelector('h2').textContent.toUpperCase();
 
-                        if (sortValue === 'chaos') {
+                        if (sortValue === 'newest') {
+                            const dateA = a.dataset.created || '0000-00-00';
+                            const dateB = b.dataset.created || '0000-00-00';
+                            if (dateA !== dateB) return dateB.localeCompare(dateA);
+                            return titleA.localeCompare(titleB);
+                        } else if (sortValue === 'chaos') {
                             const indexA = customOrder.indexOf(titleA.charAt(0));
                             const indexB = customOrder.indexOf(titleB.charAt(0));
                             if (indexA === -1 && indexB === -1) return titleA.localeCompare(titleB);
