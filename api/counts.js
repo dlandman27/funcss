@@ -14,6 +14,7 @@ module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
     return res.status(200).json(result);
   } catch (err) {
+    console.error('counts failed:', err);
     return res.status(502).json({ error: 'counter unavailable' });
   }
 };

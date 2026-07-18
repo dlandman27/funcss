@@ -16,6 +16,7 @@ module.exports = async (req, res) => {
     const count = await redis(['hincrby', 'plays', slug, '1']);
     return res.status(200).json({ slug, count });
   } catch (err) {
+    console.error('hit failed:', err);
     return res.status(502).json({ error: 'counter unavailable' });
   }
 };

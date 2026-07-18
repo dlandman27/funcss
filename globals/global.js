@@ -32,9 +32,7 @@ document.addEventListener('keydown', function(event) {
             sessionStorage.setItem(key, '1');
         } catch (e) { /* storage blocked — count anyway */ }
         var url = '/api/hit?slug=' + encodeURIComponent(slug);
-        if (navigator.sendBeacon) {
-            navigator.sendBeacon(url);
-        } else {
+        if (!(navigator.sendBeacon && navigator.sendBeacon(url))) {
             fetch(url, { method: 'POST', keepalive: true }).catch(function () {});
         }
     } catch (e) { /* never break a site over analytics */ }
