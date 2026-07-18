@@ -4,228 +4,394 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timezone Converter</title>
+    <title>Time Zone Ticket</title>
+    <meta name="description" content="A boarding pass between any two time zones, updating live">
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            max-width: 400px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f0f0f0;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --gold: #f7c948;
+            --sky: #5aa0db;
+            --coral: #f0563e;
         }
 
-        .converter {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            position: relative;
-            border: 2px dashed #ddd;
-        }
-
-        .converter::before {
-            content: '';
-            position: absolute;
-            left: -10px;
-            top: 50%;
-            width: 20px;
-            height: 20px;
-            background: #f0f0f0;
-            border-radius: 50%;
-            transform: translateY(-50%);
-        }
-
-        .converter::after {
-            content: '';
-            position: absolute;
-            right: -10px;
-            top: 50%;
-            width: 20px;
-            height: 20px;
-            background: #f0f0f0;
-            border-radius: 50%;
-            transform: translateY(-50%);
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            font-size: 1.5em;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .time-display {
-            font-size: 2.2em;
-            text-align: center;
-            margin: 15px 0;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
-        select {
+        html, body {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background: #f8f9fa;
-            color: #2c3e50;
+            min-height: 100%;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
         }
 
-        .search-input {
-            width: calc(100% - 22px);  /* Adjust for padding + border */
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background: #f8f9fa;
-            box-sizing: border-box;  /* Include padding and border in width calculation */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 30px 14px;
+            gap: 18px;
         }
 
-        label {
-            font-weight: bold;
-            color: #666;
-            text-transform: uppercase;
-            font-size: 0.8em;
-            letter-spacing: 1px;
+        /* ---- the boarding pass ---- */
+
+        .ticket {
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 18px;
+            box-shadow: 8px 8px 0 var(--ink);
+            width: min(94vw, 480px);
+            transform: rotate(-0.6deg);
+            overflow: hidden;
         }
 
-        .arrow {
-            text-align: center;
-            font-size: 1.5em;
-            color: #999;
-            margin: 15px 0;
+        .ticket-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: var(--sky);
+            border-bottom: 3px solid var(--ink);
+        }
+
+        .airline {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(15px, 3vw, 20px);
+            letter-spacing: 0.06em;
+            color: var(--cream);
+            -webkit-text-stroke: 1px var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 2px 2px 0 var(--ink);
+        }
+
+        .pass-label {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            padding: 4px 10px;
+            transform: rotate(2deg);
+        }
+
+        .zone-section { padding: 16px 20px 18px; }
+
+        .zone-label {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.22em;
+            color: rgba(32, 26, 23, 0.5);
+            margin-bottom: 8px;
+        }
+
+        .search-input, select {
+            width: 100%;
+            padding: 9px 14px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 14px;
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            background: var(--paper);
+            color: var(--ink);
+            outline: none;
+            margin-bottom: 6px;
+        }
+
+        select { cursor: pointer; }
+
+        .big-time {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(38px, 9vw, 58px);
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            margin-top: 6px;
+        }
+
+        .big-time small {
+            font-size: 0.4em;
+            color: rgba(32, 26, 23, 0.55);
+        }
+
+        .zone-date {
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(32, 26, 23, 0.55);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .day-tag {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-style: normal;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            padding: 2px 8px;
+            transform: rotate(-2deg);
+        }
+
+        /* perforated tear line */
+        .perforation {
             position: relative;
+            border-top: 3px dashed rgba(32, 26, 23, 0.35);
+            margin: 0 -3px;
         }
 
-        .arrow::before,
-        .arrow::after {
+        .perforation::before, .perforation::after {
             content: '';
             position: absolute;
-            top: 50%;
-            width: 35%;
-            height: 1px;
-            background: #ddd;
+            top: -14px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--paper);
+            border: 3px solid var(--ink);
         }
 
-        .arrow::before {
-            left: 0;
+        .perforation::before { left: -16px; }
+        .perforation::after { right: -16px; }
+
+        .swap-row {
+            display: flex;
+            justify-content: center;
+            margin: -16px 0;
+            position: relative;
+            z-index: 2;
         }
 
-        .arrow::after {
-            right: 0;
+        #swapBtn {
+            background: var(--gold);
+            border: 2.5px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 8px 20px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 13px;
+            color: var(--ink);
+            cursor: pointer;
+            transition: transform 0.15s ease;
         }
 
-        .timezone-section {
-            padding: 15px;
-            border-radius: 8px;
-            background: #f8f9fa;
-            margin: 10px 0;
+        #swapBtn:hover { transform: translate(-2px, -2px) rotate(-2deg); }
+        #swapBtn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        /* stub */
+        .stub {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 14px 20px;
+            background: var(--paper);
+            border-top: 3px solid var(--ink);
+            flex-wrap: wrap;
+        }
+
+        .stub-field .k {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            color: rgba(32, 26, 23, 0.5);
+        }
+
+        .stub-field .v {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: 16px;
+        }
+
+        .stub-field .note {
+            font-style: italic;
+            font-size: 10px;
+            color: rgba(32, 26, 23, 0.5);
+        }
+
+        .barcode {
+            display: flex;
+            gap: 2px;
+            height: 34px;
+            align-items: stretch;
+        }
+
+        .barcode i { background: var(--ink); }
+
+        #diff {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(13px, 2.4vw, 17px);
+            background: var(--gold);
+            border: 2.5px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 9px 22px;
+            transform: rotate(1deg);
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="converter">
-        <h1>Time Zone Ticket</h1>
-        
-        <div class="timezone-section">
-            <label for="fromTimezone">Departure</label>
-            <input type="text" id="fromSearch" class="search-input" placeholder="Search timezone...">
+    <div class="ticket">
+        <div class="ticket-header">
+            <div class="airline">TIME ZONE AIR</div>
+            <div class="pass-label">BOARDING PASS</div>
+        </div>
+
+        <div class="zone-section">
+            <div class="zone-label">DEPARTURE</div>
+            <input type="text" id="fromSearch" class="search-input" placeholder="search time zones&hellip;">
             <select id="fromTimezone"></select>
-            <div class="time-display" id="fromTime"></div>
+            <div class="big-time" id="fromTime"></div>
+            <div class="zone-date" id="fromDate"></div>
         </div>
 
-        <div class="arrow">✈️</div>
+        <div class="swap-row"><button id="swapBtn">&#8645; swap</button></div>
+        <div class="perforation"></div>
 
-        <div class="timezone-section">
-            <label for="toTimezone">Arrival</label>
-            <input type="text" id="toSearch" class="search-input" placeholder="Search timezone...">
+        <div class="zone-section">
+            <div class="zone-label">ARRIVAL</div>
+            <input type="text" id="toSearch" class="search-input" placeholder="search time zones&hellip;">
             <select id="toTimezone"></select>
-            <div class="time-display" id="toTime"></div>
+            <div class="big-time" id="toTime"></div>
+            <div class="zone-date" id="toDate"></div>
         </div>
 
-        <div id="timeDifference" style="text-align: center; margin-top: 15px; color: #666;"></div>
+        <div class="stub">
+            <div class="stub-field">
+                <div class="k">GATE</div>
+                <div class="v">B7</div>
+                <div class="note">it's always B7</div>
+            </div>
+            <div class="stub-field">
+                <div class="k">SEAT</div>
+                <div class="v">32F</div>
+                <div class="note">middle. sorry.</div>
+            </div>
+            <div class="barcode" id="barcode"></div>
+        </div>
     </div>
+
+    <div id="diff"></div>
 
     <script>
         const timezones = Intl.supportedValuesOf('timeZone');
         const fromSelect = document.getElementById('fromTimezone');
         const toSelect = document.getElementById('toTimezone');
-        const fromTimeDisplay = document.getElementById('fromTime');
-        const toTimeDisplay = document.getElementById('toTime');
-        const fromSearch = document.getElementById('fromSearch');
-        const toSearch = document.getElementById('toSearch');
-        const timeDifferenceDisplay = document.getElementById('timeDifference');
 
-        // Function to populate timezone dropdown
-        function populateTimezoneSelect(select, searchTerm = '') {
+        const pretty = (tz) => {
+            const parts = tz.split('/');
+            const city = parts[parts.length - 1].replace(/_/g, ' ');
+            return parts.length > 1 ? `${city} — ${parts[0].replace(/_/g, ' ')}` : city;
+        };
+
+        function populate(select, searchTerm, keep) {
+            const prev = keep || select.value;
             select.innerHTML = '';
-            const filteredTimezones = timezones.filter(tz => 
-                tz.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            filteredTimezones.forEach(timezone => {
-                select.add(new Option(timezone, timezone));
+            const filtered = timezones.filter(tz =>
+                tz.toLowerCase().replace(/_/g, ' ').includes(searchTerm.toLowerCase()));
+            for (const tz of filtered) select.add(new Option(pretty(tz), tz));
+            if (filtered.includes(prev)) select.value = prev;
+            updateAll();
+        }
+
+        // restore the last trip
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem('timezoneticket')) || {}; } catch (e) {}
+        const here = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        populate(fromSelect, '', saved.from || here);
+        populate(toSelect, '', saved.to || (here === 'America/New_York' ? 'Europe/London' : 'America/New_York'));
+
+        document.getElementById('fromSearch').addEventListener('input', (e) => populate(fromSelect, e.target.value));
+        document.getElementById('toSearch').addEventListener('input', (e) => populate(toSelect, e.target.value));
+
+        function save() {
+            try {
+                localStorage.setItem('timezoneticket', JSON.stringify({
+                    from: fromSelect.value, to: toSelect.value,
+                }));
+            } catch (e) {}
+        }
+
+        document.getElementById('swapBtn').addEventListener('click', () => {
+            const a = fromSelect.value;
+            populate(fromSelect, document.getElementById('fromSearch').value, toSelect.value);
+            populate(toSelect, document.getElementById('toSearch').value, a);
+            save();
+        });
+
+        function fmtTime(tz) {
+            const s = new Date().toLocaleTimeString('en-US', {
+                timeZone: tz, hour12: true, hour: 'numeric', minute: '2-digit',
+            });
+            const [time, meridiem] = s.split(' ');
+            return `${time} <small>${meridiem}</small>`;
+        }
+
+        function fmtDate(tz) {
+            return new Date().toLocaleDateString('en-US', {
+                timeZone: tz, weekday: 'long', month: 'long', day: 'numeric',
             });
         }
 
-        // Initial population of dropdowns
-        populateTimezoneSelect(fromSelect);
-        populateTimezoneSelect(toSelect);
+        function dayOffset(fromTz, toTz) {
+            const day = (tz) => new Date().toLocaleDateString('en-CA', { timeZone: tz });
+            const a = day(fromTz), b = day(toTz);
+            if (a === b) return 0;
+            return b > a ? 1 : -1;
+        }
 
-        // Search functionality
-        fromSearch.addEventListener('input', () => {
-            populateTimezoneSelect(fromSelect, fromSearch.value);
-        });
+        function updateAll() {
+            if (!fromSelect.value || !toSelect.value) return;
+            document.getElementById('fromTime').innerHTML = fmtTime(fromSelect.value);
+            document.getElementById('toTime').innerHTML = fmtTime(toSelect.value);
+            document.getElementById('fromDate').textContent = fmtDate(fromSelect.value);
 
-        toSearch.addEventListener('input', () => {
-            populateTimezoneSelect(toSelect, toSearch.value);
-        });
+            const off = dayOffset(fromSelect.value, toSelect.value);
+            const tag = off === 1 ? '<span class="day-tag">TOMORROW</span>'
+                : off === -1 ? '<span class="day-tag">YESTERDAY</span>' : '';
+            document.getElementById('toDate').innerHTML = fmtDate(toSelect.value) + ' ' + tag;
 
-        // Try to detect user's timezone
-        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        fromSelect.value = userTimezone;
-        
-        // Default "to" timezone to a different one
-        toSelect.value = userTimezone === 'America/New_York' ? 'Europe/London' : 'America/New_York';
-
-        function updateTimes() {
+            // difference, handling half- and quarter-hour zones honestly
             const now = new Date();
-            
-            // Calculate time difference
-            const fromTime = new Date(now.toLocaleString('en-US', { timeZone: fromSelect.value }));
-            const toTime = new Date(now.toLocaleString('en-US', { timeZone: toSelect.value }));
-            const diffHours = (toTime - fromTime) / (1000 * 60 * 60);
-            const diffText = diffHours === 0 
-                ? 'Same time zone' 
-                : `${Math.abs(diffHours)} hour${Math.abs(diffHours) !== 1 ? 's' : ''} ${diffHours > 0 ? 'ahead' : 'behind'}`;
-            timeDifferenceDisplay.textContent = diffText;
-
-            // Update "from" time
-            fromTimeDisplay.textContent = now.toLocaleTimeString('en-US', {
-                timeZone: fromSelect.value,
-                hour12: true,
-                hour: 'numeric',
-                minute: '2-digit'
-            });
-
-            // Update "to" time
-            toTimeDisplay.textContent = now.toLocaleTimeString('en-US', {
-                timeZone: toSelect.value,
-                hour12: true,
-                hour: 'numeric',
-                minute: '2-digit'
-            });
+            const wall = (tz) => new Date(now.toLocaleString('en-US', { timeZone: tz }));
+            const diff = Math.round(((wall(toSelect.value) - wall(fromSelect.value)) / 3600000) * 4) / 4;
+            const abs = Math.abs(diff);
+            const nice = abs === Math.floor(abs) ? abs : abs.toFixed(abs * 4 % 2 === 0 ? 1 : 2);
+            document.getElementById('diff').textContent =
+                diff === 0 ? 'SAME TIME. SHORT FLIGHT.'
+                : `${nice} HOUR${abs === 1 ? '' : 'S'} ${diff > 0 ? 'AHEAD' : 'BEHIND'}`;
         }
 
-        // Update times when selections change
-        fromSelect.addEventListener('change', updateTimes);
-        toSelect.addEventListener('change', updateTimes);
+        fromSelect.addEventListener('change', () => { save(); updateAll(); });
+        toSelect.addEventListener('change', () => { save(); updateAll(); });
 
-        // Update times immediately and every second
-        updateTimes();
-        setInterval(updateTimes, 1000);
+        // barcode (it scans as nothing)
+        const barcode = document.getElementById('barcode');
+        for (let i = 0; i < 24; i++) {
+            const bar = document.createElement('i');
+            bar.style.width = (Math.random() < 0.3 ? 4 : Math.random() < 0.5 ? 2 : 1) + 'px';
+            barcode.appendChild(bar);
+        }
+
+        updateAll();
+        setInterval(updateAll, 1000);
     </script>
 </body>
 </html>

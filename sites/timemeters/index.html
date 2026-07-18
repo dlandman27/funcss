@@ -60,6 +60,18 @@
             text-transform: uppercase;
         }
 
+        .c-fact {
+            font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            font-size: clamp(0.4rem, 1.3vmin, 0.7rem);
+            color: rgba(255,255,255,0.34);
+            letter-spacing: 0.12em;
+            margin-top: 14px;
+            transition: opacity 0.6s ease;
+            min-height: 1.2em;
+        }
+
+        .c-fact.fading { opacity: 0; }
+
         /* Hint text — fades after load */
         .hint {
             position: fixed;
@@ -138,6 +150,7 @@
     <div class="center-overlay">
         <div class="c-time" id="c-time">--:--:--</div>
         <div class="c-date"  id="c-date"></div>
+        <div class="c-fact"  id="c-fact"></div>
     </div>
 </div>
 
@@ -394,6 +407,26 @@ function update() {
 
 update();
 setInterval(update, 1000);
+
+// rotating deadpan fact under the clock: one meter at a time
+let factIdx = 0;
+const factEl = document.getElementById('c-fact');
+
+function rotateFact() {
+    const ring = RINGS[factIdx % RINGS.length];
+    factIdx++;
+    factEl.classList.add('fading');
+    setTimeout(() => {
+        if (ring.progress !== undefined) {
+            factEl.textContent =
+                `the ${ring.label.toLowerCase()} is ${(ring.progress * 100).toFixed(2)}% complete`;
+        }
+        factEl.classList.remove('fading');
+    }, 600);
+}
+
+rotateFact();
+setInterval(rotateFact, 6000);
 </script>
 </body>
 </html>
