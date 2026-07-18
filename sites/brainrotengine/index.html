@@ -218,7 +218,11 @@
             <div class="togglerow">
                 <div class="tog on" id="t-duplicate">Duplicate</div>
                 <div class="tog" id="t-grow">Grow</div>
-                <div class="tog on" id="t-sound">Blip</div>
+            </div>
+            <div class="toglabel">Also:</div>
+            <div class="togglerow">
+                <div class="tog on" id="t-collide">Balls collide</div>
+                <div class="tog on" id="t-sound">Sound</div>
             </div>
         </div>
 
@@ -246,7 +250,7 @@
 
         // ---- config ----
         const sliders = ['balls', 'size', 'gravity', 'energy', 'trails'];
-        const toggles = ['duplicate', 'grow', 'sound'];
+        const toggles = ['duplicate', 'grow', 'collide', 'sound'];
 
         function sliderEl(k) { return document.getElementById('c-' + k); }
         function togEl(k) { return document.getElementById('t-' + k); }
@@ -393,6 +397,37 @@
                 }
             }
             for (const s of spawnQueue) spawnBall(...s);
+
+            // ball-to-ball physics: elastic impulses, mass ~ area.
+            // restitution capped at 1 so energy-gain mode can't detonate the pile.
+            if (cfg.collide) {
+                const e = Math.min(1, energy);
+                for (let i = 0; i < balls.length; i++) {
+                    const a = balls[i];
+                    for (let j = i + 1; j < balls.length; j++) {
+                        const b = balls[j];
+                        const dx = b.x - a.x, dy = b.y - a.y;
+                        const rs = a.r + b.r;
+                        if (dx > rs || dx < -rs || dy > rs || dy < -rs) continue;
+                        const d2 = dx * dx + dy * dy;
+                        if (d2 >= rs * rs || d2 === 0) continue;
+                        const d = Math.sqrt(d2);
+                        const nx = dx / d, ny = dy / d;
+                        const ma = a.r * a.r, mb = b.r * b.r;
+                        const total = ma + mb;
+                        const overlap = rs - d;
+                        a.x -= nx * overlap * (mb / total);
+                        a.y -= ny * overlap * (mb / total);
+                        b.x += nx * overlap * (ma / total);
+                        b.y += ny * overlap * (ma / total);
+                        const vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+                        if (vn >= 0) continue;
+                        const imp = -(1 + e) * vn / (1 / ma + 1 / mb);
+                        a.vx -= imp * nx / ma; a.vy -= imp * ny / ma;
+                        b.vx += imp * nx / mb; b.vy += imp * ny / mb;
+                    }
+                }
+            }
         }
 
         // ---- render ----
