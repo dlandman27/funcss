@@ -1,479 +1,512 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
-    <title>Happy Birthday!</title>
     <meta charset="UTF-8">
+    <title>Happy Birthday!</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A fun birthday celebration page with animated effects">
+    <meta name="description" content="Make a birthday page for someone and send them the link">
     <meta name="author" content="randomsitesontheweb">
-    <meta name="theme-color" content="#87CEEB">
+    <meta name="theme-color" content="#f2ede2">
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --gold: #f7c948;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
         body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Comic Neue', sans-serif;
-            background: radial-gradient(circle at center, #ffffff 0%, #87CEEB 100%);
-            overflow: hidden;
-            position: relative;
+            background: var(--paper);
         }
 
-        /* Add sunburst effect */
-        body::before {
-            content: '';
+        /* slow sunburst, palette flavored */
+        #sunburst {
             position: fixed;
             top: 50%;
             left: 50%;
-            width: 200%;
-            height: 200%;
-            background: repeating-conic-gradient(from 0deg, #87CEEB 0deg 10deg, #5FB6E5 10deg 20deg);
-            animation: rotate 60s linear infinite;
+            width: 240vmax;
+            height: 240vmax;
+            background: repeating-conic-gradient(from 0deg,
+                rgba(247, 201, 72, 0.18) 0deg 12deg,
+                transparent 12deg 24deg);
+            animation: spin 90s linear infinite;
             transform: translate(-50%, -50%);
-            z-index: -1;
+            pointer-events: none;
         }
 
-        @keyframes rotate {
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
         }
+
+        #fx {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* ---- the message ---- */
 
         .birthday-message {
-            font-size: 5em;
             text-align: center;
-            filter: drop-shadow(0 0 10px white);
-            opacity: 0;  /* Start hidden */
-            transform: scale(0.5);  /* Start smaller */
-            animation: popMessage 1s cubic-bezier(0.17, 0.89, 0.32, 1.28) forwards;  /* Add pop animation */
+            z-index: 2;
+            padding: 20px;
         }
 
-        @keyframes popMessage {
-            0% {
-                opacity: 0;
-                transform: scale(0.5);
-            }
-            70% {
-                transform: scale(1.1);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
+        .row { margin-bottom: clamp(8px, 2vh, 20px); }
 
-        .birthday-letter {
+        .letter {
             display: inline-block;
-            animation: float 2s ease-in-out infinite;
-            margin: 0 5px;
-            padding: 10px;
-            border-radius: 15px;
-            background: white;
-            border: 4px solid #333;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(26px, 7vw, 64px);
+            line-height: 1;
+            padding: clamp(6px, 1.4vw, 14px) clamp(8px, 1.8vw, 18px);
+            margin: 3px;
+            background: #fff8ef;
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(var(--tilt)) scale(0);
+            animation: letterIn 0.5s cubic-bezier(0.22, 1.6, 0.36, 1) forwards,
+                       floatLetter 2.6s ease-in-out var(--float-delay) infinite;
         }
 
-        /* Different colors for each letter */
-        .birthday-letter:nth-child(5n+1) { color: #FF0000; animation-delay: 0.0s; }
-        .birthday-letter:nth-child(5n+2) { color: #0000FF; animation-delay: 0.1s; }
-        .birthday-letter:nth-child(5n+3) { color: #FF69B4; animation-delay: 0.2s; }
-        .birthday-letter:nth-child(5n+4) { color: #32CD32; animation-delay: 0.3s; }
-        .birthday-letter:nth-child(5n+5) { color: #FFA500; animation-delay: 0.4s; }
-        
+        @keyframes letterIn {
+            to { transform: rotate(var(--tilt)) scale(1); }
+        }
+
+        @keyframes floatLetter {
+            0%, 100% { translate: 0 0; }
+            50% { translate: 0 -12px; }
+        }
+
+        /* ---- balloons ---- */
 
         .balloon {
+            position: fixed;
+            bottom: -140px;
+            width: 54px;
+            height: 66px;
+            border-radius: 50% 50% 48% 52% / 44% 44% 56% 56%;
+            border: 3px solid var(--ink);
+            box-shadow: inset -6px -8px 0 rgba(32, 26, 23, 0.14);
+            cursor: pointer;
+            animation: rise var(--dur) linear forwards;
+            z-index: 3;
+        }
+
+        .balloon::before {
+            /* highlight */
+            content: '';
             position: absolute;
-            font-size: 80px;
-            opacity: 0;
-            transform: translateY(100vh);
-            animation: floatBalloon 6s ease-in-out infinite,
-                       balloonEntrance 1s ease-out forwards;
+            top: 9px;
+            left: 10px;
+            width: 13px;
+            height: 17px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.55);
+            transform: rotate(-20deg);
         }
 
-        @keyframes floatBalloon {
-            0%, 100% { transform: translateY(0) rotate(3deg); }
-            50% { transform: translateY(-30px) rotate(-3deg); }
+        .balloon::after {
+            /* string */
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            width: 2px;
+            height: 46px;
+            background: var(--ink);
+            transform: translateX(-50%);
         }
 
-        @keyframes balloonEntrance {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes rise {
+            0% { transform: translateY(0) rotate(-3deg); }
+            25% { transform: translateY(-28vh) rotate(4deg); }
+            50% { transform: translateY(-56vh) rotate(-4deg); }
+            75% { transform: translateY(-84vh) rotate(3deg); }
+            100% { transform: translateY(-130vh) rotate(-2deg); }
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
+        /* ---- the prompt card ---- */
 
         .prompt-container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            background: #fff8ef;
+            border: 3px solid var(--ink);
+            border-radius: 18px;
+            box-shadow: 8px 8px 0 var(--ink);
+            padding: clamp(24px, 5vw, 44px);
             text-align: center;
-            max-width: 500px;
-            margin: 20px;
-        }
-
-        .share-link {
-            margin-top: 20px;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 5px;
-            word-break: break-all;
-        }
-
-        /* Add new styles for copy feedback */
-        .copy-feedback {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #ff69b4;
-            color: white;
-            padding: 20px 40px;
-            border-radius: 50px;
-            font-size: 1.5em;
-            animation: popIn 1.5s ease-out forwards;
-            z-index: 1000;
-        }
-
-        @keyframes popIn {
-            0% { transform: translate(-50%, -50%) scale(0); }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-        }
-
-        button {
-            background: #ff69b4;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1.2em;
-            margin: 10px;
-        }
-
-        input {
-            padding: 10px;
-            font-size: 1.2em;
-            margin: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        h2{
-            font-size: 1.8em;
-            color: #333;
-            margin-bottom: 15px;
-            text-align: center;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            max-width: min(92vw, 480px);
+            z-index: 2;
+            transform: rotate(-1deg);
         }
 
         .prompt-container h2 {
-            font-size: 2em;
-            margin-bottom: 20px;
-            color: #333;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(22px, 4.6vw, 34px);
+            -webkit-text-stroke: 1px var(--ink);
+            paint-order: stroke fill;
+            color: var(--coral);
+            text-shadow: 3px 3px 0 var(--ink);
+            margin-bottom: 18px;
         }
 
-        /* Add media queries for better mobile responsiveness */
-        @media (max-width: 768px) {
-            .birthday-message {
-                font-size: 3em;
-                width: 90vw;
-                margin: 10px auto;
-            }
-
-            .birthday-letter {
-                margin: 2px;
-                padding: 5px;
-                border-width: 3px;
-            }
-
-            .balloon {
-                font-size: 40px;
-            }
-
-            .prompt-container {
-                padding: 15px;
-                margin: 5px;
-                width: 90vw;
-                max-width: none;
-            }
-
-            input {
-                width: 90%;
-                font-size: 1em;
-            }
-
-            button {
-                padding: 8px 12px;
-                font-size: 0.9em;
-                margin: 5px;
-            }
+        input {
+            width: 100%;
+            padding: 12px 18px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 17px;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            background: var(--paper);
+            outline: none;
+            text-align: center;
+            margin-bottom: 16px;
+            -webkit-user-select: text;
+            user-select: text;
         }
 
-        @media (max-width: 480px) {
-            .birthday-message {
-                font-size: 2em;
-            }
+        .btn {
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 15px;
+            padding: 11px 22px;
+            margin: 4px;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            background: var(--gold);
+            color: var(--ink);
+        }
 
-            .birthday-letter {
-                padding: 3px;
-                margin: 1px;
-                border-width: 2px;
-            }
+        .btn.alt { background: var(--sky); }
+        .btn:hover { transform: translate(-2px, -2px) rotate(-1.5deg); }
+        .btn:active { transform: translate(2px, 2px); }
 
-            .balloon {
-                font-size: 30px;
-                width: 15px !important;
-                height: 20px !important;
-            }
+        /* ---- floating toolbar on the celebration screen ---- */
 
-            h2 {
-                font-size: 1.4em;
-            }
+        #partyBar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 60;
+        }
+
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            background: var(--pink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 10px 24px;
+            font-style: italic;
+            font-size: 15px;
+            z-index: 100;
+            animation: toastIn 2.2s ease forwards;
+        }
+
+        @keyframes toastIn {
+            0% { transform: translateX(-50%) rotate(-2deg) scale(0.3); opacity: 0; }
+            12% { transform: translateX(-50%) rotate(-2deg) scale(1.08); opacity: 1; }
+            18% { transform: translateX(-50%) rotate(-2deg) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
         }
     </style>
 </head>
 <body>
+    <div id="sunburst"></div>
+    <canvas id="fx"></canvas>
     <div id="content"></div>
+    <div id="partyBar"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script>
-        const NOTES = {
-            'C4': 261.63,
-            'D4': 293.66,
-            'E4': 329.63,
-            'F4': 349.23,
-            'G4': 392.00,
-            'A4': 440.00,
-            'B4': 493.88,
-            'Bb4': 466.16,
-            'C5': 523.25
-        };
+        const INK = '#201a17';
+        const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#f7c948'];
+        const jit = (n) => (Math.random() - 0.5) * n;
+        const pick = (arr) => arr[(Math.random() * arr.length) | 0];
 
-        const BIRTHDAY_SONG = [
-            { note: 'C4', duration: 0.25 },
-            { note: 'C4', duration: 0.25 },
-            { note: 'D4', duration: 0.5 },
-            { note: 'C4', duration: 0.5 },
-            { note: 'F4', duration: 0.5 },
-            { note: 'E4', duration: 1 },
-            
-            { note: 'C4', duration: 0.25 },
-            { note: 'C4', duration: 0.25 },
-            { note: 'D4', duration: 0.5 },
-            { note: 'C4', duration: 0.5 },
-            { note: 'G4', duration: 0.5 },
-            { note: 'F4', duration: 1 },
-            
-            { note: 'C4', duration: 0.25 },
-            { note: 'C4', duration: 0.25 },
-            { note: 'C5', duration: 0.5 },
-            { note: 'A4', duration: 0.5 },
-            { note: 'F4', duration: 0.5 },
-            { note: 'E4', duration: 0.5 },
-            { note: 'D4', duration: 0.5 },
-            
-            { note: 'Bb4', duration: 0.25 },
-            { note: 'Bb4', duration: 0.25 },
-            { note: 'A4', duration: 0.5 },
-            { note: 'F4', duration: 0.5 },
-            { note: 'G4', duration: 0.5 },
-            { note: 'F4', duration: 1 }
-        ];
+        // ---- confetti engine (no CDN required at a birthday party) ----
 
-        function playNote(frequency, duration) {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+        const fxCanvas = document.getElementById('fx');
+        const fxCtx = fxCanvas.getContext('2d');
+        let FW, FH;
+        const bits = [];
+        let fxRaf = null;
 
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.type = 'sine';
-            oscillator.frequency.value = frequency;
-
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration - 0.05);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + duration);
+        function sizeFx() {
+            FW = fxCanvas.width = window.innerWidth;
+            FH = fxCanvas.height = window.innerHeight;
         }
 
-        function playBirthdaySong() {
-            let time = 0;
-            const totalDuration = BIRTHDAY_SONG.reduce((sum, note) => sum + note.duration, 0);
-            
-            function playSongLoop() {
-                BIRTHDAY_SONG.forEach(note => {
-                    setTimeout(() => {
-                        playNote(NOTES[note.note], note.duration);
-                    }, time * 1000);
-                    time += note.duration;
+        function burst(x, y, n, spread) {
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const v = 2 + Math.random() * (spread || 6);
+                bits.push({
+                    x, y,
+                    vx: Math.cos(a) * v,
+                    vy: Math.sin(a) * v - 3,
+                    g: 0.14,
+                    w: 5 + Math.random() * 5,
+                    h: 3 + Math.random() * 4,
+                    rot: Math.random() * Math.PI,
+                    vrot: jit(0.35),
+                    color: pick(COLORS),
+                    life: 1,
+                    decay: 0.008 + Math.random() * 0.008,
                 });
-                
-                // Reset time and schedule next loop
-                setTimeout(() => {
-                    time = 0;
-                    playSongLoop();
-                }, totalDuration * 1000);
             }
-            
-            playSongLoop();
+            if (bits.length > 600) bits.splice(0, bits.length - 600);
+            if (!fxRaf) fxRaf = requestAnimationFrame(fxLoop);
         }
+
+        function drizzle() {
+            burst(Math.random() * FW, -20, 6, 3);
+        }
+
+        function fxLoop() {
+            fxRaf = null;
+            fxCtx.clearRect(0, 0, FW, FH);
+            for (let i = bits.length - 1; i >= 0; i--) {
+                const p = bits[i];
+                p.life -= p.decay;
+                if (p.life <= 0 || p.y > FH + 30) { bits.splice(i, 1); continue; }
+                p.vy += p.g;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rot += p.vrot;
+                fxCtx.save();
+                fxCtx.translate(p.x, p.y);
+                fxCtx.rotate(p.rot);
+                fxCtx.globalAlpha = Math.min(1, p.life * 1.6);
+                fxCtx.fillStyle = p.color;
+                fxCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                fxCtx.lineWidth = 1.3;
+                fxCtx.strokeStyle = INK;
+                fxCtx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                fxCtx.restore();
+            }
+            fxCtx.globalAlpha = 1;
+            if (bits.length) fxRaf = requestAnimationFrame(fxLoop);
+        }
+
+        // ---- balloons you can pop ----
+
+        function launchBalloon() {
+            const b = document.createElement('div');
+            b.className = 'balloon';
+            b.style.left = 4 + Math.random() * 90 + 'vw';
+            b.style.background = pick(COLORS);
+            b.style.setProperty('--dur', 9 + Math.random() * 8 + 's');
+            b.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                const r = b.getBoundingClientRect();
+                burst(r.left + r.width / 2, r.top + r.height / 2, 24, 5);
+                b.remove();
+            });
+            b.addEventListener('animationend', () => b.remove());
+            document.body.appendChild(b);
+        }
+
+        // ---- the song (one AudioContext, actually wired up) ----
+
+        const SONG = [
+            ['C4', 0.25], ['C4', 0.25], ['D4', 0.5], ['C4', 0.5], ['F4', 0.5], ['E4', 1],
+            ['C4', 0.25], ['C4', 0.25], ['D4', 0.5], ['C4', 0.5], ['G4', 0.5], ['F4', 1],
+            ['C4', 0.25], ['C4', 0.25], ['C5', 0.5], ['A4', 0.5], ['F4', 0.5], ['E4', 0.5], ['D4', 1],
+            ['Bb4', 0.25], ['Bb4', 0.25], ['A4', 0.5], ['F4', 0.5], ['G4', 0.5], ['F4', 1],
+        ];
+        const FREQ = { C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392, A4: 440, Bb4: 466.16, B4: 493.88, C5: 523.25 };
+
+        let audio = null;
+        let songTimer = null;
+        let singing = false;
+
+        function playSong() {
+            if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+            let t = audio.currentTime + 0.08;
+            const tempo = 0.62;
+            for (const [note, beats] of SONG) {
+                const dur = beats * tempo * 2;
+                const osc = audio.createOscillator();
+                const gain = audio.createGain();
+                osc.connect(gain);
+                gain.connect(audio.destination);
+                osc.type = 'triangle';
+                osc.frequency.value = FREQ[note];
+                gain.gain.setValueAtTime(0.0001, t);
+                gain.gain.exponentialRampToValueAtTime(0.25, t + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.92);
+                osc.start(t);
+                osc.stop(t + dur);
+                t += dur;
+            }
+            return (t - audio.currentTime) * 1000;
+        }
+
+        function toggleSong(btn) {
+            if (singing) {
+                clearTimeout(songTimer);
+                singing = false;
+                if (audio) { audio.close(); audio = null; }
+                btn.textContent = 'play the song';
+                return;
+            }
+            singing = true;
+            btn.textContent = 'okay stop';
+            const loop = () => {
+                const ms = playSong();
+                songTimer = setTimeout(loop, ms + 600);
+            };
+            loop();
+        }
+
+        // ---- screens ----
 
         function getUrlParam(param) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(param);
+            return new URLSearchParams(window.location.search).get(param);
         }
 
-        function createBalloon() {
-            const balloon = document.createElement('div');
-            balloon.className = 'balloon';
-            balloon.style.left = Math.random() * window.innerWidth + 'px';
-            balloon.style.top = Math.random() * window.innerHeight + 'px';
-            balloon.style.background = `hsl(${Math.random() * 360}, 70%, 50%)`;
-            balloon.style.animationDelay = Math.random() * 2 + 's';
-            document.body.appendChild(balloon);
+        function letterRow(word) {
+            return word.split('').map(l => {
+                const tilt = jit(8).toFixed(1);
+                const delay = (Math.random() * 1.2).toFixed(2);
+                const color = pick(COLORS);
+                const ch = l === ' ' ? '&nbsp;' : l;
+                return `<span class="letter" style="--tilt:${tilt}deg; --float-delay:${delay}s; color:${color}">${ch}</span>`;
+            }).join('');
+        }
+
+        function escapeHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
         function showBirthdayMessage(name) {
-            const letters = (name + '!!').split('');
-            const message = `
+            const safe = escapeHtml(name.toUpperCase().slice(0, 24));
+            document.getElementById('content').innerHTML = `
                 <div class="birthday-message">
-                    <div style="margin-bottom: 20px">
-                        ${'HAPPY'.split('').map((letter, i) => 
-                            `<span class="birthday-letter">${letter}</span>`
-                        ).join('')}
-                    </div>
-                    <div style="margin-bottom: 20px">
-                        ${`BIRTHDAY`.split('').map((letter, i) => 
-                            `<span class="birthday-letter">${letter}</span>`
-                        ).join('')}
-                    </div>
-                    <div>
-                        ${letters.map((letter, i) => 
-                            `<span class="birthday-letter">${letter}</span>`
-                        ).join('')}
-                    </div>
+                    <div class="row">${letterRow('HAPPY')}</div>
+                    <div class="row">${letterRow('BIRTHDAY')}</div>
+                    <div class="row">${letterRow(safe + '!')}</div>
                 </div>
             `;
-            
-            document.getElementById('content').innerHTML = message;
-
-            // Update balloon creation to use colored divs instead of emojis
-            for(let i = 0; i < 80; i++) {
-                const balloon = document.createElement('div');
-                balloon.className = 'balloon';
-                balloon.style.width = '20px';
-                balloon.style.height = '25px';
-                balloon.style.borderRadius = '50% 50% 50% 50% / 40% 40% 60% 60%';
-                balloon.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
-                balloon.style.left = Math.random() * window.innerWidth + 'px';
-                balloon.style.top = Math.random() * window.innerHeight + 'px';
-                balloon.style.animationDelay = `${(Math.random() * 1 + 0.5)}s`;  // Adjusted delay
-                document.body.appendChild(balloon);
-            }
-
-            // Add initial confetti burst
-            confetti({
-                particleCount: 150,
-                spread: 180,
-                origin: { y: 0.7 },
-                startVelocity: 45,
-                gravity: 1.2,
-                ticks: 400
+            document.getElementById('partyBar').innerHTML = `
+                <button class="btn" id="songBtn">play the song</button>
+                <button class="btn alt" id="moreBtn">more confetti</button>
+            `;
+            document.getElementById('songBtn').addEventListener('click', function () { toggleSong(this); });
+            document.getElementById('moreBtn').addEventListener('click', () => {
+                burst(FW * 0.5, FH * 0.55, 120, 9);
             });
 
-            // Then start the regular confetti
-            setTimeout(() => {
-                setInterval(function() {
-                    confetti({
-                        ...defaults,
-                        particleCount: 50,
-                        origin: { x: Math.random(), y: Math.random() - 0.2 }
-                    });
-                }, 1000);
-            }, 1000);
+            // opening salvo
+            setTimeout(() => burst(FW * 0.3, FH * 0.6, 70, 8), 300);
+            setTimeout(() => burst(FW * 0.7, FH * 0.6, 70, 8), 550);
+
+            // the party never quite stops
+            setInterval(drizzle, 900);
+            setInterval(launchBalloon, 1700);
+            for (let i = 0; i < 5; i++) setTimeout(launchBalloon, i * 350);
+
+            // click anywhere = confetti
+            document.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('.btn') || e.target.closest('.balloon')) return;
+                burst(e.clientX, e.clientY, 36, 6);
+            });
         }
 
         function showNamePrompt() {
             document.getElementById('content').innerHTML = `
                 <div class="prompt-container">
-                    <h2>WHO'S BIRTHDAY IS IT?</h2>
-                    <input type="text" id="nameInput" placeholder="Enter their name...">
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        <button onclick="submitName()">Celebrate! 🎉</button>
-                        <button onclick="shareLink()">Share Birthday Page 🎈</button>
+                    <h2>WHOSE BIRTHDAY IS IT?</h2>
+                    <input type="text" id="nameInput" maxlength="24" placeholder="their name goes here&hellip;">
+                    <div>
+                        <button class="btn" id="goBtn">celebrate</button>
+                        <button class="btn alt" id="shareBtn">copy the link instead</button>
                     </div>
                 </div>
             `;
-        }
-
-        function submitName() {
-            const name = document.getElementById('nameInput').value;
-            if(name.trim()) {
-                window.location.href = `?name=${encodeURIComponent(name)}`;
-            }
-        }
-
-        function showFeedback(message) {
-            return new Promise((resolve) => {
-                // Remove existing feedback if present
-                const existingFeedback = document.querySelector('.copy-feedback');
-                if (existingFeedback) {
-                    existingFeedback.remove();
+            const input = document.getElementById('nameInput');
+            const go = () => {
+                if (input.value.trim()) {
+                    window.location.href = `?name=${encodeURIComponent(input.value.trim())}`;
                 }
-                
-                const feedback = document.createElement('div');
-                feedback.className = 'copy-feedback';
-                feedback.textContent = message;
-                document.body.appendChild(feedback);
-                
-                setTimeout(() => {
-                    feedback.remove();
-                    resolve();
-                }, 2000); // Increased from 1500 to 2000
-            });
-        }
-
-        function shareLink() {
-            const name = document.getElementById('nameInput').value;
-            if(name.trim()) {
-                const shareUrl = `${window.location.origin}${window.location.pathname}?name=${encodeURIComponent(name)}`;
-                navigator.clipboard.writeText(shareUrl)
-                    .then(async () => {
-                        await showFeedback('Copied! 🎈');
-                        confetti({
-                            particleCount: 100,
-                            spread: 70,
-                            origin: { y: 0.6 }
-                        });
+            };
+            document.getElementById('goBtn').addEventListener('click', go);
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+            document.getElementById('shareBtn').addEventListener('click', () => {
+                if (!input.value.trim()) {
+                    toast('a name first, please');
+                    return;
+                }
+                const url = `${window.location.origin}${window.location.pathname}?name=${encodeURIComponent(input.value.trim())}`;
+                navigator.clipboard.writeText(url)
+                    .then(() => {
+                        toast('copied. go make their day.');
+                        burst(FW / 2, FH * 0.35, 50, 7);
                     })
-                    .catch(async () => {
-                        await showFeedback('Oops! Could not copy link 😅');
-                    });
-            } else {
-                showFeedback('Please enter a name first! 🎂');
-            }
+                    .catch(() => toast('could not copy — the url bar works too'));
+            });
+            // a few idle balloons so the prompt isn't lonely
+            setInterval(launchBalloon, 4000);
+            launchBalloon();
         }
 
-        // Main execution
+        function toast(msg) {
+            const old = document.querySelector('.toast');
+            if (old) old.remove();
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2300);
+        }
+
+        // ---- go ----
+
+        window.addEventListener('resize', sizeFx);
+        sizeFx();
+
         const name = getUrlParam('name');
-        if(name) {
-            showBirthdayMessage(name);
+        if (name && name.trim()) {
+            showBirthdayMessage(name.trim());
         } else {
             showNamePrompt();
         }
     </script>
 </body>
 </html>
-
