@@ -6,96 +6,409 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spin the Bottle</title>
     <style>
-        body {
-            margin: 0;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --gold: #f7c948;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background: #1a1a1a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            cursor: pointer;
+            /* card-table felt */
+            background: radial-gradient(ellipse at center, #1e5c3a 0%, #123a24 70%, #0b2416 100%);
+            font-family: Georgia, 'Times New Roman', serif;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
         }
 
-        #bottle {
-            width: 400px;
-            height: 300px;
-            position: relative;
-            transform-origin: center center;
-            transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
-            background: url('bottle1.png') no-repeat center center;
-            background-size: contain;
-            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5));
-        }
-
-        .instructions {
+        #table {
             position: fixed;
-            top: 20px;
+            inset: 0;
+            cursor: grab;
+        }
+
+        #table.spinning { cursor: wait; }
+        #table.grabbing { cursor: grabbing; }
+
+        #spinner {
+            position: absolute;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.5);
-            font-family: Arial, sans-serif;
+            width: min(46vmin, 400px);
+            height: min(46vmin, 400px);
+            transform: translate(-50%, -50%) rotate(0rad);
             pointer-events: none;
         }
 
-        .randomize-button {
+        #bottle {
+            position: absolute;
+            inset: 0;
+            background: url('/sites/spinthebottle/bottle1.png') no-repeat center center;
+            background-size: contain;
+            filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.55));
+        }
+
+        /* the pointer that actually decides — a board-game arrow riding with the bottle */
+        #arrow {
+            position: absolute;
+            top: -26px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 13px solid transparent;
+            border-right: 13px solid transparent;
+            border-bottom: 22px solid var(--gold);
+            filter: drop-shadow(0 2px 0 var(--ink)) drop-shadow(0 -1px 0 var(--ink))
+                    drop-shadow(2px 0 0 var(--ink)) drop-shadow(-2px 0 0 var(--ink));
+        }
+
+        /* ---- player chips around the circle ---- */
+
+        .player {
+            position: absolute;
+            transform: translate(-50%, -50%) rotate(var(--tilt));
+            background: #fff8ef;
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 8px 18px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(12px, 2vw, 16px);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+            z-index: 3;
+            white-space: nowrap;
+        }
+
+        .player:hover { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.08); }
+
+        .player.chosen {
+            background: var(--gold);
+            animation: chosen 0.6s cubic-bezier(0.22, 1.8, 0.36, 1);
+        }
+
+        @keyframes chosen {
+            0% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); }
+            50% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.45); }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.15); }
+        }
+
+        /* ---- verdict sticker ---- */
+
+        #verdict {
+            position: fixed;
+            top: 8vh;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg) scale(0);
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 14px 30px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(16px, 3.4vw, 28px);
+            text-transform: uppercase;
+            color: var(--ink);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #verdict.show {
+            animation: verdictIn 0.45s cubic-bezier(0.22, 1.6, 0.36, 1) forwards;
+        }
+
+        @keyframes verdictIn {
+            to { transform: translateX(-50%) rotate(-2deg) scale(1); }
+        }
+
+        /* ---- controls ---- */
+
+        #controls {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 10px 20px;
-            background: #444;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 6;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 94vw;
         }
 
-        .randomize-button:hover {
-            background: #555;
+        .pill {
+            background: rgba(255, 248, 239, 0.95);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 10px 18px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
         }
+
+        .pill:hover { transform: translate(-2px, -2px) rotate(-1.5deg); }
+        .pill:active { transform: translate(2px, 2px); }
+
+        #nameInput {
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 10px 18px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 14px;
+            background: rgba(255, 248, 239, 0.95);
+            outline: none;
+            width: 170px;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        #hint {
+            position: fixed;
+            bottom: 76px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-style: italic;
+            font-size: clamp(13px, 1.9vw, 16px);
+            color: rgba(255, 248, 239, 0.6);
+            pointer-events: none;
+            transition: opacity 2s ease;
+            z-index: 5;
+        }
+
+        #hint.hidden { opacity: 0; }
     </style>
 </head>
 <body>
-    <div class="instructions">Click anywhere to spin the bottle</div>
-    <div id="bottle"></div>
-    <button class="randomize-button">Change Bottle</button>
+    <div id="table">
+        <div id="spinner">
+            <div id="bottle"></div>
+            <div id="arrow"></div>
+        </div>
+    </div>
+
+    <div id="verdict"></div>
+    <div id="hint">grab the bottle and rip it &mdash; or just click. tap a name to remove it.</div>
+
+    <div id="controls">
+        <input id="nameInput" type="text" maxlength="14" placeholder="add a player&hellip;">
+        <button class="pill" id="addBtn">add</button>
+        <button class="pill" id="bottleBtn">different bottle</button>
+    </div>
 
     <script>
-        const bottle = document.getElementById('bottle');
-        let isSpinning = false;
-        let currentBottle = 1;
-        let currentRotation = 0;
+        const INK = '#201a17';
+        const table = document.getElementById('table');
+        const spinner = document.getElementById('spinner');
+        const bottleEl = document.getElementById('bottle');
+        const verdict = document.getElementById('verdict');
+        const hint = document.getElementById('hint');
 
-        function changeBottle() {
-            const newBottle = Math.floor(Math.random() * 20) + 1;
-            bottle.style.backgroundImage = `url('/sites/spinthebottle/bottle${newBottle}.png')`;
-            currentBottle = newBottle;
+        const TAU = Math.PI * 2;
+        const wrap = (a) => ((a % TAU) + TAU) % TAU;
+        const jit = (n) => (Math.random() - 0.5) * n;
+
+        // ---- players ----
+
+        let players = ['you', 'someone'];
+        try {
+            const saved = JSON.parse(localStorage.getItem('spinthebottle-players'));
+            if (Array.isArray(saved) && saved.length) players = saved;
+        } catch (e) {}
+
+        function savePlayers() {
+            try { localStorage.setItem('spinthebottle-players', JSON.stringify(players)); } catch (e) {}
         }
 
-        document.querySelector('.randomize-button').addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent triggering the spin
-            if (!isSpinning) {
-                changeBottle();
-            }
+        function layoutPlayers() {
+            document.querySelectorAll('.player').forEach(el => el.remove());
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            const r = Math.min(window.innerWidth, window.innerHeight) * 0.38;
+            players.forEach((name, i) => {
+                const a = -Math.PI / 2 + (TAU * i) / players.length;
+                const el = document.createElement('div');
+                el.className = 'player';
+                el.textContent = name;
+                el.dataset.angle = wrap(a);
+                el.style.left = cx + Math.cos(a) * r + 'px';
+                el.style.top = cy + Math.sin(a) * r + 'px';
+                el.style.setProperty('--tilt', jit(8).toFixed(1) + 'deg');
+                el.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    players.splice(i, 1);
+                    savePlayers();
+                    layoutPlayers();
+                });
+                document.body.appendChild(el);
+            });
+        }
+
+        document.getElementById('addBtn').addEventListener('click', addPlayer);
+        document.getElementById('nameInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addPlayer();
         });
 
-        document.addEventListener('click', () => {
-            if (!isSpinning) {
-                isSpinning = true;
-                
-                const rotations = (Math.random() * 5 + 8) * 360;
-                const endAngle = Math.random() * 360;
-                const totalRotation = currentRotation + rotations + endAngle;
-                currentRotation = totalRotation;
-                
-                bottle.style.transform = `rotate(${totalRotation}deg)`;
-                
-                setTimeout(() => {
-                    isSpinning = false;
-                }, 3000);
+        function addPlayer() {
+            const input = document.getElementById('nameInput');
+            const name = input.value.trim();
+            if (!name || players.length >= 12) return;
+            players.push(name);
+            input.value = '';
+            savePlayers();
+            layoutPlayers();
+        }
+
+        // ---- the spin (real physics, not a CSS transition) ----
+
+        let angle = 0;          // radians; arrow points "up" at angle 0
+        let vel = 0;
+        let spinning = false;
+        let raf = null;
+
+        function setRotation() {
+            spinner.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+        }
+
+        function startPhysics() {
+            if (raf) return;
+            spinning = true;
+            table.classList.add('spinning');
+            const step = () => {
+                angle += vel;
+                vel *= 0.985;
+                setRotation();
+                if (Math.abs(vel) > 0.0025) {
+                    raf = requestAnimationFrame(step);
+                } else {
+                    raf = null;
+                    spinning = false;
+                    table.classList.remove('spinning');
+                    resolve();
+                }
+            };
+            raf = requestAnimationFrame(step);
+        }
+
+        function resolve() {
+            document.querySelectorAll('.player').forEach(el => el.classList.remove('chosen'));
+            if (!players.length) {
+                announce('the bottle points at no one');
+                return;
             }
+            // arrow direction in screen space: up is -PI/2, rotated by angle
+            const arrowAngle = wrap(-Math.PI / 2 + angle);
+            let best = null;
+            let bestDiff = Infinity;
+            document.querySelectorAll('.player').forEach(el => {
+                const a = parseFloat(el.dataset.angle);
+                let d = Math.abs(wrap(arrowAngle - a));
+                if (d > Math.PI) d = TAU - d;
+                if (d < bestDiff) { bestDiff = d; best = el; }
+            });
+            if (best) {
+                best.classList.add('chosen');
+                announce('the bottle has spoken: ' + best.textContent);
+            }
+        }
+
+        function announce(text) {
+            verdict.textContent = text;
+            verdict.classList.remove('show');
+            void verdict.offsetWidth;
+            verdict.classList.add('show');
+        }
+
+        // ---- input: click spins, dragging flings ----
+
+        let dragging = false;
+        let lastPointerAngle = 0;
+        let recentVel = 0;
+        let travelled = 0;
+
+        function pointerAngle(e) {
+            return Math.atan2(e.clientY - window.innerHeight / 2, e.clientX - window.innerWidth / 2);
+        }
+
+        table.addEventListener('pointerdown', (e) => {
+            if (spinning) return;
+            dragging = true;
+            travelled = 0;
+            recentVel = 0;
+            lastPointerAngle = pointerAngle(e);
+            table.classList.add('grabbing');
+            table.setPointerCapture(e.pointerId);
+            hint.classList.add('hidden');
         });
+
+        table.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            const a = pointerAngle(e);
+            let d = a - lastPointerAngle;
+            if (d > Math.PI) d -= TAU;
+            if (d < -Math.PI) d += TAU;
+            lastPointerAngle = a;
+            angle += d;                      // the bottle follows your hand
+            travelled += Math.abs(d);
+            recentVel = recentVel * 0.6 + d * 0.4;
+            setRotation();
+        });
+
+        function release() {
+            if (!dragging) return;
+            dragging = false;
+            table.classList.remove('grabbing');
+            verdict.classList.remove('show');
+            document.querySelectorAll('.player').forEach(el => el.classList.remove('chosen'));
+            if (travelled < 0.05) {
+                // a click: give it a healthy random rip
+                vel = (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.3);
+            } else {
+                vel = Math.max(-0.9, Math.min(0.9, recentVel * 1.15));
+                if (Math.abs(vel) < 0.05) vel = Math.sign(vel || 1) * 0.05;
+            }
+            startPhysics();
+        }
+
+        table.addEventListener('pointerup', release);
+        table.addEventListener('pointercancel', release);
+
+        // ---- bottles ----
+
+        let currentBottle = 1 + ((Math.random() * 20) | 0);
+        bottleEl.style.backgroundImage = `url('/sites/spinthebottle/bottle${currentBottle}.png')`;
+
+        document.getElementById('bottleBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            let next;
+            do { next = 1 + ((Math.random() * 20) | 0); } while (next === currentBottle);
+            currentBottle = next;
+            bottleEl.style.backgroundImage = `url('/sites/spinthebottle/bottle${next}.png')`;
+        });
+
+        // controls shouldn't spin the bottle
+        document.getElementById('controls').addEventListener('pointerdown', (e) => e.stopPropagation());
+
+        window.addEventListener('resize', layoutPlayers);
+        layoutPlayers();
+        setTimeout(() => hint.classList.add('hidden'), 10000);
     </script>
 </body>
 </html>
