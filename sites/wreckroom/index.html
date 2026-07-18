@@ -1,781 +1,470 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
-    <title>Hit Your Problems</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Upload an image and smash it to pieces with a bat">
+    <title>Wreck Room</title>
+    <meta name="description" content="Upload a picture of your problem and take a bat to it">
     <meta name="keywords" content="stress relief, game, interactive, bat, smash">
-    <meta name="author" content="Hit Your Problems">
+    <meta name="author" content="Random Sites On The Web">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: #f0f0f0;
-            font-family: sans-serif;
-            padding: 10px;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
         }
 
-        #gameCanvas {
-            border: 2px solid #333;
-            background: white;
-            max-width: 100%;
-            max-height: 80vh;
-            object-fit: contain;
-        }
-
-        .controls {
-            margin: 10px;
-            text-align: center;
+        html, body {
             width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
         }
 
-        input[type="file"] {
-            display: none;
+        #room {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: none;
         }
 
-        .upload-btn {
-            padding: clamp(8px, 2vw, 10px) clamp(15px, 4vw, 20px);
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        input[type="file"] { display: none; }
+
+        .pill {
+            background: #fff8ef;
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 10px 22px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 14px;
             cursor: pointer;
-            font-size: clamp(14px, 3vw, 16px);
-            margin: 10px;
+            transition: transform 0.15s ease;
         }
 
-        .upload-btn:hover {
-            background: #45a049;
+        .pill:hover { transform: translate(-2px, -2px) rotate(-2deg); }
+        .pill:active { transform: translate(2px, 2px); }
+
+        #status {
+            position: fixed;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1.5deg);
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(16px, 2.6vw, 24px);
+            color: #f0563e;
+            -webkit-text-stroke: 1.2px var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 3px 3px 0 var(--ink);
+            pointer-events: none;
+            z-index: 5;
+            font-variant-numeric: tabular-nums;
         }
 
-        #instructions {
-            margin: 10px;
-            color: #666;
+        #hint {
+            position: fixed;
+            bottom: 74px;
+            left: 0;
+            right: 0;
             text-align: center;
-            font-size: clamp(14px, 3vw, 16px);
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: clamp(13px, 1.9vw, 16px);
+            color: rgba(32, 26, 23, 0.5);
+            pointer-events: none;
+            transition: opacity 2s ease;
+            z-index: 5;
         }
 
-        @keyframes shake {
+        #hint.hidden { opacity: 0; }
+
+        @keyframes page-shake {
             0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(-5px, 5px); }
-            50% { transform: translate(5px, -5px); }
-            75% { transform: translate(-3px, -3px); }
+            25% { transform: translate(-7px, 4px); }
+            50% { transform: translate(6px, -5px); }
+            75% { transform: translate(-4px, -3px); }
         }
 
-        .screen-shake {
-            animation: shake 0.2s ease-in-out;
-        }
-
-        @keyframes flash {
-            0%, 100% { background: #f0f0f0; }
-            50% { background: #ff6b6b; }
-        }
-
-        .super-hit {
-            animation: shake 0.2s ease-in-out, flash 0.3s ease-in-out;
-        }
+        body.shake { animation: page-shake 0.24s linear; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    
-    <div class="controls">
-        <input type="file" id="imageInput" accept="image/*">
-        <label for="imageInput" class="upload-btn">Upload Image</label>
-    </div>
+    <canvas id="room"></canvas>
+    <div id="status"></div>
+    <div id="hint">this is your problem. swing at it.</div>
 
-    <div id="instructions">
-        Use your mouse to swing the bat and smash the image!
+    <div id="controls">
+        <input type="file" id="imageInput" accept="image/*">
+        <label for="imageInput" class="pill">upload your problem</label>
+        <button class="pill" id="again">same problem again</button>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const INK = '#201a17';
+        const GOLD = '#f7c948';
+        const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5'];
+
+        const canvas = document.getElementById('room');
         const ctx = canvas.getContext('2d');
-        
-        // Add bat image loading
-        const batImage = new Image();
-        batImage.src = 'bat.png';
-        
+        const statusEl = document.getElementById('status');
+        const hint = document.getElementById('hint');
+
+        let W, H;
+        const jit = (n) => (Math.random() - 0.5) * n;
+
+        // ---- the problem (a real image, sliced into real tiles) ----
+
+        const TILE = 30;
+        let source = null;          // offscreen canvas holding the scaled image
         let blocks = [];
-        let blockSize = 40;
-        let bat = {
-            x: 0,
-            y: 0,
-            angle: 0,
-            length: 150,
-            width: 20,
-            windUpAngle: 0,
-            swingSpeed: 0,
-            maxWindUp: -Math.PI * 0.8,  // Maximum wind up angle
-            isWindingUp: false,
-            power: 0,  // Current power level
-            maxPower: 100  // Maximum power
-        };
+        let totalBlocks = 0, destroyed = 0;
+        let resolved = false;
 
-        let particles = [];
-        let screenShakeTime = 0;
+        function defaultProblem() {
+            // a placard, for people with nothing to upload yet
+            const c = document.createElement('canvas');
+            c.width = 660;
+            c.height = 420;
+            const g = c.getContext('2d');
+            g.fillStyle = '#fff8ef';
+            g.fillRect(0, 0, 660, 420);
+            g.strokeStyle = INK;
+            g.lineWidth = 10;
+            g.strokeRect(14, 14, 632, 392);
+            g.strokeStyle = '#f0563e';
+            g.lineWidth = 4;
+            g.strokeRect(30, 30, 600, 360);
+            g.fillStyle = INK;
+            g.textAlign = 'center';
+            g.font = "900 84px 'Arial Black', 'Segoe UI', sans-serif";
+            g.fillText('YOUR', 330, 170);
+            g.fillText('PROBLEM', 330, 265);
+            g.font = "italic 26px Georgia, serif";
+            g.fillStyle = 'rgba(32, 26, 23, 0.55)';
+            g.fillText('(upload a more specific one below)', 330, 340);
+            return c;
+        }
 
-        let isDragging = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let throwForce = { x: 0, y: 0 };
+        function slice(imgSource) {
+            source = imgSource;
+            blocks = [];
+            destroyed = 0;
+            resolved = false;
 
-        // Add new special effects
-        let shockwaves = [];
-        let comboCount = 0;
-        let comboTimer = 0;
-        let powerUps = [];
+            // fit the image into ~70% of the viewport
+            const scale = Math.min((W * 0.72) / source.width, (H * 0.62) / source.height, 1.6);
+            const dw = source.width * scale;
+            const dh = source.height * scale;
+            const ox = (W - dw) / 2;
+            const oy = (H - dh) / 2 - H * 0.03;
 
-        // Add destruction tracking
-        let totalBlocks = 0;
-        let destroyedBlocks = 0;
-        let destructionRatio = 0;
-        let intensityLevel = 0;
+            const cols = Math.ceil(dw / TILE);
+            const rows = Math.ceil(dh / TILE);
 
-        // Add sound system
-        const sounds = {
-            hit: new Audio('hit.mp3'),
-            explosion: new Audio('explosion.mp3'),
-            powerup: new Audio('powerup.mp3'),
-            chaos: new Audio('chaos.mp3')
-        };
-
-        // Initialize all sounds muted by default
-        Object.values(sounds).forEach(sound => {
-            sound.volume = 0;
-            // Loop chaos sound
-            if (sound === sounds.chaos) {
-                sound.loop = true;
-            }
-        });
-
-        // Add game state management
-        const gameState = {
-            timeScale: 1,
-            targetTimeScale: 1,
-            cameraZoom: 1,
-            targetZoom: 1,
-            achievements: new Set(),
-            powerUps: [],
-            gravity: { x: 0, y: 1 },
-            chainReactionQueue: [],
-        };
-
-        class Block {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.velocity = { x: 0, y: 0 };
-                this.size = blockSize;
-                this.isHit = false;
-                this.rotation = 0;
-                this.angularVelocity = 0;
-                this.friction = 0.98;
-                this.glowIntensity = 0;
-                this.originalColor = color;
-                this.destroyed = false;
-                this.distanceFromCenter = 0;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.translate(this.x + this.size/2, this.y + this.size/2);
-                ctx.rotate(this.rotation);
-                
-                // Add increasing glow based on destruction ratio
-                if (this.glowIntensity > 0) {
-                    ctx.shadowColor = `hsl(${Date.now() / 20 % 360}, 70%, 50%)`;
-                    ctx.shadowBlur = 20 * this.glowIntensity * (1 + destructionRatio);
-                    const hue = (Date.now() / (20 - destructionRatio * 15)) % 360;
-                    ctx.fillStyle = `hsl(${hue}, ${70 + destructionRatio * 30}%, 50%)`;
-                } else {
-                    ctx.fillStyle = this.originalColor;
-                }
-                
-                ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
-                ctx.restore();
-            }
-
-            update() {
-                if (this.isHit && !this.destroyed) {
-                    this.x += this.velocity.x;
-                    this.y += this.velocity.y;
-                    this.velocity.y += 0.5; // gravity
-                    this.velocity.x *= this.friction;
-                    this.velocity.y *= this.friction;
-                    
-                    // Add rotation when hit
-                    this.rotation += this.angularVelocity;
-                    this.angularVelocity *= this.friction;
-                    this.glowIntensity = Math.max(0, this.glowIntensity - 0.05);
-                    
-                    // Check if block is far enough to count as destroyed
-                    if (this.y > canvas.height || this.x < -100 || this.x > canvas.width + 100) {
-                        this.destroyed = true;
-                        destroyedBlocks++;
-                        destructionRatio = destroyedBlocks / totalBlocks;
-                        intensityLevel = Math.pow(destructionRatio, 2) * 100; // Exponential intensity
-                    }
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    blocks.push({
+                        x: ox + c * TILE + TILE / 2,
+                        y: oy + r * TILE + TILE / 2,
+                        // the tile carries its actual slice of the image
+                        sx: (c * TILE) / scale,
+                        sy: (r * TILE) / scale,
+                        ss: TILE / scale,
+                        vx: 0, vy: 0, rot: 0, vrot: 0,
+                        hit: false, gone: false,
+                    });
                 }
             }
+            totalBlocks = blocks.length;
+            updateStatus();
         }
 
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.size = Math.random() * 12 + 6;
-                this.speedX = (Math.random() - 0.5) * 25;
-                this.speedY = (Math.random() - 0.5) * 25;
-                this.gravity = 0.5;
-                this.life = 1;
-                this.decay = Math.random() * 0.01 + 0.01;
-            }
-
-            update() {
-                this.speedY += this.gravity;
-                this.x += this.speedX;
-                this.y += this.speedY;
-                this.life -= this.decay;
-            }
-
-            draw() {
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
+        function updateStatus() {
+            const pct = totalBlocks ? Math.floor((destroyed / totalBlocks) * 100) : 0;
+            statusEl.textContent = pct === 0 ? '' : `problem ${pct}% resolved`;
+            if (pct >= 100 && !resolved) {
+                resolved = true;
+                statusEl.textContent = 'problem resolved.';
+                celebrate();
             }
         }
 
-        class Shockwave {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.radius = 0;
-                this.maxRadius = 200;
-                this.color = color;
-                this.opacity = 0.7;
-            }
+        // ---- the bat ----
 
-            update() {
-                this.radius += 15;
-                this.opacity *= 0.95;
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = 8;
-                ctx.globalAlpha = this.opacity;
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.globalAlpha = 1;
-            }
-        }
-
-        class PowerUp {
-            constructor(type, x, y) {
-                this.type = type;
-                this.x = x;
-                this.y = y;
-                this.size = 30;
-                this.collected = false;
-                this.floatOffset = 0;
-                this.effects = {
-                    'blackhole': {
-                        duration: 5000,
-                        activate: () => this.createBlackHole(x, y)
-                    },
-                    'explosion': {
-                        duration: 3000,
-                        activate: () => this.createMassiveExplosion(x, y)
-                    },
-                    'timestop': {
-                        duration: 4000,
-                        activate: () => this.activateTimeStop()
-                    },
-                    'lightning': {
-                        duration: 3000,
-                        activate: () => this.createLightningStorm()
-                    }
-                };
-            }
-
-            createBlackHole(x, y) {
-                const blackhole = {
-                    x, y,
-                    radius: 0,
-                    maxRadius: 200,
-                    force: 2,
-                    update() {
-                        this.radius = Math.min(this.maxRadius, this.radius + 1);
-                        blocks.forEach(block => {
-                            if (!block.destroyed) {
-                                const dx = this.x - block.x;
-                                const dy = this.y - block.y;
-                                const dist = Math.sqrt(dx * dx + dy * dy);
-                                if (dist < this.radius) {
-                                    block.velocity.x += (dx / dist) * this.force;
-                                    block.velocity.y += (dy / dist) * this.force;
-                                    block.rotation += 0.1;
-                                }
-                            }
-                        });
-                    },
-                    draw() {
-                        ctx.save();
-                        ctx.beginPath();
-                        const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.radius);
-                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
-                        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                        ctx.fillStyle = gradient;
-                        ctx.arc(x, y, this.radius, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.restore();
-                    }
-                };
-                gameState.specialEffects.push(blackhole);
-            }
-
-            createMassiveExplosion(x, y) {
-                const explosion = {
-                    x, y,
-                    radius: 0,
-                    maxRadius: 300,
-                    force: 30,
-                    particles: [],
-                    update() {
-                        this.radius += 10;
-                        if (this.radius <= this.maxRadius) {
-                            blocks.forEach(block => {
-                                const dx = block.x - this.x;
-                                const dy = block.y - this.y;
-                                const dist = Math.sqrt(dx * dx + dy * dy);
-                                if (dist < this.radius) {
-                                    block.velocity.x += (dx / dist) * this.force;
-                                    block.velocity.y += (dy / dist) * this.force;
-                                    block.isHit = true;
-                                }
-                            });
-                            // Add explosion particles
-                            for (let i = 0; i < 5; i++) {
-                                this.particles.push(new Particle(
-                                    this.x + Math.random() * this.radius - this.radius/2,
-                                    this.y + Math.random() * this.radius - this.radius/2,
-                                    `hsl(${30 + Math.random() * 30}, 100%, 50%)`
-                                ));
-                            }
-                        }
-                        this.particles.forEach(p => p.update());
-                        this.particles = this.particles.filter(p => p.life > 0);
-                    },
-                    draw() {
-                        this.particles.forEach(p => p.draw());
-                    }
-                };
-                gameState.specialEffects.push(explosion);
-                sounds.explosion.play();
-            }
-
-            activateTimeStop() {
-                gameState.targetTimeScale = 0.1;
-                setTimeout(() => {
-                    gameState.targetTimeScale = 1;
-                }, 3000);
-            }
-
-            createLightningStorm() {
-                const lightning = {
-                    bolts: [],
-                    timer: 3000,
-                    update() {
-                        if (Math.random() < 0.2) {
-                            this.createBolt();
-                        }
-                        this.timer -= 16;
-                    },
-                    createBolt() {
-                        const start = {
-                            x: Math.random() * canvas.width,
-                            y: 0
-                        };
-                        const end = {
-                            x: Math.random() * canvas.width,
-                            y: canvas.height
-                        };
-                        this.bolts.push({
-                            start, end,
-                            segments: this.generateLightningSegments(start, end),
-                            life: 5
-                        });
-                    },
-                    generateLightningSegments(start, end) {
-                        // Lightning path generation
-                        let segments = [start];
-                        let current = start;
-                        while (Math.abs(current.y - end.y) > 20) {
-                            current = {
-                                x: current.x + (Math.random() - 0.5) * 50,
-                                y: current.y + 20
-                            };
-                            segments.push(current);
-                        }
-                        segments.push(end);
-                        return segments;
-                    },
-                    draw() {
-                        this.bolts.forEach(bolt => {
-                            ctx.beginPath();
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${bolt.life / 5})`;
-                            ctx.lineWidth = 3;
-                            ctx.moveTo(bolt.segments[0].x, bolt.segments[0].y);
-                            bolt.segments.forEach(segment => {
-                                ctx.lineTo(segment.x, segment.y);
-                            });
-                            ctx.stroke();
-                            bolt.life -= 0.2;
-                        });
-                        this.bolts = this.bolts.filter(b => b.life > 0);
-                    }
-                };
-                gameState.specialEffects.push(lightning);
-            }
-
-            update() {
-                this.floatOffset = Math.sin(Date.now() / 500) * 5;
-            }
-
-            draw() {
-                ctx.fillStyle = this.type === 'mega' ? '#ff4444' : '#44ff44';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y + this.floatOffset, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+        const bat = { x: -100, y: -100, angle: -0.5, swing: 0, swinging: false };
 
         function drawBat() {
             ctx.save();
             ctx.translate(bat.x, bat.y);
-            ctx.rotate(bat.angle + bat.windUpAngle + Math.PI / 4);
-            
-            // Draw power meter when winding up
-            if (bat.isWindingUp) {
-                ctx.fillStyle = `rgba(255, ${255 - (bat.power / bat.maxPower) * 255}, 0, 0.7)`;
-                ctx.fillRect(-bat.width/2, -bat.length * (bat.power / bat.maxPower), bat.width, bat.length * (bat.power / bat.maxPower));
-            }
-            
-            // Draw bat image
-            ctx.drawImage(
-                batImage, 
-                -bat.width * 3,
-                -bat.length,
-                bat.width * 6,
-                bat.length * 2
-            );
-            
+            // swing arc: winds slightly back then whips forward
+            const s = bat.swing;
+            const swingAngle = s > 0 ? -0.9 + (1 - s) * 2.2 : 0;
+            ctx.rotate(bat.angle + swingAngle);
+            ctx.lineCap = 'round';
+            // ink outline pass, then wood
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 17;
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(86, -86); ctx.stroke();
+            ctx.lineWidth = 24;
+            ctx.beginPath(); ctx.moveTo(38, -38); ctx.lineTo(86, -86); ctx.stroke();
+            ctx.strokeStyle = '#c98d4e';
+            ctx.lineWidth = 11;
+            ctx.beginPath(); ctx.moveTo(4, -4); ctx.lineTo(84, -84); ctx.stroke();
+            ctx.lineWidth = 18;
+            ctx.beginPath(); ctx.moveTo(40, -40); ctx.lineTo(84, -84); ctx.stroke();
+            // grip wrap
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(10, -14); ctx.lineTo(16, -8); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(16, -20); ctx.lineTo(22, -14); ctx.stroke();
             ctx.restore();
         }
 
-        document.getElementById('imageInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    blocks = [];
-                    
-                    // Calculate scaling to fit the canvas while maintaining aspect ratio
-                    const scale = Math.min(
-                        (canvas.width * 0.8) / img.width,
-                        (canvas.height * 0.8) / img.height
-                    );
-                    
-                    const scaledWidth = img.width * scale;
-                    const scaledHeight = img.height * scale;
-                    
-                    // Create temporary canvas to sample image colors
-                    const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = scaledWidth;
-                    tempCanvas.height = scaledHeight;
-                    tempCtx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+        // ---- particles ----
 
-                    // Convert image to larger blocks
-                    for (let y = 0; y < scaledHeight; y += blockSize) {
-                        for (let x = 0; x < scaledWidth; x += blockSize) {
-                            // Sample color from the center of each block
-                            const imageData = tempCtx.getImageData(
-                                x + blockSize/2, 
-                                y + blockSize/2, 
-                                1, 1
-                            ).data;
-                            
-                            const color = `rgb(${imageData[0]}, ${imageData[1]}, ${imageData[2]})`;
-                            blocks.push(new Block(
-                                (canvas.width - scaledWidth)/2 + x,
-                                (canvas.height - scaledHeight)/2 + y,
-                                color
-                            ));
-                        }
+        const fx = [];
+
+        function spawnFx(p) { fx.push(p); if (fx.length > 250) fx.shift(); }
+
+        function celebrate() {
+            for (let i = 0; i < 40; i++) {
+                spawnFx({ kind: 'rect', x: W / 2, y: H * 0.3,
+                          vx: jit(9), vy: -3 - Math.random() * 5, g: 0.15,
+                          w: 6 + Math.random() * 5, h: 4 + Math.random() * 3,
+                          rot: Math.random() * Math.PI, vrot: jit(0.3),
+                          color: [GOLD, ...COLORS][(Math.random() * 7) | 0], life: 1, decay: 0.008 });
+            }
+        }
+
+        // ---- swinging ----
+
+        const SWING_RADIUS = 180;
+
+        function swing() {
+            if (bat.swinging) return;
+            bat.swinging = true;
+            bat.swing = 1;
+            hint.classList.add('hidden');
+
+            let hits = 0;
+            for (const b of blocks) {
+                if (b.hit) continue;
+                const dx = b.x - bat.x;
+                const dy = b.y - bat.y;
+                const d = Math.hypot(dx, dy);
+                if (d < SWING_RADIUS) {
+                    b.hit = true;
+                    hits++;
+                    const force = 14 + Math.random() * 14 + (1 - d / SWING_RADIUS) * 18;
+                    b.vx = (dx / (d || 1)) * force + jit(4);
+                    b.vy = (dy / (d || 1)) * force - 6;
+                    b.vrot = jit(0.5);
+                    // chips of the image fly off
+                    if (Math.random() < 0.5) {
+                        spawnFx({ kind: 'dot', x: b.x, y: b.y, vx: jit(6), vy: -2 - Math.random() * 3,
+                                  g: 0.3, r: 2 + Math.random() * 3,
+                                  color: COLORS[(Math.random() * COLORS.length) | 0], life: 1, decay: 0.03 });
                     }
+                }
+            }
 
-                    // Count total blocks
-                    totalBlocks = Math.floor((scaledWidth / blockSize) * (scaledHeight / blockSize));
-                    destroyedBlocks = 0;
-                    destructionRatio = 0;
-                    intensityLevel = 0;
+            if (hits > 0) {
+                spawnFx({ kind: 'ring', x: bat.x, y: bat.y, r: 20, vr: 9, lw: 3.5,
+                          color: '#f0563e', life: 0.8, decay: 0.06 });
+                if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    document.body.classList.remove('shake');
+                    void document.body.offsetWidth;
+                    document.body.classList.add('shake');
+                }
+            }
+        }
+
+        // ---- main loop ----
+
+        function frame() {
+            ctx.clearRect(0, 0, W, H);
+
+            // blocks: intact tiles first, flying tiles on top
+            for (const b of blocks) {
+                if (b.gone || b.hit) continue;
+                drawTile(b);
+            }
+            for (const b of blocks) {
+                if (b.gone || !b.hit) continue;
+                b.vy += 0.55;
+                b.x += b.vx;
+                b.y += b.vy;
+                b.rot += b.vrot;
+                if (b.y > H + 80 || b.x < -80 || b.x > W + 80) {
+                    b.gone = true;
+                    destroyed++;
+                    updateStatus();
+                    continue;
+                }
+                drawTile(b);
+            }
+
+            // fx
+            for (let i = fx.length - 1; i >= 0; i--) {
+                const p = fx[i];
+                p.life -= p.decay;
+                if (p.life <= 0) { fx.splice(i, 1); continue; }
+                if (p.g) p.vy = (p.vy || 0) + p.g;
+                p.x += p.vx || 0;
+                p.y += p.vy || 0;
+                if (p.vrot) p.rot += p.vrot;
+                const a = Math.min(1, p.life);
+                ctx.globalAlpha = a;
+                if (p.kind === 'dot') {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    ctx.lineWidth = 1.3;
+                    ctx.strokeStyle = INK;
+                    ctx.stroke();
+                } else if (p.kind === 'ring') {
+                    p.r += p.vr;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.lineWidth = p.lw + 2.5;
+                    ctx.strokeStyle = INK;
+                    ctx.stroke();
+                    ctx.lineWidth = p.lw;
+                    ctx.strokeStyle = p.color;
+                    ctx.stroke();
+                } else if (p.kind === 'rect') {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    ctx.lineWidth = 1.4;
+                    ctx.strokeStyle = INK;
+                    ctx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    ctx.restore();
+                }
+            }
+            ctx.globalAlpha = 1;
+
+            // bat swing animation
+            if (bat.swinging) {
+                bat.swing -= 0.12;
+                if (bat.swing <= 0) {
+                    bat.swing = 0;
+                    bat.swinging = false;
+                }
+            }
+            drawBat();
+
+            requestAnimationFrame(frame);
+        }
+
+        function drawTile(b) {
+            ctx.save();
+            ctx.translate(b.x, b.y);
+            ctx.rotate(b.rot);
+            ctx.drawImage(source, b.sx, b.sy, b.ss, b.ss, -TILE / 2, -TILE / 2, TILE, TILE);
+            // faint mosaic seams; full ink outline once it's flying
+            ctx.lineWidth = b.hit ? 2 : 1;
+            ctx.strokeStyle = b.hit ? INK : 'rgba(32, 26, 23, 0.18)';
+            ctx.strokeRect(-TILE / 2, -TILE / 2, TILE, TILE);
+            ctx.restore();
+        }
+
+        // ---- input ----
+
+        document.addEventListener('pointermove', (e) => {
+            bat.x = e.clientX;
+            bat.y = e.clientY;
+        });
+
+        document.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('#controls')) return;
+            bat.x = e.clientX;
+            bat.y = e.clientY;
+            swing();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                swing();
+            }
+        });
+
+        // ---- image loading ----
+
+        document.getElementById('imageInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const img = new Image();
+                img.onload = function () {
+                    // draw to an offscreen canvas so tiles can slice it
+                    const c = document.createElement('canvas');
+                    const maxSide = 1400;
+                    const s = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    c.width = img.width * s;
+                    c.height = img.height * s;
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    slice(c);
+                    hint.textContent = 'there it is. swing.';
+                    hint.classList.remove('hidden');
                 };
                 img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         });
 
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            bat.x = e.clientX - rect.left;
-            bat.y = e.clientY - rect.top;
-
-            if (!bat.isWindingUp) {
-                // Normal bat following
-                const dx = e.movementX;
-                const dy = e.movementY;
-                if (dx !== 0 || dy !== 0) {
-                    bat.angle = Math.atan2(dy, dx);
-                }
-            } else {
-                // Wind up mechanics
-                bat.windUpAngle = Math.max(bat.maxWindUp, bat.windUpAngle - 0.05);
-                bat.power = Math.min(bat.maxPower, bat.power + 2);
-            }
-
-            if (isDragging) {
-                const currentX = e.clientX - rect.left;
-                const currentY = e.clientY - rect.top;
-                throwForce.x = (currentX - dragStartX) * 0.1;
-                throwForce.y = (currentY - dragStartY) * 0.1;
-            }
+        document.getElementById('again').addEventListener('click', () => {
+            if (source) slice(source);
         });
 
-        canvas.addEventListener('mousedown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            dragStartX = e.clientX - rect.left;
-            dragStartY = e.clientY - rect.top;
-            isDragging = true;
-            bat.isWindingUp = true;
-        });
+        // ---- setup ----
 
-        canvas.addEventListener('mouseup', (e) => {
-            isDragging = false;
-            bat.isWindingUp = false;
-            bat.swingSpeed = 0.5 + (bat.power / bat.maxPower) * 0.5; // Faster swing with more power
-            let hitCount = 0;
-            
-            // Release the swing
-            const swingInterval = setInterval(() => {
-                bat.windUpAngle += bat.swingSpeed;
-                
-                // Check for hits during the swing
-                blocks.forEach(block => {
-                    const batTipX = bat.x + Math.cos(bat.angle + bat.windUpAngle) * bat.length;
-                    const batTipY = bat.y + Math.sin(bat.angle + bat.windUpAngle) * bat.length;
-                    
-                    const dx = block.x + (block.size/2) - bat.x;
-                    const dy = block.y + (block.size/2) - bat.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (distance < bat.length && !block.isHit) {
-                        hitCount++;
-                        block.isHit = true;
-                        const force = 45 * (bat.power / bat.maxPower); // Power-based force
-                        block.velocity.x = (dx / distance) * force + throwForce.x;
-                        block.velocity.y = (dy / distance) * force + throwForce.y;
-                        block.angularVelocity = (Math.random() - 0.5) * 1.5;
-                        
-                        // More particles for powerful hits
-                        const particleCount = Math.floor(10 * (bat.power / bat.maxPower));
-                        for (let i = 0; i < particleCount; i++) {
-                            particles.push(new Particle(block.x, block.y, block.color));
-                        }
-                    }
-                });
-
-                // Stop the swing
-                if (bat.windUpAngle >= Math.PI / 2) {
-                    clearInterval(swingInterval);
-                    bat.windUpAngle = 0;
-                    bat.power = 0;
-                    
-                    // Enhanced screen shake for bigger hits
-                    if (hitCount > 5) {
-                        screenShakeTime = 15;
-                        canvas.parentElement.classList.add('super-hit');
-                        setTimeout(() => {
-                            canvas.parentElement.classList.remove('super-hit');
-                        }, 300);
-                    }
-                }
-            }, 16);
-
-            // Add mega-hit effect
-            if (bat.power >= bat.maxPower * 0.8) {
-                const colors = ['#ff0000', '#ff7700', '#ffff00'];
-                colors.forEach((color, i) => {
-                    setTimeout(() => {
-                        shockwaves.push(new Shockwave(bat.x, bat.y, color));
-                    }, i * 100);
-                });
-            }
-        });
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Dynamic background effects based on destruction
-            const bgOpacity = Math.min(0.5, destructionRatio * 0.7);
-            ctx.fillStyle = `rgba(0, 0, 0, ${bgOpacity})`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Add destruction level indicator
-            if (destructionRatio > 0) {
-                ctx.save();
-                ctx.fillStyle = `hsl(${destructionRatio * 360}, 70%, 50%)`;
-                ctx.font = `bold ${20 + destructionRatio * 30}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.fillText(
-                    `Destruction: ${Math.floor(destructionRatio * 100)}%`,
-                    canvas.width/2,
-                    50
-                );
-                
-                // Add chaos message at high destruction
-                if (destructionRatio > 0.7) {
-                    ctx.font = `bold ${40 + destructionRatio * 40}px Arial`;
-                    ctx.fillStyle = `hsl(${Date.now() / 20 % 360}, 70%, 50%)`;
-                    ctx.fillText(
-                        'CHAOS UNLEASHED!',
-                        canvas.width/2,
-                        canvas.height - 50
-                    );
-                }
-                ctx.restore();
-            }
-            
-            // Increase particle and shockwave intensity with destruction
-            particles.forEach(particle => {
-                particle.speedX *= (1 + destructionRatio * 0.1);
-                particle.speedY *= (1 + destructionRatio * 0.1);
-                particle.size *= (1 + destructionRatio * 0.05);
-            });
-            
-            shockwaves.forEach(wave => {
-                wave.maxRadius *= (1 + destructionRatio * 0.2);
-            });
-            
-            // Screen shake
-            if (screenShakeTime > 0) {
-                ctx.save();
-                const intensity = screenShakeTime * 0.5;
-                ctx.translate(
-                    Math.random() * intensity - intensity/2,
-                    Math.random() * intensity - intensity/2
-                );
-            }
-            
-            // Update and draw shockwaves
-            shockwaves = shockwaves.filter(wave => wave.opacity > 0.1);
-            shockwaves.forEach(wave => {
-                wave.update();
-                wave.draw();
-            });
-            
-            // Update and draw power-ups
-            powerUps = powerUps.filter(p => !p.collected);
-            powerUps.forEach(powerUp => {
-                powerUp.update();
-                powerUp.draw();
-            });
-            
-            // Update combo system
-            if (comboTimer > 0) {
-                comboTimer--;
-                if (comboTimer <= 0) {
-                    comboCount = 0;
-                }
-                
-                // Draw combo counter
-                ctx.fillStyle = `hsl(${comboCount * 10}, 70%, 50%)`;
-                ctx.font = 'bold 48px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${comboCount}x COMBO!`, canvas.width/2, 100);
-            }
-            
-            // Update and draw particles
-            particles = particles.filter(p => p.life > 0);
-            particles.forEach(particle => {
-                particle.update();
-                particle.draw();
-            });
-            
-            blocks.forEach(block => {
-                block.update();
-                block.draw();
-            });
-            
-            drawBat();
-            
-            if (screenShakeTime > 0) {
-                ctx.restore();
-            }
-            
-            requestAnimationFrame(animate);
+        function setup() {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = W;
+            canvas.height = H;
         }
 
-        function resizeCanvas() {
-            const maxWidth = Math.min(window.innerWidth * 0.95, 1200);
-            const maxHeight = window.innerHeight * 0.8;
-            
-            // Calculate aspect ratio
-            const aspectRatio = 16/9;
-            
-            // Determine dimensions while maintaining aspect ratio
-            let newWidth = maxWidth;
-            let newHeight = maxWidth / aspectRatio;
-            
-            if (newHeight > maxHeight) {
-                newHeight = maxHeight;
-                newWidth = maxHeight * aspectRatio;
-            }
-            
-            canvas.width = newWidth;
-            canvas.height = newHeight;
-            
-            // Update block size based on canvas size
-            blockSize = Math.max(10, Math.min(20, canvas.width / 20));
-        }
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                setup();
+                if (source && destroyed === 0) slice(source);
+            }, 200);
+        });
 
-        // Add resize event listener
-        window.addEventListener('resize', resizeCanvas);
-        
-        // Initial canvas setup
-        resizeCanvas();
-        
-        // Update bat dimensions based on canvas size
-        bat.length = Math.min(150, canvas.width * 0.15);
-        bat.width = Math.min(20, canvas.width * 0.02);
-
-        animate();
+        setup();
+        slice(defaultProblem());
+        frame();
+        setTimeout(() => hint.classList.add('hidden'), 10000);
     </script>
 </body>
 </html>
