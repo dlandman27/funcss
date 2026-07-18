@@ -5,702 +5,911 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Paint by Number</title>
+  <meta name="description" content="Upload a photo, get a numbered kit, and paint it back together.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='6' y='6' width='38' height='38' rx='6' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><path d='M6 32l12-10 9 8 8-6 9 8v8a6 6 0 01-6 6H12a6 6 0 01-6-6z' fill='%235aa0db' stroke='%23201a17' stroke-width='3'/><circle cx='34' cy='16' r='5' fill='%23f7c948' stroke='%23201a17' stroke-width='3'/></svg>">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --gold: #f7c948;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #1a1a1e;
-      color: #e8e8ec;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      padding: 20px 24px 0;
-      text-align: center;
-    }
-    header h1 { font-size: 1.6em; font-weight: 700; letter-spacing: -0.02em; }
-    header p { color: #888; font-size: 0.88em; margin-top: 4px; }
-
-    /* ── Upload screen ── */
-    #upload-screen {
-      flex: 1;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 24px;
-      padding: 40px 20px;
+      padding: 22px 14px 40px;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .drop-zone {
-      width: min(480px, 92vw);
-      height: 220px;
-      border: 2px dashed #444;
-      border-radius: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
+    header { text-align: center; margin-bottom: 20px; }
+    h1 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(24px, 6vw, 34px);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: inline-block;
+      transform: rotate(-1.5deg);
+    }
+    header p { font-style: italic; font-size: 15px; color: rgba(32,26,23,0.6); margin-top: 4px; }
+
+    .card {
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+
+    /* ── buttons ── */
+    .pill {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 11px 20px;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      background: #222228;
-    }
-    .drop-zone:hover, .drop-zone.drag { border-color: #7b6cff; background: #26262e; }
-    .drop-zone .icon { font-size: 40px; }
-    .drop-zone p { color: #aaa; font-size: 0.9em; }
-    .drop-zone strong { color: #ddd; }
-
-    #fileInput { display: none; }
-
-    .controls-row {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    label.ctrl { display: flex; flex-direction: column; gap: 4px; font-size: 0.82em; color: #aaa; }
-    label.ctrl select, label.ctrl input[type=range] { margin-top: 2px; }
-    select {
-      background: #2a2a32; border: 1px solid #444; color: #ddd;
-      padding: 6px 10px; border-radius: 8px; font-size: 0.9em; cursor: pointer;
-    }
-    input[type=range] { width: 120px; cursor: pointer; accent-color: #7b6cff; }
-
-    .btn {
-      padding: 10px 24px; border-radius: 10px; font-size: 0.92em; font-weight: 600;
-      cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s;
-    }
-    .btn:active { transform: scale(0.96); }
-    .btn-primary { background: #7b6cff; color: #fff; }
-    .btn-primary:hover { opacity: 0.88; }
-    .btn-ghost { background: #2a2a32; color: #ccc; border: 1px solid #444; }
-    .btn-ghost:hover { background: #333340; }
-
-    /* ── App screen ── */
-    #app-screen { display: none; flex: 1; flex-direction: column; padding: 12px; gap: 12px; }
-    #app-screen.visible { display: flex; }
-
-    .top-bar {
-      display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between;
-      background: #222228; border-radius: 10px; padding: 10px 14px;
-    }
-    .top-bar .left { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .top-bar .right { display: flex; gap: 8px; align-items: center; }
-
-    #progress-text { font-size: 0.82em; color: #aaa; }
-    #progress-bar-wrap { width: 120px; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
-    #progress-bar { height: 100%; background: #7b6cff; width: 0%; transition: width 0.3s; border-radius: 3px; }
-
-    .main-area {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 160px;
-      gap: 12px;
-      min-height: 0;
-    }
-
-    @media (max-width: 600px) {
-      .main-area { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-    }
-
-    .canvas-wrap {
-      background: #222228; border-radius: 10px; overflow: hidden;
-      display: flex; align-items: center; justify-content: center; position: relative;
-      min-height: 300px;
-    }
-
-    #paintCanvas {
-      max-width: 100%; max-height: calc(100vh - 220px);
-      display: block; cursor: crosshair;
-      image-rendering: pixelated;
-    }
-
-    /* Palette sidebar */
-    .palette-panel {
-      background: #222228; border-radius: 10px; padding: 12px;
-      display: flex; flex-direction: column; gap: 8px; overflow-y: auto;
-    }
-    .palette-panel h3 { font-size: 0.78em; color: #888; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-
-    .color-swatch {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 8px; border-radius: 8px; cursor: pointer;
-      border: 2px solid transparent; transition: border-color 0.15s, background 0.15s;
+      background: var(--cream);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
       user-select: none;
     }
-    .color-swatch:hover { background: #2a2a35; }
-    .color-swatch.active { border-color: #7b6cff; background: #2a2a35; }
-    .swatch-box {
-      width: 26px; height: 26px; border-radius: 5px; flex-shrink: 0;
-      border: 1px solid rgba(255,255,255,0.12);
-    }
-    .swatch-label { font-size: 0.85em; font-weight: 600; }
-    .swatch-count { font-size: 0.72em; color: #666; margin-left: auto; }
-    .swatch-done { opacity: 0.45; }
-    .swatch-done .swatch-box { opacity: 0.5; }
+    .pill:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+    .pill:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+    .pill.coral { background: var(--coral); }
+    .pill.gold { background: var(--gold); }
+    .pill.sky { background: var(--sky); }
 
-    /* Eraser */
-    .eraser-btn {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 8px; border-radius: 8px; cursor: pointer;
-      border: 2px solid transparent; background: none; color: #aaa;
-      font-size: 0.85em; font-family: inherit; transition: background 0.15s, border-color 0.15s;
+    /* ── setup screen ── */
+    #setup {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: min(520px, 94vw);
+    }
+    .drop {
       width: 100%;
+      padding: 38px 20px;
+      text-align: center;
+      cursor: pointer;
+      border-style: dashed;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
-    .eraser-btn:hover { background: #2a2a35; }
-    .eraser-btn.active { border-color: #ff9eb5; background: #2a2a35; color: #ff9eb5; }
+    .drop:hover, .drop.drag { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+    .drop svg { display: block; margin: 0 auto 12px; }
+    .drop .big { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .drop .small { font-style: italic; font-size: 14px; color: rgba(32,26,23,0.6); margin-top: 6px; }
+    #fileInput { display: none; }
 
-    #loading-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      z-index: 100; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    .controls {
+      width: 100%;
+      padding: 16px 20px;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      transform: rotate(0.6deg);
     }
-    #loading-overlay.show { display: flex; }
-    .spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: #7b6cff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    .ctrl { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    .ctrl .lab { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+    .ctrl .row { display: flex; align-items: center; gap: 10px; }
+    input[type=range] { width: 130px; accent-color: var(--coral); cursor: pointer; }
+    #paintsVal { font-style: italic; min-width: 20px; text-align: center; }
+    select {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 14px;
+      background: var(--cream);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .setup-btns { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    #makeBtn { display: none; transform: rotate(-1.5deg); }
+
+    /* ── studio ── */
+    #studio { display: none; flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 1000px; }
+    #studio.on { display: flex; }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 10px 16px;
+      transform: rotate(-0.5deg);
+    }
+    .toolbar .pill { font-size: 12px; padding: 9px 16px; }
+    #progress { font-style: italic; font-size: 15px; }
+
+    .workbench {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      justify-content: center;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    .easel {
+      position: relative;
+      padding: 10px;
+      line-height: 0;
+    }
+    #board { display: block; cursor: crosshair; touch-action: none; user-select: none; }
+
+    .masterpiece {
+      position: absolute;
+      top: -18px;
+      right: -14px;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 10px 18px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 14px;
+      text-transform: uppercase;
+      transform: rotate(7deg) scale(0);
+      text-align: center;
+      pointer-events: none;
+      line-height: 1.2;
+    }
+    .masterpiece em { display: block; font-family: Georgia, serif; font-weight: normal; font-size: 11px; text-transform: none; }
+    .masterpiece.show { animation: popIn 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+    @keyframes popIn {
+      0% { transform: rotate(15deg) scale(0.2); }
+      70% { transform: rotate(6deg) scale(1.15); }
+      100% { transform: rotate(7deg) scale(1); }
+    }
+
+    .paints {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 70vh;
+      overflow-y: auto;
+      transform: rotate(0.8deg);
+    }
+    .paints h3 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      text-align: center;
+    }
+    .dab {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 8px;
+      border: 2px solid transparent;
+      border-radius: 999px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .dab:hover { background: rgba(32,26,23,0.06); }
+    .dab.active { border-color: var(--ink); background: rgba(32,26,23,0.06); box-shadow: 2px 2px 0 var(--ink); }
+    .dab-swatch {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 2px solid var(--ink);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .dab-num { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 14px; min-width: 22px; }
+    .dab-left { font-style: italic; font-size: 12px; color: rgba(32,26,23,0.55); margin-left: auto; }
+    .dab.done { opacity: 0.4; }
+    .dab.done .dab-left::after { content: ' ✓'; }
+    .dab.eraser .dab-swatch {
+      background: var(--cream);
+      background-image: linear-gradient(45deg, transparent 44%, var(--ink) 44%, var(--ink) 56%, transparent 56%);
+    }
+
+    @media (max-width: 720px) {
+      .workbench { flex-direction: column; align-items: center; }
+      .paints {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-height: none;
+        max-width: 94vw;
+      }
+      .paints h3 { width: 100%; }
+      .dab-left { display: none; }
+    }
+
+    .hint {
+      font-style: italic;
+      font-size: 15px;
+      color: rgba(32,26,23,0.55);
+      transition: opacity 1.2s ease;
+      min-height: 1.2em;
+      text-align: center;
+    }
+    .hint.gone { opacity: 0; }
+
+    /* ── loading ── */
+    #loading {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(242, 237, 226, 0.88);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #loading.show { display: flex; }
+    .blob-spin {
+      width: 44px; height: 44px;
+      background: var(--coral);
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      border-radius: 46% 54% 60% 40% / 50% 44% 56% 50%;
+      animation: spin 1s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #loading-msg { font-size: 0.9em; color: #aaa; }
+    #loadingMsg { font-style: italic; font-size: 16px; }
+
+    @keyframes thunk {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(2px, 3px); }
+      50% { transform: translate(-3px, 1px); }
+      75% { transform: translate(1px, -2px); }
+      100% { transform: translate(0, 0); }
+    }
+    body.thunk { animation: thunk 0.22s linear; }
+
+    @media (prefers-reduced-motion: reduce) {
+      body.thunk { animation: none; }
+      .masterpiece.show { animation: none; transform: rotate(7deg) scale(1); }
+      .blob-spin { animation-duration: 3s; }
+      .pill, .drop, .hint { transition: none; }
+    }
   </style>
 </head>
 <body>
 
 <header>
   <h1>Paint by Number</h1>
-  <p>Upload a photo — get a paint-by-number template to fill in</p>
+  <p>upload a photo. we number it. you do the rest.</p>
 </header>
 
-<!-- Upload screen -->
-<div id="upload-screen">
-  <div class="drop-zone" id="dropZone">
-    <div class="icon">🖼️</div>
-    <p><strong>Click to upload</strong> or drag an image here</p>
-    <p>JPG, PNG, GIF, WebP</p>
+<!-- setup -->
+<div id="setup">
+  <div class="card drop" id="drop">
+    <svg width="52" height="52" viewBox="0 0 50 50" aria-hidden="true">
+      <rect x="6" y="6" width="38" height="38" rx="6" fill="#fff8ef" stroke="#201a17" stroke-width="3"/>
+      <path d="M6 32l12-10 9 8 8-6 9 8v8a6 6 0 01-6 6H12a6 6 0 01-6-6z" fill="#5aa0db" stroke="#201a17" stroke-width="3"/>
+      <circle cx="34" cy="16" r="5" fill="#f7c948" stroke="#201a17" stroke-width="3"/>
+    </svg>
+    <div class="big">Drop a photo here</div>
+    <div class="small">or click — jpg, png, the usual</div>
   </div>
   <input type="file" id="fileInput" accept="image/*">
 
-  <div class="controls-row">
-    <label class="ctrl">
-      Colors
-      <div style="display:flex;align-items:center;gap:8px">
-        <input type="range" id="colorCount" min="4" max="20" value="10" step="1">
-        <span id="colorCountVal" style="color:#ddd;font-size:0.9em;min-width:18px">10</span>
+  <div class="card controls">
+    <div class="ctrl">
+      <div class="lab">Paints</div>
+      <div class="row">
+        <input type="range" id="paints" min="4" max="16" value="10" step="1">
+        <span id="paintsVal">10</span>
       </div>
-    </label>
-    <label class="ctrl">
-      Detail
-      <select id="detailLevel">
-        <option value="320">Low (fast)</option>
-        <option value="500" selected>Medium</option>
-        <option value="700">High (slow)</option>
+    </div>
+    <div class="ctrl">
+      <div class="lab">Detail</div>
+      <select id="detail">
+        <option value="260">chunky</option>
+        <option value="380" selected>classic</option>
+        <option value="560">fussy</option>
       </select>
-    </label>
-  </div>
-
-  <button class="btn btn-primary" id="processBtn" style="display:none">Generate Paint by Number</button>
-</div>
-
-<!-- App screen -->
-<div id="app-screen">
-  <div class="top-bar">
-    <div class="left">
-      <button class="btn btn-ghost" id="newImageBtn">← New Image</button>
-      <button class="btn btn-ghost" id="toggleRefBtn">👁 Reference</button>
-      <button class="btn btn-ghost" id="downloadBtn">⬇ Save</button>
-    </div>
-    <div class="right">
-      <span id="progress-text">0 / 0 filled</span>
-      <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
     </div>
   </div>
 
-  <div class="main-area">
-    <div class="canvas-wrap">
-      <canvas id="paintCanvas"></canvas>
-    </div>
-    <div class="palette-panel" id="palettePanel">
-      <h3>Colors</h3>
-    </div>
+  <div class="setup-btns">
+    <button class="pill coral" id="makeBtn">Make My Kit</button>
+    <button class="pill" id="sampleBtn" style="transform: rotate(1.2deg)">No photo? Paint the sample</button>
   </div>
 </div>
 
-<!-- Loading overlay -->
-<div id="loading-overlay">
-  <div class="spinner"></div>
-  <div id="loading-msg">Processing image…</div>
+<!-- studio -->
+<div id="studio">
+  <div class="card toolbar">
+    <button class="pill" id="newBtn">New Canvas</button>
+    <button class="pill sky" id="peekBtn">Hold to Peek</button>
+    <button class="pill gold" id="frameBtn">Frame It</button>
+    <span id="progress"></span>
+  </div>
+
+  <div class="workbench">
+    <div class="card easel">
+      <canvas id="board"></canvas>
+      <div class="masterpiece" id="masterpiece">A Masterpiece<em>signed, presumably</em></div>
+    </div>
+    <div class="card paints" id="paints-panel">
+      <h3>The Kit</h3>
+    </div>
+  </div>
+
+  <div class="hint" id="hint">drag to paint — the right color makes the number disappear</div>
+</div>
+
+<!-- loading -->
+<div id="loading">
+  <div class="blob-spin"></div>
+  <div id="loadingMsg">mixing paints…</div>
 </div>
 
 <script>
 (() => {
-  // ── State ──
-  let originalImg = null;
-  let quantizedData = null; // Uint8Array of color indices per pixel
-  let regionMap = null;     // Int32Array: region ID per pixel
-  let regions = [];         // [{id, colorIndex, area, cx, cy}]
-  let palette = [];         // [{r,g,b}]
-  let filledRegions = new Set();
-  let selectedColor = 0;    // palette index (or -1 for eraser)
+  const INK = '#201a17';
+  const CREAM = '#fff8ef';
+
+  // ── state ──
+  let srcImg = null;         // Image or canvas used as source
   let imgW = 0, imgH = 0;
-  let showReference = false;
+  let palette = [];          // [{r,g,b,hex}]
+  let qData = null;          // Uint8Array color index per pixel
+  let regionMap = null;      // Int32Array region id per pixel
+  let regions = [];          // [{id,color,area,nx,ny,pixels,filledWith}]
+  let colorTotals = [];      // regions per color
+  let selected = 0;          // palette index, -1 = eraser
+  let fillCanvas, fillCtx, fillData;
+  let borderCanvas;
+  let peeking = false;
+  let celebrated = false;
 
-  // Paint canvas layers:
-  // - outlineCanvas (offscreen): black outlines + numbers
-  // - fillCanvas (offscreen): user fills
-  let outlineCanvas, fillCanvas, outlineCtx, fillCtx;
+  const setup = document.getElementById('setup');
+  const studio = document.getElementById('studio');
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('fileInput');
+  const makeBtn = document.getElementById('makeBtn');
+  const sampleBtn = document.getElementById('sampleBtn');
+  const paintsEl = document.getElementById('paints');
+  const paintsVal = document.getElementById('paintsVal');
+  const detailEl = document.getElementById('detail');
+  const board = document.getElementById('board');
+  const bctx = board.getContext('2d');
+  const panel = document.getElementById('paints-panel');
+  const progressEl = document.getElementById('progress');
+  const loading = document.getElementById('loading');
+  const loadingMsg = document.getElementById('loadingMsg');
+  const hintEl = document.getElementById('hint');
+  const masterpieceEl = document.getElementById('masterpiece');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  const uploadScreen  = document.getElementById('upload-screen');
-  const appScreen     = document.getElementById('app-screen');
-  const dropZone      = document.getElementById('dropZone');
-  const fileInput     = document.getElementById('fileInput');
-  const processBtn    = document.getElementById('processBtn');
-  const paintCanvas   = document.getElementById('paintCanvas');
-  const paintCtx      = paintCanvas.getContext('2d');
-  const palettePanel  = document.getElementById('palettePanel');
-  const colorCountEl  = document.getElementById('colorCount');
-  const colorCountVal = document.getElementById('colorCountVal');
-  const loadingOverlay= document.getElementById('loading-overlay');
-  const loadingMsg    = document.getElementById('loading-msg');
-  const progressText  = document.getElementById('progress-text');
-  const progressBar   = document.getElementById('progress-bar');
-  const toggleRefBtn  = document.getElementById('toggleRefBtn');
-  const newImageBtn   = document.getElementById('newImageBtn');
-  const downloadBtn   = document.getElementById('downloadBtn');
+  paintsEl.addEventListener('input', () => paintsVal.textContent = paintsEl.value);
 
-  colorCountEl.addEventListener('input', () => colorCountVal.textContent = colorCountEl.value);
-
-  // ── Upload / drag ──
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', e => e.target.files[0] && loadImage(e.target.files[0]));
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
-  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); e.dataTransfer.files[0] && loadImage(e.dataTransfer.files[0]); });
-
-  function loadImage(file) {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      originalImg = img;
-      processBtn.style.display = 'block';
-      // Show tiny preview in drop zone
-      dropZone.innerHTML = `<div class="icon">✅</div><p><strong>${file.name}</strong></p><p>Click "Generate" to process</p>`;
-    };
-    img.src = url;
-  }
-
-  processBtn.addEventListener('click', () => {
-    if (!originalImg) return;
-    showLoading('Processing image…');
-    setTimeout(() => processImage(), 50);
+  // ── setup: upload / drag / sample ──
+  drop.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => e.target.files[0] && loadFile(e.target.files[0]));
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault();
+    drop.classList.remove('drag');
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
   });
 
-  // ── Main processing ──
-  function processImage() {
-    const maxDim = parseInt(document.getElementById('detailLevel').value);
-    const k = parseInt(colorCountEl.value);
+  function loadFile(file) {
+    const img = new Image();
+    img.onload = () => {
+      srcImg = img;
+      makeBtn.style.display = 'inline-block';
+      drop.querySelector('.big').textContent = file.name.length > 28 ? file.name.slice(0, 25) + '…' : file.name;
+      drop.querySelector('.small').textContent = 'got it. make your kit below.';
+    };
+    img.src = URL.createObjectURL(file);
+  }
 
-    // Resize
-    let w = originalImg.width, h = originalImg.height;
-    const scale = Math.min(1, maxDim / Math.max(w, h));
-    w = Math.round(w * scale);
-    h = Math.round(h * scale);
-    imgW = w; imgH = h;
+  sampleBtn.addEventListener('click', () => {
+    srcImg = drawSample();
+    startProcessing();
+  });
+  makeBtn.addEventListener('click', () => { if (srcImg) startProcessing(); });
 
-    const srcCanvas = document.createElement('canvas');
-    srcCanvas.width = w; srcCanvas.height = h;
-    const srcCtx = srcCanvas.getContext('2d');
-    srcCtx.drawImage(originalImg, 0, 0, w, h);
-    const imageData = srcCtx.getImageData(0, 0, w, h);
-    const pixels = imageData.data;
+  // A flat little landscape — quantizes into a clean, satisfying kit.
+  function drawSample() {
+    const c = document.createElement('canvas');
+    c.width = 480; c.height = 360;
+    const x = c.getContext('2d');
+    x.fillStyle = '#8fc1e8'; x.fillRect(0, 0, 480, 200);
+    x.fillStyle = '#5aa0db'; x.fillRect(0, 0, 480, 90);
+    x.fillStyle = '#f7c948';
+    x.beginPath(); x.arc(390, 70, 42, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#fff8ef';
+    x.beginPath(); x.ellipse(120, 60, 55, 22, 0, 0, Math.PI * 2); x.fill();
+    x.beginPath(); x.ellipse(200, 90, 40, 16, 0, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#a98fd0';
+    x.beginPath(); x.moveTo(0, 200); x.lineTo(120, 80); x.lineTo(260, 200); x.closePath(); x.fill();
+    x.fillStyle = '#8f74b8';
+    x.beginPath(); x.moveTo(140, 200); x.lineTo(300, 100); x.lineTo(480, 200); x.closePath(); x.fill();
+    x.fillStyle = '#b7ce3c'; x.fillRect(0, 200, 480, 160);
+    x.fillStyle = '#f2ede2';
+    x.beginPath();
+    x.moveTo(210, 360); x.quadraticCurveTo(250, 280, 230, 200);
+    x.lineTo(260, 200); x.quadraticCurveTo(300, 280, 290, 360);
+    x.closePath(); x.fill();
+    x.fillStyle = '#f0563e'; x.fillRect(60, 240, 90, 70);
+    x.fillStyle = '#201a17';
+    x.beginPath(); x.moveTo(45, 240); x.lineTo(105, 195); x.lineTo(165, 240); x.closePath(); x.fill();
+    x.fillStyle = '#f7c948'; x.fillRect(90, 270, 28, 40);
+    x.fillStyle = '#8a5a2b'; x.fillRect(370, 235, 18, 75);
+    x.fillStyle = '#2fb0a3';
+    x.beginPath(); x.arc(379, 210, 45, 0, Math.PI * 2); x.fill();
+    return c;
+  }
 
-    setLoading('Quantizing colors…');
+  // ── processing pipeline ──
+  function startProcessing() {
+    showLoading('mixing paints…');
+    setTimeout(process, 60);
+  }
+
+  function process() {
+    const maxDim = parseInt(detailEl.value, 10);
+    const k = parseInt(paintsEl.value, 10);
+
+    const sw = srcImg.width, sh = srcImg.height;
+    const scale = Math.min(1, maxDim / Math.max(sw, sh));
+    imgW = Math.max(2, Math.round(sw * scale));
+    imgH = Math.max(2, Math.round(sh * scale));
+
+    const src = document.createElement('canvas');
+    src.width = imgW; src.height = imgH;
+    const sctx = src.getContext('2d');
+    sctx.drawImage(srcImg, 0, 0, imgW, imgH);
+    const pixels = sctx.getImageData(0, 0, imgW, imgH).data;
+    boxBlur(pixels, imgW, imgH);
+
+    loadingMsg.textContent = 'sorting by number…';
     setTimeout(() => {
-      palette = kMeans(pixels, w, h, k);
-      quantizedData = assignColors(pixels, w, h, palette);
+      palette = kMeans(pixels, imgW * imgH, k);
+      qData = assignColors(pixels, imgW * imgH, palette);
 
-      setLoading('Finding regions…');
+      loadingMsg.textContent = 'drawing the lines…';
       setTimeout(() => {
-        const result = labelRegions(quantizedData, w, h, palette.length);
-        regionMap = result.regionMap;
-        regions   = result.regions;
-
-        setLoading('Drawing template…');
-        setTimeout(() => {
-          buildCanvases(w, h, pixels);
-          hideLoading();
-          showApp();
-        }, 20);
+        cleanRegions();
+        buildLayers();
+        buildPanel();
+        setup.style.display = 'none';
+        studio.classList.add('on');
+        sizeBoard();
+        render();
+        updateProgress();
+        hideLoading();
       }, 20);
     }, 20);
   }
 
-  // ── K-means ──
-  function kMeans(pixels, w, h, k) {
-    const n = w * h;
-    // Sample pixels
-    const step = Math.max(1, Math.floor(n / 2000));
+  // 3x3 box blur to calm speckle before quantizing
+  function boxBlur(d, w, h) {
+    const out = new Uint8ClampedArray(d.length);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          const yy = y + dy;
+          if (yy < 0 || yy >= h) continue;
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x + dx;
+            if (xx < 0 || xx >= w) continue;
+            const p = (yy * w + xx) * 4;
+            r += d[p]; g += d[p + 1]; b += d[p + 2]; n++;
+          }
+        }
+        const q = (y * w + x) * 4;
+        out[q] = r / n; out[q + 1] = g / n; out[q + 2] = b / n; out[q + 3] = 255;
+      }
+    }
+    d.set(out);
+  }
+
+  function kMeans(pixels, n, k) {
+    const step = Math.max(1, Math.floor(n / 2500));
     const samples = [];
     for (let i = 0; i < n; i += step) {
       const p = i * 4;
-      if (pixels[p + 3] < 128) continue;
-      samples.push([pixels[p], pixels[p+1], pixels[p+2]]);
+      samples.push([pixels[p], pixels[p + 1], pixels[p + 2]]);
+    }
+    const dist2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+
+    const cents = [samples[Math.floor(Math.random() * samples.length)]];
+    while (cents.length < k) {
+      let sum = 0;
+      const ds = samples.map(s => {
+        let m = Infinity;
+        for (const c of cents) { const d = dist2(s, c); if (d < m) m = d; }
+        sum += m;
+        return m;
+      });
+      let r = Math.random() * sum, acc = 0, pick = 0;
+      for (let i = 0; i < samples.length; i++) { acc += ds[i]; if (acc >= r) { pick = i; break; } }
+      cents.push(samples[pick]);
     }
 
-    // Init centroids (k-means++ style)
-    const centroids = [samples[Math.floor(Math.random() * samples.length)]];
-    while (centroids.length < k) {
-      const dists = samples.map(s => {
-        let minD = Infinity;
-        centroids.forEach(c => { const d = colorDist2(s, c); if (d < minD) minD = d; });
-        return minD;
-      });
-      const sum = dists.reduce((a, b) => a + b, 0);
-      let rand = Math.random() * sum, cumul = 0;
-      for (let i = 0; i < samples.length; i++) {
-        cumul += dists[i];
-        if (cumul >= rand) { centroids.push(samples[i]); break; }
+    for (let iter = 0; iter < 12; iter++) {
+      const sums = cents.map(() => [0, 0, 0, 0]);
+      for (const s of samples) {
+        let best = 0, bd = Infinity;
+        for (let ci = 0; ci < cents.length; ci++) {
+          const d = dist2(s, cents[ci]);
+          if (d < bd) { bd = d; best = ci; }
+        }
+        const t = sums[best];
+        t[0] += s[0]; t[1] += s[1]; t[2] += s[2]; t[3]++;
+      }
+      for (let ci = 0; ci < cents.length; ci++) {
+        if (sums[ci][3] > 0) {
+          cents[ci] = [sums[ci][0] / sums[ci][3], sums[ci][1] / sums[ci][3], sums[ci][2] / sums[ci][3]];
+        }
       }
     }
 
-    // Iterate
-    for (let iter = 0; iter < 12; iter++) {
-      const sums = centroids.map(() => [0,0,0,0]);
-      samples.forEach(s => {
-        let best = 0, bestD = Infinity;
-        centroids.forEach((c, ci) => { const d = colorDist2(s, c); if (d < bestD) { bestD = d; best = ci; } });
-        sums[best][0] += s[0]; sums[best][1] += s[1]; sums[best][2] += s[2]; sums[best][3]++;
-      });
-      centroids.forEach((c, ci) => {
-        const cnt = sums[ci][3];
-        if (cnt > 0) { centroids[ci] = [sums[ci][0]/cnt, sums[ci][1]/cnt, sums[ci][2]/cnt]; }
-      });
-    }
-
-    return centroids.map(c => ({ r: Math.round(c[0]), g: Math.round(c[1]), b: Math.round(c[2]) }));
+    // lightest paint is No. 1, like a real kit
+    cents.sort((a, b) => (b[0] + b[1] + b[2]) - (a[0] + a[1] + a[2]));
+    return cents.map(c => {
+      const r = Math.round(c[0]), g = Math.round(c[1]), b = Math.round(c[2]);
+      return { r, g, b, hex: '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('') };
+    });
   }
 
-  function colorDist2(a, b) {
-    return (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2;
-  }
-
-  function assignColors(pixels, w, h, palette) {
-    const n = w * h;
+  function assignColors(pixels, n, pal) {
     const out = new Uint8Array(n);
     for (let i = 0; i < n; i++) {
       const p = i * 4;
-      const r = pixels[p], g = pixels[p+1], b = pixels[p+2];
-      let best = 0, bestD = Infinity;
-      palette.forEach((c, ci) => {
-        const d = (r-c.r)**2 + (g-c.g)**2 + (b-c.b)**2;
-        if (d < bestD) { bestD = d; best = ci; }
-      });
+      const r = pixels[p], g = pixels[p + 1], b = pixels[p + 2];
+      let best = 0, bd = Infinity;
+      for (let ci = 0; ci < pal.length; ci++) {
+        const c = pal[ci];
+        const d = (r - c.r) ** 2 + (g - c.g) ** 2 + (b - c.b) ** 2;
+        if (d < bd) { bd = d; best = ci; }
+      }
       out[i] = best;
     }
     return out;
   }
 
-  // ── Connected components (BFS) ──
-  function labelRegions(qData, w, h, numColors) {
-    const n = w * h;
-    const regionMap = new Int32Array(n).fill(-1);
-    const regions = [];
-    let regionId = 0;
-    const MIN_AREA = Math.max(8, Math.floor(n / 5000));
-
+  function label() {
+    const n = imgW * imgH, w = imgW, h = imgH;
+    regionMap = new Int32Array(n).fill(-1);
+    regions = [];
+    const queue = new Int32Array(n);
     for (let start = 0; start < n; start++) {
       if (regionMap[start] !== -1) continue;
-      const colorIdx = qData[start];
-      // BFS
-      const queue = [start];
+      const id = regions.length;
+      const color = qData[start];
       const pixels = [];
-      regionMap[start] = regionId;
-      let qi = 0;
-      while (qi < queue.length) {
-        const cur = queue[qi++];
+      let head = 0, tail = 0;
+      queue[tail++] = start;
+      regionMap[start] = id;
+      while (head < tail) {
+        const cur = queue[head++];
         pixels.push(cur);
-        const x = cur % w, y = Math.floor(cur / w);
-        const neighbors = [];
-        if (x > 0)   neighbors.push(cur - 1);
-        if (x < w-1) neighbors.push(cur + 1);
-        if (y > 0)   neighbors.push(cur - w);
-        if (y < h-1) neighbors.push(cur + w);
-        for (const nb of neighbors) {
-          if (regionMap[nb] === -1 && qData[nb] === colorIdx) {
-            regionMap[nb] = regionId;
-            queue.push(nb);
+        const x = cur % w, y = (cur - x) / w;
+        if (x > 0 && regionMap[cur - 1] === -1 && qData[cur - 1] === color) { regionMap[cur - 1] = id; queue[tail++] = cur - 1; }
+        if (x < w - 1 && regionMap[cur + 1] === -1 && qData[cur + 1] === color) { regionMap[cur + 1] = id; queue[tail++] = cur + 1; }
+        if (y > 0 && regionMap[cur - w] === -1 && qData[cur - w] === color) { regionMap[cur - w] = id; queue[tail++] = cur - w; }
+        if (y < h - 1 && regionMap[cur + w] === -1 && qData[cur + w] === color) { regionMap[cur + w] = id; queue[tail++] = cur + w; }
+      }
+      regions.push({ id, color, area: pixels.length, pixels, filledWith: null, nx: 0, ny: 0 });
+    }
+  }
+
+  // Absorb tiny regions into the neighboring color they touch most,
+  // then relabel — repeat until every region is paintable.
+  function cleanRegions() {
+    const n = imgW * imgH, w = imgW;
+    const MIN_AREA = Math.max(24, Math.round(n / 2200));
+
+    for (let pass = 0; pass < 4; pass++) {
+      label();
+      const smalls = regions.filter(r => r.area < MIN_AREA).sort((a, b) => a.area - b.area);
+      if (smalls.length === 0) break;
+      for (const small of smalls) {
+        const tally = {};
+        for (const pi of small.pixels) {
+          const x = pi % w;
+          const nbs = [];
+          if (x > 0) nbs.push(pi - 1);
+          if (x < w - 1) nbs.push(pi + 1);
+          if (pi >= w) nbs.push(pi - w);
+          if (pi < n - w) nbs.push(pi + w);
+          for (const nb of nbs) {
+            if (regionMap[nb] !== small.id) {
+              const c = qData[nb];
+              tally[c] = (tally[c] || 0) + 1;
+            }
           }
         }
+        let bestColor = -1, bestCount = -1;
+        for (const c in tally) {
+          if (tally[c] > bestCount) { bestCount = tally[c]; bestColor = parseInt(c, 10); }
+        }
+        if (bestColor !== -1) {
+          for (const pi of small.pixels) qData[pi] = bestColor;
+        }
       }
+    }
+    label();
 
-      // Compute centroid
+    // number anchor: region pixel nearest its centroid (stays inside concave shapes)
+    for (const r of regions) {
       let sx = 0, sy = 0;
-      pixels.forEach(p => { sx += p % w; sy += Math.floor(p / w); });
-      const area = pixels.length;
-      const cx = Math.round(sx / area), cy = Math.round(sy / area);
-
-      regions.push({ id: regionId, colorIndex: colorIdx, area, cx, cy, pixels });
-      regionId++;
+      for (const pi of r.pixels) { sx += pi % w; sy += (pi - pi % w) / w; }
+      const cx = sx / r.area, cy = sy / r.area;
+      let best = Infinity;
+      for (const pi of r.pixels) {
+        const x = pi % w, y = (pi - x) / w;
+        const d = (x - cx) ** 2 + (y - cy) ** 2;
+        if (d < best) { best = d; r.nx = x; r.ny = y; }
+      }
     }
 
-    // Merge tiny regions into nearest neighbor
-    const smallRegions = regions.filter(r => r.area < MIN_AREA);
-    smallRegions.forEach(small => {
-      // Find a border neighbor with different region
-      let foundNeighbor = -1;
-      for (const pi of small.pixels) {
-        const x = pi % w, y = Math.floor(pi / w);
-        const nbs = [];
-        if (x > 0) nbs.push(pi-1); if (x < w-1) nbs.push(pi+1);
-        if (y > 0) nbs.push(pi-w); if (y < h-1) nbs.push(pi+w);
-        for (const nb of nbs) {
-          if (regionMap[nb] !== small.id) { foundNeighbor = regionMap[nb]; break; }
-        }
-        if (foundNeighbor !== -1) break;
-      }
-      if (foundNeighbor !== -1) {
-        small.pixels.forEach(pi => regionMap[pi] = foundNeighbor);
-        const target = regions.find(r => r.id === foundNeighbor);
-        if (target) target.area += small.area;
-        small.area = 0;
-      }
-    });
-
-    return { regionMap, regions: regions.filter(r => r.area > 0) };
+    colorTotals = new Array(palette.length).fill(0);
+    for (const r of regions) colorTotals[r.color]++;
   }
 
-  // ── Build canvases ──
-  function buildCanvases(w, h, origPixels) {
-    outlineCanvas = document.createElement('canvas');
-    outlineCanvas.width = w; outlineCanvas.height = h;
-    outlineCtx = outlineCanvas.getContext('2d');
-
+  // ── layers ──
+  function buildLayers() {
     fillCanvas = document.createElement('canvas');
-    fillCanvas.width = w; fillCanvas.height = h;
+    fillCanvas.width = imgW; fillCanvas.height = imgH;
     fillCtx = fillCanvas.getContext('2d');
+    fillData = fillCtx.createImageData(imgW, imgH);
 
-    // Draw outline image (white bg + black borders + numbers)
-    const outImg = outlineCtx.createImageData(w, h);
-    const od = outImg.data;
-
-    // Fill white
-    for (let i = 0; i < w * h * 4; i += 4) {
-      od[i] = 245; od[i+1] = 245; od[i+2] = 245; od[i+3] = 255;
-    }
-
-    // Draw borders: where neighboring pixel has different color index
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const i = y * w + x;
-        const c = quantizedData[i];
-        let isBorder = false;
-        if (x > 0   && quantizedData[i-1] !== c) isBorder = true;
-        if (x < w-1 && quantizedData[i+1] !== c) isBorder = true;
-        if (y > 0   && quantizedData[i-w] !== c) isBorder = true;
-        if (y < h-1 && quantizedData[i+w] !== c) isBorder = true;
-        if (isBorder) {
+    // transparent overlay with ink borders where regions meet
+    borderCanvas = document.createElement('canvas');
+    borderCanvas.width = imgW; borderCanvas.height = imgH;
+    const bc = borderCanvas.getContext('2d');
+    const bImg = bc.createImageData(imgW, imgH);
+    const bd = bImg.data;
+    for (let y = 0; y < imgH; y++) {
+      for (let x = 0; x < imgW; x++) {
+        const i = y * imgW + x;
+        const rid = regionMap[i];
+        if ((x < imgW - 1 && regionMap[i + 1] !== rid) || (y < imgH - 1 && regionMap[i + imgW] !== rid)) {
           const p = i * 4;
-          od[p] = 30; od[p+1] = 30; od[p+2] = 30; od[p+3] = 255;
+          bd[p] = 32; bd[p + 1] = 26; bd[p + 2] = 23; bd[p + 3] = 255;
         }
       }
     }
-
-    outlineCtx.putImageData(outImg, 0, 0);
-
-    // Draw numbers at region centroids
-    const SHOW_MIN = Math.max(12, Math.floor(w * h / 4000));
-    outlineCtx.textAlign = 'center';
-    outlineCtx.textBaseline = 'middle';
-
-    regions.forEach(r => {
-      if (r.area < SHOW_MIN) return;
-      const num = r.colorIndex + 1;
-      const fontSize = Math.max(6, Math.min(14, Math.sqrt(r.area) * 0.35));
-      outlineCtx.font = `bold ${fontSize}px Arial`;
-      outlineCtx.fillStyle = '#222';
-      outlineCtx.fillText(num, r.cx, r.cy);
-    });
-
-    // Fill canvas starts transparent
-    fillCtx.clearRect(0, 0, w, h);
-
-    // Size the visible canvas
-    const maxW = paintCanvas.parentElement.clientWidth - 4;
-    const maxH = window.innerHeight - 200;
-    const scale = Math.min(1, maxW / w, maxH / h);
-    paintCanvas.width  = Math.round(w * scale);
-    paintCanvas.height = Math.round(h * scale);
-    paintCanvas.style.width  = paintCanvas.width + 'px';
-    paintCanvas.style.height = paintCanvas.height + 'px';
-    paintCanvas._scale = scale;
-
-    renderPaintCanvas();
-    buildPalette();
-    updateProgress();
+    bc.putImageData(bImg, 0, 0);
   }
 
-  function renderPaintCanvas() {
-    const { width: cw, height: ch } = paintCanvas;
-    paintCtx.clearRect(0, 0, cw, ch);
+  // ── display (aspect ratio always preserved) ──
+  function sizeBoard() {
+    const pad = 24;
+    const maxW = Math.min(document.body.clientWidth - pad * 2, 760);
+    const maxH = window.innerHeight * 0.66;
+    const cssScale = Math.min(maxW / imgW, maxH / imgH);
+    const cssW = Math.round(imgW * cssScale);
+    const cssH = Math.round(imgH * cssScale);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    board.width = Math.round(cssW * dpr);
+    board.height = Math.round(cssH * dpr);
+    board.style.width = cssW + 'px';
+    board.style.height = cssH + 'px';
+  }
 
-    if (showReference && originalImg) {
-      paintCtx.drawImage(originalImg, 0, 0, cw, ch);
+  function render() {
+    const W = board.width, H = board.height;
+    bctx.clearRect(0, 0, W, H);
+
+    if (peeking && srcImg) {
+      bctx.imageSmoothingEnabled = true;
+      bctx.drawImage(srcImg, 0, 0, W, H);
       return;
     }
 
-    // White bg
-    paintCtx.fillStyle = '#f5f5f5';
-    paintCtx.fillRect(0, 0, cw, ch);
+    bctx.fillStyle = CREAM;
+    bctx.fillRect(0, 0, W, H);
+    bctx.imageSmoothingEnabled = false;
+    bctx.drawImage(fillCanvas, 0, 0, W, H);
+    bctx.drawImage(borderCanvas, 0, 0, W, H);
 
-    // User fills (scale fill canvas)
-    paintCtx.drawImage(fillCanvas, 0, 0, cw, ch);
-
-    // Outline on top
-    paintCtx.drawImage(outlineCanvas, 0, 0, cw, ch);
-  }
-
-  // ── Palette ──
-  function buildPalette() {
-    palettePanel.innerHTML = '<h3>Colors</h3>';
-
-    // Count pixels per color
-    const counts = new Array(palette.length).fill(0);
-    quantizedData.forEach(c => counts[c]++);
-
-    palette.forEach((col, i) => {
-      const hex = rgbToHex(col.r, col.g, col.b);
-      const sw = document.createElement('div');
-      sw.className = 'color-swatch' + (i === selectedColor ? ' active' : '');
-      sw.dataset.idx = i;
-      sw.innerHTML = `
-        <div class="swatch-box" style="background:${hex}"></div>
-        <span class="swatch-label">${i+1}</span>
-        <span class="swatch-count">${Math.round(counts[i]/(imgW*imgH)*100)}%</span>
-      `;
-      sw.addEventListener('click', () => selectColor(i));
-      palettePanel.appendChild(sw);
-    });
-
-    // Eraser
-    const eraser = document.createElement('button');
-    eraser.className = 'eraser-btn';
-    eraser.innerHTML = '⬜ Eraser';
-    eraser.addEventListener('click', () => selectColor(-1));
-    palettePanel.appendChild(eraser);
-
-    // Select first color
-    selectColor(0);
-  }
-
-  function selectColor(idx) {
-    selectedColor = idx;
-    palettePanel.querySelectorAll('.color-swatch').forEach(sw => {
-      sw.classList.toggle('active', parseInt(sw.dataset.idx) === idx);
-    });
-    const eraser = palettePanel.querySelector('.eraser-btn');
-    if (eraser) eraser.classList.toggle('active', idx === -1);
-  }
-
-  // ── Painting ──
-  paintCanvas.addEventListener('click', e => {
-    if (!regionMap) return;
-    const rect = paintCanvas.getBoundingClientRect();
-    const scale = paintCanvas._scale || 1;
-    const x = Math.floor((e.clientX - rect.left) / scale);
-    const y = Math.floor((e.clientY - rect.top) / scale);
-    if (x < 0 || y < 0 || x >= imgW || y >= imgH) return;
-
-    const clickedRegionId = regionMap[y * imgW + x];
-    const region = regions.find(r => r.id === clickedRegionId);
-    if (!region) return;
-
-    if (selectedColor === -1) {
-      // Erase region
-      eraseRegion(region);
-      filledRegions.delete(clickedRegionId);
-    } else {
-      // Fill region with selected color
-      fillRegion(region, palette[selectedColor]);
-      filledRegions.add(clickedRegionId);
+    // numbers: crisp vector text, gone once the region is correct
+    const s = W / imgW;
+    bctx.textAlign = 'center';
+    bctx.textBaseline = 'middle';
+    for (const r of regions) {
+      if (r.filledWith === r.color) continue;
+      const size = Math.min(14, Math.max(5, Math.sqrt(r.area) * 0.38)) * s;
+      if (size < 7) continue;
+      const x = (r.nx + 0.5) * s, y = (r.ny + 0.5) * s;
+      bctx.font = '700 ' + size + 'px Arial, sans-serif';
+      bctx.lineWidth = Math.max(2, size * 0.22);
+      bctx.strokeStyle = CREAM;
+      bctx.strokeText(r.color + 1, x, y);
+      bctx.fillStyle = (r.color === selected) ? '#f0563e' : 'rgba(32, 26, 23, 0.75)';
+      bctx.fillText(r.color + 1, x, y);
     }
-
-    renderPaintCanvas();
-    updateProgress();
-  });
-
-  function fillRegion(region, color) {
-    const imgData = fillCtx.getImageData(0, 0, imgW, imgH);
-    const d = imgData.data;
-    region.pixels.forEach(pi => {
-      const p = pi * 4;
-      d[p]   = color.r;
-      d[p+1] = color.g;
-      d[p+2] = color.b;
-      d[p+3] = 255;
-    });
-    fillCtx.putImageData(imgData, 0, 0);
   }
 
-  function eraseRegion(region) {
-    const imgData = fillCtx.getImageData(0, 0, imgW, imgH);
-    const d = imgData.data;
-    region.pixels.forEach(pi => {
-      const p = pi * 4;
-      d[p+3] = 0;
+  // ── painting (drag to paint) ──
+  let painting = false;
+
+  function regionAt(e) {
+    const rect = board.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / rect.width * imgW);
+    const y = Math.floor((e.clientY - rect.top) / rect.height * imgH);
+    if (x < 0 || y < 0 || x >= imgW || y >= imgH) return null;
+    return regions[regionMap[y * imgW + x]] || null;
+  }
+
+  function paintAt(e) {
+    const r = regionAt(e);
+    if (!r) return;
+    const d = fillData.data;
+    if (selected === -1) {
+      if (r.filledWith === null) return;
+      for (const pi of r.pixels) d[pi * 4 + 3] = 0;
+      r.filledWith = null;
+    } else {
+      if (r.filledWith === selected) return;
+      const c = palette[selected];
+      for (const pi of r.pixels) {
+        const p = pi * 4;
+        d[p] = c.r; d[p + 1] = c.g; d[p + 2] = c.b; d[p + 3] = 255;
+      }
+      r.filledWith = selected;
+    }
+    fillCtx.putImageData(fillData, 0, 0);
+    render();
+    updateProgress();
+  }
+
+  board.addEventListener('pointerdown', e => {
+    painting = true;
+    board.setPointerCapture(e.pointerId);
+    hintEl.classList.add('gone');
+    paintAt(e);
+  });
+  board.addEventListener('pointermove', e => { if (painting) paintAt(e); });
+  board.addEventListener('pointerup', () => painting = false);
+  board.addEventListener('pointercancel', () => painting = false);
+
+  // ── the kit panel ──
+  function buildPanel() {
+    panel.innerHTML = '<h3>The Kit</h3>';
+    palette.forEach((c, i) => {
+      const dab = document.createElement('div');
+      dab.className = 'dab' + (i === selected ? ' active' : '');
+      dab.dataset.idx = i;
+      dab.innerHTML =
+        '<div class="dab-swatch" style="background:' + c.hex + '"></div>' +
+        '<span class="dab-num">' + (i + 1) + '</span>' +
+        '<span class="dab-left"></span>';
+      dab.addEventListener('click', () => selectPaint(i));
+      panel.appendChild(dab);
     });
-    fillCtx.putImageData(imgData, 0, 0);
+    const eraser = document.createElement('div');
+    eraser.className = 'dab eraser';
+    eraser.dataset.idx = -1;
+    eraser.innerHTML = '<div class="dab-swatch"></div><span class="dab-num" style="font-size:11px">UNDO</span><span class="dab-left"></span>';
+    eraser.addEventListener('click', () => selectPaint(-1));
+    panel.appendChild(eraser);
+    selectPaint(0);
+  }
+
+  function selectPaint(i) {
+    selected = i;
+    panel.querySelectorAll('.dab').forEach(d => {
+      d.classList.toggle('active', parseInt(d.dataset.idx, 10) === i);
+    });
+    render();
   }
 
   function updateProgress() {
-    const totalRegions = regions.filter(r => r.area >= Math.max(8, Math.floor(imgW*imgH/5000))).length;
-    const filled = filledRegions.size;
-    progressText.textContent = `${filled} / ${totalRegions} filled`;
-    const pct = totalRegions > 0 ? (filled / totalRegions) * 100 : 0;
-    progressBar.style.width = pct + '%';
+    const done = new Array(palette.length).fill(0);
+    let correct = 0;
+    for (const r of regions) {
+      if (r.filledWith === r.color) { correct++; done[r.color]++; }
+    }
+    const pct = regions.length ? Math.floor(correct / regions.length * 100) : 0;
+    progressEl.textContent = 'true to the original: ' + pct + '% · ' + correct + '/' + regions.length + ' regions';
+
+    panel.querySelectorAll('.dab').forEach(dab => {
+      const i = parseInt(dab.dataset.idx, 10);
+      if (i < 0) return;
+      const left = colorTotals[i] - done[i];
+      dab.querySelector('.dab-left').textContent = left === 0 ? 'done' : left + ' left';
+      dab.classList.toggle('done', left === 0);
+    });
+
+    if (pct === 100 && !celebrated) {
+      celebrated = true;
+      masterpieceEl.classList.add('show');
+      if (!reducedMotion.matches) {
+        document.body.classList.add('thunk');
+        setTimeout(() => document.body.classList.remove('thunk'), 250);
+      }
+    }
   }
 
-  // ── UI actions ──
-  toggleRefBtn.addEventListener('click', () => {
-    showReference = !showReference;
-    toggleRefBtn.textContent = showReference ? '🖼 Template' : '👁 Reference';
-    renderPaintCanvas();
+  // ── toolbar ──
+  document.getElementById('newBtn').addEventListener('click', () => {
+    studio.classList.remove('on');
+    setup.style.display = 'flex';
+    drop.querySelector('.big').textContent = 'Drop a photo here';
+    drop.querySelector('.small').textContent = 'or click — jpg, png, the usual';
+    makeBtn.style.display = 'none';
+    fileInput.value = '';
+    srcImg = null; qData = null; regionMap = null; regions = [];
+    celebrated = false;
+    masterpieceEl.classList.remove('show');
+    hintEl.classList.remove('gone');
   });
 
-  newImageBtn.addEventListener('click', () => {
-    appScreen.classList.remove('visible');
-    uploadScreen.style.display = 'flex';
-    dropZone.innerHTML = `<div class="icon">🖼️</div><p><strong>Click to upload</strong> or drag an image here</p><p>JPG, PNG, GIF, WebP</p>`;
-    processBtn.style.display = 'none';
-    originalImg = null; quantizedData = null; regionMap = null;
-    regions = []; filledRegions = new Set();
-  });
+  const peekBtn = document.getElementById('peekBtn');
+  function peek(on) {
+    if (peeking === on) return;
+    peeking = on;
+    render();
+  }
+  peekBtn.addEventListener('pointerdown', e => { e.preventDefault(); peek(true); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => peekBtn.addEventListener(ev, () => peek(false)));
 
-  downloadBtn.addEventListener('click', () => {
-    renderPaintCanvas();
+  document.getElementById('frameBtn').addEventListener('click', () => {
+    if (!regions.length) return;
+    const S = 2;
+    const out = document.createElement('canvas');
+    out.width = imgW * S; out.height = imgH * S;
+    const c = out.getContext('2d');
+    c.fillStyle = CREAM;
+    c.fillRect(0, 0, out.width, out.height);
+    c.imageSmoothingEnabled = false;
+    c.drawImage(fillCanvas, 0, 0, out.width, out.height);
+    c.drawImage(borderCanvas, 0, 0, out.width, out.height);
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    for (const r of regions) {
+      if (r.filledWith === r.color) continue;
+      const size = Math.min(14, Math.max(5, Math.sqrt(r.area) * 0.38)) * S;
+      c.font = '700 ' + size + 'px Arial, sans-serif';
+      c.lineWidth = Math.max(2, size * 0.22);
+      c.strokeStyle = CREAM;
+      c.strokeText(r.color + 1, (r.nx + 0.5) * S, (r.ny + 0.5) * S);
+      c.fillStyle = 'rgba(32, 26, 23, 0.75)';
+      c.fillText(r.color + 1, (r.nx + 0.5) * S, (r.ny + 0.5) * S);
+    }
     const link = document.createElement('a');
-    link.download = 'paint-by-number.png';
-    link.href = paintCanvas.toDataURL();
+    link.download = celebrated ? 'a-masterpiece.png' : 'work-in-progress.png';
+    link.href = out.toDataURL('image/png');
     link.click();
   });
 
-  // ── Loading ──
-  function showLoading(msg) {
-    loadingMsg.textContent = msg;
-    loadingOverlay.classList.add('show');
-  }
-  function setLoading(msg) { loadingMsg.textContent = msg; }
-  function hideLoading() { loadingOverlay.classList.remove('show'); }
+  // ── loading ──
+  function showLoading(msg) { loadingMsg.textContent = msg; loading.classList.add('show'); }
+  function hideLoading() { loading.classList.remove('show'); }
 
-  function showApp() {
-    uploadScreen.style.display = 'none';
-    appScreen.classList.add('visible');
-  }
-
-  // ── Helpers ──
-  function rgbToHex(r, g, b) {
-    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
-  }
-
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (studio.classList.contains('on') && regions.length) { sizeBoard(); render(); }
+    }, 150);
+  });
 })();
 </script>
 </body>
