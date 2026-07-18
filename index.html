@@ -2411,29 +2411,8 @@
             });
         }
 
-        // Sparkle trail — skip on touch devices and when motion is reduced
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (!('ontouchstart' in window) && !prefersReducedMotion) {
-            const sparkChars = ['✦', '✧', '★', '✳', '❋', '+'];
-            const sparkColors = ['#f47b28', '#f0563e', '#5aa0db', '#a98fd0', '#b7ce3c', '#ff7fa5'];
-            let lastSpark = 0;
-
-            document.addEventListener('mousemove', (e) => {
-                const now = performance.now();
-                if (now - lastSpark < 55) return; // throttle so it's a trail, not a smear
-                lastSpark = now;
-
-                const spark = document.createElement('span');
-                spark.className = 'spark';
-                spark.textContent = sparkChars[Math.floor(Math.random() * sparkChars.length)];
-                spark.style.left = e.clientX + (Math.random() * 16 - 8) + 'px';
-                spark.style.top = e.clientY + (Math.random() * 16 - 8) + 'px';
-                spark.style.color = sparkColors[Math.floor(Math.random() * sparkColors.length)];
-                spark.style.fontSize = (Math.random() * 12 + 10) + 'px';
-                document.body.appendChild(spark);
-                spark.addEventListener('animationend', () => spark.remove());
-            });
-        }
+        // (the always-on sparkle trail used to live here — trails are now
+        // opt-in via the cursor customizer's "leave a trail" toggle)
 
         function saveSiteVisit(folder) {
             fetch(window.location.origin + '/sites' + folder + 'index.html')
@@ -3027,6 +3006,25 @@
                 const GOLD = '#f7c948';
                 const GRAPHITE = '#3a3733';
                 const ZAP_YELLOW = '#ffd94a';
+                const anyPaint = () => PALETTE[(Math.random() * PALETTE.length) | 0][1];
+
+                // Dylan's pixel portrait, from the made-by sticker
+                const faceImg = new Image();
+                faceImg.src = '/dylan.png';
+
+                // blocky paintball pistol, muzzle at the left
+                const gunPath = (x) => {
+                    x.beginPath();
+                    x.moveTo(3, 10);
+                    x.lineTo(25, 10);
+                    x.lineTo(25, 16);
+                    x.lineTo(15, 16);
+                    x.lineTo(17, 27);
+                    x.lineTo(10, 27);
+                    x.lineTo(8, 16);
+                    x.lineTo(3, 16);
+                    x.closePath();
+                };
 
                 // every cursor brings its own trail + click burst. The first —
                 // the site's black arrow — is the default, and clicks with it
@@ -3046,18 +3044,23 @@
                     fx: { trail: 'comet', click: 'burst', color: val, every: 20 },
                 }));
                 CURSORS.push(
+                    { id: 'paintball', name: 'paintball gun', hot: [3, 13], draw: sticker(gunPath, color('--teal', '#2fb0a3')),
+                      fx: { trail: 'drips', click: 'paint', color: null, every: 40 } },
                     { id: 'star', name: 'gold star', hot: [16, 16], draw: sticker(starPath, GOLD),
-                      fx: { trail: 'stars', click: 'starBurst', color: GOLD, every: 55 } },
+                      fx: { trail: 'stars', click: 'nova', color: GOLD, every: 55 } },
                     { id: 'heart', name: 'heart', hot: [16, 16], draw: sticker(heartPath, color('--coral', '#f0563e')),
-                      fx: { trail: 'hearts', click: 'heartBurst', color: color('--coral', '#f0563e'), every: 90 } },
+                      fx: { trail: 'hearts', click: 'heartPulse', color: color('--coral', '#f0563e'), every: 90 } },
                     { id: 'bolt', name: 'lightning bolt', hot: [16, 16], draw: sticker(boltPath, color('--orange', '#f47b28')),
-                      fx: { trail: 'zaps', click: 'zapBurst', color: ZAP_YELLOW, every: 45 } },
+                      fx: { trail: 'zaps', click: 'strike', color: ZAP_YELLOW, every: 45 } },
                     { id: 'pencil', name: 'pencil', hot: [6, 26], draw: sticker(pencilPath, color('--sky', '#5aa0db')),
-                      fx: { trail: 'pencil', click: 'scribble', color: GRAPHITE, every: 8 } },
+                      fx: { trail: 'pencil', click: 'doodle', color: GRAPHITE, every: 8 } },
                     { id: 'wand', name: 'magic wand', hot: [24, 8], draw: (x) => wandDraw(x, color('--purple', '#a98fd0')),
-                      fx: { trail: 'rainbow', click: 'rainbowBurst', color: null, every: 24 } },
+                      fx: { trail: 'rainbow', click: 'poof', color: null, every: 24 } },
                     { id: 'target', name: 'crosshair', hot: [16, 16], draw: (x) => targetDraw(x, color('--lime', '#b7ce3c')),
-                      fx: { trail: 'pings', click: 'ping', color: color('--lime', '#b7ce3c'), every: 260 } }
+                      fx: { trail: 'pings', click: 'lock', color: color('--lime', '#b7ce3c'), every: 260 } },
+                    { id: 'dylan', name: 'dylan', hot: [16, 16],
+                      draw: (x) => { x.imageSmoothingEnabled = false; x.drawImage(faceImg, 2, 2, 28, 28); },
+                      fx: { trail: 'faces', click: 'facePop', color: null, every: 80 } }
                 );
 
                 const urlCache = {};
@@ -3067,10 +3070,18 @@
                         c.width = 32;
                         c.height = 32;
                         cursor.draw(c.getContext('2d'));
-                        urlCache[cursor.id] = c.toDataURL('image/png');
+                        const url = c.toDataURL('image/png');
+                        // don't cache the face until the portrait has loaded
+                        if (cursor.id === 'dylan' && !faceImg.complete) return url;
+                        urlCache[cursor.id] = url;
                     }
                     return urlCache[cursor.id];
                 }
+
+                faceImg.addEventListener('load', () => {
+                    delete urlCache.dylan;
+                    if (currentCursor && currentCursor.id === 'dylan') applyCursor(currentCursor);
+                });
 
                 function applyCursor(cursor) {
                     let style = document.getElementById('custom-cursor-style');
@@ -3161,14 +3172,57 @@
                     return pts;
                 }
 
+                // jagged line between two points (for the lightning strike)
+                function zagBetween(x0, y0, x1, y1, segs) {
+                    const pts = [];
+                    for (let i = 0; i <= segs; i++) {
+                        const t = i / segs;
+                        const off = i === 0 || i === segs ? 0 : jit(26) * Math.sin(t * Math.PI);
+                        pts.push([x0 + (x1 - x0) * t + off, y0 + (y1 - y0) * t]);
+                    }
+                    return pts;
+                }
+
+                // little doodles for the pencil (relative points around 0,0)
+                function doodlePts() {
+                    const kind = (Math.random() * 3) | 0;
+                    const rot = Math.random() * Math.PI * 2;
+                    const pts = [];
+                    if (kind === 0) {          // spiral
+                        for (let i = 0; i <= 40; i++) {
+                            const t = i / 40;
+                            const a = t * Math.PI * 4.5;
+                            pts.push([Math.cos(a) * t * 17, Math.sin(a) * t * 17]);
+                        }
+                    } else if (kind === 1) {   // five-point star
+                        for (let i = 0; i <= 10; i++) {
+                            const r = i % 2 === 0 ? 16 : 6.5;
+                            const a = -Math.PI / 2 + (Math.PI * i) / 5;
+                            pts.push([Math.cos(a) * r, Math.sin(a) * r]);
+                        }
+                    } else {                   // squiggle
+                        for (let i = 0; i <= 30; i++) {
+                            const t = i / 30;
+                            pts.push([(t - 0.5) * 36, Math.sin(t * Math.PI * 3) * 9]);
+                        }
+                    }
+                    const cos = Math.cos(rot), sin = Math.sin(rot);
+                    return pts.map(([px, py]) => [px * cos - py * sin, px * sin + py * cos]);
+                }
+
+                const blobBumps = () =>
+                    Array.from({ length: 12 }, () => 0.6 + Math.random() * 0.8);
+
                 function fxLoop() {
                     fxRaf = null;
                     fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
                     for (let i = particles.length - 1; i >= 0; i--) {
                         const p = particles[i];
                         if (p.delay > 0) { p.delay--; continue; }
-                        p.life -= p.decay;
+                        if (p.prog !== undefined && p.prog < 1) p.prog = Math.min(1, p.prog + 0.06);
+                        else p.life -= p.decay;
                         if (p.life <= 0) { particles.splice(i, 1); continue; }
+                        if (p.g) p.vy = (p.vy || 0) + p.g;
                         p.x += p.vx || 0;
                         p.y += p.vy || 0;
                         if (p.sway) p.x += Math.sin(p.life * 9 + p.phase) * p.sway;
@@ -3230,6 +3284,97 @@
                                     k === 0 ? fxCtx.moveTo(zx, zy) : fxCtx.lineTo(zx, zy));
                                 fxCtx.stroke();
                                 break;
+                            case 'strike':
+                                // glow pass, then hot core
+                                fxCtx.globalAlpha = a * 0.45;
+                                fxCtx.strokeStyle = ZAP_YELLOW;
+                                fxCtx.lineWidth = 7;
+                                fxCtx.lineJoin = 'round';
+                                fxCtx.beginPath();
+                                p.pts.forEach(([zx, zy], k) =>
+                                    k === 0 ? fxCtx.moveTo(zx, zy) : fxCtx.lineTo(zx, zy));
+                                fxCtx.stroke();
+                                fxCtx.globalAlpha = a;
+                                fxCtx.strokeStyle = '#fffbe8';
+                                fxCtx.lineWidth = 2.5;
+                                fxCtx.stroke();
+                                break;
+                            case 'flash':
+                                fxCtx.globalAlpha = a * (p.a || 1);
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.beginPath();
+                                fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                                fxCtx.fill();
+                                break;
+                            case 'blob': {
+                                // paint sticks around, then soaks away
+                                fxCtx.globalAlpha = p.life > 0.35 ? 0.92 : (p.life / 0.35) * 0.92;
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.beginPath();
+                                const B = p.bumps.length;
+                                for (let k = 0; k <= B; k++) {
+                                    const ang = (Math.PI * 2 * k) / B;
+                                    const rr = p.r * p.bumps[k % B];
+                                    const bx = p.x + Math.cos(ang) * rr;
+                                    const by = p.y + Math.sin(ang) * rr;
+                                    k === 0 ? fxCtx.moveTo(bx, by) : fxCtx.lineTo(bx, by);
+                                }
+                                fxCtx.closePath();
+                                fxCtx.fill();
+                                break;
+                            }
+                            case 'rect':
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.rotate(p.rot);
+                                fxCtx.globalAlpha = a;
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                                fxCtx.restore();
+                                break;
+                            case 'draw': {
+                                // a doodle sketching itself in
+                                fxCtx.globalAlpha = Math.min(1, p.life);
+                                fxCtx.strokeStyle = p.color;
+                                fxCtx.lineWidth = 2;
+                                fxCtx.lineJoin = 'round';
+                                fxCtx.lineCap = 'round';
+                                const upTo = Math.max(2, Math.floor(p.pts.length * p.prog));
+                                fxCtx.beginPath();
+                                for (let k = 0; k < upTo; k++) {
+                                    const [dx, dy] = p.pts[k];
+                                    k === 0 ? fxCtx.moveTo(p.x + dx, p.y + dy) : fxCtx.lineTo(p.x + dx, p.y + dy);
+                                }
+                                fxCtx.stroke();
+                                break;
+                            }
+                            case 'imgp':
+                                if (faceImg.complete) {
+                                    fxCtx.save();
+                                    fxCtx.translate(p.x, p.y);
+                                    fxCtx.rotate(p.rot || 0);
+                                    fxCtx.globalAlpha = a;
+                                    fxCtx.imageSmoothingEnabled = false;
+                                    fxCtx.drawImage(faceImg, -p.s / 2, -p.s / 2, p.s, p.s);
+                                    fxCtx.restore();
+                                }
+                                break;
+                            case 'heartpulse': {
+                                const hs = p.s0 + (1 - p.life) * p.grow;
+                                drawHeartP(fxCtx, p.x, p.y, hs, p.color, a * 0.85);
+                                break;
+                            }
+                            case 'facepulse':
+                                if (faceImg.complete) {
+                                    const fsz = p.s0 + (1 - p.life) * p.grow;
+                                    fxCtx.save();
+                                    fxCtx.translate(p.x, p.y);
+                                    fxCtx.globalAlpha = a * 0.9;
+                                    fxCtx.imageSmoothingEnabled = false;
+                                    fxCtx.drawImage(faceImg, -fsz / 2, -fsz / 2, fsz, fsz);
+                                    fxCtx.restore();
+                                }
+                                break;
                         }
                     }
                     fxCtx.globalAlpha = 1;
@@ -3247,6 +3392,11 @@
                         kind: 'dot', x: x + jit(6), y: y + jit(6),
                         vx: jit(0.7), vy: jit(0.7),
                         r: 2 + Math.random() * 2, color: c, life: 0.9, decay: 0.03,
+                    }),
+                    drips: (x, y, c) => push({
+                        kind: 'dot', x: x + jit(6), y: y + 4,
+                        vy: 0.4, g: 0.09,
+                        r: 1.8 + Math.random() * 1.6, color: anyPaint(), life: 0.9, decay: 0.03,
                     }),
                     stars: (x, y, c) => push({
                         kind: 'star', x: x + jit(10), y: y + jit(10),
@@ -3272,68 +3422,124 @@
                         kind: 'ring', x, y, r: 2, vr: 0.5, lw: 1.5,
                         color: c, life: 0.7, decay: 0.025,
                     }),
+                    faces: (x, y, c) => push({
+                        kind: 'imgp', x: x + jit(12), y: y + jit(12),
+                        vy: -0.3, s: 12 + Math.random() * 6,
+                        rot: jit(0.6), vrot: jit(0.08), life: 0.9, decay: 0.025,
+                    }),
                 };
 
-                // ---- click bursts, one flavor per cursor ----
+                // ---- click effects, one personality per cursor ----
                 const CLICKS = {
-                    burst: (x, y, c) => {
-                        push({ kind: 'ring', x, y, r: 4, vr: 1.6, lw: 2.5, color: c, life: 1, decay: 0.05 });
+                    // palette arrows: a confetti cannon in your color
+                    confetti: (x, y, c) => {
+                        const colors = [c, c, INK, '#fff8ef', GOLD];
+                        for (let i = 0; i < 16; i++) {
+                            push({ kind: 'rect', x, y,
+                                   vx: jit(5), vy: -1.5 - Math.random() * 3, g: 0.11,
+                                   w: 5 + Math.random() * 4, h: 3 + Math.random() * 3,
+                                   rot: Math.random() * Math.PI, vrot: jit(0.35),
+                                   color: colors[(Math.random() * colors.length) | 0],
+                                   life: 1, decay: 0.016 });
+                        }
+                        push({ kind: 'ring', x, y, r: 4, vr: 1.8, lw: 2.5, color: c, life: 0.8, decay: 0.06 });
+                    },
+                    // paintball gun: SPLAT. paint sticks around for a few seconds
+                    paint: (x, y) => {
+                        const c = anyPaint();
+                        push({ kind: 'blob', x: x + jit(4), y: y + jit(4),
+                               r: 11 + Math.random() * 8, bumps: blobBumps(),
+                               color: c, life: 1, decay: 0.0045 });
+                        for (let i = 0; i < 3; i++) {
+                            push({ kind: 'blob', x: x + jit(34), y: y + jit(34),
+                                   r: 2.5 + Math.random() * 4, bumps: blobBumps(),
+                                   color: c, life: 1, decay: 0.006 });
+                        }
+                        for (let i = 0; i < 8; i++) {
+                            const a = Math.random() * Math.PI * 2;
+                            const v = 1.5 + Math.random() * 3;
+                            push({ kind: 'dot', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1, g: 0.14,
+                                   r: 1.6 + Math.random() * 2, color: c, life: 1, decay: 0.035 });
+                        }
+                        push({ kind: 'flash', x, y, r: 10, vr: 2.4, a: 0.35, color: '#ffffff', life: 0.5, decay: 0.1 });
+                    },
+                    // star: goes supernova
+                    nova: (x, y, c) => {
+                        push({ kind: 'flash', x, y, r: 6, vr: 3.4, a: 0.5, color: '#fff6d8', life: 0.6, decay: 0.07 });
+                        push({ kind: 'ring', x, y, r: 6, vr: 3.2, lw: 3, color: c, life: 0.9, decay: 0.045 });
+                        push({ kind: 'ring', x, y, r: 4, vr: 2.1, lw: 1.5, color: '#ffffff', life: 0.8, decay: 0.05, delay: 4 });
                         for (let i = 0; i < 10; i++) {
                             const a = (Math.PI * 2 * i) / 10 + jit(0.3);
-                            const v = 1.5 + Math.random() * 2;
-                            push({ kind: 'dot', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-                                   r: 2 + Math.random() * 2, color: c, life: 1, decay: 0.04 });
+                            const v = 1.6 + Math.random() * 2.6;
+                            push({ kind: 'star', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+                                   r: 3 + Math.random() * 4, rot: Math.random() * Math.PI, vrot: jit(0.4),
+                                   color: i % 3 === 0 ? '#ffffff' : c, life: 1, decay: 0.028 });
                         }
                     },
-                    rainbowBurst: (x, y) => {
-                        for (let i = 0; i < 16; i++) {
-                            const a = (Math.PI * 2 * i) / 16 + jit(0.3);
-                            const v = 1.2 + Math.random() * 2.4;
-                            push({ kind: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.4,
-                                   hue: (i * 360) / 16, life: 1, decay: 0.03 });
+                    // heart: one big pulse from the click, plus a little fountain
+                    heartPulse: (x, y, c) => {
+                        push({ kind: 'heartpulse', x, y, s0: 14, grow: 90, color: c, life: 1, decay: 0.04 });
+                        push({ kind: 'heartpulse', x, y, s0: 10, grow: 60, color: '#ffb3c0', life: 1, decay: 0.05, delay: 6 });
+                        for (let i = 0; i < 7; i++) {
+                            const a = -Math.PI / 2 + jit(1.6);
+                            const v = 1.2 + Math.random() * 2;
+                            push({ kind: 'heart', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.8, g: 0.03,
+                                   s: 6 + Math.random() * 8, sway: 0.3, phase: Math.random() * 6,
+                                   color: c, life: 1, decay: 0.024 });
                         }
                     },
-                    starBurst: (x, y, c) => {
-                        push({ kind: 'ring', x, y, r: 4, vr: 1.4, lw: 2, color: c, life: 0.9, decay: 0.05 });
+                    // bolt: lightning strikes the click point from the sky
+                    strike: (x, y, c) => {
+                        push({ kind: 'strike', x: 0, y: 0, pts: zagBetween(x, -12, x, y, 14), life: 1, decay: 0.09 });
+                        push({ kind: 'strike', x: 0, y: 0, pts: zagBetween(x, -12, x, y, 14), life: 1, decay: 0.11, delay: 5 });
+                        push({ kind: 'flash', x, y, r: 8, vr: 3, a: 0.45, color: '#fff9d0', life: 0.6, decay: 0.09 });
+                        push({ kind: 'ring', x, y, r: 4, vr: 2.6, lw: 2, color: c, life: 0.8, decay: 0.06, delay: 3 });
+                        for (let i = 0; i < 7; i++) {
+                            const a = -Math.PI * Math.random();
+                            push({ kind: 'zap', x: 0, y: 0, pts: zagPoints(x, y, a, 3, 7),
+                                   color: c, lw: 1.8, life: 0.7, decay: 0.07, delay: 4 });
+                        }
+                    },
+                    // pencil: sketches a little doodle where you clicked
+                    doodle: (x, y, c) => {
+                        push({ kind: 'draw', x, y, pts: doodlePts(), prog: 0.05,
+                               color: c, life: 1, decay: 0.03 });
+                        for (let i = 0; i < 4; i++) {
+                            push({ kind: 'dot', x: x + jit(30), y: y + jit(30),
+                                   r: 1.3, color: c, life: 0.8, decay: 0.03 });
+                        }
+                    },
+                    // wand: a proper magic poof
+                    poof: (x, y) => {
+                        push({ kind: 'flash', x, y, r: 6, vr: 2.6, a: 0.3, color: '#ffffff', life: 0.7, decay: 0.07 });
+                        for (let i = 0; i < 22; i++) {
+                            const a = (Math.PI * 2 * i) / 22 + jit(0.3);
+                            const v = 1 + Math.random() * 3;
+                            push({ kind: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.5,
+                                   hue: Math.random() * 360, life: 1, decay: 0.024 });
+                        }
+                        for (let i = 0; i < 5; i++) {
+                            push({ kind: 'star', x: x + jit(46), y: y + jit(46),
+                                   r: 2.5 + Math.random() * 3, rot: Math.random() * Math.PI, vrot: jit(0.25),
+                                   color: '#ffffff', life: 1, decay: 0.03, delay: i * 4 });
+                        }
+                    },
+                    // crosshair: target acquired — rings snap inward, dot lingers
+                    lock: (x, y, c) => {
+                        push({ kind: 'ring', x, y, r: 30, vr: -1.9, lw: 2.5, color: c, life: 1, decay: 0.055 });
+                        push({ kind: 'ring', x, y, r: 44, vr: -2.4, lw: 1.5, color: c, life: 1, decay: 0.05, delay: 4 });
+                        push({ kind: 'dot', x, y, r: 3, color: c, life: 1, decay: 0.015, delay: 12 });
+                        push({ kind: 'flash', x, y, r: 5, vr: 1.2, a: 0.4, color: c, life: 0.5, decay: 0.1, delay: 14 });
+                    },
+                    // dylan: dylans, everywhere
+                    facePop: (x, y) => {
+                        push({ kind: 'facepulse', x, y, s0: 20, grow: 80, life: 1, decay: 0.045 });
                         for (let i = 0; i < 8; i++) {
                             const a = (Math.PI * 2 * i) / 8 + jit(0.3);
-                            const v = 1.4 + Math.random() * 1.8;
-                            push({ kind: 'star', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-                                   r: 3 + Math.random() * 3, rot: Math.random() * Math.PI, vrot: jit(0.3),
-                                   color: c, life: 1, decay: 0.035 });
-                        }
-                    },
-                    heartBurst: (x, y, c) => {
-                        for (let i = 0; i < 9; i++) {
-                            const a = -Math.PI / 2 + jit(2.4);
-                            const v = 1 + Math.random() * 1.8;
-                            push({ kind: 'heart', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.6,
-                                   s: 6 + Math.random() * 7, sway: 0.3, phase: Math.random() * 6,
-                                   color: c, life: 1, decay: 0.03 });
-                        }
-                    },
-                    zapBurst: (x, y, c) => {
-                        push({ kind: 'ring', x, y, r: 3, vr: 2.2, lw: 2, color: c, life: 0.7, decay: 0.07 });
-                        for (let i = 0; i < 6; i++) {
-                            const a = (Math.PI * 2 * i) / 6 + jit(0.4);
-                            push({ kind: 'zap', x: 0, y: 0, pts: zagPoints(x, y, a, 4, 8),
-                                   color: c, lw: 2, life: 0.7, decay: 0.07 });
-                        }
-                    },
-                    scribble: (x, y, c) => {
-                        push({ kind: 'wring', x, y, r: 6, vr: 1.1, lw: 2, rot: Math.random() * 6,
-                               color: c, life: 1, decay: 0.05 });
-                        for (let i = 0; i < 6; i++) {
-                            const a = Math.random() * Math.PI * 2;
-                            const v = 0.8 + Math.random() * 1.4;
-                            push({ kind: 'dot', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-                                   r: 1.5, color: c, life: 0.9, decay: 0.045 });
-                        }
-                    },
-                    ping: (x, y, c) => {
-                        for (let i = 0; i < 3; i++) {
-                            push({ kind: 'ring', x, y, r: 3, vr: 1.5, lw: 2,
-                                   color: c, life: 1, decay: 0.035, delay: i * 7 });
+                            const v = 1.5 + Math.random() * 2;
+                            push({ kind: 'imgp', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.6, g: 0.05,
+                                   s: 14 + Math.random() * 10, rot: jit(0.6), vrot: jit(0.3),
+                                   life: 1, decay: 0.022 });
                         }
                     },
                 };
@@ -3358,7 +3564,8 @@
                     const b = document.createElement('button');
                     b.dataset.cursor = cursor.id;
                     b.title = cursor.name;
-                    b.innerHTML = `<img src="${cursorUrl(cursor)}" alt="${cursor.name}">`;
+                    const preview = cursor.id === 'dylan' ? '/dylan.png' : cursorUrl(cursor);
+                    b.innerHTML = `<img src="${preview}" alt="${cursor.name}" style="image-rendering: pixelated;">`;
                     b.addEventListener('click', () => {
                         applyCursor(cursor);
                         grid.querySelectorAll('button').forEach(x => x.classList.toggle('selected', x === b));
