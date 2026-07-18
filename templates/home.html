@@ -2009,23 +2009,38 @@
                     x.stroke();
                 };
 
-                // RPG sword, tip at top-left
+                // RPG sword, tip at top-left: tapered blade, fuller, wide
+                // crossguard, wrapped grip, gold pommel
                 const swordDraw = (x) => {
                     const blade = (g) => {
                         g.beginPath();
-                        g.moveTo(4, 3); g.lineTo(9, 3); g.lineTo(22, 16); g.lineTo(17, 21);
+                        g.moveTo(3, 3);
+                        g.lineTo(9, 4.5);
+                        g.lineTo(20.5, 16);
+                        g.lineTo(16, 20.5);
+                        g.lineTo(4.5, 9);
                         g.closePath();
                     };
-                    sticker(blade, '#d9dde3')(x);
+                    sticker(blade, '#dfe4ea')(x);
+                    // fuller (the groove down the middle)
+                    x.strokeStyle = 'rgba(32, 26, 23, 0.45)';
+                    x.lineWidth = 1.2;
+                    x.beginPath(); x.moveTo(6, 6); x.lineTo(17.5, 17.5); x.stroke();
                     x.lineCap = 'round';
+                    // crossguard, clearly wider than the blade
+                    x.strokeStyle = INK; x.lineWidth = 6;
+                    x.beginPath(); x.moveTo(14.5, 24.5); x.lineTo(24.5, 14.5); x.stroke();
+                    x.strokeStyle = GOLD; x.lineWidth = 3;
+                    x.beginPath(); x.moveTo(15.5, 23.5); x.lineTo(23.5, 15.5); x.stroke();
+                    // grip
                     x.strokeStyle = INK; x.lineWidth = 5;
-                    x.beginPath(); x.moveTo(15, 24); x.lineTo(24, 15); x.stroke();
-                    x.strokeStyle = GOLD; x.lineWidth = 2.4;
-                    x.beginPath(); x.moveTo(15, 24); x.lineTo(24, 15); x.stroke();
-                    x.strokeStyle = INK; x.lineWidth = 4.5;
-                    x.beginPath(); x.moveTo(21.5, 20.5); x.lineTo(27, 26); x.stroke();
-                    x.strokeStyle = color('--purple', '#a98fd0'); x.lineWidth = 2.2;
-                    x.beginPath(); x.moveTo(21.5, 20.5); x.lineTo(27, 26); x.stroke();
+                    x.beginPath(); x.moveTo(21.5, 21.5); x.lineTo(26, 26); x.stroke();
+                    x.strokeStyle = color('--purple', '#a98fd0'); x.lineWidth = 2.6;
+                    x.beginPath(); x.moveTo(21.5, 21.5); x.lineTo(25.5, 25.5); x.stroke();
+                    // pommel
+                    x.fillStyle = GOLD;
+                    x.beginPath(); x.arc(27.5, 27.5, 2.6, 0, Math.PI * 2); x.fill();
+                    x.strokeStyle = INK; x.lineWidth = 1.4; x.stroke();
                 };
 
                 // tiny slot machine with a lever
@@ -2082,7 +2097,7 @@
                       fx: { trail: 'pings', click: 'lock', color: color('--lime', '#b7ce3c'), every: 260 } },
                     { id: 'block', name: 'crate', hot: [16, 16], draw: crateDraw,
                       fx: { trail: 'cubes', click: 'dropBlock', color: color('--orange', '#f47b28'), every: 90 } },
-                    { id: 'xp', name: 'sword', hot: [4, 3], draw: swordDraw,
+                    { id: 'xp', name: 'sword', hot: [3, 3], draw: swordDraw,
                       fx: { trail: 'plusses', click: 'xp', color: GOLD, every: 70 } },
                     { id: 'slot', name: 'slot machine', hot: [14, 17], draw: slotDraw,
                       fx: { trail: 'coins', click: 'slots', color: GOLD, every: 140 } },
@@ -2277,16 +2292,20 @@
                     },
                 ];
 
-                // where a falling crate lands: on the floor, or on settled crates
+                // where a falling crate lands: on the floor, or on other crates.
+                // Compared against where the crate STARTED this frame, so a
+                // fast-moving block can't tunnel through a surface between frames.
                 function crateFloor(p) {
                     let floor = window.innerHeight - 4;
+                    const prevBottom = p.y + p.s / 2 - (p.vy || 0);
                     for (const q of particles) {
-                        if (q.kind !== 'block' || q === p || !q.settled) continue;
+                        if (q.kind !== 'block' || q === p) continue;
+                        if (!q.settled && Math.abs(q.vy || 0) > 2.5) continue;  // still falling fast
                         const overlap = Math.min(p.x + p.s / 2, q.x + q.s / 2)
                                       - Math.max(p.x - p.s / 2, q.x - q.s / 2);
-                        if (overlap > p.s * 0.35) {
+                        if (overlap > Math.min(p.s, q.s) * 0.3) {
                             const top = q.y - q.s / 2;
-                            if (top >= p.y + p.s / 2 - 6) floor = Math.min(floor, top);
+                            if (top >= prevBottom - 6) floor = Math.min(floor, top);
                         }
                     }
                     return floor;
@@ -2488,6 +2507,7 @@
                                 break;
                             case 'block': {
                                 if (!p.settled) {
+                                    if (p.vy > 13) p.vy = 13;   // terminal velocity
                                     const floor = crateFloor(p);
                                     if (p.y + p.s / 2 >= floor) {
                                         p.y = floor - p.s / 2;
