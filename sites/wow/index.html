@@ -5,119 +5,263 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WOW</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #000;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
+            background-color: #f2ede2;
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            cursor: crosshair;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
         }
 
         .wow {
-            color: #fff;
-            font-family: Arial, sans-serif;
-            font-weight: bold;
             position: absolute;
-            opacity: 0;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            -webkit-text-stroke: 3px #201a17;
+            paint-order: stroke fill;
+            text-shadow: 6px 6px 0 #201a17;
+            pointer-events: none;
+            transform: translate(-50%, -50%) rotate(var(--tilt, 0deg));
+        }
+
+        .wow.small {
+            -webkit-text-stroke: 2px #201a17;
+            text-shadow: 3px 3px 0 #201a17;
+        }
+
+        .wow.whisper {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-weight: normal;
+            font-style: italic;
+            -webkit-text-stroke: 0;
+            text-shadow: none;
+            color: rgba(32, 26, 23, 0.55) !important;
+        }
+
+        /* ---- entrances (each WOW rolls one) ---- */
+
+        @keyframes slam {
+            0% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(3.2); opacity: 0; }
+            55% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(0.92); opacity: 1; }
+            75% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.06); }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); opacity: 1; }
+        }
+
+        @keyframes pop {
+            0% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(0.15); opacity: 0; }
+            65% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.18); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); opacity: 1; }
+        }
+
+        @keyframes spinIn {
+            0% { transform: translate(-50%, -50%) rotate(calc(var(--tilt) - 540deg)) scale(0.1); opacity: 0; }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); opacity: 1; }
+        }
+
+        @keyframes flipIn {
+            0% { transform: translate(-50%, -50%) rotate(var(--tilt)) perspective(500px) rotateX(95deg); opacity: 0; }
+            60% { transform: translate(-50%, -50%) rotate(var(--tilt)) perspective(500px) rotateX(-18deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) perspective(500px) rotateX(0); opacity: 1; }
+        }
+
+        @keyframes rise {
+            0% { transform: translate(-50%, 30vh) rotate(var(--tilt)) scale(0.7); opacity: 0; }
+            70% { transform: translate(-50%, -54%) rotate(var(--tilt)) scale(1.04); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); opacity: 1; }
+        }
+
+        @keyframes tumble {
+            0% { transform: translate(-160%, -50%) rotate(calc(var(--tilt) - 220deg)) scale(0.8); opacity: 0; }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); opacity: 1; }
+        }
+
+        @keyframes jelly {
+            0% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(0.3, 1.6); opacity: 0; }
+            40% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.35, 0.7); opacity: 1; }
+            65% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(0.85, 1.2); }
+            85% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.08, 0.94); }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1, 1); opacity: 1; }
+        }
+
+        @keyframes stretch {
+            0% { transform: translate(-50%, -50%) rotate(var(--tilt)) scaleX(0.02); opacity: 0; }
+            70% { transform: translate(-50%, -50%) rotate(var(--tilt)) scaleX(1.15); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scaleX(1); opacity: 1; }
+        }
+
+        @keyframes whisperIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes byebye {
+            to { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(0.6); opacity: 0; }
+        }
+
+        .wow.leaving { animation: byebye 0.5s ease-in forwards !important; }
+
+        @keyframes page-shake {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-7px, 4px); }
+            50% { transform: translate(6px, -5px); }
+            75% { transform: translate(-4px, -3px); }
+        }
+
+        body.shake { animation: page-shake 0.26s linear; }
+
+        #tally {
+            position: fixed;
+            bottom: 14px;
+            left: 18px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(12px, 1.7vw, 15px);
+            color: rgba(32, 26, 23, 0.45);
+            font-variant-numeric: tabular-nums;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .wow { animation: whisperIn 0.4s ease forwards !important; }
         }
     </style>
 </head>
 <body>
+    <div id="tally"></div>
+
     <script>
-        const animations = [
-            'bounce',
-            'flash',
-            'pulse',
-            'rubberBand',
-            'shakeX',
-            'shakeY',
-            'headShake',
-            'swing',
-            'tada',
-            'wobble',
-            'jello',
-            'heartBeat',
-            'backInDown',
-            'backInLeft', 
-            'backInRight',
-            'backInUp',
-            'bounceIn',
-            'bounceInDown',
-            'bounceInLeft',
-            'bounceInRight', 
-            'bounceInUp',
-            'fadeIn',
-            'fadeInDown',
-            'fadeInLeft',
-            'fadeInRight',
-            'fadeInUp',
-            'flipInX',
-            'flipInY',
-            'lightSpeedInRight',
-            'lightSpeedInLeft',
-            'rotateIn',
-            'rotateInDownLeft',
-            'rotateInDownRight',
-            'rotateInUpLeft',
-            'rotateInUpRight',
-            'jackInTheBox',
-            'rollIn',
-            'zoomIn',
-            'zoomInDown',
-            'zoomInLeft',
-            'zoomInRight',
-            'zoomInUp',
-            'slideInDown',
-            'slideInLeft',
-            'slideInRight',
-            'slideInUp'
-        ];
+        const INK = '#201a17';
+        const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+        const ENTRANCES = ['slam', 'pop', 'spinIn', 'flipIn', 'rise', 'tumble', 'jelly', 'stretch'];
+        const RARE = ['WOWZA', 'WOAH', 'W O W', 'MOM LOOK', 'UNBELIEVABLE'];
 
-        function createWow() {
-            const wow = document.createElement('div');
-            wow.textContent = 'WOW';
-            wow.className = 'wow';
-            
-            // Random position
-            wow.style.left = Math.random() * 80 + 10 + '%';
-            wow.style.top = Math.random() * 80 + 10 + '%';
-            
-            // Random size
-            const size = Math.random() * 100 + 50;
-            wow.style.fontSize = size + 'px';
-            
-            // Random color
-            wow.style.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-            
-            // Random animation
-            const animation = animations[Math.floor(Math.random() * animations.length)];
-            wow.classList.add('animate__animated', `animate__${animation}`);
-            
-            document.body.appendChild(wow);
-            
-            // Fade in
-            wow.style.opacity = 1;
-            
-            // Remove after animation
+        const tallyEl = document.getElementById('tally');
+        let wows = 0;
+        try { wows = parseInt(localStorage.getItem('wow-tally'), 10) || 0; } catch (e) {}
+
+        function updateTally() {
+            tallyEl.textContent = `wows witnessed: ${wows.toLocaleString()}`;
+        }
+
+        const live = [];
+
+        function spawnWow(x, y, opts = {}) {
+            const el = document.createElement('div');
+            el.className = 'wow';
+
+            const roll = Math.random();
+            let text = 'WOW';
+            let whisper = false;
+            if (!opts.mega && roll < 0.03) {
+                text = 'wow.';
+                whisper = true;
+            } else if (!opts.mega && roll < 0.08) {
+                text = RARE[(Math.random() * RARE.length) | 0];
+            } else if (opts.mega) {
+                text = 'MEGA WOW';
+            }
+            el.textContent = text;
+
+            const size = opts.mega
+                ? Math.min(window.innerWidth * 0.16, 150)
+                : whisper
+                    ? 16 + Math.random() * 10
+                    : (opts.big ? 70 : 26) + Math.random() * (opts.big ? 90 : 60);
+            el.style.fontSize = size + 'px';
+            if (size < 40) el.classList.add('small');
+            if (whisper) el.classList.add('whisper');
+
+            el.style.color = opts.mega ? '#f7c948' : COLORS[(Math.random() * COLORS.length) | 0];
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.setProperty('--tilt', ((Math.random() - 0.5) * 22).toFixed(1) + 'deg');
+            el.style.zIndex = Math.round(size);
+
+            const anim = whisper ? 'whisperIn' : ENTRANCES[(Math.random() * ENTRANCES.length) | 0];
+            const dur = whisper ? 1.2 : 0.45 + Math.random() * 0.3;
+            el.style.animation = `${anim} ${dur}s cubic-bezier(0.22, 1.2, 0.36, 1) forwards`;
+
+            document.body.appendChild(el);
+            live.push(el);
+            if (live.length > 34) {
+                const old = live.shift();
+                old.classList.add('leaving');
+                setTimeout(() => old.remove(), 500);
+            }
+
+            // linger, then leave
+            const stay = whisper ? 3800 : opts.mega ? 3200 : 1600 + Math.random() * 1400;
             setTimeout(() => {
-                wow.style.opacity = 0;
+                el.classList.add('leaving');
                 setTimeout(() => {
-                    wow.remove();
-                }, 1000);
-            }, 2000);
+                    el.remove();
+                    const i = live.indexOf(el);
+                    if (i !== -1) live.splice(i, 1);
+                }, 500);
+            }, stay);
+
+            wows++;
+            updateTally();
         }
 
-        // Create new WOWs periodically
-        setInterval(createWow, 500);
-        
-        // Start with a few WOWs
-        for(let i = 0; i < 5; i++) {
-            createWow();
+        function randomSpot() {
+            return {
+                x: window.innerWidth * (0.1 + Math.random() * 0.8),
+                y: window.innerHeight * (0.12 + Math.random() * 0.76),
+            };
         }
+
+        // ---- ambient wows ----
+
+        setInterval(() => {
+            const { x, y } = randomSpot();
+            spawnWow(x, y);
+        }, 650);
+
+        for (let i = 0; i < 4; i++) {
+            const { x, y } = randomSpot();
+            spawnWow(x, y);
+        }
+
+        // ---- your wows ----
+
+        let painting = false;
+        let lastSpray = 0;
+
+        document.addEventListener('pointerdown', (e) => {
+            painting = true;
+            const mega = Math.random() < 0.07;
+            spawnWow(e.clientX, e.clientY, mega ? { mega: true } : { big: true });
+            if (mega && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.body.classList.remove('shake');
+                void document.body.offsetWidth;
+                document.body.classList.add('shake');
+            }
+        });
+
+        document.addEventListener('pointermove', (e) => {
+            if (!painting) return;
+            const now = performance.now();
+            if (now - lastSpray < 90) return;
+            lastSpray = now;
+            spawnWow(e.clientX + (Math.random() - 0.5) * 30, e.clientY + (Math.random() - 0.5) * 30);
+        });
+
+        document.addEventListener('pointerup', () => { painting = false; });
+        document.addEventListener('pointercancel', () => { painting = false; });
+
+        updateTally();
     </script>
 </body>
 </html>
