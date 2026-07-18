@@ -77,6 +77,14 @@
             background-color: var(--paper);
             overflow-x: hidden;
             position: relative;
+            /* it's a toy box, not a document — no blue text selection on tap */
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         /* Faint orbit-line + dot texture echoing the logo's rings */
@@ -1961,8 +1969,8 @@
                     x.restore();
                 };
 
-                // sticker treatment: hard ink shadow, fill, ink outline
-                const sticker = (path, fill) => (x) => {
+                // sticker treatment: hard ink shadow, fill, outline
+                const sticker = (path, fill, stroke) => (x) => {
                     x.save();
                     x.translate(1.5, 1.5);
                     path(x);
@@ -1974,7 +1982,7 @@
                     x.fill();
                     x.lineWidth = 1.75;
                     x.lineJoin = 'round';
-                    x.strokeStyle = INK;
+                    x.strokeStyle = stroke || INK;
                     x.stroke();
                 };
 
@@ -1991,9 +1999,16 @@
                 const GRAPHITE = '#3a3733';
                 const ZAP_YELLOW = '#ffd94a';
 
-                // every cursor brings its own trail + click burst (the default
-                // keeps the page's comic click splat)
-                const CURSORS = [{ id: 'default', name: 'back to normal' }];
+                // every cursor brings its own trail + click burst. The first —
+                // the site's black arrow — is the default, and clicks with it
+                // keep the page's comic splat (fx.click: null = splat handles it).
+                const CURSORS = [{
+                    id: 'arrow-ink',
+                    name: 'the classic',
+                    hot: [5, 3],
+                    draw: sticker(arrowPath, INK, color('--card', '#fff8ef')),
+                    fx: { trail: 'comet', click: null, color: INK, every: 20 },
+                }];
                 PALETTE.forEach(([key, val]) => CURSORS.push({
                     id: 'arrow-' + key,
                     name: key + ' arrow',
@@ -2030,13 +2045,6 @@
 
                 function applyCursor(cursor) {
                     let style = document.getElementById('custom-cursor-style');
-                    if (!cursor || cursor.id === 'default') {
-                        if (style) style.remove();
-                        btn.innerHTML = '<i class="fas fa-arrow-pointer"></i>';
-                        currentCursor = null;
-                        window.__customCursorActive = false;   // the comic splat takes clicks again
-                        return;
-                    }
                     if (!style) {
                         style = document.createElement('style');
                         style.id = 'custom-cursor-style';
@@ -2046,7 +2054,8 @@
                         `* { cursor: url("${cursorUrl(cursor)}") ${cursor.hot[0]} ${cursor.hot[1]}, auto !important; }`;
                     btn.innerHTML = `<img src="${cursorUrl(cursor)}" alt="">`;
                     currentCursor = cursor;
-                    window.__customCursorActive = true;        // suppress the comic splat
+                    // cursors without their own click burst leave clicks to the comic splat
+                    window.__customCursorActive = !!(cursor.fx && cursor.fx.click);
                 }
 
                 // ---- effect engine: shared overlay canvas + typed particles ----
@@ -2310,7 +2319,7 @@
                 }, { passive: true });
 
                 document.addEventListener('pointerdown', (e) => {
-                    if (!currentCursor || !currentCursor.fx) return;
+                    if (!currentCursor || !currentCursor.fx || !currentCursor.fx.click) return;
                     if (e.target.closest('.cursor-panel') || e.target.closest('.cursor-btn')) return;
                     CLICKS[currentCursor.fx.click](e.clientX, e.clientY, currentCursor.fx.color);
                 });
@@ -2320,11 +2329,7 @@
                     const b = document.createElement('button');
                     b.dataset.cursor = cursor.id;
                     b.title = cursor.name;
-                    if (cursor.id === 'default') {
-                        b.innerHTML = '<i class="fas fa-arrow-pointer"></i>';
-                    } else {
-                        b.innerHTML = `<img src="${cursorUrl(cursor)}" alt="${cursor.name}">`;
-                    }
+                    b.innerHTML = `<img src="${cursorUrl(cursor)}" alt="${cursor.name}">`;
                     b.addEventListener('click', () => {
                         applyCursor(cursor);
                         grid.querySelectorAll('button').forEach(x => x.classList.toggle('selected', x === b));
@@ -2346,20 +2351,20 @@
                     if (!panel.contains(e.target)) panel.classList.remove('open');
                 });
 
-                // restore saved choices
+                // restore saved choice — the black arrow is the house default
+                let startCursor = CURSORS[0];
                 try {
                     const savedId = localStorage.getItem('home-cursor');
                     const saved = CURSORS.find(c => c.id === savedId);
-                    if (saved && saved.id !== 'default') {
-                        applyCursor(saved);
-                        grid.querySelectorAll('button').forEach(x =>
-                            x.classList.toggle('selected', x.dataset.cursor === saved.id));
-                    }
+                    if (saved) startCursor = saved;
                     if (localStorage.getItem('home-cursor-trail')) {
                         trailToggle.checked = true;
                         setTrail(true);
                     }
                 } catch (err) {}
+                applyCursor(startCursor);
+                grid.querySelectorAll('button').forEach(x =>
+                    x.classList.toggle('selected', x.dataset.cursor === startCursor.id));
             })();
 
             document.addEventListener('click', (e) => {
