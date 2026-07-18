@@ -4,219 +4,614 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Font Ninja Dojo - Master of Web Safe Fonts</title>
-    <meta name="description" content="Explore and preview web-safe fonts in an interactive dojo environment. Find the perfect font combination for your web projects.">
-    <meta name="keywords" content="web safe fonts, font preview, typography, web design, font combinations">
-    <meta name="author" content="Random Sites on the Web">
-    <meta property="og:title" content="Font Ninja Dojo - Master of Web Safe Fonts">
-    <meta property="og:description" content="Interactive web-safe font previewer and typography playground">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="/images/font-ninja-preview.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Font Ninja Dojo">
-    <meta name="twitter:description" content="Master web typography with our interactive font previewer">
-    <meta name="theme-color" content="#ff4444">
+    <title>Font Ninja</title>
+    <meta name="description" content="Words fly across the screen. Slice only the ones in the target font.">
+    <meta name="theme-color" content="#f2ede2">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #2c2c2c;
-            color: #fff;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23393939' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --gold: #f7c948;
+            --lime: #b7ce3c;
         }
 
-        h1 {
-            text-align: center;
-            color: #ff4444;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            margin-bottom: 30px;
-        }
-
-        .font-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .font-card {
-            background: #333;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            transition: all 0.3s;
-            cursor: pointer;
-            border: 1px solid #444;
-        }
-
-        .font-card:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 6px 12px rgba(255,68,68,0.2);
-            border-color: #ff4444;
-        }
-
-        .font-sample {
-            font-size: 24px;
-            margin-bottom: 10px;
-            color: #fff;
-            padding: 10px;
-            background: #222;
-            border-radius: 4px;
-        }
-
-        .font-info {
-            font-size: 14px;
-            color: #aaa;
-        }
-
-        .font-info strong {
-            color: #ff4444;
-        }
-
-        .copied {
-            background-color: #446644;
-            animation: pulse 1s;
-        }
-
-        #search {
+        html, body {
             width: 100%;
-            max-width: 300px;
-            padding: 12px;
-            margin: 20px auto;
-            display: block;
-            border: 2px solid #444;
-            border-radius: 4px;
-            background: #333;
-            color: #fff;
-            font-size: 16px;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
+            cursor: crosshair;
         }
 
-        #search:focus {
-            outline: none;
-            border-color: #ff4444;
+        /* ---- HUD ---- */
+
+        #hud {
+            position: fixed;
+            top: 14px;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            z-index: 50;
+            pointer-events: none;
+            flex-wrap: wrap;
+            padding: 0 12px;
         }
 
-        #search::placeholder {
-            color: #666;
+        .sticker {
+            background: var(--cream);
+            border: 2.5px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 8px 18px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(12px, 2vw, 16px);
+            letter-spacing: 0.05em;
+            transform: rotate(-1deg);
+            font-variant-numeric: tabular-nums;
         }
 
-        @keyframes pulse {
-            0% { background-color: #446644; }
-            50% { background-color: #558855; }
-            100% { background-color: #446644; }
+        #target {
+            background: var(--gold);
+            transform: rotate(1deg);
+            font-weight: normal;
+            font-size: clamp(15px, 2.6vw, 22px);
         }
+
+        #target .label {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: 0.65em;
+            letter-spacing: 0.14em;
+            margin-right: 8px;
+        }
+
+        #target.swap { animation: swap 0.4s cubic-bezier(0.22, 1.6, 0.36, 1); }
+
+        @keyframes swap {
+            0% { transform: rotate(1deg) scale(0.4); }
+            60% { transform: rotate(1deg) scale(1.15); }
+            100% { transform: rotate(1deg) scale(1); }
+        }
+
+        #lives { display: flex; gap: 6px; align-items: center; }
+
+        .shuriken {
+            width: 26px;
+            height: 26px;
+            background: var(--ink);
+            clip-path: polygon(50% 0%, 63% 37%, 100% 50%, 63% 63%, 50% 100%, 37% 63%, 0% 50%, 37% 37%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .shuriken.spent { opacity: 0.15; transform: scale(0.7) rotate(90deg); }
+
+        /* ---- flying words ---- */
+
+        .word {
+            position: fixed;
+            top: 0;
+            left: 0;
+            font-size: clamp(30px, 6vw, 54px);
+            line-height: 1.1;
+            color: var(--ink);
+            white-space: nowrap;
+            will-change: transform;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .half { z-index: 11; }
+
+        /* ---- blade ---- */
+
+        #blade { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
+
+        /* ---- overlays ---- */
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 100;
+            background: rgba(242, 237, 226, 0.88);
+            backdrop-filter: blur(3px);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .overlay h1 {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(34px, 8vw, 72px);
+            transform: rotate(-2deg);
+            -webkit-text-stroke: 1.5px var(--ink);
+            paint-order: stroke fill;
+            color: var(--coral);
+            text-shadow: 5px 5px 0 var(--ink);
+        }
+
+        .overlay .rules {
+            font-style: italic;
+            font-size: clamp(15px, 2.2vw, 19px);
+            line-height: 1.7;
+            max-width: 460px;
+            color: rgba(32, 26, 23, 0.75);
+        }
+
+        .overlay .big-score {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(44px, 10vw, 90px);
+            color: var(--gold);
+            -webkit-text-stroke: 2px var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 5px 5px 0 var(--ink);
+        }
+
+        .overlay .best {
+            font-style: italic;
+            color: rgba(32, 26, 23, 0.6);
+        }
+
+        .pill {
+            background: var(--coral);
+            color: var(--cream);
+            border: 2.5px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 14px 36px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(15px, 2.4vw, 20px);
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .pill:hover { transform: translate(-2px, -2px) rotate(-2deg); }
+        .pill:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        #toast {
+            position: fixed;
+            top: 18vh;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg) scale(0);
+            background: var(--cream);
+            border: 2.5px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 10px 24px;
+            font-style: italic;
+            font-size: clamp(14px, 2.2vw, 18px);
+            z-index: 90;
+            pointer-events: none;
+        }
+
+        #toast.bad { background: #ffd9d4; }
+        #toast.show { animation: toastIn 1.6s ease forwards; }
+
+        @keyframes toastIn {
+            0% { transform: translateX(-50%) rotate(-2deg) scale(0); }
+            15% { transform: translateX(-50%) rotate(-2deg) scale(1.08); }
+            22% { transform: translateX(-50%) rotate(-2deg) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes page-shake {
+            0%, 100% { transform: translate(0, 0); }
+            30% { transform: translate(-6px, 4px); }
+            60% { transform: translate(5px, -4px); }
+        }
+
+        body.shake { animation: page-shake 0.22s linear; }
     </style>
 </head>
 <body>
-    <h1>🥷 Font Ninja 🥷</h1>
-    <p style="text-align: center; color: #aaa; margin-bottom: 20px; font-size: 1.1em;">A repository of all websafe fonts on the internet</p>
-    <input type="text" id="search" placeholder="Search the ancient scrolls...">
-    <div class="font-grid" id="fontGrid"></div>
+    <div id="hud" style="display:none">
+        <div class="sticker" id="score">0</div>
+        <div class="sticker" id="target"><span class="label">SLICE:</span><span id="targetName"></span></div>
+        <div id="lives"></div>
+    </div>
+
+    <canvas id="blade"></canvas>
+    <div id="toast"></div>
+
+    <div class="overlay" id="startOverlay">
+        <h1>FONT NINJA</h1>
+        <div class="rules">
+            words fly across the screen in different typefaces.<br>
+            <b>swipe through the ones in the target font.</b><br>
+            slice the wrong font &mdash; lose a shuriken.<br>
+            let a target escape &mdash; lose a shuriken.<br>
+            three shurikens. no mercy.
+        </div>
+        <button class="pill" id="startBtn">BEGIN TRAINING</button>
+    </div>
+
+    <div class="overlay" id="overOverlay" style="display:none">
+        <h1>DISHONOR</h1>
+        <div class="big-score" id="finalScore">0</div>
+        <div class="best" id="bestLine"></div>
+        <button class="pill" id="againBtn">TRAIN AGAIN</button>
+    </div>
 
     <script>
-        // Web safe fonts list
-        const webSafeFonts = [
-            { name: 'Arial', stack: 'Arial, sans-serif' },
-            { name: 'Helvetica', stack: 'Helvetica, sans-serif' },
-            { name: 'Times New Roman', stack: '\'Times New Roman\', Times, serif' },
-            { name: 'Times', stack: 'Times, serif' },
-            { name: 'Courier New', stack: '\'Courier New\', Courier, monospace' },
-            { name: 'Courier', stack: 'Courier, monospace' },
-            { name: 'Verdana', stack: 'Verdana, sans-serif' },
-            { name: 'Georgia', stack: 'Georgia, serif' },
-            { name: 'Palatino', stack: 'Palatino, serif' },
-            { name: 'Garamond', stack: 'Garamond, serif' },
-            { name: 'Bookman', stack: 'Bookman, serif' },
-            { name: 'Comic Sans MS', stack: '\'Comic Sans MS\', cursive' },
-            { name: 'Trebuchet MS', stack: '\'Trebuchet MS\', sans-serif' },
-            { name: 'Arial Black', stack: '\'Arial Black\', sans-serif' },
-            { name: 'Impact', stack: 'Impact, sans-serif' },
-            { name: 'Tahoma', stack: 'Tahoma, sans-serif' },
-            { name: 'Lucida Sans', stack: '\'Lucida Sans\', \'Lucida Grande\', \'Lucida Sans Unicode\', sans-serif' },
-            { name: 'Geneva', stack: 'Geneva, Verdana, sans-serif' },
-            { name: 'Segoe UI', stack: '\'Segoe UI\', Tahoma, Geneva, sans-serif' },
-            { name: 'Optima', stack: 'Optima, sans-serif' },
-            { name: 'Futura', stack: 'Futura, \'Trebuchet MS\', Arial, sans-serif' },
-            { name: 'Gill Sans', stack: '\'Gill Sans\', \'Gill Sans MT\', Calibri, sans-serif' },
-            { name: 'Candara', stack: 'Candara, Calibri, Segoe, sans-serif' },
-            { name: 'Calibri', stack: 'Calibri, Candara, Segoe, sans-serif' },
-            { name: 'Century Gothic', stack: '\'Century Gothic\', CenturyGothic, AppleGothic, sans-serif' },
-            { name: 'Franklin Gothic', stack: '\'Franklin Gothic Medium\', \'Franklin Gothic\', \'ITC Franklin Gothic\', Arial, sans-serif' },
-            { name: 'Copperplate', stack: 'Copperplate, \'Copperplate Gothic Light\', fantasy' },
-            { name: 'Brush Script MT', stack: '\'Brush Script MT\', cursive' },
-            { name: 'Monaco', stack: 'Monaco, Consolas, \'Lucida Console\', monospace' },
-            { name: 'Consolas', stack: 'Consolas, monaco, monospace' },
-            { name: 'Lucida Console', stack: '\'Lucida Console\', Monaco, monospace' },
-            { name: 'Andale Mono', stack: '\'Andale Mono\', AndaleMono, monospace' },
-            { name: 'Menlo', stack: 'Menlo, Monaco, Consolas, monospace' },
-            { name: 'Baskerville', stack: 'Baskerville, \'Baskerville Old Face\', \'Hoefler Text\', Garamond, serif' },
-            { name: 'Didot', stack: 'Didot, \'Didot LT STD\', \'Hoefler Text\', Garamond, serif' },
-            { name: 'Rockwell', stack: 'Rockwell, \'Courier Bold\', Courier, Georgia, serif' },
-            { name: 'Perpetua', stack: 'Perpetua, Baskerville, \'Big Caslon\', serif' },
-            { name: 'Cambria', stack: 'Cambria, Georgia, serif' },
-            { name: 'Constantia', stack: 'Constantia, Georgia, serif' },
-            { name: 'Frutiger', stack: 'Frutiger, \'Frutiger Linotype\', Univers, Calibri, sans-serif' },
-            { name: 'Myriad Pro', stack: '\'Myriad Pro\', Myriad, \'Liberation Sans\', \'Nimbus Sans L\', sans-serif' },
-            { name: 'Avenir', stack: 'Avenir, \'Avenir Next\', \'Segoe UI\', sans-serif' },
-            { name: 'Corbel', stack: 'Corbel, \'Lucida Grande\', \'Lucida Sans Unicode\', sans-serif' },
-            { name: 'Helvetica Neue', stack: '\'Helvetica Neue\', Helvetica, Arial, sans-serif' },
-            { name: 'Lato', stack: 'Lato, \'Helvetica Neue\', Helvetica, Arial, sans-serif' }
+        const INK = '#201a17';
+        const jit = (n) => (Math.random() - 0.5) * n;
+        const pick = (arr) => arr[(Math.random() * arr.length) | 0];
+
+        // ---- the dojo's font pool (only ones this device actually has) ----
+
+        const CANDIDATES = [
+            ['Comic Sans MS', "'Comic Sans MS', cursive"],
+            ['Impact', 'Impact, fantasy'],
+            ['Courier New', "'Courier New', monospace"],
+            ['Georgia', 'Georgia, serif'],
+            ['Times New Roman', "'Times New Roman', serif"],
+            ['Arial', 'Arial, sans-serif'],
+            ['Verdana', 'Verdana, sans-serif'],
+            ['Trebuchet MS', "'Trebuchet MS', sans-serif"],
+            ['Brush Script MT', "'Brush Script MT', cursive"],
+            ['Arial Black', "'Arial Black', sans-serif"],
+            ['Palatino', 'Palatino, serif'],
+            ['Tahoma', 'Tahoma, sans-serif'],
         ];
 
-        function createFontCards() {
-            const fontGrid = document.getElementById('fontGrid');
-            fontGrid.innerHTML = '';
+        let POOL = CANDIDATES.filter(([name]) => {
+            try { return document.fonts.check(`16px "${name}"`); } catch (e) { return true; }
+        });
+        if (POOL.length < 6) POOL = CANDIDATES;
 
-            webSafeFonts.forEach(font => {
-                const card = document.createElement('div');
-                card.className = 'font-card';
-                card.innerHTML = `
-                    <div class="font-sample" style="font-family: ${font.stack}">
-                        ABCDEFGHIJKLM<br>
-                        The quick brown fox jumps over the lazy dog<br>
-                        1234567890
-                    </div>
-                    <div class="font-info">
-                        <strong>${font.name}</strong><br>
-                        Font stack: ${font.stack}
-                    </div>
-                `;
+        const WORDS = [
+            'slice', 'dojo', 'swift', 'shadow', 'honor', 'blade', 'sensei', 'stealth',
+            'whoosh', 'kerning', 'serif', 'glyph', 'ligature', 'italic', 'baseline',
+            'ascender', 'x-height', 'swash', 'grotesque', 'oblique',
+        ];
 
-                // Add font loading check
-                document.fonts.ready.then(() => {
-                    const fontSample = card.querySelector('.font-sample');
-                    if (!document.fonts.check(`12px "${font.name}"`)) {
-                        fontSample.style.opacity = '0.5';
-                        card.querySelector('.font-info').innerHTML += '<br><em>(Font may not be available)</em>';
+        // ---- state ----
+
+        let playing = false;
+        let score = 0;
+        let combo = 0;
+        let correctCount = 0;
+        let lives = 3;
+        let target = null;
+        let spawnTimer = null;
+        let spawnEvery = 1700;
+        const words = [];
+
+        let best = 0;
+        try { best = parseInt(localStorage.getItem('fontninja-best'), 10) || 0; } catch (e) {}
+
+        // ---- HUD ----
+
+        function renderLives() {
+            const el = document.getElementById('lives');
+            el.textContent = '';
+            for (let i = 0; i < 3; i++) {
+                const s = document.createElement('div');
+                s.className = 'shuriken' + (i >= lives ? ' spent' : '');
+                el.appendChild(s);
+            }
+        }
+
+        function setTarget() {
+            const others = POOL.filter(f => f !== target);
+            target = pick(others);
+            const t = document.getElementById('target');
+            const nameEl = document.getElementById('targetName');
+            nameEl.textContent = target[0];
+            nameEl.style.fontFamily = target[1];
+            t.classList.remove('swap');
+            void t.offsetWidth;
+            t.classList.add('swap');
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent =
+                combo > 1 ? `${score} · x${combo}` : String(score);
+        }
+
+        function toast(msg, bad) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = bad ? 'bad' : '';
+            t.id = 'toast';
+            t.classList.remove('show');
+            void t.offsetWidth;
+            t.classList.add('show');
+        }
+
+        // ---- flying words ----
+
+        function spawnWord() {
+            if (!playing) return;
+            // 40% chance it's the target font
+            const font = Math.random() < 0.4 ? target : pick(POOL.filter(f => f !== target));
+            const el = document.createElement('div');
+            el.className = 'word';
+            el.textContent = pick(WORDS);
+            el.style.fontFamily = font[1];
+            document.body.appendChild(el);
+
+            const W = window.innerWidth, H = window.innerHeight;
+            const fromX = W * (0.15 + Math.random() * 0.7);
+            const w = {
+                el, font,
+                x: fromX,
+                y: H + 40,
+                vx: (W / 2 - fromX) * 0.0025 + jit(1.2),
+                vy: -(H * 0.0122 + Math.random() * H * 0.0025),
+                g: H * 0.0000875,
+                rot: jit(14),
+                vrot: jit(0.7),
+                sliced: false,
+            };
+            words.push(w);
+        }
+
+        function stepWords() {
+            for (let i = words.length - 1; i >= 0; i--) {
+                const w = words[i];
+                w.vy += w.g;
+                w.x += w.vx;
+                w.y += w.vy;
+                w.rot += w.vrot;
+                w.el.style.transform = `translate(${w.x}px, ${w.y}px) translate(-50%, -50%) rotate(${w.rot}deg)`;
+                if (w.y > window.innerHeight + 80 && w.vy > 0) {
+                    // letting a target escape costs a shuriken too
+                    if (!w.sliced && w.font === target && playing) {
+                        lives--;
+                        combo = 0;
+                        renderLives();
+                        updateScore();
+                        toast(`a ${w.font[0]} got away.`, true);
+                        if (lives <= 0) gameOver();
                     }
-                });
+                    w.el.remove();
+                    words.splice(i, 1);
+                }
+            }
+        }
 
-                card.addEventListener('click', () => {
-                    navigator.clipboard.writeText(font.stack);
-                    card.classList.add('copied');
-                    setTimeout(() => card.classList.remove('copied'), 1000);
-                });
+        // ---- slicing ----
 
-                fontGrid.appendChild(card);
+        function slice(w, angleDeg) {
+            w.sliced = true;
+            const rect = w.el.getBoundingClientRect();
+            const correct = w.font === target;
+
+            // the word splits into two halves that tumble apart
+            for (const half of ['top', 'bottom']) {
+                const h = w.el.cloneNode(true);
+                h.classList.add('half');
+                h.style.clipPath = half === 'top' ? 'inset(0 0 48% 0)' : 'inset(48% 0 0 0)';
+                if (!correct) h.style.color = '#c0392b';
+                document.body.appendChild(h);
+                const dir = half === 'top' ? -1 : 1;
+                const hw = {
+                    el: h, font: w.font,
+                    x: w.x, y: w.y,
+                    vx: w.vx + jit(3) + dir * 1.5,
+                    vy: w.vy * 0.3 + dir * -2 + (half === 'bottom' ? 3 : -1),
+                    g: 0.5,
+                    rot: w.rot, vrot: dir * (2 + Math.random() * 3),
+                    sliced: true,
+                };
+                words.push(hw);
+            }
+            w.el.remove();
+            words.splice(words.indexOf(w), 1);
+
+            // slash flash
+            flashSlash(rect.left + rect.width / 2, rect.top + rect.height / 2, angleDeg);
+
+            if (correct) {
+                combo++;
+                correctCount++;
+                score += 10 * combo;
+                updateScore();
+                if (correctCount % 5 === 0) {
+                    setTarget();
+                    toast('new target. focus.');
+                }
+            } else {
+                lives--;
+                combo = 0;
+                renderLives();
+                updateScore();
+                toast(`that was ${w.font[0]}.`, true);
+                document.body.classList.remove('shake');
+                void document.body.offsetWidth;
+                document.body.classList.add('shake');
+                if (lives <= 0) gameOver();
+            }
+        }
+
+        // ---- the blade ----
+
+        const blade = document.getElementById('blade');
+        const bctx = blade.getContext('2d');
+        const trail = [];
+        const slashes = [];
+        let pointerDown = false;
+
+        function sizeBlade() {
+            blade.width = window.innerWidth;
+            blade.height = window.innerHeight;
+        }
+
+        function flashSlash(x, y, angleDeg) {
+            const a = (angleDeg * Math.PI) / 180;
+            slashes.push({
+                x1: x - Math.cos(a) * 70, y1: y - Math.sin(a) * 70,
+                x2: x + Math.cos(a) * 70, y2: y + Math.sin(a) * 70,
+                life: 1,
             });
         }
 
-        // Search functionality
-        document.getElementById('search').addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.font-card');
-            
-            cards.forEach(card => {
-                const fontName = card.querySelector('strong').textContent.toLowerCase();
-                card.style.display = fontName.includes(searchTerm) ? 'block' : 'none';
-            });
+        function drawBlade() {
+            bctx.clearRect(0, 0, blade.width, blade.height);
+            const now = performance.now();
+
+            // trail
+            const pts = trail.filter(p => now - p.t < 140);
+            trail.length = 0;
+            trail.push(...pts);
+            if (pts.length > 1) {
+                for (const [width, color] of [[7, INK], [2.5, '#fff8ef']]) {
+                    bctx.lineWidth = width;
+                    bctx.strokeStyle = color;
+                    bctx.lineCap = 'round';
+                    bctx.lineJoin = 'round';
+                    bctx.beginPath();
+                    pts.forEach((p, i) => i === 0 ? bctx.moveTo(p.x, p.y) : bctx.lineTo(p.x, p.y));
+                    bctx.stroke();
+                }
+            }
+
+            // slash flashes
+            for (let i = slashes.length - 1; i >= 0; i--) {
+                const s = slashes[i];
+                s.life -= 0.08;
+                if (s.life <= 0) { slashes.splice(i, 1); continue; }
+                bctx.globalAlpha = s.life;
+                bctx.lineCap = 'round';
+                bctx.lineWidth = 8 * s.life;
+                bctx.strokeStyle = INK;
+                bctx.beginPath();
+                bctx.moveTo(s.x1, s.y1);
+                bctx.lineTo(s.x2, s.y2);
+                bctx.stroke();
+                bctx.lineWidth = 3 * s.life;
+                bctx.strokeStyle = '#fff8ef';
+                bctx.stroke();
+                bctx.globalAlpha = 1;
+            }
+        }
+
+        function checkSlice(x1, y1, x2, y2) {
+            if (!playing) return;
+            const speed = Math.hypot(x2 - x1, y2 - y1);
+            if (speed < 14) return;   // a swipe, not a hover
+            const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+            const steps = Math.ceil(speed / 8);
+            for (const w of [...words]) {
+                if (w.sliced) continue;
+                const rect = w.el.getBoundingClientRect();
+                for (let s = 0; s <= steps; s++) {
+                    const px = x1 + ((x2 - x1) * s) / steps;
+                    const py = y1 + ((y2 - y1) * s) / steps;
+                    if (px >= rect.left && px <= rect.right && py >= rect.top && py <= rect.bottom) {
+                        slice(w, angle);
+                        break;
+                    }
+                }
+            }
+        }
+
+        let lastPX = 0, lastPY = 0;
+
+        document.addEventListener('pointerdown', (e) => {
+            pointerDown = true;
+            lastPX = e.clientX;
+            lastPY = e.clientY;
         });
 
-        // Initialize the font cards
-        createFontCards();
+        document.addEventListener('pointermove', (e) => {
+            if (!pointerDown) return;
+            trail.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+            checkSlice(lastPX, lastPY, e.clientX, e.clientY);
+            lastPX = e.clientX;
+            lastPY = e.clientY;
+        });
+
+        document.addEventListener('pointerup', () => { pointerDown = false; });
+        document.addEventListener('pointercancel', () => { pointerDown = false; });
+
+        // ---- game flow ----
+
+        function start() {
+            playing = true;
+            score = 0;
+            combo = 0;
+            correctCount = 0;
+            lives = 3;
+            spawnEvery = 1700;
+            for (const w of words) w.el.remove();
+            words.length = 0;
+            document.getElementById('startOverlay').style.display = 'none';
+            document.getElementById('overOverlay').style.display = 'none';
+            document.getElementById('hud').style.display = 'flex';
+            renderLives();
+            setTarget();
+            updateScore();
+            scheduleSpawn();
+        }
+
+        function scheduleSpawn() {
+            clearTimeout(spawnTimer);
+            if (!playing) return;
+            spawnWord();
+            if (Math.random() < 0.3) setTimeout(spawnWord, 300);
+            spawnEvery = Math.max(900, spawnEvery - 9);   // it gets worse, gently
+            spawnTimer = setTimeout(scheduleSpawn, spawnEvery);
+        }
+
+        function gameOver() {
+            playing = false;
+            clearTimeout(spawnTimer);
+            if (score > best) {
+                best = score;
+                try { localStorage.setItem('fontninja-best', String(best)); } catch (e) {}
+            }
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('bestLine').textContent =
+                score >= best && score > 0 ? 'a new personal best. the dojo is proud.' : `personal best: ${best}`;
+            setTimeout(() => {
+                document.getElementById('overOverlay').style.display = 'flex';
+            }, 700);
+        }
+
+        document.getElementById('startBtn').addEventListener('click', start);
+        document.getElementById('againBtn').addEventListener('click', start);
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && playing) clearTimeout(spawnTimer);
+            else if (playing) scheduleSpawn();
+        });
+
+        // ---- loop ----
+
+        function frame() {
+            stepWords();
+            drawBlade();
+            requestAnimationFrame(frame);
+        }
+
+        window.addEventListener('resize', sizeBlade);
+        sizeBlade();
+        frame();
     </script>
 </body>
 </html>
