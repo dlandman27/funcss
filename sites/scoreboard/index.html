@@ -5,452 +5,521 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scoreboard</title>
+    <meta name="description" content="A tap-to-score scoreboard for any game — two teams, period, clock, kept safe across refreshes">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --gold: #f7c948;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
 
         body {
-            min-height: 100vh;
-            background: #0a0a0a;
-            font-family: 'Courier New', monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            user-select: none;
+            gap: clamp(14px, 3vh, 26px);
+            padding: 16px;
         }
 
-        .board {
-            background: #111;
-            border: 4px solid #222;
-            border-radius: 16px;
-            padding: 32px 24px 28px;
-            width: min(96vw, 680px);
-            box-shadow: 0 0 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+        h1 {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(20px, 4vw, 34px);
+            transform: rotate(-1.5deg);
+            -webkit-text-stroke: 1.2px var(--ink);
+            paint-order: stroke fill;
+            color: var(--gold);
+            text-shadow: 4px 4px 0 var(--ink);
         }
 
-        .top-bar {
+        /* ---- clock & period row ---- */
+
+        .meta-row {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 28px;
-        }
-
-        .period-label {
-            color: #555;
-            font-size: 11px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-
-        .period-display {
-            color: #ff9500;
-            font-size: 22px;
-            letter-spacing: 4px;
-            text-shadow: 0 0 12px rgba(255,149,0,0.6);
-            cursor: pointer;
-            transition: opacity 0.1s;
-        }
-
-        .period-display:hover { opacity: 0.75; }
-
-        .clock {
-            color: #ff3b30;
-            font-size: 28px;
-            letter-spacing: 3px;
-            text-shadow: 0 0 14px rgba(255,59,48,0.6);
-            cursor: pointer;
-            min-width: 90px;
-            text-align: center;
-        }
-
-        .teams {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            gap: 0;
-            align-items: center;
-        }
-
-        .team {
-            display: flex;
-            flex-direction: column;
             align-items: center;
             gap: 12px;
         }
 
-        .team-name-wrap {
-            position: relative;
+        .chip {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 8px 18px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(13px, 2.4vw, 18px);
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: transform 0.12s ease;
+            font-variant-numeric: tabular-nums;
         }
+
+        .chip:hover { transform: translate(-2px, -2px) rotate(-1.5deg); }
+        .chip:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        #clock { background: var(--gold); min-width: 120px; text-align: center; }
+
+        #status {
+            transform: rotate(2deg);
+            background: #d8d3c6;
+            font-size: clamp(10px, 1.8vw, 12px);
+            padding: 7px 14px;
+            cursor: default;
+        }
+
+        #status.live { background: var(--lime); }
+
+        /* ---- the board ---- */
+
+        .teams {
+            display: flex;
+            align-items: stretch;
+            gap: clamp(12px, 3vw, 30px);
+        }
+
+        .team-card {
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 20px;
+            box-shadow: 8px 8px 0 var(--ink);
+            padding: clamp(16px, 3vw, 30px) clamp(20px, 4vw, 44px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            width: clamp(150px, 38vw, 300px);
+        }
+
+        .team-card.left { transform: rotate(-1deg); }
+        .team-card.right { transform: rotate(1deg); }
+        .team-card.left:active { transform: rotate(-1deg) scale(0.97); }
+        .team-card.right:active { transform: rotate(1deg) scale(0.97); }
 
         .team-name {
             background: none;
             border: none;
-            border-bottom: 2px solid #333;
-            color: #eee;
-            font-family: inherit;
-            font-size: 18px;
-            letter-spacing: 4px;
+            border-bottom: 3px dashed rgba(32, 26, 23, 0.3);
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(15px, 2.6vw, 22px);
+            letter-spacing: 0.1em;
             text-transform: uppercase;
             text-align: center;
-            width: 160px;
+            width: 100%;
             padding: 4px 0;
             outline: none;
-            transition: border-color 0.2s;
+            color: var(--ink);
+            cursor: text;
+            -webkit-user-select: text;
+            user-select: text;
         }
 
-        .team-name:focus { border-color: #555; }
-
-        .score-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
+        .team-name:focus { border-bottom-color: var(--ink); }
 
         .score {
-            font-size: clamp(72px, 18vw, 120px);
-            font-weight: bold;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(70px, 16vw, 140px);
             line-height: 1;
-            letter-spacing: -4px;
+            -webkit-text-stroke: 2px var(--ink);
+            paint-order: stroke fill;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .left .score { color: var(--coral); text-shadow: 5px 5px 0 var(--ink); }
+        .right .score { color: var(--sky); text-shadow: 5px 5px 0 var(--ink); }
+
+        .score.bump { animation: bump 0.25s cubic-bezier(0.22, 1.8, 0.36, 1); }
+
+        @keyframes bump {
+            0% { transform: scale(1); }
+            45% { transform: scale(1.18) rotate(-2deg); }
+            100% { transform: scale(1); }
+        }
+
+        .minus {
+            background: var(--paper);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            width: 38px;
+            height: 38px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: 18px;
+            color: var(--ink);
             cursor: pointer;
-            transition: transform 0.07s, text-shadow 0.15s;
-            padding: 8px 16px;
-            border-radius: 8px;
+            transition: transform 0.12s ease;
         }
 
-        .score:active {
-            transform: scale(0.94);
+        .minus:hover { transform: translate(-1px, -1px); }
+        .minus:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+
+        .tap-note {
+            font-style: italic;
+            font-size: 12px;
+            color: rgba(32, 26, 23, 0.45);
         }
 
-        .team-left .score {
-            color: #30d158;
-            text-shadow: 0 0 30px rgba(48,209,88,0.4);
-        }
-
-        .team-right .score {
-            color: #0a84ff;
-            text-shadow: 0 0 30px rgba(10,132,255,0.4);
-        }
-
-        .score.bump {
-            transform: scale(1.12);
-        }
-
-        .team-left .score.bump {
-            text-shadow: 0 0 50px rgba(48,209,88,0.9);
-        }
-
-        .team-right .score.bump {
-            text-shadow: 0 0 50px rgba(10,132,255,0.9);
-        }
-
-        .btn-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn {
-            background: #1c1c1e;
-            border: 1px solid #333;
-            border-radius: 8px;
-            color: #888;
-            font-family: inherit;
-            font-size: 20px;
-            width: 44px;
-            height: 44px;
-            cursor: pointer;
-            transition: background 0.1s, color 0.1s, transform 0.1s;
+        .vs {
             display: flex;
             align-items: center;
-            justify-content: center;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(18px, 3.4vw, 30px);
+            color: rgba(32, 26, 23, 0.35);
         }
 
-        .btn:hover { background: #2c2c2e; color: #ccc; }
-        .btn:active { transform: scale(0.9); }
-
-        .divider {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            padding: 0 16px;
-        }
-
-        .dash {
-            color: #333;
-            font-size: 48px;
-            font-weight: bold;
-            line-height: 1;
-            margin-top: 8px;
-        }
-
-        .bottom-bar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 28px;
-            gap: 16px;
-        }
-
-        .reset-btn {
-            background: none;
-            border: 1px solid #2a2a2a;
-            border-radius: 8px;
-            color: #444;
-            font-family: inherit;
-            font-size: 11px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            padding: 8px 20px;
+        #reset {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 10px 24px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 14px;
+            color: var(--ink);
             cursor: pointer;
-            transition: border-color 0.2s, color 0.2s;
+            transition: transform 0.15s ease;
         }
 
-        .reset-btn:hover { border-color: #555; color: #777; }
+        #reset:hover { transform: translate(-2px, -2px) rotate(-1.5deg); }
+        #reset:active { transform: translate(2px, 2px); }
 
-        /* floating +1 */
+        /* floating +1 sticker */
         .plus-one {
             position: fixed;
-            font-size: 28px;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: 30px;
+            -webkit-text-stroke: 1.2px var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 3px 3px 0 var(--ink);
             pointer-events: none;
             animation: floatUp 0.9s ease-out forwards;
             z-index: 100;
         }
 
-        .plus-one.green { color: #30d158; text-shadow: 0 0 10px rgba(48,209,88,0.8); }
-        .plus-one.blue  { color: #0a84ff; text-shadow: 0 0 10px rgba(10,132,255,0.8); }
-
         @keyframes floatUp {
-            0%   { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-80px) scale(0.6); opacity: 0; }
+            0% { transform: translateY(0) rotate(-4deg) scale(0.6); opacity: 1; }
+            20% { transform: translateY(-16px) rotate(3deg) scale(1.15); }
+            100% { transform: translateY(-90px) rotate(-2deg) scale(0.9); opacity: 0; }
         }
 
-        /* LED dot rows */
-        .led-row {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-            margin-bottom: 20px;
+        #toast {
+            position: fixed;
+            top: 7vh;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg) scale(0);
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 12px 26px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(14px, 2.8vw, 22px);
+            text-transform: uppercase;
+            z-index: 200;
+            pointer-events: none;
         }
 
-        .led {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #222;
-            transition: background 0.15s, box-shadow 0.15s;
+        #toast.show { animation: toastIn 2.4s cubic-bezier(0.22, 1.6, 0.36, 1) forwards; }
+
+        @keyframes toastIn {
+            0% { transform: translateX(-50%) rotate(-2deg) scale(0); }
+            12% { transform: translateX(-50%) rotate(-2deg) scale(1.1); }
+            18% { transform: translateX(-50%) rotate(-2deg) scale(1); }
+            82% { transform: translateX(-50%) rotate(-2deg) scale(1); opacity: 1; }
+            100% { opacity: 0; }
         }
 
-        .led.on-green { background: #30d158; box-shadow: 0 0 6px rgba(48,209,88,0.8); }
-        .led.on-blue  { background: #0a84ff; box-shadow: 0 0 6px rgba(10,132,255,0.8); }
-        .led.on-red   { background: #ff3b30; box-shadow: 0 0 6px rgba(255,59,48,0.8); }
+        #fx { position: fixed; inset: 0; pointer-events: none; z-index: 150; }
 
-        @media (max-width: 480px) {
-            .team-name { width: 110px; font-size: 14px; }
-            .btn { width: 38px; height: 38px; font-size: 18px; }
-            .divider { padding: 0 8px; }
+        @media (max-width: 560px) {
+            .teams { flex-direction: column; align-items: center; }
+            .team-card { width: min(86vw, 340px); flex-direction: row; justify-content: space-between; padding: 14px 22px; }
+            .team-card .score { font-size: clamp(48px, 14vw, 70px); }
+            .team-name { width: 40%; font-size: 14px; }
+            .vs { display: none; }
+            .tap-note { display: none; }
         }
     </style>
 </head>
 <body>
+    <h1>SCOREBOARD</h1>
 
-<div class="board">
-    <div class="led-row" id="ledRow"></div>
-
-    <div class="top-bar">
-        <div>
-            <div class="period-label">Period</div>
-            <div class="period-display" id="period" onclick="cyclePeriod()">1ST</div>
-        </div>
-        <div class="clock" id="clock" onclick="toggleClock()">00:00</div>
-        <div style="text-align:right">
-            <div class="period-label">Status</div>
-            <div class="period-display" id="status" style="font-size:14px;letter-spacing:2px">PAUSED</div>
-        </div>
+    <div class="meta-row">
+        <div class="chip" id="period" title="tap to change period">1ST</div>
+        <div class="chip" id="clock" title="tap to start / pause">00:00</div>
+        <div class="chip" id="status">PAUSED</div>
     </div>
 
     <div class="teams">
-        <div class="team team-left">
-            <div class="team-name-wrap">
-                <input class="team-name" id="nameLeft" value="HOME" maxlength="8" spellcheck="false">
-            </div>
-            <div class="score-area">
-                <div class="score" id="scoreLeft" onclick="addScore('left', event)">0</div>
-                <div class="btn-row">
-                    <div class="btn" onclick="addScore('left', event)">+</div>
-                    <div class="btn" onclick="subScore('left')">−</div>
-                </div>
-            </div>
+        <div class="team-card left" id="cardLeft">
+            <input class="team-name" id="nameLeft" value="HOME" maxlength="10" spellcheck="false">
+            <div class="score" id="scoreLeft">0</div>
+            <button class="minus" id="minusLeft">&minus;</button>
+            <div class="tap-note">tap the card to score</div>
         </div>
 
-        <div class="divider">
-            <div class="dash">–</div>
-        </div>
+        <div class="vs">VS</div>
 
-        <div class="team team-right">
-            <div class="team-name-wrap">
-                <input class="team-name" id="nameRight" value="AWAY" maxlength="8" spellcheck="false">
-            </div>
-            <div class="score-area">
-                <div class="score" id="scoreRight" onclick="addScore('right', event)">0</div>
-                <div class="btn-row">
-                    <div class="btn" onclick="addScore('right', event)">+</div>
-                    <div class="btn" onclick="subScore('right')">−</div>
-                </div>
-            </div>
+        <div class="team-card right" id="cardRight">
+            <input class="team-name" id="nameRight" value="AWAY" maxlength="10" spellcheck="false">
+            <div class="score" id="scoreRight">0</div>
+            <button class="minus" id="minusRight">&minus;</button>
+            <div class="tap-note">tap the card to score</div>
         </div>
     </div>
 
-    <div class="bottom-bar">
-        <button class="reset-btn" onclick="resetAll()">Reset</button>
-    </div>
-</div>
+    <button id="reset">new game</button>
 
-<script>
-    let scores = { left: 0, right: 0 };
-    let periodIdx = 0;
-    const periods = ['1ST', '2ND', '3RD', '4TH', 'OT', '2OT'];
+    <canvas id="fx"></canvas>
+    <div id="toast"></div>
 
-    // the game survives a page refresh
-    function saveGame() {
-        try {
-            localStorage.setItem('scoreboard', JSON.stringify({
-                scores, periodIdx, clockSecs,
-                nameLeft: document.getElementById('nameLeft').value,
-                nameRight: document.getElementById('nameRight').value,
-            }));
-        } catch (e) {}
-    }
+    <script>
+        const INK = '#201a17';
+        const TEAM_COLOR = { left: '#f0563e', right: '#5aa0db' };
+        const CONFETTI = ['#f7c948', '#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#ff7fa5'];
+        const jit = (n) => (Math.random() - 0.5) * n;
+        const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-    function loadGame() {
-        try {
-            const saved = JSON.parse(localStorage.getItem('scoreboard'));
-            if (!saved) return;
-            scores = saved.scores || scores;
-            periodIdx = saved.periodIdx || 0;
-            clockSecs = saved.clockSecs || 0;
+        let scores = { left: 0, right: 0 };
+        let periodIdx = 0;
+        const periods = ['1ST', '2ND', '3RD', '4TH', 'OT', '2OT'];
+        let clockSecs = 0;
+        let clockRunning = false;
+        let clockInterval = null;
+
+        // ---- persistence: the game survives a refresh ----
+
+        function saveGame() {
+            try {
+                localStorage.setItem('scoreboard', JSON.stringify({
+                    scores, periodIdx, clockSecs,
+                    nameLeft: document.getElementById('nameLeft').value,
+                    nameRight: document.getElementById('nameRight').value,
+                }));
+            } catch (e) {}
+        }
+
+        function loadGame() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('scoreboard'));
+                if (!saved) return;
+                scores = saved.scores || scores;
+                periodIdx = saved.periodIdx || 0;
+                clockSecs = saved.clockSecs || 0;
+                if (saved.nameLeft) document.getElementById('nameLeft').value = saved.nameLeft;
+                if (saved.nameRight) document.getElementById('nameRight').value = saved.nameRight;
+            } catch (e) {}
             document.getElementById('scoreLeft').textContent = scores.left;
             document.getElementById('scoreRight').textContent = scores.right;
             document.getElementById('period').textContent = periods[periodIdx];
-            if (saved.nameLeft) document.getElementById('nameLeft').value = saved.nameLeft;
-            if (saved.nameRight) document.getElementById('nameRight').value = saved.nameRight;
             updateClockDisplay();
-        } catch (e) {}
-    }
+        }
 
-    // Clock
-    let clockSecs = 0;
-    let clockRunning = false;
-    let clockInterval = null;
+        // ---- clock ----
 
-    function toggleClock() {
-        clockRunning = !clockRunning;
-        document.getElementById('status').textContent = clockRunning ? 'LIVE' : 'PAUSED';
-        if (clockRunning) {
-            clockInterval = setInterval(() => {
-                clockSecs++;
-                updateClockDisplay();
-                if (clockSecs % 5 === 0) saveGame();
-            }, 1000);
-        } else {
+        function updateClockDisplay() {
+            const m = String(Math.floor(clockSecs / 60)).padStart(2, '0');
+            const s = String(clockSecs % 60).padStart(2, '0');
+            document.getElementById('clock').textContent = `${m}:${s}`;
+        }
+
+        function toggleClock() {
+            clockRunning = !clockRunning;
+            const status = document.getElementById('status');
+            status.textContent = clockRunning ? 'LIVE' : 'PAUSED';
+            status.classList.toggle('live', clockRunning);
+            if (clockRunning) {
+                clockInterval = setInterval(() => {
+                    clockSecs++;
+                    updateClockDisplay();
+                    if (clockSecs % 5 === 0) saveGame();
+                }, 1000);
+            } else {
+                clearInterval(clockInterval);
+                saveGame();
+            }
+        }
+
+        // ---- scoring ----
+
+        function addScore(side, e) {
+            const before = scores.left === scores.right ? null
+                : scores.left > scores.right ? 'left' : 'right';
+            scores[side]++;
+            const el = document.getElementById('score' + cap(side));
+            el.textContent = scores[side];
+            el.classList.remove('bump');
+            void el.offsetWidth;
+            el.classList.add('bump');
+            spawnPlusOne(side);
+            burstAt(e.clientX || null, e.clientY || null, side, 10);
+
+            const after = scores.left === scores.right ? null
+                : scores.left > scores.right ? 'left' : 'right';
+            if (after && after !== before) {
+                const name = document.getElementById('name' + cap(after)).value || after;
+                toast(before === null ? `${name} TAKES THE LEAD` : `${name} STEALS THE LEAD`);
+            }
+            saveGame();
+        }
+
+        function subScore(side) {
+            if (scores[side] > 0) {
+                scores[side]--;
+                document.getElementById('score' + cap(side)).textContent = scores[side];
+                saveGame();
+            }
+        }
+
+        function spawnPlusOne(side) {
+            const el = document.createElement('div');
+            el.className = 'plus-one';
+            el.textContent = '+1';
+            el.style.color = TEAM_COLOR[side];
+            const rect = document.getElementById('score' + cap(side)).getBoundingClientRect();
+            el.style.left = (rect.left + rect.width / 2 - 18 + jit(50)) + 'px';
+            el.style.top = (rect.top + jit(20)) + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 900);
+        }
+
+        function toast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('show');
+            void t.offsetWidth;
+            t.classList.add('show');
+        }
+
+        // ---- confetti ----
+
+        const fxCanvas = document.getElementById('fx');
+        const fxCtx = fxCanvas.getContext('2d');
+        const bits = [];
+        let raf = null;
+
+        function sizeFx() {
+            fxCanvas.width = window.innerWidth;
+            fxCanvas.height = window.innerHeight;
+        }
+
+        function burstAt(x, y, side, n) {
+            if (x === null) {
+                const rect = document.getElementById('score' + cap(side)).getBoundingClientRect();
+                x = rect.left + rect.width / 2;
+                y = rect.top + rect.height / 2;
+            }
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const v = 2 + Math.random() * 4;
+                bits.push({
+                    x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2.5, g: 0.15,
+                    w: 5 + Math.random() * 4, h: 3 + Math.random() * 3,
+                    rot: Math.random() * Math.PI, vrot: jit(0.3),
+                    color: Math.random() < 0.5 ? TEAM_COLOR[side] : CONFETTI[(Math.random() * CONFETTI.length) | 0],
+                    life: 1, decay: 0.02,
+                });
+            }
+            if (!raf) raf = requestAnimationFrame(loop);
+        }
+
+        function loop() {
+            raf = null;
+            fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            for (let i = bits.length - 1; i >= 0; i--) {
+                const p = bits[i];
+                p.life -= p.decay;
+                if (p.life <= 0) { bits.splice(i, 1); continue; }
+                p.vy += p.g;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rot += p.vrot;
+                fxCtx.save();
+                fxCtx.translate(p.x, p.y);
+                fxCtx.rotate(p.rot);
+                fxCtx.globalAlpha = Math.min(1, p.life * 1.5);
+                fxCtx.fillStyle = p.color;
+                fxCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                fxCtx.lineWidth = 1.3;
+                fxCtx.strokeStyle = INK;
+                fxCtx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                fxCtx.restore();
+            }
+            fxCtx.globalAlpha = 1;
+            if (bits.length) raf = requestAnimationFrame(loop);
+        }
+
+        // ---- wiring ----
+
+        for (const side of ['left', 'right']) {
+            const card = document.getElementById('card' + cap(side));
+            card.addEventListener('click', (e) => {
+                if (e.target.classList.contains('minus') || e.target.classList.contains('team-name')) return;
+                addScore(side, e);
+            });
+            document.getElementById('minus' + cap(side)).addEventListener('click', (e) => {
+                e.stopPropagation();
+                subScore(side);
+            });
+            document.getElementById('name' + cap(side)).addEventListener('input', saveGame);
+        }
+
+        document.getElementById('clock').addEventListener('click', toggleClock);
+        document.getElementById('period').addEventListener('click', () => {
+            periodIdx = (periodIdx + 1) % periods.length;
+            document.getElementById('period').textContent = periods[periodIdx];
+            saveGame();
+        });
+
+        document.getElementById('reset').addEventListener('click', () => {
+            scores = { left: 0, right: 0 };
+            periodIdx = 0;
+            clockSecs = 0;
+            clockRunning = false;
             clearInterval(clockInterval);
+            document.getElementById('scoreLeft').textContent = '0';
+            document.getElementById('scoreRight').textContent = '0';
+            document.getElementById('period').textContent = periods[0];
+            const status = document.getElementById('status');
+            status.textContent = 'PAUSED';
+            status.classList.remove('live');
+            updateClockDisplay();
             saveGame();
-        }
-    }
+        });
 
-    function updateClockDisplay() {
-        const m = String(Math.floor(clockSecs / 60)).padStart(2, '0');
-        const s = String(clockSecs % 60).padStart(2, '0');
-        document.getElementById('clock').textContent = `${m}:${s}`;
-    }
-
-    function cyclePeriod() {
-        periodIdx = (periodIdx + 1) % periods.length;
-        document.getElementById('period').textContent = periods[periodIdx];
-        saveGame();
-    }
-
-    function addScore(side, e) {
-        scores[side]++;
-        const el = document.getElementById('score' + capitalize(side));
-        el.textContent = scores[side];
-        el.classList.remove('bump');
-        void el.offsetWidth;
-        el.classList.add('bump');
-        setTimeout(() => el.classList.remove('bump'), 200);
-        spawnPlusOne(e, side);
-        flashLeds(side);
-        saveGame();
-    }
-
-    function subScore(side) {
-        if (scores[side] > 0) {
-            scores[side]--;
-            document.getElementById('score' + capitalize(side)).textContent = scores[side];
-            saveGame();
-        }
-    }
-
-    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-    function spawnPlusOne(e, side) {
-        const el = document.createElement('div');
-        el.className = 'plus-one ' + (side === 'left' ? 'green' : 'blue');
-        el.textContent = '+1';
-        // position near click or score element
-        const scoreEl = document.getElementById('score' + capitalize(side));
-        const rect = scoreEl.getBoundingClientRect();
-        el.style.left = (rect.left + rect.width / 2 - 20 + (Math.random() - 0.5) * 40) + 'px';
-        el.style.top  = (rect.top + (Math.random() * 20)) + 'px';
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 900);
-    }
-
-    // LED row
-    const ledRow = document.getElementById('ledRow');
-    for (let i = 0; i < 24; i++) {
-        const d = document.createElement('div');
-        d.className = 'led';
-        ledRow.appendChild(d);
-    }
-
-    function flashLeds(side) {
-        const cls = side === 'left' ? 'on-green' : 'on-blue';
-        const leds = ledRow.querySelectorAll('.led');
-        let i = 0;
-        const interval = setInterval(() => {
-            leds.forEach(l => l.className = 'led');
-            if (i < leds.length) {
-                leds[i].className = 'led ' + cls;
-                if (i > 0) leds[i - 1].className = 'led ' + cls;
-            }
-            i++;
-            if (i > leds.length + 1) {
-                clearInterval(interval);
-                leds.forEach(l => l.className = 'led');
-            }
-        }, 30);
-    }
-
-    function resetAll() {
-        scores = { left: 0, right: 0 };
-        document.getElementById('scoreLeft').textContent = '0';
-        document.getElementById('scoreRight').textContent = '0';
-        clockSecs = 0;
-        clockRunning = false;
-        clearInterval(clockInterval);
-        updateClockDisplay();
-        document.getElementById('status').textContent = 'PAUSED';
-        periodIdx = 0;
-        document.getElementById('period').textContent = periods[0];
-        saveGame();
-    }
-
-    document.getElementById('nameLeft').addEventListener('input', saveGame);
-    document.getElementById('nameRight').addEventListener('input', saveGame);
-    loadGame();
-</script>
+        window.addEventListener('resize', sizeFx);
+        sizeFx();
+        loadGame();
+    </script>
 </body>
 </html>
