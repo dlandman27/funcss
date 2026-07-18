@@ -25,7 +25,8 @@ Example: `/new-site typeracer "Type Racer" "Race against the clock to type a ran
    - Responsive — must look good on mobile
    - Creative and fun — make it genuinely interesting, not generic
    - Smooth animations and interactions where appropriate
-   - Match the vibe of the existing sites (playful, polished, a little quirky)
+   - **Read `.claude/commands/site-style.md` first and follow it** — the sticker-comic design
+     language, interaction feel, voice, and tech checklist for every site
 
 3. **Register the site in `catalog.json`** — the homepage is GENERATED from the catalog;
    never edit `index.html` by hand. Append to the `sites` array:

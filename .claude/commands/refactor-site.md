@@ -36,7 +36,8 @@ Example: `/refactor-site prefixsuffix rename to "The Longest Name" and make the 
    - `<title>` must match the new catalog `name`
    - Vanilla HTML + CSS + JS only, fully self-contained in one file, no CDN imports
    - Responsive — must look good on mobile
-   - Match the vibe of the existing sites (playful, polished, a little quirky)
+   - **Read `.claude/commands/site-style.md` first and follow it** — the sticker-comic design
+     language, interaction feel, voice, and tech checklist for every site
    - Prefer interactive over static — if the old page was a wall of text, give it a toy
 
 4. **Run `npm run build`** — regenerates `index.html` from the catalog and validates
