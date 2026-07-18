@@ -1,651 +1,615 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roll a Die</title>
+    <title>Fair Die</title>
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2ecc71;
-            --background-color: #f5f5f5;
-            --card-background: #ffffff;
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --gold: #f7c948;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, 0.06) 2px, transparent 2.2px);
+            background-size: 22px 22px;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            background-color: var(--background-color);
-            color: #333;
-            padding: 20px;
-            min-height: 100vh;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-        }
-
-        .screen {
-            opacity: 0;
-            visibility: hidden;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transition: opacity 0.5s ease;
-            padding: 20px;
-        }
-
-        .screen.active {
-            opacity: 1;
-            visibility: visible;
-            position: relative;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 0 10px;
-        }
-
-        .card {
-            background: var(--card-background);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .setup-card {
-            max-width: 600px;
-            margin: 20px auto;
-            text-align: center;
-        }
-
-        @media (max-width: 480px) {
-            .setup-card {
-                margin: 10px auto;
-            }
-            .card {
-                padding: 15px;
-            }
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
         }
 
         h1 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            font-size: 2em;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            font-size: clamp(26px, 5.5vw, 44px);
+            letter-spacing: 0.02em;
+            transform: rotate(-1.5deg);
+            -webkit-text-stroke: 1.5px var(--ink);
+            paint-order: stroke fill;
+            color: var(--coral);
+            text-shadow: 4px 4px 0 var(--ink);
         }
 
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 1.5em;
-                margin-bottom: 15px;
-            }
+        /* certification sticker */
+        .cert {
+            position: relative;
+            background: var(--lime);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 5px 16px;
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: clamp(10px, 1.6vw, 13px);
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            transform: rotate(2deg);
         }
 
-        .welcome-text {
-            margin: 20px 0;
-            font-size: 1.2em;
-            color: #666;
+        .cert.void::after {
+            content: 'VOID';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-14deg);
+            font-size: 1.7em;
+            color: #c0392b;
+            border: 3px solid #c0392b;
+            border-radius: 6px;
+            padding: 0 8px;
+            opacity: 0.9;
+            background: rgba(242, 237, 226, 0.65);
         }
 
-        @media (max-width: 480px) {
-            .welcome-text {
-                font-size: 1em;
-                margin: 15px 0;
-            }
+        /* ---- the die ---- */
+
+        .die-area {
+            position: relative;
+            padding: 10px;
         }
 
         .die {
-            width: 150px;
-            height: 150px;
-            background: white;
-            border: 2px solid #333;
-            border-radius: 15px;
-            margin: 20px auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 48px;
+            width: min(200px, 44vw);
+            height: min(200px, 44vw);
+            background: #fff8ef;
+            border: 4px solid var(--ink);
+            border-radius: 18%;
+            box-shadow: 8px 8px 0 var(--ink);
+            cursor: grab;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 14%;
             position: relative;
-            transition: transform 0.3s ease;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
+            transition: box-shadow 0.15s ease;
         }
 
-        @media (max-width: 480px) {
-            .die {
-                width: 120px;
-                height: 120px;
-                font-size: 36px;
-                margin: 15px auto;
-            }
-        }
+        .die:active { cursor: grabbing; }
 
-        .die:hover {
-            transform: rotate(15deg);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .die:active {
-            transform: scale(0.95);
-        }
-
-        .probability-control {
-            margin-bottom: 15px;
-        }
-
-        .probability-control label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 1em;
-        }
-
-        @media (max-width: 480px) {
-            .probability-control {
-                margin-bottom: 10px;
-            }
-            .probability-control label {
-                font-size: 0.9em;
-            }
-        }
-
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0 5px;
-        }
-
-        input[type="range"] {
-            flex: 1;
-            height: 8px;
-            -webkit-appearance: none;
-            background: #ddd;
-            border-radius: 4px;
-            outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: var(--primary-color);
+        .die .pip {
+            width: 70%;
+            height: 70%;
+            margin: auto;
             border-radius: 50%;
-            cursor: pointer;
+            background: var(--ink);
+            opacity: 0;
+            transform: scale(0.3);
+            transition: opacity 0.05s linear, transform 0.12s ease;
         }
 
-        @media (max-width: 480px) {
-            input[type="range"]::-webkit-slider-thumb {
-                width: 24px;
-                height: 24px;
-            }
+        .die .pip.on {
+            opacity: 1;
+            transform: scale(1);
         }
 
-        .probability-value {
-            min-width: 60px;
-            text-align: right;
+        .die.landing { animation: land 0.35s cubic-bezier(0.2, 2.4, 0.4, 1); }
+
+        @keyframes land {
+            0% { transform: scale(1.25, 0.75); }
+            50% { transform: scale(0.92, 1.1); }
+            100% { transform: scale(1, 1); }
         }
 
-        button {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
-            transition: background-color 0.3s;
+        @keyframes page-shake {
+            0%, 100% { transform: translate(0, 0); }
+            30% { transform: translate(-5px, 3px); }
+            60% { transform: translate(4px, -3px); }
         }
 
-        button:hover {
-            background-color: #2980b9;
-        }
+        body.shake { animation: page-shake 0.2s linear; }
 
-        button.start-button {
-            background-color: var(--secondary-color);
-            font-size: 1.2em;
-            margin-top: 30px;
-        }
-
-        @media (max-width: 480px) {
-            button.start-button {
-                font-size: 1.1em;
-                margin-top: 20px;
-                padding: 12px;
-            }
-        }
-
-        button.start-button:hover {
-            background-color: #27ae60;
-        }
-
-        .stats {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-        }
-
-        .roll-history {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-            justify-content: center;
-        }
-
-        .roll-history span {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f0f0f0;
-            border-radius: 8px;
-            font-size: 18px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        @media (max-width: 480px) {
-            .roll-history span {
-                width: 35px;
-                height: 35px;
-                font-size: 16px;
-            }
-        }
-
-        .settings-icon {
-            width: 16px;
-            height: 16px;
-            fill: currentColor;
-        }
-
-        .back-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 8px 15px;
-            background-color: #95a5a6;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            width: auto;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            z-index: 100;
-        }
-
-        @media (max-width: 480px) {
-            .back-button {
-                top: 10px;
-                right: 10px;
-                padding: 6px 12px;
-                font-size: 12px;
-            }
-            .settings-icon {
-                width: 14px;
-                height: 14px;
-            }
-        }
-
-        .back-button:hover {
-            background-color: #7f8c8d;
-        }
-
-        .game-instructions {
-            text-align: center;
-            color: #666;
-            margin: 15px 0;
+        .hint {
             font-style: italic;
+            font-size: clamp(13px, 1.9vw, 16px);
+            color: rgba(32, 26, 23, 0.5);
+            min-height: 1.4em;
         }
 
-        @media (max-width: 480px) {
-            .game-instructions {
-                font-size: 0.9em;
-                margin: 10px 0;
-            }
+        /* ---- history & histogram ---- */
+
+        .history {
+            display: flex;
+            gap: 8px;
+            min-height: 34px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 90vw;
         }
 
-        .reset-instructions {
-            text-align: center;
-            color: #666;
-            font-size: 0.9em;
-            margin-top: 10px;
+        .chip {
+            width: 32px;
+            height: 32px;
+            background: #fff8ef;
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 2px 2px 0 var(--ink);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 4px;
+            transform: rotate(var(--tilt, 0deg));
+            animation: chipIn 0.3s cubic-bezier(0.22, 1.6, 0.36, 1);
         }
 
-        @media (max-width: 480px) {
-            .reset-instructions {
-                font-size: 0.8em;
-            }
+        @keyframes chipIn {
+            from { transform: scale(0.2) rotate(var(--tilt)); }
+            to { transform: scale(1) rotate(var(--tilt)); }
         }
 
-        .preset-buttons {
+        .chip i {
+            border-radius: 50%;
+            background: var(--ink);
+            width: 100%;
+            height: 100%;
+            visibility: hidden;
+        }
+
+        .chip i.on { visibility: visible; }
+
+        .histo {
             display: flex;
             gap: 10px;
-            margin: 20px 0;
-            flex-wrap: wrap;
+            align-items: flex-end;
+            height: 74px;
         }
 
-        .preset-button {
-            flex: 1;
-            min-width: 120px;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border: 2px solid #ddd;
-            border-radius: 5px;
+        .histo .col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: clamp(26px, 5vw, 38px);
+        }
+
+        .histo .bar {
+            width: 100%;
+            border: 2px solid var(--ink);
+            border-radius: 5px 5px 0 0;
+            box-shadow: 2px 2px 0 var(--ink);
+            min-height: 3px;
+            transition: height 0.25s ease;
+        }
+
+        .histo .lbl {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .tally {
+            font-style: italic;
+            font-size: clamp(11px, 1.5vw, 13px);
+            color: rgba(32, 26, 23, 0.4);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ---- calibration ---- */
+
+        #calBtn {
+            position: fixed;
+            bottom: 18px;
+            right: 18px;
+            background: var(--purple);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 9px 18px;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
+            transition: transform 0.15s ease;
         }
 
-        .preset-button:hover {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+        #calBtn:hover { transform: translate(-2px, -2px) rotate(-2deg); }
+        #calBtn:active { transform: translate(2px, 2px); }
+
+        #calPanel {
+            position: fixed;
+            bottom: 68px;
+            right: 18px;
+            width: min(320px, calc(100vw - 36px));
+            background: #fff8ef;
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 16px;
+            display: none;
+            z-index: 5;
         }
 
-        .preset-button.active {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+        #calPanel.open { display: block; }
+
+        #calPanel h3 {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-size: 14px;
+            margin-bottom: 4px;
         }
 
-        @media (max-width: 480px) {
-            .preset-button {
-                padding: 8px;
-                font-size: 0.8em;
-                min-width: 100px;
-            }
+        #calPanel .fine-print {
+            font-style: italic;
+            font-size: 11px;
+            color: rgba(32, 26, 23, 0.5);
+            margin-bottom: 12px;
         }
+
+        .cal-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .cal-row .face {
+            font-family: 'Arial Black', 'Segoe UI', sans-serif;
+            font-weight: 900;
+            width: 16px;
+            text-align: center;
+        }
+
+        .cal-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--coral);
+        }
+
+        .cal-row .pct {
+            width: 42px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #recert {
+            width: 100%;
+            margin-top: 10px;
+            padding: 9px;
+            background: var(--lime);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        #recert:active { transform: translate(1px, 1px); }
     </style>
 </head>
 <body>
-    <!-- Setup Screen -->
-    <div id="setupScreen" class="screen active">
-        <div class="setup-card card">
-            <h1>Roll a Die</h1>
-            <p class="welcome-text">Choose a preset or set custom probabilities.</p>
-            
-            <div class="preset-buttons">
-                <!-- <button class="preset-button" onclick="setPreset('threeman')">3 Man</button>
-                <button class="preset-button" onclick="setPreset('custom')">Custom</button> -->
-            </div>
+    <h1>FAIR DIE</h1>
+    <div class="cert" id="cert">CERTIFIED FAIR &#10003;</div>
 
-            <div id="setupControls">
-                <!-- Probability controls will be generated here -->
-            </div>
-            
-            <div id="setup-error-message"></div>
-            <button class="start-button" onclick="startGame()">Start Rolling!</button>
-        </div>
+    <div class="die-area">
+        <div class="die" id="die"></div>
     </div>
 
-    <!-- Main Game Screen -->
-    <div id="gameScreen" class="screen">
-        <button class="back-button" onclick="showSetup()">
-            <svg class="settings-icon" viewBox="0 0 24 24">
-                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
-            </svg>
-            Settings
-        </button>
-        <div class="container">
-            <div class="card">
-                <p class="game-instructions">Click the die or tap the space bar to roll!</p>
-                <div class="die" id="die" onclick="rollDie()">1</div>
-                <div class="stats">
-                    <h3>Last 10 Rolls:</h3>
-                    <div class="roll-history" id="rollHistory"></div>
-                </div>
-                <p class="reset-instructions">To change probabilities, refresh the page and set new values.</p>
-            </div>
-        </div>
+    <div class="hint" id="hint">click to roll &mdash; or grab it and give it a proper throw</div>
+
+    <div class="history" id="history"></div>
+    <div class="histo" id="histo"></div>
+    <div class="tally" id="tally"></div>
+
+    <button id="calBtn">calibration&hellip;</button>
+    <div id="calPanel">
+        <h3>CALIBRATION</h3>
+        <div class="fine-print">for maintenance purposes only. nobody needs to know.</div>
+        <div id="calRows"></div>
+        <button id="recert">re-certify as fair (we ask no questions)</button>
     </div>
 
     <script>
-        let probabilities = {
-            1: 1/6,
-            2: 1/6,
-            3: 1/6,
-            4: 1/6,
-            5: 1/6,
-            6: 1/6
+        const PIP_MAP = {
+            1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8],
+        };
+        const BAR_COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#f7c948'];
+
+        const die = document.getElementById('die');
+        const cert = document.getElementById('cert');
+        const hint = document.getElementById('hint');
+        const historyEl = document.getElementById('history');
+        const histoEl = document.getElementById('histo');
+        const tallyEl = document.getElementById('tally');
+
+        // die face pips
+        const pips = [];
+        for (let i = 0; i < 9; i++) {
+            const p = document.createElement('div');
+            p.className = 'pip';
+            die.appendChild(p);
+            pips.push(p);
+        }
+
+        function showFace(n) {
+            const on = PIP_MAP[n];
+            pips.forEach((p, i) => p.classList.toggle('on', on.includes(i)));
+        }
+
+        // ---- state ----
+
+        let weights = [1, 1, 1, 1, 1, 1];
+        let counts = [0, 0, 0, 0, 0, 0];
+        let rolls = 0;
+        const history = [];
+
+        try {
+            const saved = JSON.parse(localStorage.getItem('fairdie'));
+            if (saved) {
+                weights = saved.weights || weights;
+                counts = saved.counts || counts;
+                rolls = saved.rolls || 0;
+            }
+        } catch (e) {}
+
+        function save() {
+            try { localStorage.setItem('fairdie', JSON.stringify({ weights, counts, rolls })); } catch (e) {}
+        }
+
+        const isRigged = () => {
+            const total = weights.reduce((a, b) => a + b, 0);
+            return weights.some(w => Math.abs(w / total - 1 / 6) > 0.02);
         };
 
-        const presets = {
-            fair: {
-                1: 1/6,
-                2: 1/6,
-                3: 1/6,
-                4: 1/6,
-                5: 1/6,
-                6: 1/6
-            },
-            threeman: {
-                1: 0.1,
-                2: 0.1,
-                3: 0.4,
-                4: 0.1,
-                5: 0.1,
-                6: 0.2
-            },
-            custom: null
-        };
-
-        let currentPreset = 'fair';
-        let customProbabilities = {...probabilities};
-        let rollHistory = [];
-        const maxHistoryLength = 10;
-
-        // Initialize probability controls
-        function initializeControls() {
-            initializeProbabilityControls('setupControls', 'setup-error-message');
+        function updateCert() {
+            cert.classList.toggle('void', isRigged());
         }
 
-        // Initialize probability controls for setup
-        function initializeProbabilityControls(containerId, errorId) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
+        // ---- rolling ----
 
-            for (let i = 1; i <= 6; i++) {
-                const div = document.createElement('div');
-                div.className = 'probability-control';
-                
-                const label = document.createElement('label');
-                label.textContent = `Number ${i}`;
-                
-                const sliderContainer = document.createElement('div');
-                sliderContainer.className = 'slider-container';
-                
-                const slider = document.createElement('input');
-                slider.type = 'range';
-                slider.min = '0';
-                slider.max = '100';
-                slider.value = (probabilities[i] * 100).toFixed(0);
-                slider.oninput = () => updateProbability(i, slider, errorId);
-                
-                const value = document.createElement('span');
-                value.className = 'probability-value';
-                value.textContent = slider.value + '%';
-                
-                sliderContainer.appendChild(slider);
-                sliderContainer.appendChild(value);
-                div.appendChild(label);
-                div.appendChild(sliderContainer);
-                container.appendChild(div);
+        let rolling = false;
+
+        function pickResult() {
+            const total = weights.reduce((a, b) => a + b, 0) || 1;
+            let r = Math.random() * total;
+            for (let i = 0; i < 6; i++) {
+                r -= weights[i];
+                if (r <= 0) return i + 1;
             }
+            return 6;
         }
 
-        function setPreset(preset) {
-            // Update button styles
+        function roll(power) {
+            if (rolling) return;
+            rolling = true;
+            hint.textContent = '';
 
-            currentPreset = preset;
+            const result = pickResult();
+            const duration = Math.max(500, Math.min(2000, 500 + power));
+            let rot = 0;
+            const spinVel = 14 + power * 0.02;
+            const start = performance.now();
+            let lastFlip = 0;
 
-            if (preset === 'custom') {
-                probabilities = {...customProbabilities};
-            } else {
-                probabilities = {...presets[preset]};
-                customProbabilities = {...probabilities};
-            }
-
-            initializeProbabilityControls('setupControls', 'setup-error-message');
-        }
-
-        // Update probability when slider changes
-        function updateProbability(number, slider, errorId) {
-            const oldValue = probabilities[number];
-            const newValue = parseFloat(slider.value) / 100;
-            
-            // If trying to set below 0% or above 100%, prevent it
-            if (newValue < 0 || newValue > 1) {
-                slider.value = oldValue * 100;
-                return;
-            }
-
-            probabilities[number] = newValue;
-            customProbabilities[number] = newValue;
-
-            // Switch to custom preset when user adjusts values
-            if (currentPreset !== 'custom') {
-                currentPreset = 'custom';
-                document.querySelectorAll('.preset-button').forEach(btn => {
-                    btn.classList.remove('active');
-                    if (btn.textContent.toLowerCase().includes('custom')) {
-                        btn.classList.add('active');
+            function tumble(now) {
+                const t = (now - start) / duration;
+                if (t >= 1) {
+                    die.style.transform = '';
+                    showFace(result);
+                    die.classList.remove('landing');
+                    void die.offsetWidth;
+                    die.classList.add('landing');
+                    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                        document.body.classList.remove('shake');
+                        void document.body.offsetWidth;
+                        document.body.classList.add('shake');
                     }
-                });
-            }
-
-            // Get sum of other probabilities
-            const otherSum = Object.entries(probabilities)
-                .filter(([key]) => key != number)
-                .reduce((sum, [_, val]) => sum + val, 0);
-
-            // If other probabilities sum to 0, distribute the remaining evenly
-            if (otherSum === 0) {
-                const remainingValue = (1 - newValue) / 5;
-                for (let i = 1; i <= 6; i++) {
-                    if (i != number) {
-                        probabilities[i] = remainingValue;
-                        customProbabilities[i] = remainingValue;
-                    }
+                    finish(result);
+                    return;
                 }
-            } else {
-                // Adjust other probabilities proportionally
-                const adjustmentFactor = (1 - newValue) / otherSum;
-                for (let i = 1; i <= 6; i++) {
-                    if (i != number) {
-                        probabilities[i] = probabilities[i] * adjustmentFactor;
-                        customProbabilities[i] = probabilities[i];
-                    }
+                const ease = 1 - Math.pow(t, 2.2);   // decelerate
+                rot += spinVel * ease;
+                die.style.transform = `rotate(${rot}deg) scale(${1 + 0.08 * Math.sin(t * 14)})`;
+                if (now - lastFlip > 70 + t * 160) {   // faces flip slower as it settles
+                    showFace(1 + ((Math.random() * 6) | 0));
+                    lastFlip = now;
                 }
+                requestAnimationFrame(tumble);
             }
-
-            // Update all sliders and their display values
-            const container = slider.closest('.probability-control').parentElement;
-            const allSliders = container.querySelectorAll('input[type="range"]');
-            allSliders.forEach((s, index) => {
-                const num = index + 1;
-                s.value = (probabilities[num] * 100).toFixed(0);
-                s.nextElementSibling.textContent = s.value + '%';
-            });
-
-            // Clear error message since total will always be 100%
-            document.getElementById(errorId).textContent = '';
+            requestAnimationFrame(tumble);
         }
 
-        // Switch to game screen
-        function startGame() {
-            document.getElementById('setupScreen').classList.remove('active');
-            document.getElementById('gameScreen').classList.add('active');
+        function finish(result) {
+            rolling = false;
+            rolls++;
+            counts[result - 1]++;
+            history.unshift(result);
+            if (history.length > 12) history.pop();
+            save();
+            renderHistory();
+            renderHisto();
+            tallyEl.textContent = `${rolls.toLocaleString()} rolls on record`;
         }
 
-        // Switch back to setup screen
-        function showSetup() {
-            document.getElementById('gameScreen').classList.remove('active');
-            document.getElementById('setupScreen').classList.add('active');
-        }
-
-        // Roll the die based on probabilities
-        function rollDie() {
-            const die = document.getElementById('die');
-            const random = Math.random();
-            let cumulative = 0;
-            let result = 1;
-
-            // Normalize probabilities
-            const total = Object.values(probabilities).reduce((sum, val) => sum + val, 0);
-            const normalizedProbabilities = {};
-            for (let i = 1; i <= 6; i++) {
-                normalizedProbabilities[i] = probabilities[i] / total;
-            }
-
-            // Find the result based on normalized probabilities
-            for (let i = 1; i <= 6; i++) {
-                cumulative += normalizedProbabilities[i];
-                if (random <= cumulative) {
-                    result = i;
-                    break;
+        function renderHistory() {
+            historyEl.textContent = '';
+            for (const n of history) {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.style.setProperty('--tilt', ((Math.random() - 0.5) * 10).toFixed(1) + 'deg');
+                for (let i = 0; i < 9; i++) {
+                    const dot = document.createElement('i');
+                    if (PIP_MAP[n].includes(i)) dot.className = 'on';
+                    chip.appendChild(dot);
                 }
+                historyEl.appendChild(chip);
             }
-
-            // Animate the die
-            die.style.transform = 'rotate(720deg)';
-            setTimeout(() => {
-                die.style.transform = 'none';
-                die.textContent = result;
-            }, 300);
-
-            // Update roll history
-            rollHistory.unshift(result);
-            if (rollHistory.length > maxHistoryLength) {
-                rollHistory.pop();
-            }
-            updateRollHistory();
         }
 
-        // Update the roll history display
-        function updateRollHistory() {
-            const historyContainer = document.getElementById('rollHistory');
-            historyContainer.innerHTML = '';
-            
-            rollHistory.forEach(roll => {
-                const span = document.createElement('span');
-                span.textContent = roll;
-                historyContainer.appendChild(span);
-            });
+        function renderHisto() {
+            histoEl.textContent = '';
+            const max = Math.max(1, ...counts);
+            for (let i = 0; i < 6; i++) {
+                const col = document.createElement('div');
+                col.className = 'col';
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = Math.round((counts[i] / max) * 56) + 'px';
+                bar.style.background = BAR_COLORS[i];
+                bar.title = `${counts[i]} times`;
+                const lbl = document.createElement('div');
+                lbl.className = 'lbl';
+                lbl.textContent = i + 1;
+                col.appendChild(bar);
+                col.appendChild(lbl);
+                histoEl.appendChild(col);
+            }
         }
 
-        // Add space bar listener for rolling
-        document.addEventListener('keydown', function(event) {
-            if (event.code === 'Space' && document.getElementById('gameScreen').classList.contains('active')) {
-                event.preventDefault(); // Prevent page scroll
-                rollDie();
+        // ---- grab & throw ----
+
+        let dragging = false;
+        let startX = 0, startY = 0, lastX = 0, lastY = 0;
+        let travelled = 0, lastSpeed = 0;
+
+        die.addEventListener('pointerdown', (e) => {
+            if (rolling) return;
+            dragging = true;
+            startX = lastX = e.clientX;
+            startY = lastY = e.clientY;
+            travelled = 0;
+            die.setPointerCapture(e.pointerId);
+            die.style.transition = 'none';
+        });
+
+        die.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            lastSpeed = Math.hypot(e.clientX - lastX, e.clientY - lastY);
+            travelled += lastSpeed;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            const ox = Math.max(-60, Math.min(60, (e.clientX - startX) * 0.5));
+            const oy = Math.max(-60, Math.min(60, (e.clientY - startY) * 0.5));
+            die.style.transform = `translate(${ox}px, ${oy}px) rotate(${ox * 0.25}deg)`;
+        });
+
+        function releaseDie() {
+            if (!dragging) return;
+            dragging = false;
+            die.style.transition = '';
+            die.style.transform = '';
+            if (travelled < 8) roll(200);                       // a click
+            else roll(Math.min(1500, travelled * 3 + lastSpeed * 30));   // a throw
+        }
+
+        die.addEventListener('pointerup', releaseDie);
+        die.addEventListener('pointercancel', releaseDie);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                roll(400);
             }
         });
 
-        // Initialize the controls and set the default preset when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            setPreset('fair');
+        // ---- calibration ----
+
+        const calBtn = document.getElementById('calBtn');
+        const calPanel = document.getElementById('calPanel');
+        const calRows = document.getElementById('calRows');
+        const sliders = [];
+
+        for (let i = 0; i < 6; i++) {
+            const row = document.createElement('div');
+            row.className = 'cal-row';
+            const face = document.createElement('div');
+            face.className = 'face';
+            face.textContent = i + 1;
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = '0';
+            slider.max = '100';
+            const pct = document.createElement('div');
+            pct.className = 'pct';
+            slider.addEventListener('input', () => {
+                weights[i] = parseInt(slider.value, 10);
+                if (weights.every(w => w === 0)) weights[i] = 1;
+                refreshPcts();
+                updateCert();
+                save();
+            });
+            row.appendChild(face);
+            row.appendChild(slider);
+            row.appendChild(pct);
+            calRows.appendChild(row);
+            sliders.push({ slider, pct });
+        }
+
+        function refreshPcts() {
+            const total = weights.reduce((a, b) => a + b, 0) || 1;
+            sliders.forEach(({ slider, pct }, i) => {
+                slider.value = weights[i];
+                pct.textContent = Math.round((weights[i] / total) * 100) + '%';
+            });
+        }
+
+        calBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            calPanel.classList.toggle('open');
         });
+
+        document.addEventListener('pointerdown', (e) => {
+            if (!calPanel.contains(e.target) && e.target !== calBtn) {
+                calPanel.classList.remove('open');
+            }
+        });
+
+        document.getElementById('recert').addEventListener('click', () => {
+            weights = [1, 1, 1, 1, 1, 1];
+            refreshPcts();
+            updateCert();
+            save();
+        });
+
+        // ---- init ----
+
+        showFace(1 + ((Math.random() * 6) | 0));
+        refreshPcts();
+        updateCert();
+        renderHisto();
+        if (rolls > 0) tallyEl.textContent = `${rolls.toLocaleString()} rolls on record`;
     </script>
 </body>
 </html>
