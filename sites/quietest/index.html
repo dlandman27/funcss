@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Quietest Site on the Web</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #0b0c0e;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #b8b4aa;
+      text-align: center;
+      padding: 24px;
+    }
+
+    header .label {
+      font-size: clamp(11px, 1.4vw, 13px);
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: #6b675e;
+    }
+
+    header h1 {
+      font-weight: normal;
+      font-style: italic;
+      font-size: clamp(20px, 3.4vw, 32px);
+      color: #d5d0c3;
+      margin-top: 10px;
+    }
+
+    #meter { width: min(78vw, 380px); }
+
+    #db {
+      font-size: clamp(34px, 6vw, 54px);
+      font-variant-numeric: tabular-nums;
+      color: #e8e2d2;
+      letter-spacing: 0.04em;
+    }
+
+    #db span {
+      font-size: 0.45em;
+      color: #7a756a;
+    }
+
+    .stats {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: clamp(13px, 1.8vw, 16px);
+      color: #8d887c;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stats b {
+      color: #cfc9ba;
+      font-weight: normal;
+    }
+
+    #soundBtn {
+      appearance: none;
+      background: transparent;
+      border: 1px solid rgba(200, 190, 170, 0.28);
+      color: #b8b4aa;
+      font-family: inherit;
+      font-style: italic;
+      font-size: clamp(13px, 1.8vw, 16px);
+      padding: 10px 26px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: border-color 0.3s ease, color 0.3s ease;
+      margin-top: 6px;
+    }
+
+    #soundBtn:hover {
+      border-color: rgba(220, 210, 185, 0.55);
+      color: #e0dac9;
+    }
+
+    #soundBtn:active { transform: translateY(1px); }
+
+    #response {
+      min-height: 1.4em;
+      font-style: italic;
+      font-size: clamp(12px, 1.7vw, 15px);
+      color: #7a756a;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    #response.show { opacity: 1; }
+
+    footer {
+      position: fixed;
+      bottom: 3vh;
+      left: 0;
+      right: 0;
+      font-size: clamp(10px, 1.3vw, 12px);
+      font-style: italic;
+      color: #52504a;
+      letter-spacing: 0.06em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="label">Now Broadcasting</div>
+    <h1>The Quietest Site on the Web</h1>
+  </header>
+
+  <svg id="meter" viewBox="0 0 300 170" aria-hidden="true">
+    <!-- dial face -->
+    <path d="M 30 150 A 120 120 0 0 1 270 150" fill="none" stroke="#2a2c30" stroke-width="2"/>
+    <g id="ticks"></g>
+    <text x="34" y="168" fill="#6b675e" font-size="11" font-family="Georgia" text-anchor="middle">0</text>
+    <text x="266" y="168" fill="#453f38" font-size="11" font-family="Georgia" text-anchor="middle">120</text>
+    <text x="150" y="60" fill="#453f38" font-size="10" font-family="Georgia" text-anchor="middle" font-style="italic" letter-spacing="2">decibels</text>
+    <!-- needle, pinned at silence -->
+    <g id="needle">
+      <line x1="150" y1="150" x2="42" y2="98" stroke="#c9b98a" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    <circle cx="150" cy="150" r="6" fill="#1d1f22" stroke="#4a463e" stroke-width="1.5"/>
+  </svg>
+
+  <div id="db">0.000 <span>dB</span></div>
+
+  <div class="stats">
+    <div>consecutive silent days: <b id="days">0</b></div>
+    <div>today's silence: <b id="clock">00:00:00</b></div>
+    <div>sounds produced to date: <b>0</b></div>
+  </div>
+
+  <button id="soundBtn">make a sound</button>
+  <div id="response"></div>
+
+  <footer>please do not adjust your volume. there is nothing to adjust.</footer>
+
+  <script>
+    // silence began the day this page went live
+    const EPOCH = new Date(2026, 6, 17); // July 17, 2026, local midnight
+
+    const daysEl = document.getElementById('days');
+    const clockEl = document.getElementById('clock');
+    const response = document.getElementById('response');
+    const needle = document.getElementById('needle');
+
+    // dial ticks
+    const ticks = document.getElementById('ticks');
+    for (let i = 0; i <= 12; i++) {
+      const a = Math.PI - (Math.PI * i) / 12;
+      const x1 = 150 + Math.cos(a) * 112;
+      const y1 = 150 - Math.sin(a) * 112;
+      const x2 = 150 + Math.cos(a) * (i % 3 === 0 ? 102 : 107);
+      const y2 = 150 - Math.sin(a) * (i % 3 === 0 ? 102 : 107);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+      line.setAttribute('stroke', i === 0 ? '#8d887c' : '#33353a');
+      line.setAttribute('stroke-width', i % 3 === 0 ? 2 : 1);
+      ticks.appendChild(line);
+    }
+
+    const pad = (n) => String(n).padStart(2, '0');
+
+    function tick() {
+      const now = new Date();
+      const days = Math.max(0, Math.floor((now - EPOCH) / 86400000));
+      daysEl.textContent = days.toLocaleString();
+
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const secs = Math.floor((now - midnight) / 1000);
+      clockEl.textContent = `${pad(Math.floor(secs / 3600))}:${pad(Math.floor((secs % 3600) / 60))}:${pad(secs % 60)}`;
+    }
+
+    // the needle rests at zero. occasionally it dreams.
+    let quiver = 0;
+    function quiverLoop() {
+      quiver = Math.random() < 0.015 ? Math.random() * 0.8 : quiver * 0.92;
+      needle.setAttribute('transform', `rotate(${quiver.toFixed(3)} 150 150)`);
+      requestAnimationFrame(quiverLoop);
+    }
+
+    // the button
+    const RESPONSES = [
+      'nothing happened.',
+      'the silence holds.',
+      'thank you for your restraint.',
+      '0.000 dB. as always.',
+      'we were worried for a moment.',
+      'shhh.',
+      'your sound could not be produced at this time.',
+      'the committee has reviewed your request and declined.',
+      'even that click was silent. impressive.',
+      'please try never again.',
+    ];
+    let clicks = 0;
+    let responseTimer = null;
+
+    document.getElementById('soundBtn').addEventListener('click', () => {
+      response.textContent = RESPONSES[clicks % RESPONSES.length];
+      response.classList.add('show');
+      clicks++;
+      clearTimeout(responseTimer);
+      responseTimer = setTimeout(() => response.classList.remove('show'), 4000);
+    });
+
+    tick();
+    setInterval(tick, 1000);
+    quiverLoop();
+  </script>
+</body>
+</html>

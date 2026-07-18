@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaleidoscope</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0c0c13;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #paint {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(20, 20, 32, 0.72);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      transition: opacity 0.6s ease;
+    }
+
+    #controls.faded { opacity: 0.12; }
+    #controls:hover { opacity: 1; }
+
+    #controls button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgba(235, 235, 245, 0.85);
+      font-size: 17px;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    #controls button:hover { background: rgba(255, 255, 255, 0.1); }
+    #controls button.on { color: #ffd479; }
+
+    #symCount {
+      min-width: 34px;
+      text-align: center;
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+      color: rgba(235, 235, 245, 0.9);
+    }
+
+    .divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.12);
+      margin: 0 4px;
+    }
+
+    #hint {
+      position: fixed;
+      top: 8vh;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(14px, 2vw, 18px);
+      color: rgba(220, 210, 235, 0.5);
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      transition: opacity 2s ease;
+    }
+
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="paint"></canvas>
+  <div id="hint">draw anywhere</div>
+
+  <div id="controls">
+    <button id="symDown" title="fewer reflections">&#8249;</button>
+    <div id="symCount">8</div>
+    <button id="symUp" title="more reflections">&#8250;</button>
+    <div class="divider"></div>
+    <button id="mirror" class="on" title="mirror mode">&#10231;</button>
+    <div class="divider"></div>
+    <button id="save" title="save image">&#8595;</button>
+    <button id="clear" title="clear">&#215;</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('paint');
+    const ctx = canvas.getContext('2d');
+    const hint = document.getElementById('hint');
+    const controls = document.getElementById('controls');
+    const symCountEl = document.getElementById('symCount');
+    const mirrorBtn = document.getElementById('mirror');
+
+    let W, H, dpr, cx, cy;
+
+    let symmetry = 8;
+    let mirror = true;
+    let hue = Math.random() * 360;
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      const oldPaint = W ? snapshot() : null;
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx = W / 2;
+      cy = H / 2;
+      paintBackground();
+      if (oldPaint) ctx.drawImage(oldPaint, 0, 0, W, H);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+
+    function paintBackground() {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.75);
+      g.addColorStop(0, '#12121d');
+      g.addColorStop(1, '#08080e');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function snapshot() {
+      const c = document.createElement('canvas');
+      c.width = canvas.width;
+      c.height = canvas.height;
+      c.getContext('2d').drawImage(canvas, 0, 0);
+      return c;
+    }
+
+    // ---- Drawing ----
+
+    let drawing = false;
+    let lastX = 0, lastY = 0;
+    let lastWidth = 3;
+
+    function strokeSegment(x0, y0, x1, y1, width, color, blur) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = blur;
+
+      const step = (Math.PI * 2) / symmetry;
+      for (let i = 0; i < symmetry; i++) {
+        const a = step * i;
+        const cos = Math.cos(a), sin = Math.sin(a);
+
+        // rotate both endpoints around center
+        const rx0 = cx + (x0 - cx) * cos - (y0 - cy) * sin;
+        const ry0 = cy + (x0 - cx) * sin + (y0 - cy) * cos;
+        const rx1 = cx + (x1 - cx) * cos - (y1 - cy) * sin;
+        const ry1 = cy + (x1 - cx) * sin + (y1 - cy) * cos;
+
+        ctx.beginPath();
+        ctx.moveTo(rx0, ry0);
+        ctx.lineTo(rx1, ry1);
+        ctx.stroke();
+
+        if (mirror) {
+          // reflect across the vertical axis, then rotate
+          const mx0 = cx - (x0 - cx), mx1 = cx - (x1 - cx);
+          const sx0 = cx + (mx0 - cx) * cos - (y0 - cy) * sin;
+          const sy0 = cy + (mx0 - cx) * sin + (y0 - cy) * cos;
+          const sx1 = cx + (mx1 - cx) * cos - (y1 - cy) * sin;
+          const sy1 = cy + (mx1 - cx) * sin + (y1 - cy) * cos;
+          ctx.beginPath();
+          ctx.moveTo(sx0, sy0);
+          ctx.lineTo(sx1, sy1);
+          ctx.stroke();
+        }
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    function drawTo(x, y) {
+      const dx = x - lastX, dy = y - lastY;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 1.5) return;
+
+      // faster strokes get thinner, like ink
+      const targetWidth = Math.max(1.2, 9 - dist * 0.28);
+      lastWidth += (targetWidth - lastWidth) * 0.3;
+
+      hue = (hue + dist * 0.22) % 360;
+      const color = `hsl(${hue}, 85%, 66%)`;
+      const glow = `hsla(${hue}, 90%, 60%, 0.35)`;
+
+      // soft halo pass, then bright core
+      strokeSegment(lastX, lastY, x, y, lastWidth * 3.2, glow, 0);
+      strokeSegment(lastX, lastY, x, y, lastWidth, color, 12);
+
+      lastX = x;
+      lastY = y;
+    }
+
+    // ---- Input ----
+
+    canvas.addEventListener('pointerdown', (e) => {
+      drawing = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      lastWidth = 3;
+      hint.classList.add('hidden');
+      controls.classList.add('faded');
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!drawing) return;
+      if (e.getCoalescedEvents) {
+        for (const ev of e.getCoalescedEvents()) drawTo(ev.clientX, ev.clientY);
+      } else {
+        drawTo(e.clientX, e.clientY);
+      }
+    });
+
+    function stopDrawing() {
+      drawing = false;
+      controls.classList.remove('faded');
+    }
+    canvas.addEventListener('pointerup', stopDrawing);
+    canvas.addEventListener('pointercancel', stopDrawing);
+
+    // ---- Controls ----
+
+    function setSymmetry(n) {
+      symmetry = Math.max(2, Math.min(24, n));
+      symCountEl.textContent = symmetry;
+    }
+
+    document.getElementById('symDown').addEventListener('click', () => setSymmetry(symmetry - 1));
+    document.getElementById('symUp').addEventListener('click', () => setSymmetry(symmetry + 1));
+
+    mirrorBtn.addEventListener('click', () => {
+      mirror = !mirror;
+      mirrorBtn.classList.toggle('on', mirror);
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      paintBackground();
+    });
+
+    document.getElementById('save').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'kaleidoscope.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') setSymmetry(symmetry - 1);
+      if (e.key === 'ArrowRight') setSymmetry(symmetry + 1);
+      if (e.key === 'm' || e.key === 'M') mirrorBtn.click();
+      if (e.key === 'c' || e.key === 'C') paintBackground();
+      if (e.key === 's' || e.key === 'S') document.getElementById('save').click();
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 200);
+    });
+
+    setup();
+    setTimeout(() => hint.classList.add('hidden'), 10000);
+  </script>
+</body>
+</html>

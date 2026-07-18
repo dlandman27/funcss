@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wet Paint</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #e9e5dd;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #wall {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    #damage {
+      position: fixed;
+      bottom: 18px;
+      left: 20px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(13px, 1.8vw, 16px);
+      color: rgba(80, 60, 50, 0.65);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+    }
+
+    #damage.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <canvas id="wall"></canvas>
+  <div id="damage"></div>
+
+  <script>
+    const canvas = document.getElementById('wall');
+    const ctx = canvas.getContext('2d');
+    const damageEl = document.getElementById('damage');
+
+    let W, H, dpr;
+
+    // ---- Paint the scene ----
+
+    function paintScene() {
+      // plaster wall
+      ctx.fillStyle = '#e9e5dd';
+      ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 60; i++) {
+        const x = Math.random() * W, y = Math.random() * H;
+        const r = 30 + Math.random() * 120;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        const tone = Math.random() < 0.5 ? '210,200,185' : '255,252,244';
+        g.addColorStop(0, `rgba(${tone},${0.05 + Math.random() * 0.08})`);
+        g.addColorStop(1, `rgba(${tone},0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(x - r, y - r, r * 2, r * 2);
+      }
+
+      // the sign
+      const sw = Math.min(W * 0.8, 620);
+      const sh = sw * 0.58;
+      const sx = (W - sw) / 2;
+      const sy = (H - sh) / 2;
+
+      ctx.save();
+      ctx.translate(sx + sw / 2, sy + sh / 2);
+      ctx.rotate(-0.022);
+      ctx.translate(-sw / 2, -sh / 2);
+
+      // shadow + enamel plate
+      ctx.shadowColor = 'rgba(60, 45, 30, 0.35)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = '#f6f3ea';
+      roundRect(0, 0, sw, sh, sw * 0.02);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      // red border
+      ctx.strokeStyle = '#b3271e';
+      ctx.lineWidth = sw * 0.018;
+      roundRect(sw * 0.035, sh * 0.05, sw * 0.93, sh * 0.9, sw * 0.012);
+      ctx.stroke();
+
+      // glossy red lettering
+      const grad = ctx.createLinearGradient(0, sh * 0.2, 0, sh * 0.62);
+      grad.addColorStop(0, '#d63a2a');
+      grad.addColorStop(0.5, '#b3271e');
+      grad.addColorStop(1, '#8e1c15');
+      ctx.fillStyle = grad;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `900 ${sw * 0.155}px 'Arial Black', 'Segoe UI', sans-serif`;
+      ctx.fillText('WET PAINT', sw / 2, sh * 0.36);
+
+      ctx.fillStyle = '#5a4a3c';
+      ctx.font = `700 ${sw * 0.055}px 'Arial Black', 'Segoe UI', sans-serif`;
+      ctx.fillText('DO NOT TOUCH', sw / 2, sh * 0.66);
+
+      ctx.fillStyle = 'rgba(90, 74, 60, 0.55)';
+      ctx.font = `italic ${sw * 0.032}px Georgia, serif`;
+      ctx.fillText('(seriously. it has not dried yet.)', sw / 2, sh * 0.8);
+
+      // corner screws
+      for (const [fx, fy] of [[0.05, 0.09], [0.95, 0.09], [0.05, 0.91], [0.95, 0.91]]) {
+        const x = sw * fx, y = sh * fy;
+        ctx.fillStyle = '#9a948a';
+        ctx.beginPath();
+        ctx.arc(x, y, sw * 0.011, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#6e6a62';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x - sw * 0.007, y);
+        ctx.lineTo(x + sw * 0.007, y);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // vignette
+      const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.8);
+      v.addColorStop(0, 'rgba(0,0,0,0)');
+      v.addColorStop(1, 'rgba(70, 55, 40, 0.14)');
+      ctx.fillStyle = v;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // ---- Smudging: everything is still wet ----
+
+    const BRUSH = 20;
+    let brush, bctx;
+
+    function makeBrush() {
+      brush = document.createElement('canvas');
+      brush.width = BRUSH * 2 * dpr;
+      brush.height = BRUSH * 2 * dpr;
+      bctx = brush.getContext('2d');
+    }
+
+    let lastX = null, lastY = null;
+
+    function smudge(x, y) {
+      if (lastX === null) { lastX = x; lastY = y; return; }
+      const dx = x - lastX, dy = y - lastY;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 2) return;
+
+      const steps = Math.min(24, Math.ceil(dist / 3));
+      let sx = lastX, sy = lastY;
+      for (let i = 1; i <= steps; i++) {
+        const tx = lastX + (dx * i) / steps;
+        const ty = lastY + (dy * i) / steps;
+
+        // grab the paint under the previous spot...
+        bctx.save();
+        bctx.setTransform(1, 0, 0, 1, 0, 0);
+        bctx.clearRect(0, 0, brush.width, brush.height);
+        bctx.beginPath();
+        bctx.arc(BRUSH * dpr, BRUSH * dpr, BRUSH * dpr, 0, Math.PI * 2);
+        bctx.clip();
+        bctx.drawImage(canvas,
+          (sx - BRUSH) * dpr, (sy - BRUSH) * dpr, BRUSH * 2 * dpr, BRUSH * 2 * dpr,
+          0, 0, BRUSH * 2 * dpr, BRUSH * 2 * dpr);
+        bctx.restore();
+
+        // ...and drag it forward
+        ctx.globalAlpha = 0.55;
+        ctx.drawImage(brush, tx - BRUSH, ty - BRUSH, BRUSH * 2, BRUSH * 2);
+        ctx.globalAlpha = 1;
+
+        sx = tx; sy = ty;
+      }
+
+      // wet paint drips
+      if (Math.random() < 0.06 && drips.length < 40) {
+        const pixel = ctx.getImageData((x * dpr) | 0, (y * dpr) | 0, 1, 1).data;
+        drips.push({ x, y, r: pixel[0], g: pixel[1], b: pixel[2], vy: 0.3 + Math.random() * 0.5, life: 60 + Math.random() * 120 });
+      }
+
+      lastX = x; lastY = y;
+      smudged = true;
+    }
+
+    // ---- Drips ----
+
+    const drips = [];
+
+    function updateDrips() {
+      for (let i = drips.length - 1; i >= 0; i--) {
+        const d = drips[i];
+        ctx.fillStyle = `rgba(${d.r},${d.g},${d.b},0.5)`;
+        ctx.fillRect(d.x - 1.2, d.y, 2.4, d.vy * 2.5);
+        d.y += d.vy;
+        d.vy *= 0.995;
+        d.life--;
+        if (d.life <= 0 || d.y > H) drips.splice(i, 1);
+      }
+      requestAnimationFrame(updateDrips);
+    }
+
+    // ---- Damage meter ----
+
+    let pristine = null;
+    let smudged = false;
+    const SAMPLE_W = 96, SAMPLE_H = 54;
+    const sampler = document.createElement('canvas');
+    sampler.width = SAMPLE_W;
+    sampler.height = SAMPLE_H;
+    const sampCtx = sampler.getContext('2d', { willReadFrequently: true });
+
+    function snapshotSmall() {
+      sampCtx.drawImage(canvas, 0, 0, SAMPLE_W, SAMPLE_H);
+      return sampCtx.getImageData(0, 0, SAMPLE_W, SAMPLE_H).data;
+    }
+
+    const TITLES = [
+      [0, 'Wet Paint'],
+      [1, 'Wet Pain t'],
+      [4, 'We t Pai nt'],
+      [10, 'W et Pa in—'],
+      [20, 'w e t  p a i n t'],
+      [35, '(smeared)'],
+    ];
+
+    function checkDamage() {
+      if (smudged && pristine) {
+        const now = snapshotSmall();
+        let changed = 0;
+        const total = SAMPLE_W * SAMPLE_H;
+        for (let i = 0; i < total; i++) {
+          const idx = i * 4;
+          const diff = Math.abs(now[idx] - pristine[idx]) + Math.abs(now[idx + 1] - pristine[idx + 1]) + Math.abs(now[idx + 2] - pristine[idx + 2]);
+          if (diff > 30) changed++;
+        }
+        const pct = (changed / total) * 100;
+        if (pct > 0.4) {
+          damageEl.textContent = `you've ruined ${pct.toFixed(1)}% of this page`;
+          damageEl.classList.add('show');
+        }
+        for (const [threshold, title] of TITLES) {
+          if (pct >= threshold) document.title = title;
+        }
+      }
+      setTimeout(checkDamage, 700);
+    }
+
+    // ---- Input: hovering is touching ----
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (e.getCoalescedEvents) {
+        for (const ev of e.getCoalescedEvents()) smudge(ev.clientX, ev.clientY);
+      } else {
+        smudge(e.clientX, e.clientY);
+      }
+    });
+    canvas.addEventListener('pointerdown', (e) => { lastX = e.clientX; lastY = e.clientY; });
+    canvas.addEventListener('pointerout', () => { lastX = null; lastY = null; });
+
+    // ---- Setup ----
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      makeBrush();
+      paintScene();
+      pristine = snapshotSmall();
+      smudged = false;
+      damageEl.classList.remove('show');
+      document.title = 'Wet Paint';
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 200);
+    });
+
+    setup();
+    checkDamage();
+    requestAnimationFrame(updateDrips);
+  </script>
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Infinite Painting</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #211e1a;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    #wall {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 90% 75% at 50% 38%,
+          rgba(255, 240, 214, 0.10) 0%,
+          rgba(255, 240, 214, 0.04) 45%,
+          transparent 70%),
+        radial-gradient(ellipse at center,
+          transparent 55%,
+          rgba(0, 0, 0, 0.45) 100%);
+    }
+
+    #frame {
+      position: relative;
+      line-height: 0;
+      padding: 16px;
+      background: linear-gradient(135deg, #3a3128 0%, #241e17 50%, #3a3128 100%);
+      box-shadow:
+        0 30px 70px rgba(0, 0, 0, 0.55),
+        0 6px 18px rgba(0, 0, 0, 0.45),
+        inset 0 0 0 2px rgba(190, 160, 110, 0.25);
+    }
+
+    #painting {
+      display: block;
+      cursor: zoom-in;
+    }
+
+    #painting.panning { cursor: grabbing; }
+
+    #plaque {
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #b8ac99;
+      text-align: center;
+      max-width: 86vw;
+    }
+
+    #plaque .title {
+      font-style: italic;
+      font-size: clamp(15px, 2.2vw, 19px);
+      color: #d6cab4;
+    }
+
+    #plaque .details {
+      font-size: clamp(11px, 1.4vw, 13px);
+      margin-top: 5px;
+      color: #8d8371;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 3.5vh;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: clamp(12px, 1.6vw, 14px);
+      color: rgba(184, 172, 153, 0.45);
+      letter-spacing: 0.08em;
+      pointer-events: none;
+      transition: opacity 2s ease;
+    }
+
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <div id="wall"></div>
+  <div id="frame"><canvas id="painting"></canvas></div>
+  <div id="plaque">
+    <div class="title">Untitled</div>
+    <div class="details" id="details">oil on canvas &middot; dimensions unknown</div>
+  </div>
+  <div id="hint">scroll to step closer. there is no bottom.</div>
+
+  <script>
+    const canvas = document.getElementById('painting');
+    const ctx = canvas.getContext('2d');
+    const details = document.getElementById('details');
+    const hint = document.getElementById('hint');
+
+    let CW, CH, dpr;
+
+    // ---- View ----
+    // world unit 1 == one canvas-height at the surface of the painting
+    let scale;            // px per world unit
+    let scale0;
+    let center = { x: 0, y: 0 };
+    let octaveBase = 0;   // how many times we've rebased (each = one doubling)
+
+    // ---- Deterministic randomness ----
+
+    function hash32(n) {
+      n = (n ^ 61) ^ (n >>> 16);
+      n = (n + (n << 3)) | 0;
+      n = n ^ (n >>> 4);
+      n = Math.imul(n, 0x27d4eb2d);
+      n = n ^ (n >>> 15);
+      return (n >>> 0) / 4294967296;
+    }
+
+    function strHash(s) {
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) h = (Math.imul(h, 33) ^ s.charCodeAt(i)) | 0;
+      return h >>> 0;
+    }
+
+    function mulberry(seed) {
+      let a = seed >>> 0;
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    const octaveHue = (a) => hash32(Math.imul(a + 40009, 2654435761) | 0) * 360;
+
+    // ---- Strokes ----
+
+    const strokes = [];          // {x, y, ang, len, wid, h, s, l, a, wob}
+    const spawned = new Set();   // cell keys already populated
+    const MIN_CELL_PX = 48;
+
+    function spawnCell(L, cx, cy, key) {
+      const A = octaveBase + L;             // absolute depth, for the palette
+      const size = Math.pow(2, -L);
+      const rng = mulberry(strHash(key));
+      const baseHue = octaveHue(A);
+      const n = 2 + (rng() < 0.3 ? 1 : 0);
+
+      for (let i = 0; i < n; i++) {
+        const wash = rng() < 0.1;
+        const len = size * (0.5 + rng() * 1.3) * (wash ? 2.6 : 1);
+        const s = {
+          x: (cx + rng()) * size,
+          y: (cy + rng()) * size,
+          ang: rng() * Math.PI * 2,
+          len,
+          wid: len * (0.15 + rng() * 0.25) * (wash ? 1.8 : 1),
+          h: (baseHue + rng() * 90 - 45 + 360) % 360,
+          s: 38 + rng() * 42,
+          l: 28 + rng() * 46,
+          a: (wash ? 0.14 : 0.4 + rng() * 0.45),
+          wob: rng() * 10,
+        };
+        strokes.push(s);
+      }
+    }
+
+    function spawnVisible() {
+      const L0 = Math.ceil(Math.log2(scale / (2.2 * CH)));
+      const L1 = Math.floor(Math.log2(scale / MIN_CELL_PX));
+      let any = false;
+
+      for (let L = L0; L <= L1; L++) {
+        const size = Math.pow(2, -L);
+        const x0 = Math.floor((center.x - (CW / 2) / scale) / size) - 1;
+        const x1 = Math.floor((center.x + (CW / 2) / scale) / size) + 1;
+        const y0 = Math.floor((center.y - (CH / 2) / scale) / size) - 1;
+        const y1 = Math.floor((center.y + (CH / 2) / scale) / size) + 1;
+        for (let cy = y0; cy <= y1; cy++) {
+          for (let cx = x0; cx <= x1; cx++) {
+            const key = `${octaveBase}|${L}|${cx}|${cy}`;
+            if (!spawned.has(key)) {
+              spawned.add(key);
+              spawnCell(L, cx, cy, key);
+              any = true;
+            }
+          }
+        }
+      }
+      // biggest strokes first, so fine detail always paints on top
+      if (any) strokes.sort((a, b) => b.len - a.len);
+    }
+
+    function cullAndRebase() {
+      // rebase before numbers get big: double the world, halve the scale
+      if (scale > scale0 * 2) {
+        scale /= 2;
+        octaveBase += 1;
+        for (const s of strokes) {
+          s.x = (s.x - center.x) * 2;
+          s.y = (s.y - center.y) * 2;
+          s.len *= 2;
+          s.wid *= 2;
+        }
+        center.x = 0;
+        center.y = 0;
+        spawned.clear();   // keys are stale; visible cells re-key next frame
+      }
+
+      const halfW = (CW / 2) / scale, halfH = (CH / 2) / scale;
+      for (let i = strokes.length - 1; i >= 0; i--) {
+        const s = strokes[i];
+        const m = s.len;
+        const gone =
+          s.len * scale > CH * 7 ||                          // zoomed far past it
+          s.x + m < center.x - halfW * 2 || s.x - m > center.x + halfW * 2 ||
+          s.y + m < center.y - halfH * 2 || s.y - m > center.y + halfH * 2;
+        if (gone) strokes.splice(i, 1);
+      }
+      if (spawned.size > 6000) spawned.clear();
+    }
+
+    // ---- Render ----
+
+    function render() {
+      // ground color drifts between octave palettes as you descend
+      const O = octaveBase + Math.log2(scale / scale0);
+      const f = O - Math.floor(O);
+      const h1 = octaveHue(Math.floor(O)), h2 = octaveHue(Math.floor(O) + 1);
+      let dh = h2 - h1;
+      if (dh > 180) dh -= 360;
+      if (dh < -180) dh += 360;
+      ctx.fillStyle = `hsl(${(h1 + dh * f + 360) % 360}, 22%, 76%)`;
+      ctx.fillRect(0, 0, CW, CH);
+
+      for (const s of strokes) {
+        const sl = s.len * scale;
+        // fade in as it resolves, fade out as you sail past it
+        let alpha = s.a;
+        if (sl < 26) alpha *= Math.max(0, (sl - 8) / 18);
+        if (sl > CH * 1.6) alpha *= Math.max(0, 1 - (sl - CH * 1.6) / (CH * 4));
+        if (alpha <= 0.004) continue;
+
+        const sx = (s.x - center.x) * scale + CW / 2;
+        const sy = (s.y - center.y) * scale + CH / 2;
+        if (sx < -sl || sx > CW + sl || sy < -sl || sy > CH + sl) continue;
+
+        const sw = Math.max(0.6, s.wid * scale);
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.rotate(s.ang);
+        ctx.lineCap = 'round';
+
+        // three overlapping passes make it read as pigment, not vector
+        ctx.strokeStyle = `hsla(${s.h}, ${s.s}%, ${s.l}%, ${alpha})`;
+        ctx.lineWidth = sw;
+        ctx.beginPath();
+        ctx.moveTo(-sl / 2, 0);
+        ctx.quadraticCurveTo(0, s.wob * 0.06 * sl * 0.1, sl / 2, 0);
+        ctx.stroke();
+
+        ctx.strokeStyle = `hsla(${s.h}, ${s.s}%, ${Math.min(92, s.l + 14)}%, ${alpha * 0.5})`;
+        ctx.lineWidth = sw * 0.45;
+        ctx.beginPath();
+        ctx.moveTo(-sl * 0.42, -sw * 0.18);
+        ctx.lineTo(sl * 0.38, -sw * 0.14);
+        ctx.stroke();
+
+        ctx.strokeStyle = `hsla(${s.h}, ${s.s}%, ${Math.max(8, s.l - 16)}%, ${alpha * 0.4})`;
+        ctx.lineWidth = sw * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(-sl * 0.35, sw * 0.2);
+        ctx.lineTo(sl * 0.44, sw * 0.16);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      // magnification, for the plaque
+      const mag = octaveBase + Math.log2(scale / scale0);
+      let magText;
+      if (mag < 0.02) magText = 'viewing distance: polite';
+      else if (mag < 30) magText = `magnification: ${Math.pow(2, mag) < 100 ? Math.pow(2, mag).toFixed(1) : Math.round(Math.pow(2, mag)).toLocaleString()}×`;
+      else magText = `magnification: 10^${Math.floor(mag * 0.30103)}×`;
+      details.textContent = `oil on canvas · dimensions unknown · ${magText}`;
+    }
+
+    function frame() {
+      cullAndRebase();
+      spawnVisible();
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    // ---- Input ----
+
+    function zoomAt(sx, sy, factor) {
+      const wx = (sx - CW / 2) / scale + center.x;
+      const wy = (sy - CH / 2) / scale + center.y;
+      const target = scale * factor;
+      scale = Math.max(scale0 * 0.85, target);   // you can step back, but not out of the museum
+      center.x = wx - (sx - CW / 2) / scale;
+      center.y = wy - (sy - CH / 2) / scale;
+      hint.classList.add('hidden');
+    }
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const r = canvas.getBoundingClientRect();
+      zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0016));
+    }, { passive: false });
+
+    const pointers = new Map();
+    let lastPinch = null;
+
+    canvas.addEventListener('pointerdown', (e) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add('panning');
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      const p = pointers.get(e.pointerId);
+      if (!p) return;
+      if (pointers.size === 1) {
+        center.x -= (e.clientX - p.x) / scale;
+        center.y -= (e.clientY - p.y) / scale;
+      }
+      p.x = e.clientX;
+      p.y = e.clientY;
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        const r = canvas.getBoundingClientRect();
+        const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
+        if (lastPinch) zoomAt(mx, my, d / lastPinch);
+        lastPinch = d;
+      }
+    });
+
+    function endPointer(e) {
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) lastPinch = null;
+      if (pointers.size === 0) canvas.classList.remove('panning');
+    }
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', endPointer);
+
+    // ---- Setup ----
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      const maxW = window.innerWidth * 0.8;
+      const maxH = window.innerHeight * 0.66;
+      const ratio = 1.28;
+      CW = Math.min(maxW, maxH / ratio);
+      CH = CW * ratio;
+      canvas.width = CW * dpr;
+      canvas.height = CH * dpr;
+      canvas.style.width = CW + 'px';
+      canvas.style.height = CH + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const keepDepth = scale && scale0 ? scale / scale0 : 1;
+      scale0 = CH;
+      scale = scale0 * keepDepth;
+      strokes.length = 0;
+      spawned.clear();
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 200);
+    });
+
+    setup();
+    requestAnimationFrame(frame);
+    setTimeout(() => hint.classList.add('hidden'), 11000);
+  </script>
+</body>
+</html>

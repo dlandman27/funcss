@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinite Maze</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f0ebdf;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #maze {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+    }
+
+    #maze.dragging { cursor: grabbing; }
+
+    #stats {
+      position: fixed;
+      bottom: 16px;
+      left: 20px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(12px, 1.6vw, 15px);
+      font-variant-numeric: tabular-nums;
+      color: rgba(60, 55, 45, 0.6);
+      pointer-events: none;
+      line-height: 1.5;
+    }
+
+    #hint {
+      position: fixed;
+      top: 7vh;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: clamp(15px, 2.2vw, 19px);
+      color: rgba(60, 55, 45, 0.55);
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      transition: opacity 2.5s ease;
+    }
+
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="maze"></canvas>
+  <div id="stats"></div>
+  <div id="hint">arrow keys to walk. or&hellip; zoom out.</div>
+
+  <script>
+    const canvas = document.getElementById('maze');
+    const ctx = canvas.getContext('2d');
+    const stats = document.getElementById('stats');
+    const hint = document.getElementById('hint');
+
+    let W, H, dpr;
+
+    const CHUNK = 16;            // cells per chunk side
+    const RES = 10;              // px per cell in cached chunk art
+    const INK = '#33323b';
+    const PAPER = '#f0ebdf';
+    const FLAT = '#d8d3c6';      // what the maze averages out to from very far away
+
+    // view: world units are maze cells
+    const view = { cx: CHUNK / 2, cy: CHUNK / 2, scale: 26 };
+    const MIN_SCALE = 1e-7;
+    const MAX_SCALE = 90;
+
+    // ---- Deterministic chunk mazes ----
+
+    const mix = (a, b) => (Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b ^ 0xc2b2ae35, 0x27d4eb2d)) | 0;
+
+    function chunkSeed(cx, cy) {
+      // wrap far coordinates into 32-bit space; the maze quietly repeats
+      // every ~67 million chunks, which no one will ever notice
+      const ix = ((cx % 67108864) + 67108864) | 0;
+      const iy = ((cy % 67108864) + 67108864) | 0;
+      return mix(ix, mix(iy, 51797));
+    }
+
+    function mulberry(seed) {
+      let a = seed >>> 0;
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    // generate a perfect maze in one chunk (recursive backtracker),
+    // then punch deterministic doorways in its east and south borders
+    function generateChunk(cx, cy) {
+      const n = CHUNK;
+      const eWall = new Uint8Array(n * n).fill(1);   // wall east of (c, r)
+      const sWall = new Uint8Array(n * n).fill(1);   // wall south of (c, r)
+      const visited = new Uint8Array(n * n);
+      const rng = mulberry(chunkSeed(cx, cy));
+
+      const stack = [(rng() * n * n) | 0];
+      visited[stack[0]] = 1;
+      const dirs = [0, 1, 2, 3];
+
+      while (stack.length) {
+        const i = stack[stack.length - 1];
+        const c = i % n, r = (i / n) | 0;
+
+        // shuffle directions
+        for (let k = 3; k > 0; k--) {
+          const j = (rng() * (k + 1)) | 0;
+          const t = dirs[k]; dirs[k] = dirs[j]; dirs[j] = t;
+        }
+
+        let moved = false;
+        for (const d of dirs) {
+          let nc = c, nr = r;
+          if (d === 0) nc++; else if (d === 1) nc--; else if (d === 2) nr++; else nr--;
+          if (nc < 0 || nr < 0 || nc >= n || nr >= n) continue;
+          const ni = nc + nr * n;
+          if (visited[ni]) continue;
+          if (d === 0) eWall[i] = 0;
+          else if (d === 1) eWall[ni] = 0;
+          else if (d === 2) sWall[i] = 0;
+          else sWall[ni] = 0;
+          visited[ni] = 1;
+          stack.push(ni);
+          moved = true;
+          break;
+        }
+        if (!moved) stack.pop();
+      }
+
+      // doorways east: two openings, decided by this chunk
+      const eastRng = mulberry(mix(chunkSeed(cx, cy), 0xE057));
+      eWall[(n - 1) + ((eastRng() * n) | 0) * n] = 0;
+      eWall[(n - 1) + ((eastRng() * n) | 0) * n] = 0;
+
+      // doorways south
+      const southRng = mulberry(mix(chunkSeed(cx, cy), 0x50F7));
+      sWall[((southRng() * n) | 0) + (n - 1) * n] = 0;
+      sWall[((southRng() * n) | 0) + (n - 1) * n] = 0;
+
+      return { eWall, sWall };
+    }
+
+    // walls cache, shared by rendering and walking
+    const wallsCache = new Map();
+    const WALLS_MAX = 600;
+
+    function wallsFor(cx, cy) {
+      const key = cx + ',' + cy;
+      const hit = wallsCache.get(key);
+      if (hit) {
+        wallsCache.delete(key);
+        wallsCache.set(key, hit);
+        return hit;
+      }
+      const w = generateChunk(cx, cy);
+      wallsCache.set(key, w);
+      if (wallsCache.size > WALLS_MAX) wallsCache.delete(wallsCache.keys().next().value);
+      return w;
+    }
+
+    // render a chunk's walls (its own south + east lines) to a cached canvas
+    const cache = new Map();
+    const CACHE_MAX = 500;
+
+    function chunkCanvas(cx, cy) {
+      const key = cx + ',' + cy;
+      const hit = cache.get(key);
+      if (hit) {
+        cache.delete(key);
+        cache.set(key, hit);   // refresh LRU position
+        return hit;
+      }
+
+      const { eWall, sWall } = wallsFor(cx, cy);
+      const size = CHUNK * RES;
+      const c = document.createElement('canvas');
+      c.width = size + 2;
+      c.height = size + 2;
+      const g = c.getContext('2d');
+      g.strokeStyle = INK;
+      g.lineWidth = 2;
+      g.lineCap = 'square';
+      g.beginPath();
+      for (let r = 0; r < CHUNK; r++) {
+        for (let col = 0; col < CHUNK; col++) {
+          const i = col + r * CHUNK;
+          const x = col * RES + 1, y = r * RES + 1;
+          if (eWall[i]) { g.moveTo(x + RES, y); g.lineTo(x + RES, y + RES); }
+          if (sWall[i]) { g.moveTo(x, y + RES); g.lineTo(x + RES, y + RES); }
+        }
+      }
+      g.stroke();
+
+      cache.set(key, c);
+      if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value);
+      return c;
+    }
+
+    // ---- Walking ----
+
+    const player = { x: CHUNK / 2, y: CHUNK / 2 };   // cell coordinates
+    const trail = [[player.x, player.y]];
+    let steps = 0;
+    let following = false;
+
+    // is the move from cell (x, y) by (dx, dy) blocked by a wall?
+    function blocked(x, y, dx, dy) {
+      const wallAt = (wx, wy, which) => {
+        const cx = Math.floor(wx / CHUNK), cy = Math.floor(wy / CHUNK);
+        const c = wx - cx * CHUNK, r = wy - cy * CHUNK;
+        const w = wallsFor(cx, cy);
+        return which === 'e' ? w.eWall[c + r * CHUNK] : w.sWall[c + r * CHUNK];
+      };
+      if (dx === 1) return wallAt(x, y, 'e');
+      if (dx === -1) return wallAt(x - 1, y, 'e');
+      if (dy === 1) return wallAt(x, y, 's');
+      return wallAt(x, y - 1, 's');
+    }
+
+    function walk(dx, dy) {
+      if (blocked(player.x, player.y, dx, dy)) return;
+      player.x += dx;
+      player.y += dy;
+      steps++;
+      trail.push([player.x, player.y]);
+      if (trail.length > 8000) trail.shift();
+      following = true;
+      if (view.scale < 8) view.scale = 26;   // walking pulls you back down into the maze
+      hint.classList.add('hidden');
+      dirty = true;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'arrowright' || k === 'd') walk(1, 0);
+      else if (k === 'arrowleft' || k === 'a') walk(-1, 0);
+      else if (k === 'arrowdown' || k === 's') walk(0, 1);
+      else if (k === 'arrowup' || k === 'w') walk(0, -1);
+      else return;
+      e.preventDefault();
+    });
+
+    // ---- Render ----
+
+    function render() {
+      // follow-cam eases onto the player while walking
+      if (following) {
+        const tx = player.x + 0.5, ty = player.y + 0.5;
+        view.cx += (tx - view.cx) * 0.18;
+        view.cy += (ty - view.cy) * 0.18;
+        if (Math.abs(tx - view.cx) < 0.01 && Math.abs(ty - view.cy) < 0.01) following = false;
+        else dirty = true;
+      }
+      renderScene();
+    }
+
+    function renderScene() {
+      ctx.fillStyle = PAPER;
+      ctx.fillRect(0, 0, W, H);
+
+      const s = view.scale;
+      const chunkPx = CHUNK * s;
+
+      if (s >= 3) {
+        drawChunks(chunkPx);
+      } else if (s >= 0.3) {
+        drawPattern(chunkPx);
+        // dissolve toward the flat gray as detail becomes subpixel
+        const fade = Math.max(0, Math.min(1, (0.9 - s) / 0.6));
+        if (fade > 0) {
+          ctx.fillStyle = FLAT;
+          ctx.globalAlpha = fade;
+          ctx.fillRect(0, 0, W, H);
+          ctx.globalAlpha = 1;
+        }
+      } else {
+        ctx.fillStyle = FLAT;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      if (s > 2) {
+        // breadcrumb trail
+        if (trail.length > 1) {
+          ctx.strokeStyle = 'rgba(192, 57, 43, 0.35)';
+          ctx.lineWidth = Math.max(1.5, s * 0.16);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo((trail[0][0] + 0.5 - view.cx) * s + W / 2, (trail[0][1] + 0.5 - view.cy) * s + H / 2);
+          for (let i = 1; i < trail.length; i++) {
+            ctx.lineTo((trail[i][0] + 0.5 - view.cx) * s + W / 2, (trail[i][1] + 0.5 - view.cy) * s + H / 2);
+          }
+          ctx.stroke();
+        }
+
+        // where you started
+        const sx0 = (CHUNK / 2 - view.cx) * s + W / 2;
+        const sy0 = (CHUNK / 2 - view.cy) * s + H / 2;
+        ctx.fillStyle = 'rgba(192, 57, 43, 0.45)';
+        ctx.beginPath();
+        ctx.arc(sx0, sy0, Math.min(7, s * 0.2), 0, Math.PI * 2);
+        ctx.fill();
+
+        // you
+        const px = (player.x + 0.5 - view.cx) * s + W / 2;
+        const py = (player.y + 0.5 - view.cy) * s + H / 2;
+        ctx.fillStyle = '#c0392b';
+        ctx.beginPath();
+        ctx.arc(px, py, Math.min(10, s * 0.3), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      updateStats();
+    }
+
+    function drawChunks(chunkPx) {
+      const s = view.scale;
+      const x0 = Math.floor((view.cx - (W / 2) / s) / CHUNK) - 1;
+      const x1 = Math.floor((view.cx + (W / 2) / s) / CHUNK) + 1;
+      const y0 = Math.floor((view.cy - (H / 2) / s) / CHUNK) - 1;
+      const y1 = Math.floor((view.cy + (H / 2) / s) / CHUNK) + 1;
+
+      ctx.imageSmoothingEnabled = s < RES;
+      for (let cy = y0; cy <= y1; cy++) {
+        for (let cx = x0; cx <= x1; cx++) {
+          const sx = (cx * CHUNK - view.cx) * s + W / 2;
+          const sy = (cy * CHUNK - view.cy) * s + H / 2;
+          const pad = chunkPx / (CHUNK * RES);   // account for the 1px art margin
+          ctx.drawImage(chunkCanvas(cx, cy), sx - pad, sy - pad, chunkPx + pad * 2, chunkPx + pad * 2);
+        }
+      }
+    }
+
+    let genericTile = null;
+
+    function drawPattern(chunkPx) {
+      if (!genericTile) genericTile = chunkCanvas(0, 0);
+      const pat = ctx.createPattern(genericTile, 'repeat');
+      const k = chunkPx / (CHUNK * RES);
+      const ox = ((-view.cx * view.scale + W / 2) % chunkPx + chunkPx) % chunkPx;
+      const oy = ((-view.cy * view.scale + H / 2) % chunkPx + chunkPx) % chunkPx;
+      pat.setTransform(new DOMMatrix().translate(ox, oy).scale(k));
+      ctx.fillStyle = pat;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function fmtCells(n) {
+      if (n < 1e6) return Math.round(n).toLocaleString();
+      if (n < 1e12) return (n / 1e6).toPrecision(3) + ' million';
+      if (n < 1e18) return (n / 1e12).toPrecision(3) + ' trillion';
+      return n.toExponential(2).replace('e+', ' × 10^');
+    }
+
+    function updateStats() {
+      const cells = (W / view.scale) * (H / view.scale);
+      stats.innerHTML = `steps: ${steps.toLocaleString()}<br>cells on screen: ${fmtCells(cells)}<br>maze explored: 0%`;
+    }
+
+    // ---- Pan & zoom ----
+
+    function zoomAt(sx, sy, factor) {
+      const wx = (sx - W / 2) / view.scale + view.cx;
+      const wy = (sy - H / 2) / view.scale + view.cy;
+      view.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, view.scale * factor));
+      view.cx = wx - (sx - W / 2) / view.scale;
+      view.cy = wy - (sy - H / 2) / view.scale;
+      dirty = true;
+      hint.classList.add('hidden');
+    }
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0016));
+    }, { passive: false });
+
+    const pointers = new Map();
+    let lastPinch = null;
+
+    canvas.addEventListener('pointerdown', (e) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      downAt = { x: e.clientX, y: e.clientY };
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add('dragging');
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      const p = pointers.get(e.pointerId);
+      if (!p) return;
+      if (pointers.size === 1) {
+        view.cx -= (e.clientX - p.x) / view.scale;
+        view.cy -= (e.clientY - p.y) / view.scale;
+        dirty = true;
+      }
+      p.x = e.clientX;
+      p.y = e.clientY;
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (lastPinch) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d / lastPinch);
+        lastPinch = d;
+      }
+    });
+
+    let downAt = null;
+
+    function endPointer(e) {
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) lastPinch = null;
+      if (pointers.size === 0) canvas.classList.remove('dragging');
+    }
+    canvas.addEventListener('pointerup', (e) => {
+      // a tap (not a drag) steps toward where you tapped
+      if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6 && view.scale > 3) {
+        const px = (player.x + 0.5 - view.cx) * view.scale + W / 2;
+        const py = (player.y + 0.5 - view.cy) * view.scale + H / 2;
+        const dx = e.clientX - px, dy = e.clientY - py;
+        if (Math.hypot(dx, dy) > view.scale * 0.3) {
+          if (Math.abs(dx) > Math.abs(dy)) walk(Math.sign(dx), 0);
+          else walk(0, Math.sign(dy));
+        }
+      }
+      downAt = null;
+      endPointer(e);
+    });
+    canvas.addEventListener('pointercancel', endPointer);
+
+    // ---- Loop ----
+
+    let dirty = true;
+    function frame() {
+      if (dirty) {
+        dirty = false;
+        render();   // render may set dirty again (follow-cam animation)
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      dirty = true;
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 150);
+    });
+
+    setup();
+    requestAnimationFrame(frame);
+    setTimeout(() => hint.classList.add('hidden'), 9000);
+  </script>
+</body>
+</html>

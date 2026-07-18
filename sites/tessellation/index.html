@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tessellation</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0c0c13;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #paint {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(20, 20, 32, 0.72);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      transition: opacity 0.6s ease;
+    }
+
+    #controls.faded { opacity: 0.12; }
+    #controls:hover { opacity: 1; }
+
+    #controls button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgba(235, 235, 245, 0.85);
+      font-size: 15px;
+      line-height: 1;
+      min-width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
+      padding: 0 8px;
+    }
+
+    #controls button:hover { background: rgba(255, 255, 255, 0.1); }
+    #controls button.on {
+      color: #ffd479;
+      background: rgba(255, 212, 121, 0.12);
+    }
+
+    #tileSize {
+      min-width: 40px;
+      text-align: center;
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+      color: rgba(235, 235, 245, 0.9);
+    }
+
+    .divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.12);
+      margin: 0 4px;
+    }
+
+    #hint {
+      position: fixed;
+      top: 8vh;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(14px, 2vw, 18px);
+      color: rgba(220, 210, 235, 0.5);
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      transition: opacity 2s ease;
+    }
+
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="paint"></canvas>
+  <div id="hint">draw anywhere &mdash; it tiles</div>
+
+  <div id="controls">
+    <button id="sizeDown" title="smaller tiles">&#8249;</button>
+    <div id="tileSize">220</div>
+    <button id="sizeUp" title="bigger tiles">&#8250;</button>
+    <div class="divider"></div>
+    <button id="mode1" class="on" title="grid">1</button>
+    <button id="mode2" title="brick">2</button>
+    <button id="mode3" title="mirror">3</button>
+    <div class="divider"></div>
+    <button id="bg" title="background">BG</button>
+    <div class="divider"></div>
+    <button id="save" title="save image">&#8595;</button>
+    <button id="clear" title="clear">&#215;</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('paint');
+    const ctx = canvas.getContext('2d');
+    const hint = document.getElementById('hint');
+    const controls = document.getElementById('controls');
+    const tileSizeEl = document.getElementById('tileSize');
+
+    const SIZES = [120, 160, 220, 300, 400];
+    const BGS = ['#0c0c13', '#141d38', '#232030', '#f2ede2', '#e8dcc8'];
+
+    let W, H, dpr;
+    let sizeIndex = 2;
+    let ts = SIZES[sizeIndex];       // tile size in CSS px
+    let mode = 1;                    // 1 grid, 2 brick, 3 mirror
+    let bgIndex = 0;
+    let hue = Math.random() * 360;
+
+    // the tile being painted (device-pixel resolution)
+    let tile, tctx;
+
+    function makeTile(fromOld) {
+      const t = document.createElement('canvas');
+      t.width = Math.round(ts * dpr);
+      t.height = Math.round(ts * dpr);
+      const c = t.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+      if (fromOld) c.drawImage(fromOld, 0, 0, ts, ts);
+      tile = t;
+      tctx = c;
+    }
+
+    function setup() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (!tile) makeTile(null);
+      dirty = true;
+    }
+
+    // ---- Repaint: lay the tile across the canvas ----
+
+    let dirty = true;
+
+    function repaint() {
+      ctx.fillStyle = BGS[bgIndex];
+      ctx.fillRect(0, 0, W, H);
+
+      const cols = Math.ceil(W / ts) + 2;
+      const rows = Math.ceil(H / ts) + 2;
+
+      for (let r = -1; r < rows; r++) {
+        for (let c = -1; c < cols; c++) {
+          let x = c * ts;
+          const y = r * ts;
+
+          if (mode === 2) {
+            // brick: odd rows shift half a tile
+            if (((r % 2) + 2) % 2 === 1) x += ts / 2;
+          }
+
+          if (mode === 3) {
+            const flipX = ((c % 2) + 2) % 2 === 1;
+            const flipY = ((r % 2) + 2) % 2 === 1;
+            if (flipX || flipY) {
+              ctx.save();
+              ctx.translate(x + ts / 2, y + ts / 2);
+              ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+              ctx.drawImage(tile, -ts / 2, -ts / 2, ts, ts);
+              ctx.restore();
+              continue;
+            }
+          }
+
+          ctx.drawImage(tile, x, y, ts, ts);
+        }
+      }
+    }
+
+    function frame() {
+      if (dirty) {
+        repaint();
+        dirty = false;
+      }
+      requestAnimationFrame(frame);
+    }
+
+    // ---- Map a screen point into tile-local coordinates ----
+
+    const mod = (a, n) => ((a % n) + n) % n;
+
+    function toLocal(x, y) {
+      if (mode === 1) {
+        return { x: mod(x, ts), y: mod(y, ts), key: 0 };
+      }
+      if (mode === 2) {
+        const row = Math.floor(y / ts);
+        const xoff = mod(row, 2) === 1 ? ts / 2 : 0;
+        return { x: mod(x - xoff, ts), y: mod(y, ts), key: 0 };
+      }
+      // mirror: invert the flip of the tile under the pointer
+      const col = Math.floor(x / ts);
+      const row = Math.floor(y / ts);
+      let lx = mod(x, ts);
+      let ly = mod(y, ts);
+      if (mod(col, 2) === 1) lx = ts - lx;
+      if (mod(row, 2) === 1) ly = ts - ly;
+      return { x: lx, y: ly, key: col * 100003 + row };
+    }
+
+    // ---- Brush: wrapped strokes into the tile ----
+
+    function strokeTile(x0, y0, x1, y1, width, color, blur) {
+      tctx.strokeStyle = color;
+      tctx.lineWidth = width;
+      tctx.shadowColor = color;
+      tctx.shadowBlur = blur;
+      // nine wrapped copies keep the pattern seamless across tile edges
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oy = -1; oy <= 1; oy++) {
+          tctx.beginPath();
+          tctx.moveTo(x0 + ox * ts, y0 + oy * ts);
+          tctx.lineTo(x1 + ox * ts, y1 + oy * ts);
+          tctx.stroke();
+        }
+      }
+      tctx.shadowBlur = 0;
+    }
+
+    let drawing = false;
+    let prev = null;       // previous tile-local point
+    let prevKey = 0;
+    let lastWidth = 3;
+
+    function drawTo(x, y) {
+      const p = toLocal(x, y);
+
+      if (prev === null || (mode === 3 && p.key !== prevKey)) {
+        prev = p;
+        prevKey = p.key;
+        return;
+      }
+
+      // unwrap so a stroke crossing the tile edge stays continuous
+      let x1 = p.x, y1 = p.y;
+      if (mode !== 3) {
+        if (x1 - prev.x > ts / 2) x1 -= ts;
+        else if (x1 - prev.x < -ts / 2) x1 += ts;
+        if (y1 - prev.y > ts / 2) y1 -= ts;
+        else if (y1 - prev.y < -ts / 2) y1 += ts;
+      }
+
+      const dist = Math.hypot(x1 - prev.x, y1 - prev.y);
+      if (dist < 1.2) return;
+
+      const targetWidth = Math.max(1.1, 8 - dist * 0.26);
+      lastWidth += (targetWidth - lastWidth) * 0.3;
+
+      hue = (hue + dist * 0.25) % 360;
+      const light = bgIndex >= 3;   // paper backgrounds get deeper strokes
+      const color = light
+        ? `hsl(${hue}, 70%, 42%)`
+        : `hsl(${hue}, 85%, 66%)`;
+      const halo = light
+        ? `hsla(${hue}, 65%, 45%, 0.18)`
+        : `hsla(${hue}, 90%, 60%, 0.32)`;
+
+      strokeTile(prev.x, prev.y, x1, y1, lastWidth * 3, halo, 0);
+      strokeTile(prev.x, prev.y, x1, y1, lastWidth, color, light ? 0 : 10);
+
+      prev = { x: mod(x1, ts), y: mod(y1, ts), key: p.key };
+      prevKey = p.key;
+      dirty = true;
+    }
+
+    // ---- Input ----
+
+    canvas.addEventListener('pointerdown', (e) => {
+      drawing = true;
+      prev = null;
+      lastWidth = 3;
+      drawTo(e.clientX, e.clientY);
+      hint.classList.add('hidden');
+      controls.classList.add('faded');
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!drawing) return;
+      if (e.getCoalescedEvents) {
+        for (const ev of e.getCoalescedEvents()) drawTo(ev.clientX, ev.clientY);
+      } else {
+        drawTo(e.clientX, e.clientY);
+      }
+    });
+
+    function stopDrawing() {
+      drawing = false;
+      prev = null;
+      controls.classList.remove('faded');
+    }
+    canvas.addEventListener('pointerup', stopDrawing);
+    canvas.addEventListener('pointercancel', stopDrawing);
+
+    // ---- Controls ----
+
+    function setSize(i) {
+      sizeIndex = Math.max(0, Math.min(SIZES.length - 1, i));
+      const old = tile;
+      ts = SIZES[sizeIndex];
+      tileSizeEl.textContent = ts;
+      makeTile(old);   // rescale existing art into the new tile
+      dirty = true;
+    }
+
+    document.getElementById('sizeDown').addEventListener('click', () => setSize(sizeIndex - 1));
+    document.getElementById('sizeUp').addEventListener('click', () => setSize(sizeIndex + 1));
+
+    const modeBtns = [null, document.getElementById('mode1'), document.getElementById('mode2'), document.getElementById('mode3')];
+    function setMode(m) {
+      mode = m;
+      for (let i = 1; i <= 3; i++) modeBtns[i].classList.toggle('on', i === m);
+      prev = null;
+      dirty = true;
+    }
+    modeBtns[1].addEventListener('click', () => setMode(1));
+    modeBtns[2].addEventListener('click', () => setMode(2));
+    modeBtns[3].addEventListener('click', () => setMode(3));
+
+    document.getElementById('bg').addEventListener('click', () => {
+      bgIndex = (bgIndex + 1) % BGS.length;
+      dirty = true;
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      tctx.clearRect(0, 0, ts, ts);
+      dirty = true;
+    });
+
+    document.getElementById('save').addEventListener('click', () => {
+      repaint();
+      const a = document.createElement('a');
+      a.download = 'tessellation.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') setMode(1);
+      if (e.key === '2') setMode(2);
+      if (e.key === '3') setMode(3);
+      if (e.key === 'ArrowLeft') setSize(sizeIndex - 1);
+      if (e.key === 'ArrowRight') setSize(sizeIndex + 1);
+      if (e.key === 'b' || e.key === 'B') document.getElementById('bg').click();
+      if (e.key === 'c' || e.key === 'C') document.getElementById('clear').click();
+      if (e.key === 's' || e.key === 'S') document.getElementById('save').click();
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 200);
+    });
+
+    setup();
+    setTimeout(() => hint.classList.add('hidden'), 10000);
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
