@@ -87,6 +87,9 @@ test('generated homepage includes the new-site badge logic', () => {
   assert.ok(html.includes("badge.className = 'new-badge'"), 'homepage should render .new-badge elements');
   assert.ok(html.includes('data-created'), 'cards should carry data-created');
   assert.ok(html.includes('value="newest"'), 'sort dropdown should offer Newest First');
+  assert.ok(html.includes("buildRail('railNew'"), 'homepage should build the New rail');
+  assert.ok(html.includes("buildRail('railHot'"), 'homepage should build the Hottest rail');
+  assert.ok(html.includes("chip.className = 'hot-badge'"), 'homepage should render .hot-badge chips');
 });
 
 test('validateCatalog rejects invalid slug and non-boolean flags', () => {

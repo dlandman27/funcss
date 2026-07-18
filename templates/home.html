@@ -837,6 +837,73 @@
             transform: rotate(4deg) scale(1.12);
         }
 
+        /* "🔥 HOT" chip — red, for the most-played sites */
+        .site-card .hot-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 2;
+            background: #e0301e;
+            color: #fff8f0;
+            border: var(--border);
+            border-radius: 999px;
+            padding: 4px 11px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            transform: rotate(-6deg);
+            box-shadow: 3px 3px 0 var(--ink);
+            transition: transform 0.15s ease;
+        }
+
+        /* a card that is both new and hot stacks its stickers */
+        .site-card .new-badge ~ .hot-badge {
+            top: 46px;
+        }
+
+        .site-card:hover .hot-badge {
+            transform: rotate(4deg) scale(1.12);
+        }
+
+        /* ---- Featured rails: New / Hottest ---- */
+        #featured .rail-title {
+            margin: 30px 0 0;
+        }
+
+        #featured .rail {
+            display: flex;
+            gap: 18px;
+            margin-top: 20px;
+            overflow-x: auto;
+            padding: 6px 6px 18px;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #featured .rail .site-card {
+            flex: 0 0 240px;
+            scroll-snap-align: start;
+        }
+
+        #featured .rail .thumb {
+            height: 104px;
+            font-size: 2.6rem;
+        }
+
+        #featured .rail::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        #featured .rail::-webkit-scrollbar-thumb {
+            background: var(--ink);
+            border-radius: 999px;
+        }
+
+        #featured .rail::-webkit-scrollbar-track {
+            background: rgba(32, 26, 23, 0.08);
+            border-radius: 999px;
+        }
+
         .category {
             display: none;
         }
@@ -1073,6 +1140,10 @@
         </div>
 
         <div class="directory-inner">
+            <!-- Featured rails (New / Hottest) — populated by JS from card data,
+                 hidden automatically while searching or filtering -->
+            <div id="featured"></div>
+
 {{SECTIONS}}
 
             <!-- Footer message -->
@@ -1424,11 +1495,71 @@
                 }
             });
 
+            // ---- Featured rails: New / Hottest --------------------------------
+            const featured = document.getElementById('featured');
+            const cardSlug = (card) => {
+                const link = card.querySelector('a');
+                return link
+                    ? (link.getAttribute('href') || '').replace('/sites/', '').replace(/\/$/, '').toLowerCase()
+                    : '';
+            };
+
+            function buildRail(id, title, cards) {
+                if (!featured || !cards.length || document.getElementById(id)) return;
+                const heading = document.createElement('h2');
+                heading.className = 'category-title rail-title';
+                heading.textContent = title;
+                const rail = document.createElement('div');
+                rail.className = 'rail';
+                rail.id = id;
+                cards.forEach(card => {
+                    const clone = card.cloneNode(true);
+                    clone.classList.remove('hidden');
+                    rail.appendChild(clone);
+                });
+                featured.appendChild(heading);
+                featured.appendChild(rail);
+            }
+
+            // New rail: same freshness window as the badges, newest first
+            const newCards = Array.from(siteCards)
+                .filter(card => {
+                    const d = card.dataset.created;
+                    if (!d) return false;
+                    const age = (Date.now() - new Date(d + 'T00:00:00')) / 86400000;
+                    return age >= 0 && age < NEW_FOR_DAYS;
+                })
+                .sort((a, b) => (b.dataset.created || '').localeCompare(a.dataset.created || ''))
+                .slice(0, 8);
+            buildRail('railNew', '★ New', newCards);
+
             // ---- Play counts (live, from /api/counts) -------------------------
             fetch('/api/counts')
                 .then(r => (r.ok ? r.json() : null))
                 .then(countsBySlug => {
                     if (!countsBySlug) return;
+
+                    // Hottest rail: most-played sites (built before the sticker
+                    // pass below, so its clones get play stickers too)
+                    const hotCards = Array.from(siteCards)
+                        .map(card => ({ card, n: countsBySlug[cardSlug(card)] || 0 }))
+                        .filter(x => x.n >= 5)
+                        .sort((a, b) => b.n - a.n)
+                        .slice(0, 8)
+                        .map(x => x.card);
+
+                    // red chip on the originals first, so the rail clones carry it
+                    hotCards.forEach(card => {
+                        const link = card.querySelector('a');
+                        if (!link || link.querySelector('.hot-badge')) return;
+                        const chip = document.createElement('div');
+                        chip.className = 'hot-badge';
+                        chip.textContent = '🔥 HOT';
+                        link.appendChild(chip);
+                    });
+
+                    buildRail('railHot', '🔥 Hottest', hotCards);
+
                     document.querySelectorAll('.site-card a').forEach(link => {
                         const slug = (link.getAttribute('href') || '')
                             .replace('/sites/', '').replace(/\/$/, '').toLowerCase();
@@ -1515,6 +1646,13 @@
 
                 const activeCategories = Array.from(categoryFilters.querySelectorAll('input:checked'))
                     .map(input => input.value);
+
+                // rails don't participate in search/filter — hide them instead
+                const featuredEl = document.getElementById('featured');
+                if (featuredEl) {
+                    const filtering = searchTerm !== '' || activeCategories.length < categories.size;
+                    featuredEl.style.display = filtering ? 'none' : '';
+                }
 
                 siteCards.forEach(card => {
                     const title = card.querySelector('h2').textContent.toLowerCase();
