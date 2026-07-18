@@ -93,6 +93,44 @@
       background: rgba(255,255,255,0.07);
     }
 
+    /* auto-hide chrome while watching */
+    #bar, #clock {
+      transition: opacity 0.8s ease;
+    }
+    body.idle #bar, body.idle #clock {
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.idle { cursor: none; }
+
+    /* channel OSD (retro tv overlay) */
+    #osd {
+      position: fixed;
+      top: 22px; left: 28px;
+      font-family: 'Inconsolata', monospace;
+      font-size: clamp(14px, 2.2vw, 20px);
+      letter-spacing: 0.22em;
+      color: #7dff9a;
+      text-shadow: 0 0 8px rgba(125, 255, 154, 0.7), 1px 1px 0 rgba(0,0,0,0.6);
+      pointer-events: none;
+      z-index: 21;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      text-transform: uppercase;
+    }
+    #osd.visible { opacity: 1; }
+
+    /* static burst between channels */
+    #static-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 16;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #static-canvas.on { opacity: 1; }
+
     /* fade overlay for scene transitions */
     #fade {
       position: fixed;
@@ -137,8 +175,10 @@
 
 <canvas id="scene-canvas"></canvas>
 <div id="fade"></div>
+<canvas id="static-canvas"></canvas>
 
 <div id="clock">00:00:00</div>
+<div id="osd"></div>
 
 <div id="title-card">
   <h1 id="title-text">Fireplace</h1>
@@ -217,19 +257,61 @@
     desert: 'Desert Night', lava: 'Lava Lamp', sakura: 'Sakura', fog: 'Foggy Morning',
   };
 
+  /* ─────────────── Static burst + OSD ───── */
+  const staticCanvas = document.getElementById('static-canvas');
+  const staticCtx = staticCanvas.getContext('2d');
+  const osd = document.getElementById('osd');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let osdTimer = null;
+  let staticId = null;
+
+  function staticBurst(ms) {
+    if (reduced) return;
+    const sw = staticCanvas.width = 240;
+    const sh = staticCanvas.height = 135;
+    staticCanvas.classList.add('on');
+    const img = staticCtx.createImageData(sw, sh);
+    const stop = performance.now() + ms;
+    (function frame() {
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random() * 255 | 0;
+        d[i] = d[i + 1] = d[i + 2] = v;
+        d[i + 3] = 255;
+      }
+      staticCtx.putImageData(img, 0, 0);
+      if (performance.now() < stop) {
+        staticId = requestAnimationFrame(frame);
+      } else {
+        staticCanvas.classList.remove('on');
+      }
+    })();
+  }
+
+  function showOSD(key) {
+    const ch = CHANNEL_KEYS.indexOf(key) + 1;
+    osd.textContent = 'CH ' + String(ch).padStart(2, '0') + ' · ' + sceneNames[key];
+    osd.classList.add('visible');
+    clearTimeout(osdTimer);
+    osdTimer = setTimeout(() => osd.classList.remove('visible'), 3000);
+  }
+
   function switchScene(key) {
     const fade = document.getElementById('fade');
     fade.classList.add('out');
+    staticBurst(650);
     setTimeout(() => {
       if (animId) { cancelAnimationFrame(animId); animId = null; }
       if (currentScene && currentScene.destroy) currentScene.destroy();
       currentScene = scenes[key]();
       currentScene.resize && currentScene.resize(W, H);
       showTitle(sceneNames[key]);
+      showOSD(key);
       fade.classList.remove('out');
       loop();
     }, 700);
 
+    try { localStorage.setItem('slowtv-channel', key); } catch (e) {}
     document.querySelectorAll('.scene-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.scene === key);
     });
@@ -244,6 +326,40 @@
   document.querySelectorAll('.scene-btn').forEach(btn => {
     btn.addEventListener('click', () => switchScene(btn.dataset.scene));
   });
+
+  /* ─────────────── Channel surfing ──────── */
+  const CHANNEL_KEYS = [...document.querySelectorAll('.scene-btn')].map(b => b.dataset.scene);
+
+  function currentChannel() {
+    const active = document.querySelector('.scene-btn.active');
+    return CHANNEL_KEYS.indexOf(active ? active.dataset.scene : CHANNEL_KEYS[0]);
+  }
+
+  function tune(delta) {
+    const n = CHANNEL_KEYS.length;
+    switchScene(CHANNEL_KEYS[(currentChannel() + delta + n) % n]);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { tune(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { tune(-1); e.preventDefault(); }
+    else if (/^[0-9]$/.test(e.key)) {
+      const ch = e.key === '0' ? 9 : parseInt(e.key, 10) - 1;
+      if (ch < CHANNEL_KEYS.length) switchScene(CHANNEL_KEYS[ch]);
+    }
+  });
+
+  /* ─────────────── Idle chrome hiding ───── */
+  let idleTimer = null;
+  function wakeChrome() {
+    document.body.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => document.body.classList.add('idle'), 4500);
+  }
+  ['mousemove', 'pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, wakeChrome, { passive: true }));
+  wakeChrome();
 
   /* ══════════════════════════════════════════
      SCENE: FIREPLACE
@@ -1805,7 +1921,12 @@
 
   /* ─── Boot ─── */
   resize();
-  switchScene('fireplace');
+  let bootChannel = 'fireplace';
+  try {
+    const saved = localStorage.getItem('slowtv-channel');
+    if (saved && scenes[saved]) bootChannel = saved;
+  } catch (e) {}
+  switchScene(bootChannel);
 
 })();
 </script>

@@ -4,450 +4,300 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meditation App</title>
+    <title>Breathe</title>
+    <meta name="description" content="A circle that breathes. Match it — box, 4-7-8, or resonant pace.">
     <style>
-        body {
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --breath: #2fb0a3;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
-            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #1a4569, #2a8dc5, #87CEEB);
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Georgia, 'Times New Roman', serif;
         }
 
-        .container {
-            text-align: center;
-            margin-top: 130px;
-        }
-
-        .container h1 {
-            font-size: 3.5rem;
-            font-weight: 300;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 30px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            background: linear-gradient(to right, #fff, #87CEEB);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: titleGlow 3s ease-in-out infinite;
-        }
-
-        @keyframes titleGlow {
-            0%, 100% { text-shadow: 0 2px 10px rgba(135, 206, 235, 0.2); }
-            50% { text-shadow: 0 2px 20px rgba(135, 206, 235, 0.5); }
-        }
-
-        .breathing-circle {
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 0 50px rgba(255, 255, 255, 0.2);
+        #stage {
             position: relative;
-            margin: 50px auto;
-            transform-origin: center;
+            width: min(78vmin, 460px);
+            height: min(78vmin, 460px);
             display: flex;
-            justify-content: center;
             align-items: center;
-            animation: breathe 10s infinite cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            justify-content: center;
+            cursor: pointer;
         }
 
-        @keyframes breathe {
-            0%, 100% {
-                transform: scale(1);
-                background: rgba(135, 206, 235, 0.2);
-                box-shadow: 0 0 50px rgba(135, 206, 235, 0.3);
-            }
-            45% {
-                transform: scale(1.4);
-                background: rgba(135, 206, 235, 0.4);
-                box-shadow: 0 0 80px rgba(135, 206, 235, 0.5);
-            }
-        }
-
-        /* Add ripple effect */
-        .breathing-circle::before,
-        .breathing-circle::after {
-            content: '';
+        /* soft halo that trails the circle */
+        #halo {
             position: absolute;
-            border-radius: 50%;
             width: 100%;
             height: 100%;
-            background: rgba(135, 206, 235, 0.2);
-            animation: ripple 8s infinite cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .breathing-circle::after {
-            animation-delay: -4s;
-        }
-
-        @keyframes ripple {
-            0% {
-                transform: scale(1);
-                opacity: 0.5;
-            }
-            50% {
-                transform: scale(1.6);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 0.5;
-            }
-        }
-
-        .controls {
-            margin-top: 40px;
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-        }
-
-        button {
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 500;
-        }
-
-        button:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .instruction {
-            font-size: 1.8rem;
-            font-weight: 300;
-            opacity: 0.9;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            animation: fadeInOut 8s infinite;
-        }
-
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0.9; }
-            50% { opacity: 0.6; }
-        }
-
-        .mute-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px;
             border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: radial-gradient(circle, rgba(47, 176, 163, 0.16) 55%, rgba(47, 176, 163, 0) 72%);
+            transform: scale(0.66);
+            will-change: transform;
         }
 
-        .mute-button i {
-            font-size: 1.2rem;
-        }
-
-        .top-controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .control-button {
-            padding: 10px;
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .control-button i {
-            font-size: 1.2rem;
-        }
-
-        .breathing-text {
+        #circle {
             position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.8rem;
-            font-weight: 300;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            text-align: center;
+            width: 72%;
+            height: 72%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 42% 38%, rgba(47, 176, 163, 0.34), rgba(47, 176, 163, 0.22));
+            border: 1px solid rgba(32, 26, 23, 0.18);
+            transform: scale(0.62);
+            will-change: transform;
+        }
+
+        #prompt {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
             pointer-events: none;
-            animation: breatheText 10s infinite;
-        }
-
-        @keyframes breatheText {
-            0%, 5% {
-                content: "Breathe In";
-                opacity: 0;
-            }
-            10%, 45% {
-                content: "Breathe In";
-                opacity: 0.9;
-            }
-            50%, 55% {
-                content: "Breathe Out";
-                opacity: 0;
-            }
-            60%, 95% {
-                content: "Breathe Out";
-                opacity: 0.9;
-            }
-            100% {
-                content: "Breathe Out";
-                opacity: 0;
-            }
-        }
-
-        .title-container {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
             text-align: center;
         }
 
-        .title-container h1 {
-            font-size: 2.5rem;
-            margin: 0;
-            font-weight: 300;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            background: linear-gradient(to right, #fff, #87CEEB);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: titleGlow 3s ease-in-out infinite;
+        #phase {
+            font-style: italic;
+            font-size: clamp(1.1rem, 4vmin, 1.5rem);
+            letter-spacing: 0.14em;
+            opacity: 0.85;
         }
 
-        .title-container .subtitle {
-            font-size: 1rem;
-            margin-top: 5px;
-            opacity: 0.8;
-            letter-spacing: 2px;
+        #countdown {
+            font-size: clamp(0.85rem, 2.6vmin, 1rem);
+            font-style: italic;
+            opacity: 0.4;
+            min-height: 1.3em;
+            font-variant-numeric: tabular-nums;
         }
 
-        .breathe-in {
-            animation: fadeIn 10s infinite;
+        #hint {
+            position: fixed;
+            bottom: 18%;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-style: italic;
+            font-size: clamp(0.85rem, 2.6vmin, 1rem);
+            opacity: 0.5;
+            transition: opacity 2s ease;
+            padding: 0 1rem;
+            pointer-events: none;
+        }
+
+        #hint.gone { opacity: 0; }
+
+        #ledger {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            font-style: italic;
+            font-size: 0.78rem;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        #controls {
+            position: fixed;
+            left: 50%;
+            bottom: max(22px, env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1.6rem;
+            align-items: center;
+            transition: opacity 1.5s ease;
+        }
+
+        #controls.faded { opacity: 0.14; }
+        #controls:hover { opacity: 1; }
+
+        .pattern {
+            background: none;
+            border: none;
+            padding: 0.3rem 0.2rem;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.88rem;
+            letter-spacing: 0.1em;
+            color: var(--ink);
+            opacity: 0.42;
+            cursor: pointer;
+            border-bottom: 1px solid transparent;
+            transition: opacity 0.3s, border-color 0.3s;
+            white-space: nowrap;
+        }
+
+        .pattern:hover { opacity: 0.8; }
+
+        .pattern.on {
             opacity: 0.9;
+            border-bottom-color: rgba(32, 26, 23, 0.45);
         }
 
-        .breathe-out {
-            animation: fadeOut 10s infinite;
-            opacity: 0;
-        }
-
-        @keyframes fadeIn {
-            0% { opacity: 0.9; }
-            35% { opacity: 0.9; }
-            40% { opacity: 0; }
-            90% { opacity: 0; }
-            100% { opacity: 0.9; }
-        }
-
-        @keyframes fadeOut {
-            0%, 35% { opacity: 0; }
-            40% { opacity: 0.9; }
-            85% { opacity: 0.9; }
-            90% { opacity: 0; }
-            100% { opacity: 0; }
-        }
-
-        @keyframes breathe {
-            0%, 100% {
-                transform: scale(1);
-                background: rgba(135, 206, 235, 0.2);
-                box-shadow: 0 0 50px rgba(135, 206, 235, 0.3);
-            }
-            45% {
-                transform: scale(1.4);
-                background: rgba(135, 206, 235, 0.4);
-                box-shadow: 0 0 80px rgba(135, 206, 235, 0.5);
-            }
+        @media (prefers-reduced-motion: reduce) {
+            #circle { transform: scale(0.82) !important; }
+            #halo { transform: scale(0.86) !important; }
         }
     </style>
 </head>
 <body>
-    <div class="title-container">
-        <h1>Breathe</h1>
-        <div class="subtitle">@randomsitesontheweb</div>
-    </div>
-    <div class="top-controls">
-        <button class="control-button" onclick="changeAnimation()" id="animationButton">
-            <i class="fas fa-sync-alt"></i>
-        </button>
-        <button class="control-button" onclick="toggleAudio()" id="audioButton">
-            <i class="fas fa-volume-up"></i>
-        </button>
-    </div>
-    <div class="container">
-        <div class="breathing-circle">
-            <!-- <div id="breathing-text" class="breathing-text">Breathe In</div> -->
+    <div id="stage">
+        <div id="halo"></div>
+        <div id="circle"></div>
+        <div id="prompt">
+            <div id="phase">breathe</div>
+            <div id="countdown"></div>
         </div>
     </div>
 
-    <!-- Add Font Awesome for the volume icon -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <div id="hint">tap the circle to begin</div>
+
+    <div id="ledger">breaths on record: <span id="breaths">0</span></div>
+
+    <div id="controls">
+        <button class="pattern on" data-p="box">box 4·4·4·4</button>
+        <button class="pattern" data-p="478">4·7·8</button>
+        <button class="pattern" data-p="resonant">resonant</button>
+    </div>
 
     <script>
-        const audioTracks = [
-            'track3.mp3',
-        ];
-        
-        let currentTrack = Math.floor(Math.random() * audioTracks.length);
-        const audio = new Audio(audioTracks[currentTrack]);
-        audio.loop = true;
-        let isPlaying = true;
-        
-        // Auto-play audio when page loads
-        window.addEventListener('load', () => {
-            audio.play().catch(error => {
-                // Browser might block autoplay
-                isPlaying = false;
-                const icon = document.querySelector('#audioButton i');
-                icon.className = 'fas fa-volume-mute';
-            });
-        });
+        (() => {
+            // phases: [label, seconds, from-scale, to-scale]
+            const PATTERNS = {
+                box: [
+                    ['breathe in', 4, 0.62, 1.0],
+                    ['hold', 4, 1.0, 1.0],
+                    ['breathe out', 4, 1.0, 0.62],
+                    ['hold', 4, 0.62, 0.62]
+                ],
+                '478': [
+                    ['breathe in', 4, 0.62, 1.0],
+                    ['hold', 7, 1.0, 1.0],
+                    ['breathe out', 8, 1.0, 0.62]
+                ],
+                resonant: [
+                    ['breathe in', 5.5, 0.62, 1.0],
+                    ['breathe out', 5.5, 1.0, 0.62]
+                ]
+            };
 
-        const breathingCircle = document.querySelector('.breathing-circle');
-        let isAnimating = true;
+            const circle = document.getElementById('circle');
+            const halo = document.getElementById('halo');
+            const stage = document.getElementById('stage');
+            const phaseEl = document.getElementById('phase');
+            const countdownEl = document.getElementById('countdown');
+            const hint = document.getElementById('hint');
+            const breathsEl = document.getElementById('breaths');
+            const controls = document.getElementById('controls');
+            const patternBtns = [...document.querySelectorAll('.pattern')];
+            const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        function toggleAudio() {
-            const audioButton = document.getElementById('audioButton');
-            const icon = audioButton.querySelector('i');
-            
-            if (isPlaying) {
-                audio.pause();
-                icon.className = 'fas fa-volume-mute';
-            } else {
-                audio.play();
-                icon.className = 'fas fa-volume-up';
-            }
-            isPlaying = !isPlaying;
-        }
+            let breaths = 0;
+            try { breaths = parseInt(localStorage.getItem('breathe-breaths')) || 0; } catch (e) {}
+            breathsEl.textContent = breaths;
 
-        // Change tracks periodically
-        audio.addEventListener('ended', () => {
-            currentTrack = (currentTrack + 1) % audioTracks.length;
-            audio.src = audioTracks[currentTrack];
-            if (isPlaying) {
-                audio.play();
-            }
-        });
+            let pattern = PATTERNS.box;
+            let running = false;
+            let rafId = null;
+            let phaseIndex = 0;
+            let phaseStart = 0;
+            let fadeTimer = null;
 
-        const animations = [
-            {
-                duration: '10s',
-                scale: '1.4',
-                instruction: 'Breathe with the circle',
-                name: 'Normal Breathing'
-            },
-            {
-                duration: '12s',
-                scale: '1.5',
-                instruction: 'Deep, slow breaths',
-                name: 'Deep Breathing'
-            },
-            {
-                duration: '15s',
-                scale: '1.6',
-                instruction: 'Very deep, relaxing breaths',
-                name: 'Extra Deep Breathing'
-            },
-            {
-                duration: '20s',
-                scale: '1.5',
-                instruction: 'Slow, meditative breaths',
-                name: 'Meditation Breathing'
-            },
-            {
-                duration: '18s',
-                scale: '1.45',
-                instruction: 'Calming, peaceful breaths',
-                name: 'Relaxation Breathing'
-            },
-            {
-                duration: '25s',
-                scale: '1.55',
-                instruction: 'Ultra slow, mindful breaths',
-                name: 'Zen Breathing'
-            }
-        ];
+            const easeInOut = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
-        let currentAnimation = 0;
-
-        function changeAnimation() {
-            currentAnimation = (currentAnimation + 1) % animations.length;
-            const circle = document.querySelector('.breathing-circle');
-            const breathingText = document.querySelector('#breathing-text');
-            const animation = animations[currentAnimation];
-            
-            circle.style.animation = `breathe ${animation.duration} infinite cubic-bezier(0.4, 0, 0.2, 1)`;
-            
-            // Set up text animation
-            // Clear any existing interval
-            if (window.breathingInterval) {
-                clearInterval(window.breathingInterval);
-            }
-            
-            // Set up new interval for text animation
-            window.breathingInterval = setInterval(() => {
-                if (breathingText.innerText === 'Breathe Out') {
-                    breathingText.innerText = 'Breathe In';
-                } else {
-                    breathingText.innerText = 'Breathe Out';
+            function enterPhase(i, now) {
+                const wrapped = i >= pattern.length;
+                phaseIndex = wrapped ? 0 : i;
+                phaseStart = now;
+                phaseEl.textContent = pattern[phaseIndex][0];
+                if (wrapped) {
+                    breaths++;
+                    breathsEl.textContent = breaths;
+                    try { localStorage.setItem('breathe-breaths', breaths); } catch (e) {}
                 }
-            }, animation.duration.replace('s', '') * 500);
-            
-            // Start with 'Breathe In'
-            breathingText.innerText = 'Breathe In';
-            
-            // Update the @keyframes rule
-            const styleSheet = document.styleSheets[0];
-            const breatheKeyframes = [...styleSheet.cssRules].find(rule => 
-                rule.type === CSSRule.KEYFRAMES_RULE && rule.name === 'breathe'
-            );
-            
-            if (breatheKeyframes) {
-                breatheKeyframes.deleteRule('50%');
-                breatheKeyframes.appendRule(`50% {
-                    transform: scale(${animation.scale});
-                    background: rgba(135, 206, 235, 0.4);
-                    box-shadow: 0 0 80px rgba(135, 206, 235, 0.5);
-                }`);
             }
-        }
 
-        changeAnimation()
+            function frame(now) {
+                if (!running) return;
+                const [, dur, from, to] = pattern[phaseIndex];
+                const elapsed = (now - phaseStart) / 1000;
+
+                if (elapsed >= dur) {
+                    enterPhase(phaseIndex + 1, now);
+                } else {
+                    if (!reduced) {
+                        const t = easeInOut(Math.min(elapsed / dur, 1));
+                        const s = from + (to - from) * t;
+                        circle.style.transform = 'scale(' + s.toFixed(4) + ')';
+                        halo.style.transform = 'scale(' + (s * 1.06).toFixed(4) + ')';
+                    }
+                    countdownEl.textContent = Math.ceil(dur - elapsed);
+                }
+                rafId = requestAnimationFrame(frame);
+            }
+
+            function start() {
+                if (running) return;
+                running = true;
+                hint.classList.add('gone');
+                phaseIndex = 0;
+                phaseStart = performance.now();
+                phaseEl.textContent = pattern[0][0];
+                rafId = requestAnimationFrame(frame);
+                clearTimeout(fadeTimer);
+                fadeTimer = setTimeout(() => controls.classList.add('faded'), 6000);
+            }
+
+            function stop() {
+                running = false;
+                cancelAnimationFrame(rafId);
+                phaseEl.textContent = 'paused';
+                countdownEl.textContent = '';
+                controls.classList.remove('faded');
+                clearTimeout(fadeTimer);
+            }
+
+            stage.addEventListener('click', () => running ? stop() : start());
+
+            patternBtns.forEach(btn => btn.addEventListener('click', () => {
+                patternBtns.forEach(b => b.classList.toggle('on', b === btn));
+                pattern = PATTERNS[btn.dataset.p];
+                if (running) {
+                    phaseIndex = 0;
+                    phaseStart = performance.now();
+                    phaseEl.textContent = pattern[0][0];
+                } else {
+                    phaseEl.textContent = 'breathe';
+                }
+            }));
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && running) stop();
+            });
+        })();
     </script>
 </body>
 </html>

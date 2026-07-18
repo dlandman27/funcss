@@ -4,196 +4,406 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>I'm sorry :(</title>
+    <title>I'm Sorry :(</title>
     <style>
-        body {
-            font-family: "Comic Sans MS", cursive;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: black;
-            text-align: center;
-            overflow: hidden;
-            touch-action: manipulation;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .container {
-            max-width: 90%;
-            padding: 1rem;
-            animation: crazyBg 0.5s infinite;
-        }
-
-        @keyframes crazyBg {
-            0% { background: red; }
-            25% { background: yellow; }
-            50% { background: green; }
-            75% { background: blue; }
-            100% { background: purple; }
-        }
-
-        h1 {
-            font-size: 3em;
-            margin: 0;
-            animation: shake 0.1s infinite, rainbow 1s infinite;
-        }
-
-        @keyframes shake {
-            0% { transform: translate(2px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(0px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(2px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(2px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
-
-        @keyframes rainbow {
-            0% { color: red; }
-            14% { color: orange; }
-            28% { color: yellow; }
-            42% { color: green; }
-            56% { color: blue; }
-            70% { color: indigo; }
-            84% { color: violet; }
-            100% { color: red; }
-        }
-
-        .message {
-            font-size: 1.5em;
-            margin: 1rem 0;
-            animation: spin 2s linear infinite;
-            color: white;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .emoji-spam {
-            font-size: 2em;
-            position: fixed;
-            animation: float 3s linear infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translate(0, 0); }
-            25% { transform: translate(100vw, 100vh); }
-            50% { transform: translate(0, 100vh); }
-            75% { transform: translate(100vw, 0); }
-            100% { transform: translate(0, 0); }
-        }
-
-        .fade-in {
-            opacity: 0;
-            animation: fadeIn 3s forwards;
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+        html, body {
             height: 100%;
-            background: black;
-            color: white;
+            overflow: hidden;
+            background: #f2ede2;
+            color: #201a17;
+            font-family: Georgia, 'Times New Roman', serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #fx {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        #stage {
+            position: fixed;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3em;
-            z-index: 1000;
-            opacity: 1;
-            transition: opacity 1s ease-out;
+            flex-direction: column;
+            padding: 20px;
         }
 
-        .hidden {
+        /* ── phase one: the apology ── */
+        #card {
+            background: #fff8ef;
+            border: 3px solid #201a17;
+            box-shadow: 6px 6px 0 #201a17;
+            border-radius: 14px;
+            padding: clamp(28px, 6vw, 52px) clamp(24px, 7vw, 60px);
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            transform: rotate(-1deg);
+        }
+        #card > * { opacity: 0; animation: appear 1.2s ease forwards; }
+        #pre    { font-style: italic; font-size: 15px; animation-delay: 0.4s; }
+        #sorry  {
+            font-size: clamp(34px, 8vw, 52px);
+            font-weight: normal;
+            margin: 18px 0 14px;
+            animation-delay: 1.5s;
+        }
+        #note   { font-style: italic; font-size: 15px; opacity: 0; animation-delay: 2.8s; margin-bottom: 26px; }
+        #accept {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #201a17;
+            background: #f0563e;
+            border: 2px solid #201a17;
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 #201a17;
+            padding: 12px 26px;
+            cursor: pointer;
+            animation-delay: 3.8s;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        #accept:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #201a17; }
+        #accept:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #201a17; }
+
+        @keyframes appear { to { opacity: 1; } }
+
+        /* ── phase two: the truth ── */
+        #punch { display: none; text-align: center; }
+        #punch.on { display: block; }
+
+        .big {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(44px, 13vw, 110px);
+            line-height: 1.02;
+            text-transform: uppercase;
+            -webkit-text-stroke: 7px #201a17;
+            paint-order: stroke fill;
+            transform: scale(0);
+        }
+        .big.in { animation: thunk 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        .w1 { color: #5aa0db; rotate: -3deg; }
+        .w2 { color: #f0563e; rotate: 2deg; }
+        .w3 { color: #f7c948; rotate: -2deg; }
+
+        @keyframes thunk {
+            0%   { transform: scale(0.2); }
+            70%  { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        #deal {
+            display: inline-block;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(18px, 4.5vw, 30px);
+            text-transform: uppercase;
+            color: #201a17;
+            background: #f7c948;
+            border: 4px solid #201a17;
+            box-shadow: 5px 5px 0 #201a17;
+            border-radius: 12px;
+            padding: 10px 24px;
+            margin-top: 26px;
+            transform: rotate(-6deg) scale(0);
+        }
+        #deal.in { animation: thunk 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; transform: rotate(-6deg) scale(1); }
+
+        #maybe {
+            font-style: italic;
+            font-size: 13px;
             opacity: 0;
+            margin-top: 18px;
+            transition: opacity 2s;
+        }
+        #maybe.show { opacity: 0.7; }
+
+        /* ── stamps left behind by clicking ── */
+        .stamp {
+            position: fixed;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 15px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            color: #201a17;
+            border: 2px solid #201a17;
+            box-shadow: 3px 3px 0 #201a17;
+            border-radius: 999px;
+            padding: 7px 16px;
             pointer-events: none;
+            z-index: 10;
+            animation: thunk 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+        }
+
+        /* ── chrome ── */
+        #sincerity {
+            position: fixed;
+            left: 50%;
+            bottom: 70px;
+            transform: translateX(-50%);
+            font-style: italic;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 1s;
+            z-index: 20;
+        }
+        #sincerity.show { opacity: 0.75; }
+
+        #again {
+            position: fixed;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #201a17;
+            background: #b7ce3c;
+            border: 2px solid #201a17;
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 #201a17;
+            padding: 10px 20px;
+            cursor: pointer;
+            display: none;
+            z-index: 20;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        #again.show { display: block; }
+        #again:hover { transform: translateX(-50%) translate(-2px, -2px); box-shadow: 5px 5px 0 #201a17; }
+        #again:active { transform: translateX(-50%) translate(2px, 2px); box-shadow: 1px 1px 0 #201a17; }
+
+        body.shake { animation: pageshake 0.25s; }
+        @keyframes pageshake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 3px); }
+            40% { transform: translate(5px, -4px); }
+            60% { transform: translate(-4px, -3px); }
+            80% { transform: translate(4px, 3px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            body.shake { animation: none; }
         }
     </style>
 </head>
 <body>
-    <div class="overlay" id="overlay">I'M SORRY</div>
-    <div class="container">
-        <h1>FOR</h1>
-        <h1>ABSOLUTELY</h1>
-        <h1>NOTHING!!!</h1>
-        <div class="message">DEAL WITH IT! 🤪</div>
+    <canvas id="fx"></canvas>
+    <div id="stage">
+        <div id="card">
+            <div id="pre">there's something I need to say.</div>
+            <h1 id="sorry">I'm sorry.</h1>
+            <div id="note">this isn't easy for me.</div>
+            <button id="accept">Accept Apology</button>
+        </div>
+        <div id="punch">
+            <div class="big w1">For</div>
+            <div class="big w2">Absolutely</div>
+            <div class="big w3">Nothing</div>
+            <div><span id="deal">Deal With It.</span></div>
+            <div id="maybe">(ok. maybe a little sorry.)</div>
+        </div>
     </div>
-
-    <audio id="chaos" loop>
-        <source src="https://www.example.com/new-sound.mp3" type="audio/mpeg">
-    </audio>
+    <div id="sincerity">sincerity: 0%</div>
+    <button id="again">Apologize Again</button>
 
     <script>
-        // Start the chaos when page loads
-        window.onload = function() {
-            const overlay = document.getElementById('overlay');
+        'use strict';
+
+        const INK = '#201a17';
+        const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+        const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const PRES = [
+            "there's something I need to say.",
+            "please, sit down for this.",
+            "I've been rehearsing this all week.",
+            "this has been weighing on me.",
+            "I owe you this, at the very least.",
+        ];
+        const NOTES = [
+            "this isn't easy for me.",
+            "I mean it. every word.",
+            "from the very bottom of my heart.",
+            "I hope you can find it in yourself to forgive me.",
+            "no, really.",
+        ];
+        const STAMPS = [
+            'not sorry', 'zero regrets', 'still right', 'no refunds',
+            'my bad (not really)', 'apology void', 'case closed', 'unrepentant',
+        ];
+        const SINCERITY = [
+            'sincerity: 0%',
+            'sincerity: 0.0%',
+            'sincerity: recalculating…',
+            'sincerity: still 0%',
+            'regret detected: none',
+            'remorse levels: nominal (zero)',
+        ];
+
+        const $ = id => document.getElementById(id);
+        const card = $('card'), punch = $('punch');
+        let phase = 1, sincerityTimer = null, sincerityIdx = 0;
+
+        // ── confetti engine: one canvas, sleeps when empty ──
+        const fx = $('fx'), fctx = fx.getContext('2d');
+        let FW = 0, FH = 0, particles = [], fxRunning = false;
+
+        function fxResize() {
+            const dpr = Math.min(devicePixelRatio || 1, 2);
+            FW = innerWidth; FH = innerHeight;
+            fx.width = FW * dpr;
+            fx.height = FH * dpr;
+            fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        let rt = null;
+        addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(fxResize, 100); });
+        fxResize();
+
+        function burst(x, y, n) {
+            if (reduceMotion) n = Math.min(n, 12);
+            for (let i = 0; i < n; i++) {
+                if (particles.length > 350) break;
+                const a = Math.random() * Math.PI * 2;
+                const sp = 3 + Math.random() * 9;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(a) * sp,
+                    vy: Math.sin(a) * sp - 4,
+                    rot: Math.random() * Math.PI,
+                    vr: (Math.random() - 0.5) * 0.3,
+                    kind: Math.random() < 0.5 ? 'rect' : 'dot',
+                    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                    size: 5 + Math.random() * 7,
+                });
+            }
+            if (!fxRunning) { fxRunning = true; requestAnimationFrame(fxTick); }
+        }
+
+        function fxTick() {
+            fctx.clearRect(0, 0, FW, FH);
+            particles = particles.filter(p => p.y < FH + 40);
+            for (const p of particles) {
+                p.vy += 0.28;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rot += p.vr;
+                fctx.save();
+                fctx.translate(p.x, p.y);
+                fctx.rotate(p.rot);
+                fctx.fillStyle = p.color;
+                fctx.strokeStyle = INK;
+                fctx.lineWidth = 2;
+                if (p.kind === 'rect') {
+                    fctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    fctx.strokeRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                } else {
+                    fctx.beginPath();
+                    fctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                    fctx.fill();
+                    fctx.stroke();
+                }
+                fctx.restore();
+            }
+            if (particles.length) requestAnimationFrame(fxTick);
+            else { fxRunning = false; fctx.clearRect(0, 0, FW, FH); }
+        }
+
+        function shake() {
+            if (reduceMotion) return;
+            document.body.classList.remove('shake');
+            void document.body.offsetWidth;
+            document.body.classList.add('shake');
+        }
+
+        // ── phase one → two ──
+        function resetApology() {
+            phase = 1;
+            punch.classList.remove('on');
+            document.querySelectorAll('.big').forEach(b => b.classList.remove('in'));
+            $('deal').classList.remove('in');
+            $('maybe').classList.remove('show');
+            $('sincerity').classList.remove('show');
+            $('again').classList.remove('show');
+            clearInterval(sincerityTimer);
+            document.querySelectorAll('.stamp').forEach(s => s.remove());
+            $('pre').textContent = PRES[Math.floor(Math.random() * PRES.length)];
+            $('note').textContent = NOTES[Math.floor(Math.random() * NOTES.length)];
+            card.style.display = '';
+            // restart the fade-in sequence
+            [...card.children].forEach(el => {
+                el.style.animation = 'none';
+                void el.offsetWidth;
+                el.style.animation = '';
+            });
+        }
+
+        function theTruth() {
+            phase = 2;
+            card.style.display = 'none';
+            punch.classList.add('on');
+            const bigs = document.querySelectorAll('.big');
+            bigs.forEach((b, i) => {
+                setTimeout(() => {
+                    b.classList.add('in');
+                    shake();
+                    burst(innerWidth / 2, innerHeight * (0.3 + i * 0.15), 30);
+                }, 200 + i * 380);
+            });
             setTimeout(() => {
-                overlay.classList.add('hidden');
-                
-                // Start playing the audio after the overlay is hidden
-                const audio = document.getElementById('chaos');
-                audio.play();
-                audio.volume = 0.5;
-            }, 3000); // Hide overlay and start music after 3 seconds
+                $('deal').classList.add('in');
+                shake();
+                burst(innerWidth / 2, innerHeight * 0.7, 60);
+                $('sincerity').classList.add('show');
+                $('again').classList.add('show');
+                sincerityIdx = 0;
+                clearInterval(sincerityTimer);
+                sincerityTimer = setInterval(() => {
+                    sincerityIdx = (sincerityIdx + 1) % SINCERITY.length;
+                    $('sincerity').textContent = SINCERITY[sincerityIdx];
+                }, 4000);
+                // a rare crack in the armor. tell no one.
+                if (Math.random() < 0.03) {
+                    setTimeout(() => $('maybe').classList.add('show'), 5000);
+                }
+            }, 200 + bigs.length * 380 + 300);
+        }
 
-            const apologyText = document.getElementById('apology-text');
-            setTimeout(() => {
-                apologyText.textContent = "FOR NOTHING!!!";
-            }, 6000); // Change text after 6 seconds
-
-            // Create floating emojis
-            const emojis = ['🤪', '😜', '🤡', '👻', '💩', '🎉', '🌈', '💥', '🔥', '⚡️'];
-            
-            setInterval(() => {
-                const emoji = document.createElement('div');
-                emoji.className = 'emoji-spam';
-                emoji.style.left = Math.random() * window.innerWidth + 'px';
-                emoji.style.top = Math.random() * window.innerHeight + 'px';
-                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-                document.body.appendChild(emoji);
-                
-                // Remove emoji after animation
-                setTimeout(() => emoji.remove(), 3000);
-            }, 200);
-
-            // Make the background flash different colors
-            setInterval(() => {
-                document.body.style.backgroundColor = 
-                    '#' + Math.floor(Math.random()*16777215).toString(16);
-            }, 200);
-
-            // Make everything rotate randomly
-            setInterval(() => {
-                document.querySelector('.container').style.transform = 
-                    `rotate(${Math.random() * 360}deg)`;
-            }, 1000);
-        };
-
-        // Make cursor trail
-        document.addEventListener('mousemove', function(e) {
-            const trail = document.createElement('div');
-            trail.className = 'emoji-spam';
-            trail.style.left = e.pageX + 'px';
-            trail.style.top = e.pageY + 'px';
-            trail.textContent = '🤪';
-            document.body.appendChild(trail);
-            setTimeout(() => trail.remove(), 1000);
+        $('accept').addEventListener('click', e => {
+            e.stopPropagation();
+            theTruth();
         });
+
+        $('again').addEventListener('click', e => {
+            e.stopPropagation();
+            resetApology();
+        });
+
+        // clicking anywhere in phase two leaves a mark
+        addEventListener('pointerdown', e => {
+            if (phase !== 2) return;
+            if (e.target.closest('button')) return;
+            const stamps = document.querySelectorAll('.stamp');
+            if (stamps.length > 60) stamps[0].remove();
+            const s = document.createElement('div');
+            s.className = 'stamp';
+            s.textContent = STAMPS[Math.floor(Math.random() * STAMPS.length)];
+            s.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+            s.style.left = e.clientX + 'px';
+            s.style.top = e.clientY + 'px';
+            s.style.rotate = (Math.random() * 24 - 12) + 'deg';
+            s.style.translate = '-50% -50%';
+            document.body.appendChild(s);
+            burst(e.clientX, e.clientY, 14);
+        });
+
+        resetApology();
     </script>
 </body>
 </html>
-

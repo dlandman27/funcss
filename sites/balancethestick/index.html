@@ -5,411 +5,723 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balance the Stick</title>
-    <meta name="description" content="Test your balancing skills by keeping a stick upright on a moving platform">
-    <meta name="keywords" content="balance game, physics game, stick balance, browser game">
-    <meta name="author" content="@randomsitesontheweb">
-    <meta name="theme-color" content="#000000">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='45' y='10' width='10' height='80' fill='white'/><rect x='20' y='85' width='60' height='5' fill='white'/></svg>">
-    <meta property="og:title" content="Balance the Stick">
-    <meta property="og:description" content="How long can you keep the stick balanced? Test your skills in this physics-based balancing game.">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Random Sites on the Web">
-    
+    <meta name="description" content="A stick, a cart, and your one job: keep it upright. The wind disagrees.">
     <style>
-        body {
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --orange: #f47b28;
+            --gold: #f7c948;
+            --teal: #2fb0a3;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
-            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+
+        #game {
+            position: fixed;
+            inset: 0;
+            cursor: none;
+        }
+
+        body.menu #game { cursor: default; }
+
+        /* ---------- timer chip ---------- */
+        #timer {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 0.25em 0.9em;
+            font-variant-numeric: tabular-nums;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* ---------- hall of fame ---------- */
+        #fame {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 0.6rem 1rem;
+            font-size: 0.8rem;
+            transform: rotate(1.5deg);
+            pointer-events: none;
+            z-index: 5;
+            min-width: 128px;
+        }
+
+        #fame h3 {
+            margin: 0 0 0.3rem;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
+
+        #fame ol {
+            margin: 0;
+            padding-left: 1.3em;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+
+        /* ---------- ledger ---------- */
+        #ledger {
+            position: fixed;
+            bottom: 12px;
+            left: 14px;
+            font-style: italic;
+            font-size: 0.8rem;
+            opacity: 0.55;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* ---------- overlays ---------- */
+        .overlay {
+            position: fixed;
+            inset: 0;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-            background: #000;
-            font-family: 'Courier New', monospace;
-            color: #fff;
-        }
-
-        canvas {
-            border: 2px solid #fff;
-        }
-
-        .score {
-            position: absolute;
-            top: 20px;
-            font-size: 24px;
-        }
-
-        #game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            display: none;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 18px;
-            background: #fff;
-            border: none;
-            cursor: pointer;
-            margin-top: 20px;
-            font-family: 'Courier New', monospace;
-        }
-
-        button:hover {
-            background: #ddd;
-        }
-
-        .leaderboard {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            text-align: right;
-        }
-
-        .leaderboard h3 {
-            margin-bottom: 5px;
-        }
-
-        .leaderboard ol {
-            margin: 0;
-            padding-left: 25px;
-        }
-
-        #title-screen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 100;
-        }
-
-        #title-screen h1 {
-            font-size: 48px;
-            margin-bottom: 30px;
-            text-shadow: 0 0 10px #0f0;
-        }
-
-        .glow-text {
-            color: #fff;
-            text-shadow: 0 0 10px #0f0;
-        }
-
-        .initials-container {
-            display: flex;
             justify-content: center;
-            gap: 5px;
-            margin: 10px 0;
+            gap: 1.2rem;
+            z-index: 10;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .overlay.hidden { display: none; }
+
+        .overlay h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(1.6rem, 7vw, 2.8rem);
+            margin: 0;
+            background: var(--sky);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--ink);
+            padding: 0.25em 0.7em;
+            transform: rotate(-2deg);
+        }
+
+        .overlay .plaquenote {
+            font-style: italic;
+            font-size: clamp(0.9rem, 3vw, 1.05rem);
+            opacity: 0.8;
+            max-width: 420px;
+            line-height: 1.5;
+        }
+
+        .bigbtn {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 1.05rem;
+            letter-spacing: 0.05em;
+            padding: 0.7rem 1.9rem;
+            background: var(--lime);
+            color: var(--ink);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            cursor: pointer;
+            transform: rotate(-2deg);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+
+        .bigbtn:hover { transform: translate(-2px, -2px) rotate(-2deg); box-shadow: 6px 6px 0 var(--ink); }
+        .bigbtn:active { transform: translate(3px, 3px) rotate(-2deg); box-shadow: 1px 1px 0 var(--ink); }
+
+        #stamp {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(2rem, 9vw, 3.4rem);
+            color: var(--cream);
+            -webkit-text-stroke: 2px var(--ink);
+            paint-order: stroke fill;
+            background: var(--coral);
+            border: 5px double var(--ink);
+            border-radius: 16px;
+            box-shadow: 6px 6px 0 var(--ink);
+            padding: 0.25em 0.7em;
+            transform: rotate(-7deg);
+            animation: slam 0.32s cubic-bezier(0.25, 1.4, 0.5, 1);
+        }
+
+        @keyframes slam {
+            0%   { transform: scale(3) rotate(3deg); opacity: 0; }
+            65%  { transform: scale(0.94) rotate(-8deg); opacity: 1; }
+            100% { transform: scale(1) rotate(-7deg); opacity: 1; }
+        }
+
+        #result {
+            font-size: clamp(1rem, 3.4vw, 1.2rem);
+            font-style: italic;
+        }
+
+        #result b {
+            font-family: 'Courier New', monospace;
+            font-style: normal;
+        }
+
+        .initials {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
         }
 
         .initial {
-            width: 30px;
-            height: 30px;
+            width: clamp(44px, 12vw, 56px);
+            height: clamp(52px, 14vw, 66px);
             text-align: center;
-            font-size: 24px;
-            background: #000;
-            border: 2px solid #0f0;
-            color: #0f0;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.4rem, 5vw, 1.9rem);
             text-transform: uppercase;
+            background: var(--cream);
+            color: var(--ink);
+            border: 3px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 3px 3px 0 var(--ink);
+            outline: none;
+            caret-color: transparent;
+        }
+
+        .initial:focus { background: #fff; transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+
+        .newrecord {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 0.25em 0.9em;
+            transform: rotate(3deg);
+        }
+
+        #count {
+            position: fixed;
+            top: 38%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-4deg);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(3.4rem, 16vw, 6.5rem);
+            color: var(--gold);
+            -webkit-text-stroke: 4px var(--ink);
+            paint-order: stroke fill;
+            pointer-events: none;
+            z-index: 8;
+            display: none;
+        }
+
+        #count.tick {
+            display: block;
+            animation: countPop 0.7s cubic-bezier(0.2, 1.6, 0.4, 1);
+        }
+
+        @keyframes countPop {
+            0%   { transform: translate(-50%, -50%) scale(0.2) rotate(10deg); opacity: 0; }
+            35%  { transform: translate(-50%, -50%) scale(1.15) rotate(-5deg); opacity: 1; }
+            70%  { transform: translate(-50%, -50%) scale(1) rotate(-4deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(-4deg); opacity: 0.4; }
+        }
+
+        body.shake { animation: jolt 0.25s linear; }
+
+        @keyframes jolt {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-6px, 4px); }
+            50% { transform: translate(6px, -4px); }
+            75% { transform: translate(-4px, -4px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.shake { animation: none; }
+            #stamp { animation: none; }
         }
     </style>
 </head>
-<body>
-    <div id="title-screen">
-        <h1>balance the stick</h1>
-        <button onclick="startGame()">Start Game</button>
+<body class="menu">
+    <canvas id="game"></canvas>
+
+    <div id="timer">0.000</div>
+
+    <div id="fame">
+        <h3>Hall of Fame</h3>
+        <ol id="famelist"></ol>
     </div>
-    <div class="score">Time: <span id="timer">0</span>s</div>
-    <div class="leaderboard">
-        <h3>Top Scores</h3>
-        <ol id="leaderboard-list"></ol>
+
+    <div id="ledger">sticks dropped: <span id="drops">0</span></div>
+    <div id="count"></div>
+
+    <div id="menu" class="overlay">
+        <h1>Balance the Stick</h1>
+        <p class="plaquenote">keep it upright. that is the entire sport.<br>
+        move the cart with your pointer. mind the wind.</p>
+        <button id="start" class="bigbtn">Pick It Up</button>
     </div>
-    <canvas id="gameCanvas"></canvas>
-    <div id="game-over">
-        <h2>Game Over!</h2>
-        <p>You lasted: <span id="final-time">0</span> seconds</p>
-        <div id="initials-input">
-            <p>Enter your initials:</p>
-            <div class="initials-container">
-                <input type="text" maxlength="1" class="initial" value="A">
-                <input type="text" maxlength="1" class="initial" value="A">
-                <input type="text" maxlength="1" class="initial" value="A">
+
+    <div id="over" class="overlay hidden">
+        <div id="stamp">It Fell</div>
+        <div id="result">upright for <b id="finaltime">0.000</b> seconds</div>
+        <div id="recordwrap" style="display:none"><span class="newrecord">Hall of Fame</span></div>
+        <div id="entry" style="display:none">
+            <p class="plaquenote" style="margin:0 0 0.6rem">initials, for the record:</p>
+            <div class="initials">
+                <input class="initial" maxlength="1" aria-label="first initial">
+                <input class="initial" maxlength="1" aria-label="second initial">
+                <input class="initial" maxlength="1" aria-label="third initial">
             </div>
-            <button onclick="submitScore()">Submit Score</button>
         </div>
-        <button onclick="resetGame()" style="display: none;" id="try-again-btn">Try Again</button>
+        <button id="retry" class="bigbtn">Again</button>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const timerElement = document.getElementById('timer');
-        const gameOverScreen = document.getElementById('game-over');
-        const finalTimeElement = document.getElementById('final-time');
-        const highScoreElement = document.getElementById('high-score');
+        (() => {
+            const INK = '#201a17';
+            const canvas = document.getElementById('game');
+            const ctx = canvas.getContext('2d');
+            const timerEl = document.getElementById('timer');
+            const menuEl = document.getElementById('menu');
+            const overEl = document.getElementById('over');
+            const finalEl = document.getElementById('finaltime');
+            const entryEl = document.getElementById('entry');
+            const recordWrap = document.getElementById('recordwrap');
+            const fameList = document.getElementById('famelist');
+            const dropsEl = document.getElementById('drops');
+            const initials = [...document.querySelectorAll('.initial')];
+            const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        canvas.width = 800;
-        canvas.height = 600;
+            let W = 0, H = 0, dpr = 1;
+            let state = 'menu';          // menu | countdown | play | falling | over
+            let pointerX = null;
+            let countTimers = [];
 
-        const platform = {
-            width: 100,
-            height: 20,
-            x: canvas.width / 2 - 50,
-            y: canvas.height - 50
-        };
+            // physics
+            const stick = { angle: 0, vel: 0, len: 0 };
+            const cart = { x: 0, px: 0, v: 0, w: 0, h: 18 };
+            let startTime = 0, elapsed = 0;
 
-        const stick = {
-            length: 100,
-            width: 5,
-            angle: 0,
-            angleVelocity: 0,
-            angleAcceleration: 0,
-            x: canvas.width / 2,
-            y: canvas.height - 50,
-            lastPlatformX: canvas.width / 2 - 50  // Track last platform position
-        };
+            // wind
+            let wind = 0;                // current angular push from wind (rad/s^2 * L)
+            let gustAt = 0;              // when the next gust hits (ms since start)
+            let gustUntil = 0;
+            let gustDir = 1;
+            let gustMag = 0;
+            let stage = 0;               // difficulty stage index
 
-    let isGameOver = false;
-    let startTime = Date.now();
-    let elapsedTime = 0;
-    let highScore = localStorage.getItem('highScore') || 0;
-    let scores = JSON.parse(localStorage.getItem('scores') || '[]');
-    // highScoreElement.textContent = highScore;
-    let gameStarted = false;
+            let drops = 0, scores = [];
+            try {
+                drops = parseInt(localStorage.getItem('stick-drops')) || 0;
+                scores = JSON.parse(localStorage.getItem('scores')) || [];
+            } catch (e) {}
+            dropsEl.textContent = drops;
 
-        function drawPlatform() {
-            ctx.strokeStyle = '#0f0';
-            ctx.lineWidth = 2;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#0f0';
-            ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
-            ctx.shadowBlur = 0;
-        }
-
-        function drawStick() {
-            ctx.save();
-            ctx.strokeStyle = '#0f0';
-            ctx.lineWidth = 2;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#0f0';
-            ctx.translate(stick.x, stick.y);
-            ctx.rotate(stick.angle);
-            
-            // Draw stick outline
-            ctx.beginPath();
-            ctx.moveTo(-stick.width/2, -stick.length);
-            ctx.lineTo(-stick.width/2, 0);
-            ctx.lineTo(stick.width/2, 0);
-            ctx.lineTo(stick.width/2, -stick.length);
-            ctx.stroke();
-            
-            // Draw a small circle at the top to indicate weight
-            ctx.beginPath();
-            ctx.arc(0, -stick.length, stick.width * 1.5, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            ctx.restore();
-        }
-
-        function updateStick() {
-            const gravity = 0.0015;      // Reduced gravity
-            const dampening = 0.998;     // More dampening for smoother motion
-            const platformSensitivity = 0.0005; // Increased platform sensitivity
-            const topHeavyFactor = 2;  // Slightly reduced top-heaviness
-
-            // Calculate platform movement
-            const platformDelta = platform.x - stick.lastPlatformX;
-            
-            // Update angle acceleration with gentler physics
-            stick.angleAcceleration = Math.sin(stick.angle) * gravity * topHeavyFactor;
-            stick.angleAcceleration += -platformDelta * platformSensitivity;
-            
-            // Update velocity and apply dampening
-            stick.angleVelocity += stick.angleAcceleration;
-            stick.angleVelocity *= dampening;
-            
-            // Update angle
-            stick.angle += stick.angleVelocity;
-            
-            // Store platform position for next frame
-            stick.lastPlatformX = platform.x;
-            
-            // Game over if stick falls too far (increased angle tolerance)
-            if (Math.abs(stick.angle) > Math.PI/2) { // More forgiving angle
-                gameOver();
+            function resize() {
+                dpr = Math.min(window.devicePixelRatio || 1, 2);
+                W = window.innerWidth;
+                H = window.innerHeight;
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                stick.len = Math.min(H * 0.34, 300);
+                cart.w = Math.max(90, Math.min(W * 0.16, 130));
             }
-        }
 
-        function gameOver() {
-            isGameOver = true;
-            const seconds = Math.floor(elapsedTime / 1000);
-            const milliseconds = elapsedTime % 1000;
-            const currentTime = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
-            gameOverScreen.style.display = 'block';
-            finalTimeElement.textContent = currentTime;
-            document.getElementById('try-again-btn').style.display = 'none';
-            document.getElementById('initials-input').style.display = 'block';
-        }
-
-        function submitScore() {
-            const inputs = document.querySelectorAll('.initial');
-            const initials = Array.from(inputs).map(input => input.value).join('');
-            const score = elapsedTime / 1000; // Store as seconds with decimals
-            
-            scores.push({ initials, score });
-            scores.sort((a, b) => b.score - a.score);
-            scores = scores.slice(0, 5);
-            
-            localStorage.setItem('scores', JSON.stringify(scores));
-            updateLeaderboard();
-            
-            // Reset the game immediately after submitting
-            resetGame();
-            gameOverScreen.style.display = 'none';
-        }
-
-        function updateLeaderboard() {
-            const leaderboardList = document.getElementById('leaderboard-list');
-            leaderboardList.innerHTML = '';
-            
-            scores.forEach(score => {
-                const li = document.createElement('li');
-                li.textContent = `${score.initials} - ${score.score.toFixed(3)}s`;
-                leaderboardList.appendChild(li);
-            });
-        }
-
-        function resetGame() {
-            isGameOver = false;
-            gameOverScreen.style.display = 'none';
-            
-            // Reset stick physics
-            stick.angle = 0;
-            stick.angleVelocity = 0;
-            stick.angleAcceleration = 0;
-            
-            // Reset positions
-            platform.x = canvas.width / 2 - platform.width / 2;
-            stick.x = platform.x + platform.width / 2;
-            stick.lastPlatformX = platform.x;
-            
-            // Reset timer
-            startTime = Date.now();
-            elapsedTime = 0;
-            timerElement.textContent = '0';
-            
-            // Add this line to update leaderboard when resetting
-            updateLeaderboard();
-        }
-
-        function updateTimer() {
-            if (!isGameOver) {
-                elapsedTime = Date.now() - startTime;
-                const seconds = Math.floor(elapsedTime / 1000);
-                const milliseconds = elapsedTime % 1000;
-                timerElement.textContent = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+            // ---------- sticker helpers ----------
+            function sticker(path, fill, lw) {
+                ctx.save(); ctx.translate(3, 3); path(); ctx.fillStyle = INK; ctx.fill(); ctx.restore();
+                path(); ctx.fillStyle = fill; ctx.fill();
+                ctx.lineWidth = lw || 2.5; ctx.lineJoin = 'round'; ctx.strokeStyle = INK; ctx.stroke();
             }
-        }
 
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (gameStarted && !isGameOver) {
-                updateStick();
-                updateTimer();
+            function rr(x, y, w, h, r) {
+                return () => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
             }
-            
-            drawPlatform();
-            drawStick();
-            
-            requestAnimationFrame(gameLoop);
-        }
 
-        // Mouse/Touch movement
-        function handleMove(e) {
-            if (isGameOver || !gameStarted) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            let x;
-            
-            if (e.type.startsWith('touch')) {
-                x = e.touches[0].clientX - rect.left;
-            } else {
-                x = e.clientX - rect.left;
+            // ---------- drawing ----------
+            function drawGround() {
+                const y = groundY();
+                ctx.strokeStyle = INK;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(0, y + cart.h + 16);
+                ctx.lineTo(W, y + cart.h + 16);
+                ctx.stroke();
             }
-            
-            // Update platform and stick position
-            platform.x = Math.max(0, Math.min(canvas.width - platform.width, x - platform.width/2));
-            stick.x = platform.x + platform.width/2;
-        }
 
-        canvas.addEventListener('mousemove', handleMove);
-        canvas.addEventListener('touchmove', handleMove);
-        canvas.addEventListener('touchstart', handleMove);
+            function groundY() {
+                return H - Math.max(90, H * 0.16);
+            }
 
-        function startGame() {
-            document.getElementById('title-screen').style.display = 'none';
-            gameStarted = true;
-            scores = JSON.parse(localStorage.getItem('scores') || '[]');
-            updateLeaderboard();
-            setupInitialsInput();
-            resetGame();
-        }
-
-        // Start game
-        updateLeaderboard();
-        gameLoop();
-
-        // Add this new function to handle initial input navigation
-        function setupInitialsInput() {
-            const inputs = document.querySelectorAll('.initial');
-            
-            inputs.forEach((input, index) => {
-                // Clear the 'A' when focusing on the input
-                input.addEventListener('focus', () => {
-                    input.value = '';
+            function drawCart() {
+                const y = groundY();
+                const x = cart.x - cart.w / 2;
+                sticker(rr(x, y, cart.w, cart.h, 8), '#5aa0db');
+                // wheels
+                const wy = y + cart.h + 8;
+                [x + cart.w * 0.22, x + cart.w * 0.78].forEach(wx => {
+                    sticker(() => { ctx.beginPath(); ctx.arc(wx, wy, 9, 0, Math.PI * 2); }, '#f7c948', 2.5);
                 });
+            }
 
-                // Remove the input event listener that was causing issues
-                // and handle all input through keydown instead
-                input.addEventListener('keydown', (e) => {
-                    // Only allow A-Z and a-z keys
-                    if (e.key.match(/^[A-Za-z]$/)) {
-                        input.value = e.key.toUpperCase();
-                        if (index < inputs.length - 1) {
-                            inputs[index + 1].focus();
-                        } else if (index === inputs.length - 1) {
-                            // Auto-submit if it's the last input
-                            submitScore();
+            function drawStick() {
+                const y = groundY();
+                const bx = cart.x;
+                const danger = state === 'play' && Math.abs(stick.angle) > 0.45;
+                ctx.save();
+                ctx.translate(bx, y);
+                ctx.rotate(stick.angle);
+                const w = 11;
+                sticker(rr(-w / 2, -stick.len, w, stick.len, 5), '#f47b28');
+                // the knob on top — flashes in danger
+                const knobColor = danger && (Math.floor(elapsed / 120) % 2) ? '#f7c948' : '#f0563e';
+                sticker(() => { ctx.beginPath(); ctx.arc(0, -stick.len, 15, 0, Math.PI * 2); }, knobColor);
+                ctx.restore();
+
+                // exclamation over the knob when it's about to go
+                if (danger) {
+                    const kx = bx + Math.sin(stick.angle) * stick.len;
+                    const ky = y - Math.cos(stick.angle) * stick.len;
+                    ctx.font = '900 26px "Arial Black", Arial, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = INK;
+                    ctx.strokeText('!', kx, ky - 30);
+                    ctx.fillStyle = '#f7c948';
+                    ctx.fillText('!', kx, ky - 30);
+                }
+            }
+
+            function drawWind() {
+                if (state !== 'play' || STAGES[stage].windMax === 0) return;
+                const telegraphing = gustUntil === 0 && elapsed >= gustAt - 700 && elapsed < gustAt;
+                const blowing = gustUntil > 0 && elapsed < gustUntil;
+                if (!telegraphing && !blowing) return;
+                const y0 = groundY() - stick.len * 0.7;
+                ctx.strokeStyle = telegraphing ? 'rgba(32,26,23,0.25)' : INK;
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+                for (let i = 0; i < 3; i++) {
+                    const y = y0 + i * 26 - 26;
+                    const len = 46 + (i % 2) * 22;
+                    const x = gustDir > 0 ? 24 + ((elapsed / 4) % 60) : W - 24 - len - ((elapsed / 4) % 60);
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + len, y);
+                    // little curl on the end
+                    ctx.quadraticCurveTo(x + len + 10, y, x + len + 8, y - 7);
+                    ctx.stroke();
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+                drawGround();
+                drawWind();
+                drawCart();
+                drawStick();
+            }
+
+            // ---------- difficulty stages ----------
+            const STAGES = [
+                { at: 0,     gravity: 900,  windMin: 0,   windMax: 0,   note: null },
+                { at: 10000, gravity: 1000, windMin: 1.6, windMax: 2.4, note: 'a breeze picks up' },
+                { at: 25000, gravity: 1150, windMin: 2.4, windMax: 3.6, note: 'the wind has opinions' },
+                { at: 45000, gravity: 1300, windMin: 3.4, windMax: 5.0, note: 'gale advisory issued' },
+                { at: 70000, gravity: 1500, windMin: 4.6, windMax: 6.6, note: 'the sky is simply against you now' }
+            ];
+
+            function currentStage() {
+                let s = 0;
+                for (let i = 0; i < STAGES.length; i++) if (elapsed >= STAGES[i].at) s = i;
+                return s;
+            }
+
+            function announce(text) {
+                const chip = document.createElement('div');
+                chip.textContent = text;
+                chip.style.cssText =
+                    'position:fixed;top:70px;left:50%;transform:translateX(-50%) rotate(-2deg);' +
+                    'font-family:Georgia,serif;font-style:italic;font-size:0.95rem;' +
+                    'background:var(--cream);border:2px solid var(--ink);border-radius:999px;' +
+                    'box-shadow:3px 3px 0 var(--ink);padding:0.35rem 1.1rem;z-index:6;' +
+                    'pointer-events:none;transition:opacity 1.2s ease;';
+                document.body.appendChild(chip);
+                setTimeout(() => { chip.style.opacity = '0'; }, 2200);
+                setTimeout(() => chip.remove(), 3600);
+            }
+
+            // ---------- physics ----------
+            let lastT = 0;
+
+            function scheduleGust() {
+                // gusts come faster in later stages
+                const gap = Math.max(1800, 5200 - stage * 800);
+                gustAt = elapsed + gap + Math.random() * gap;
+                gustUntil = 0;
+                gustDir = Math.random() < 0.5 ? -1 : 1;   // decided now so the telegraph is honest
+            }
+
+            function step(t) {
+                const dt = Math.min((t - lastT) / 1000, 0.033);
+                lastT = t;
+
+                if (state === 'countdown' && dt > 0) {
+                    // stick is pinned upright; cart already follows the pointer
+                    // so play begins from wherever your hand is — no snap
+                    if (pointerX !== null) {
+                        const target = Math.max(cart.w / 2, Math.min(W - cart.w / 2, pointerX));
+                        cart.x += (target - cart.x) * Math.min(1, dt * 20);
+                    }
+                    cart.v = (cart.x - cart.px) / dt;
+                    cart.px = cart.x;
+                }
+
+                if ((state === 'play' || state === 'falling') && dt > 0) {
+                    if (pointerX !== null && state === 'play') {
+                        const target = Math.max(cart.w / 2, Math.min(W - cart.w / 2, pointerX));
+                        cart.x += (target - cart.x) * Math.min(1, dt * 20);
+                    }
+                    // smoothed cart velocity — moving the cart toward the lean
+                    // is what rights the stick (velocity coupling: forgiving,
+                    // and corrections don't cancel themselves out)
+                    const rawV = (cart.x - cart.px) / dt;
+                    cart.v = cart.v * 0.65 + rawV * 0.35;
+                    cart.px = cart.x;
+
+                    const g = STAGES[stage].gravity;
+                    let acc = (g * Math.sin(stick.angle)) / stick.len;
+                    if (state === 'play') {
+                        let control = (cart.v / stick.len) * Math.cos(stick.angle) * 1.15;
+                        control = Math.max(-14, Math.min(14, control));
+                        acc -= control;
+                        acc += (wind / stick.len) * 60;   // wind as a steady sideways shove
+                    }
+                    stick.vel += acc * dt;
+                    stick.vel *= 0.998;
+                    stick.angle += stick.vel * dt;
+
+                    if (state === 'play') {
+                        elapsed = performance.now() - startTime;
+                        timerEl.textContent = (elapsed / 1000).toFixed(3);
+
+                        // stage promotion
+                        const s = currentStage();
+                        if (s !== stage) {
+                            stage = s;
+                            if (STAGES[s].note) announce(STAGES[s].note);
+                            if (gustAt > elapsed + 6000) scheduleGust();
                         }
+
+                        // wind lifecycle
+                        const st = STAGES[stage];
+                        if (st.windMax > 0) {
+                            if (gustUntil === 0 && elapsed >= gustAt) {
+                                gustMag = st.windMin + Math.random() * (st.windMax - st.windMin);
+                                gustUntil = gustAt + 1100 + Math.random() * 1000;
+                            }
+                            if (gustUntil > 0) {
+                                if (elapsed < gustUntil) {
+                                    // ease the gust in and out so it shoves, not snaps
+                                    const p = (elapsed - gustAt) / (gustUntil - gustAt);
+                                    wind = gustDir * gustMag * Math.sin(Math.PI * Math.min(Math.max(p, 0), 1));
+                                } else {
+                                    wind = 0;
+                                    scheduleGust();
+                                }
+                            }
+                        }
+
+                        if (Math.abs(stick.angle) > Math.PI * 0.42) beginFall();
+                    } else {
+                        // falling: free rotation until it hits the ground
+                        if (Math.abs(stick.angle) >= Math.PI / 2) {
+                            stick.angle = Math.sign(stick.angle) * Math.PI / 2;
+                            finishFall();
+                        }
+                    }
+                }
+
+                draw();
+                if (state !== 'over') requestAnimationFrame(step);
+            }
+
+            // ---------- game flow ----------
+            const countEl = document.getElementById('count');
+
+            function startGame() {
+                countTimers.forEach(clearTimeout);
+                countTimers = [];
+                state = 'countdown';
+                document.body.classList.remove('menu');
+                menuEl.classList.add('hidden');
+                overEl.classList.add('hidden');
+                stick.angle = 0;
+                stick.vel = 0;
+                cart.x = cart.px = W / 2;
+                cart.v = 0;
+                pointerX = null;
+                wind = 0;
+                elapsed = 0;
+                stage = 0;
+                timerEl.textContent = '0.000';
+                lastT = performance.now();
+                requestAnimationFrame(step);
+
+                // 3 · 2 · 1 while the stick is held upright
+                ['3', '2', '1'].forEach((n, i) => {
+                    countTimers.push(setTimeout(() => {
+                        countEl.textContent = n;
+                        countEl.classList.remove('tick');
+                        void countEl.offsetWidth;
+                        countEl.classList.add('tick');
+                    }, i * 700));
+                });
+                countTimers.push(setTimeout(() => {
+                    countEl.classList.remove('tick');
+                    stick.angle = (Math.random() < 0.5 ? -1 : 1) * 0.02;
+                    stick.vel = 0;
+                    scheduleGust();
+                    startTime = performance.now();
+                    state = 'play';
+                }, 2100));
+            }
+
+            function beginFall() {
+                state = 'falling';
+                wind = 0;
+                drops++;
+                dropsEl.textContent = drops;
+                try { localStorage.setItem('stick-drops', drops); } catch (e) {}
+            }
+
+            function finishFall() {
+                state = 'over';
+                document.body.classList.add('menu');
+                if (!reduced) {
+                    document.body.classList.remove('shake');
+                    void document.body.offsetWidth;
+                    document.body.classList.add('shake');
+                }
+                const secs = elapsed / 1000;
+                finalEl.textContent = secs.toFixed(3);
+
+                const qualifies = scores.length < 5 || secs > scores[scores.length - 1].score;
+                recordWrap.style.display = qualifies ? 'block' : 'none';
+                entryEl.style.display = qualifies ? 'block' : 'none';
+                overEl.classList.remove('hidden');
+                if (qualifies) {
+                    initials.forEach(i => i.value = '');
+                    setTimeout(() => initials[0].focus(), 50);
+                }
+            }
+
+            function submitScore() {
+                const name = initials.map(i => i.value.toUpperCase() || '·').join('');
+                scores.push({ initials: name, score: elapsed / 1000 });
+                scores.sort((a, b) => b.score - a.score);
+                scores = scores.slice(0, 5);
+                try { localStorage.setItem('scores', JSON.stringify(scores)); } catch (e) {}
+                renderFame();
+                entryEl.style.display = 'none';
+            }
+
+            function renderFame() {
+                fameList.innerHTML = '';
+                scores.forEach(s => {
+                    const li = document.createElement('li');
+                    li.textContent = s.initials + ' ' + s.score.toFixed(3) + 's';
+                    fameList.appendChild(li);
+                });
+                if (!scores.length) {
+                    const li = document.createElement('li');
+                    li.textContent = 'vacant';
+                    fameList.appendChild(li);
+                }
+            }
+
+            // ---------- input ----------
+            canvas.addEventListener('pointermove', e => { pointerX = e.clientX; });
+            canvas.addEventListener('pointerdown', e => {
+                pointerX = e.clientX;
+                canvas.setPointerCapture(e.pointerId);
+            });
+
+            document.getElementById('start').addEventListener('click', startGame);
+            document.getElementById('retry').addEventListener('click', startGame);
+
+            initials.forEach((input, idx) => {
+                input.addEventListener('keydown', e => {
+                    if (/^[a-zA-Z]$/.test(e.key)) {
+                        input.value = e.key.toUpperCase();
+                        e.preventDefault();
+                        if (idx < 2) initials[idx + 1].focus();
+                        else submitScore();
                     } else if (e.key === 'Backspace') {
                         input.value = '';
-                        if (index > 0) {
-                            inputs[index - 1].focus();
-                        }
-                    } else {
+                        if (idx > 0) initials[idx - 1].focus();
                         e.preventDefault();
-                    }
-                });
-
-                // Prevent paste unless it's a single letter
-                input.addEventListener('paste', (e) => {
-                    e.preventDefault();
-                    const paste = (e.clipboardData || window.clipboardData).getData('text');
-                    if (paste.length === 1 && paste.match(/^[A-Za-z]$/)) {
-                        input.value = paste.toUpperCase();
-                        if (index < inputs.length - 1) {
-                            inputs[index + 1].focus();
-                        } else {
-                            // Auto-submit if it's the last input
-                            submitScore();
-                        }
+                    } else if (e.key === 'Enter') {
+                        submitScore();
                     }
                 });
             });
-        }
+
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    resize();
+                    if (state === 'menu' || state === 'over') draw();
+                }, 120);
+            });
+
+            resize();
+            cart.x = cart.px = W / 2;
+            renderFame();
+            draw();
+        })();
     </script>
 </body>
 </html>

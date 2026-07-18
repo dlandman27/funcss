@@ -38,6 +38,12 @@ Example: `/refactor-site prefixsuffix rename to "The Longest Name" and make the 
    - Responsive — must look good on mobile
    - **Read `.claude/commands/site-style.md` first and follow it** — the sticker-comic design
      language, interaction feel, voice, and tech checklist for every site
+   - **Match the intensity to the site's purpose.** Not every site gets the full sticker
+     treatment. Toys, games, and tools get the loud recipe (hard shadows, crooked pills,
+     Arial Black). Mindfulness and ambient sites (breathing, affirmations, slow tv, noise)
+     stay QUIET: same ink/paper palette and serif voice so they feel related, but soft
+     edges, muted color, no hard offset shadows, no shouting type. See "Volume" in
+     site-style.md.
    - Prefer interactive over static — if the old page was a wall of text, give it a toy
 
 4. **Run `npm run build`** — regenerates `index.html` from the catalog and validates

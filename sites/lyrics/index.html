@@ -1,840 +1,571 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lyrics to Songs Without Lyrics</title>
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            min-height: 100%;
+            background: #201a17;
+            color: #fff8ef;
+            font-family: Georgia, 'Times New Roman', serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         body {
-            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 26px 16px 40px;
+            background: radial-gradient(ellipse 120% 80% at 50% 20%, #3a3029 0%, #201a17 65%);
+            min-height: 100vh;
+        }
+
+        #pagetitle {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(20px, 5vw, 34px);
+            text-transform: uppercase;
+            color: #ff7fa5;
+            -webkit-text-stroke: 6px #201a17;
+            paint-order: stroke fill;
+            transform: rotate(-1.5deg);
             text-align: center;
-            background-color: #f5f5f5;
-            color: #333;
+            text-shadow: 3px 3px 0 #000;
         }
-        h1 {
-            font-size: 2.5em;
-            color: #2c3e50;
-            margin-bottom: 1.5em;
-            font-weight: 300;
+        #pagesub {
+            font-style: italic;
+            font-size: 14px;
+            opacity: 0.7;
+            margin: 8px 0 24px;
+            text-align: center;
         }
-        .lyrics-container {
-            margin: 40px auto;
-            padding: 40px;
-            border-radius: 12px;
-            background: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 700px;
+
+        /* ── the karaoke screen ── */
+        #screen {
+            background: #fff8ef;
+            color: #201a17;
+            border: 3px solid #201a17;
+            box-shadow: 8px 8px 0 #000;
+            border-radius: 16px;
+            width: min(600px, 100%);
+            padding: 24px 26px 20px;
+            transform: rotate(-0.6deg);
+        }
+
+        #songTitle {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(19px, 4.6vw, 27px);
+            text-transform: uppercase;
+            line-height: 1.15;
+        }
+        #meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0 18px;
+            flex-wrap: wrap;
+        }
+        #artist { font-style: italic; font-size: 15px; }
+        .tag {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            background: #2fb0a3;
+            border: 2px solid #201a17;
+            box-shadow: 2px 2px 0 #201a17;
+            border-radius: 999px;
+            padding: 3px 10px;
+            transform: rotate(-2deg);
+        }
+
+        #sectionRow {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            min-height: 30px;
+            flex-wrap: wrap;
+        }
+        #sectionLabel {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            background: #f7c948;
+            border: 2px solid #201a17;
+            box-shadow: 2px 2px 0 #201a17;
+            border-radius: 999px;
+            padding: 4px 14px;
+            transform: rotate(1.5deg);
+            animation: popin 0.3s cubic-bezier(0.2, 1.5, 0.4, 1);
+        }
+        #sectionAside { font-style: italic; font-size: 13px; opacity: 0.7; }
+
+        @keyframes popin {
+            0% { transform: scale(0.2) rotate(1.5deg); }
+            70% { transform: scale(1.12) rotate(1.5deg); }
+            100% { transform: scale(1) rotate(1.5deg); }
+        }
+
+        #lines {
             position: relative;
+            padding: 34px 6px 14px;
+            min-height: 170px;
         }
-        .lyrics-container h2 {
-            color: #2c3e50;
-            font-size: 1.8em;
-            margin-bottom: 1em;
-            font-weight: 500;
+        .line {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
-        #lyrics {
-            font-size: 1.2em;
-            line-height: 1.8;
-            color: #555;
-            white-space: pre-line;
-            margin: 20px 0;
+        .word {
+            height: 12px;
+            background: #f2ede2;
+            border: 2px solid #201a17;
+            border-radius: 999px;
+            transition: transform 0.15s;
         }
-        button {
-            padding: 12px 28px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #3498db;
-            color: white;
+        .word.sung {
+            animation: wordpop 0.28s cubic-bezier(0.2, 1.5, 0.4, 1);
+        }
+        .word.real {
+            height: auto;
+            background: none;
             border: none;
-            border-radius: 25px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 20px;
+            text-transform: uppercase;
+            color: #f0563e;
+            -webkit-text-stroke: 4px #201a17;
+            paint-order: stroke fill;
+            visibility: hidden;
         }
-        button:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        .word.real.sung { visibility: visible; }
+        @keyframes wordpop {
+            0% { transform: scale(0.4); }
+            70% { transform: scale(1.3); }
+            100% { transform: scale(1); }
         }
-        .song-info {
-            margin-bottom: 30px;
-            color: #7f8c8d;
-            font-size: 0.9em;
+
+        #ball {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #f0563e;
+            border: 2px solid #201a17;
+            box-shadow: 2px 2px 0 #201a17;
+            top: 0;
+            left: 0;
+            display: none;
+            z-index: 5;
+        }
+
+        #stats {
+            display: flex;
+            justify-content: space-between;
+            border-top: 2px dashed #201a17;
+            padding-top: 12px;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        /* ── controls ── */
+        #controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 26px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #201a17;
+            border: 2px solid #201a17;
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 #000;
+            padding: 12px 22px;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #000; }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+        #playBtn { background: #f0563e; min-width: 120px; }
+        #nextBtn { background: #5aa0db; }
+        #copyBtn { background: #b7ce3c; }
+
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1deg);
+            font-style: italic;
+            font-size: 14px;
+            color: #201a17;
+            background: #fff8ef;
+            border: 2px solid #201a17;
+            box-shadow: 3px 3px 0 #000;
+            border-radius: 999px;
+            padding: 9px 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 40;
+        }
+        #toast.show { opacity: 1; }
+
+        #applause {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(30px, 8vw, 52px);
+            text-transform: uppercase;
+            color: #201a17;
+            background: #f7c948;
+            border: 4px solid #201a17;
+            box-shadow: 6px 6px 0 #201a17;
+            border-radius: 14px;
+            padding: 12px 28px;
+            transform: translate(-50%, -50%) rotate(-7deg) scale(0);
+            z-index: 8;
+        }
+        #applause.show { animation: thunk 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+        @keyframes thunk {
+            0%   { transform: translate(-50%, -50%) rotate(-7deg) scale(0.2); }
+            70%  { transform: translate(-50%, -50%) rotate(-7deg) scale(1.15); }
+            100% { transform: translate(-50%, -50%) rotate(-7deg) scale(1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .word.sung, #sectionLabel, #applause.show { animation: none; }
+            #applause.show { transform: translate(-50%, -50%) rotate(-7deg) scale(1); }
         }
     </style>
 </head>
 <body>
-    <h1>Lyrics to Songs Without Lyrics</h1>
-    <p style="color: #666; margin-bottom: 2em;">See the lyrics of famous songs throughout history, however they all have no lyrics</p>
-    <div class="lyrics-container">
-        <h2 id="songTitle">Loading song...</h2>
-        <div class="song-info">
-            <span id="artist">Loading artist...</span> • Instrumental
+    <div id="pagetitle">Lyrics to Songs Without Lyrics</div>
+    <div id="pagesub">every word, exactly as recorded. sing along.</div>
+
+    <div id="screen">
+        <div id="songTitle"></div>
+        <div id="meta">
+            <span id="artist"></span>
+            <span class="tag">Instrumental</span>
         </div>
-        <strong>Lyrics:</strong>
-        <p id="lyrics">...</p>
+        <div id="sectionRow">
+            <span id="sectionLabel"></span>
+            <span id="sectionAside"></span>
+        </div>
+        <div id="lines">
+            <div id="ball"></div>
+            <div id="applause">Applause</div>
+        </div>
+        <div id="stats">
+            <span id="wordCount">total words: 0</span>
+            <span id="hummed">notes hummed: 0</span>
+        </div>
     </div>
-    <button onclick="nextSong()">Next Song</button>
+
+    <div id="controls">
+        <button class="btn" id="playBtn">Play</button>
+        <button class="btn" id="nextBtn">Next Song</button>
+        <button class="btn" id="copyBtn">Copy Lyrics</button>
+    </div>
+
+    <div id="toast"></div>
 
     <script>
-        const instrumentalSongs = [
-            { 
-                title: "Rush E",
-                artist: "Sheet Music Boss",
-                lyrics: ""
-            },
-            { 
-                title: "Flight of the Bumblebee",
-                artist: "Nikolai Rimsky-Korsakov",
-                lyrics: ""
-            },
-            { 
-                title: "Axel F",
-                artist: "Harold Faltermeyer",
-                lyrics: "" 
-            },
-            { 
-                title: "Classical Gas",
-                artist: "Mason Williams",
-                lyrics: "" 
-            },
-            { 
-                title: "Moonlight Sonata",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Clair de Lune",
-                artist: "Claude Debussy",
-                lyrics: ""
-            },
-            { 
-                title: "The Four Seasons",
-                artist: "Antonio Vivaldi",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 9",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 21",
-                artist: "Wolfgang Amadeus Mozart",
-                lyrics: ""
-            },
-            { 
-                title: "The Blue Danube",
-                artist: "Johann Strauss II",
-                lyrics: ""
-            },
-            { 
-                title: "Rhapsody in Blue",
-                artist: "George Gershwin",
-                lyrics: ""
-            },
-            { 
-                title: "Bolero",
-                artist: "Maurice Ravel",
-                lyrics: ""
-            },
-            { 
-                title: "The Nutcracker",
-                artist: "Pyotr Ilyich Tchaikovsky",
-                lyrics: ""
-            },
-            { 
-                title: "Swan Lake",
-                artist: "Pyotr Ilyich Tchaikovsky",
-                lyrics: ""
-            },
-            { 
-                title: "Für Elise",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Habanera",
-                artist: "Georges Bizet",
-                lyrics: ""
-            },
-            { 
-                title: "The Entertainer",
-                artist: "Scott Joplin",
-                lyrics: ""
-            },
-            { 
-                title: "Take Five",
-                artist: "The Dave Brubeck Quartet",
-                lyrics: ""
-            },
-            { 
-                title: "Moon River",
-                artist: "Henry Mancini",
-                lyrics: ""
-            },
-            { 
-                title: "The Pink Panther Theme",
-                artist: "Henry Mancini",
-                lyrics: ""
-            },
-            { 
-                title: "Jesu, Joy of Man's Desiring",
-                artist: "Johann Sebastian Bach",
-                lyrics: ""
-            },
-            { 
-                title: "Air on the G String",
-                artist: "Johann Sebastian Bach",
-                lyrics: ""
-            },
-            { 
-                title: "The Four Seasons: Winter",
-                artist: "Antonio Vivaldi",
-                lyrics: ""
-            },
-            { 
-                title: "The Four Seasons: Spring",
-                artist: "Antonio Vivaldi",
-                lyrics: ""
-            },
-            { 
-                title: "The Four Seasons: Summer",
-                artist: "Antonio Vivaldi",
-                lyrics: ""
-            },
-            { 
-                title: "The Four Seasons: Autumn",
-                artist: "Antonio Vivaldi",
-                lyrics: ""
-            },
-            { 
-                title: "Pomp and Circumstance",
-                artist: "Edward Elgar",
-                lyrics: ""
-            },
-            { 
-                title: "The William Tell Overture",
-                artist: "Gioachino Rossini",
-                lyrics: ""
-            },
-            { 
-                title: "The Barber of Seville Overture",
-                artist: "Gioachino Rossini",
-                lyrics: ""
-            },
-            { 
-                title: "The Magic Flute Overture",
-                artist: "Wolfgang Amadeus Mozart",
-                lyrics: ""
-            },
-            { 
-                title: "Eine Kleine Nachtmusik",
-                artist: "Wolfgang Amadeus Mozart",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 40",
-                artist: "Wolfgang Amadeus Mozart",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 5",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 6",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 7",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 8",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 9",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 20",
-                artist: "Wolfgang Amadeus Mozart",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 23",
-                artist: "Wolfgang Amadeus Mozart",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 8",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 14",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 23",
-                artist: "Ludwig van Beethoven",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 8",
-                artist: "Franz Schubert",
-                lyrics: ""
-            },
-            { 
-                title: "Impromptus",
-                artist: "Franz Schubert",
-                lyrics: ""
-            },
-            { 
-                title: "Unfinished Symphony",
-                artist: "Franz Schubert",
-                lyrics: ""
-            },
-            { 
-                title: "The Great Gate of Kiev",
-                artist: "Modest Mussorgsky",
-                lyrics: ""
-            },
-            { 
-                title: "Night on Bald Mountain",
-                artist: "Modest Mussorgsky",
-                lyrics: ""
-            },
-            { 
-                title: "Pictures at an Exhibition",
-                artist: "Modest Mussorgsky",
-                lyrics: ""
-            },
-            { 
-                title: "The Sorcerer's Apprentice",
-                artist: "Paul Dukas",
-                lyrics: ""
-            },
-            { 
-                title: "The Dance of the Sugar Plum Fairy",
-                artist: "Pyotr Ilyich Tchaikovsky",
-                lyrics: ""
-            },
-            { 
-                title: "The Waltz of the Flowers",
-                artist: "Pyotr Ilyich Tchaikovsky",
-                lyrics: ""
-            },
-            { 
-                title: "1812 Overture",
-                artist: "Pyotr Ilyich Tchaikovsky",
-                lyrics: ""
-            },
-            { 
-                title: "Romeo and Juliet Fantasy Overture",
-                artist: "Pyotr Ilyich Tchaikovsky",
-                lyrics: ""
-            },
-            { 
-                title: "Capriccio Italien",
-                artist: "Pyotr Ilyich Tchaikovsky",
-                lyrics: ""
-            },
-            { 
-                title: "Marche Slave",
-                artist: "Pyotr Ilyich Tchaikovsky",
-                lyrics: ""
-            },
-            { 
-                title: "Polonaise in A-flat major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Nocturne in E-flat major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 1",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 2",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Fantaisie-Impromptu",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Waltz in D-flat major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Waltz in C-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in D-flat major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in C minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in G minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E-flat major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in B minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A-flat major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in F-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in C-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in G-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in D-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in B-flat major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in F major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in C major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in G major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in D major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in B major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in F-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in C-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in G-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in D-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in B-flat minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in F minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in C minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in G minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in D minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in B minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A-flat minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in F-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in C-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in G-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in D-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E-sharp minor",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in B-flat major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in F major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in C major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in G major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in D major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in B major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in F-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in C-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in G-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in D-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in A-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Prelude in E-sharp major",
-                artist: "Frédéric Chopin",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 1",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 2",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 3",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "Hungarian Rhapsodies",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "Les Préludes",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "La Campanella",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "Mephisto Waltz",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 1",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 2",
-                artist: "Franz Liszt",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 3",
-                artist: "Sergei Rachmaninoff",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Concerto No. 4",
-                artist: "Sergei Rachmaninoff",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 2",
-                artist: "Sergei Rachmaninoff",
-                lyrics: ""
-            },
-            { 
-                title: "Symphony No. 3",
-                artist: "Sergei Rachmaninoff",
-                lyrics: ""
-            },
-            { 
-                title: "Vocalise",
-                artist: "Sergei Rachmaninoff",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 2",
-                artist: "Sergei Rachmaninoff",
-                lyrics: ""
-            },
-            { 
-                title: "Piano Sonata No. 3",
-                artist: "Sergei Rachmaninoff",
-                lyrics: ""
-            },
-            { 
-                title: "Nuvole Bianche",
-                artist: "Max Richter",
-                lyrics: ""
-            },
-            { 
-                title: "Sleep",
-                artist: "Max Richter",
-                lyrics: ""
-            },
-            { 
-                title: "The Blue Danube",
-                artist: "Johann Strauss II",
-                lyrics: ""
-            },
-            { 
-                title: "Also sprach Zarathustra",
-                artist: "Richard Strauss",
-                lyrics: ""
-            },
-            { 
-                title: "Boléro",
-                artist: "Maurice Ravel",
-                lyrics: ""
-            },
-            { 
-                title: "Daphnis et Chloé",
-                artist: "Maurice Ravel",
-                lyrics: ""
-            },
-            { 
-                title: "Pavane pour une infante défunte",
-                artist: "Maurice Ravel",
-                lyrics: ""
-            },
-            { 
-                title: "Rhapsody in Blue",
-                artist: "George Gershwin",
-                lyrics: ""
-            },
-            { 
-                title: "An American in Paris",
-                artist: "George Gershwin",
-                lyrics: ""
-            },
-            { 
-                title: "Concierto de Aranjuez",
-                artist: "Joaquín Rodrigo",
-                lyrics: ""
-            },
-            { 
-                title: "Fantasia on a Theme by Thomas Tallis",
-                artist: "Ralph Vaughan Williams",
-                lyrics: ""
-            },
-            { 
-                title: "The Planets",
-                artist: "Gustav Holst",
-                lyrics: ""
-            },
-            { 
-                title: "The Planets",
-                artist: "Gustav Holst",
-                lyrics: ""
-            },
-            
+        'use strict';
+
+        const SONGS = [
+            { title: 'Rush E', artist: 'Sheet Music Boss' },
+            { title: 'Flight of the Bumblebee', artist: 'Nikolai Rimsky-Korsakov' },
+            { title: 'Axel F', artist: 'Harold Faltermeyer' },
+            { title: 'Classical Gas', artist: 'Mason Williams' },
+            { title: 'Moonlight Sonata', artist: 'Ludwig van Beethoven' },
+            { title: 'Clair de Lune', artist: 'Claude Debussy' },
+            { title: 'Für Elise', artist: 'Ludwig van Beethoven' },
+            { title: 'The Blue Danube', artist: 'Johann Strauss II' },
+            { title: 'Rhapsody in Blue', artist: 'George Gershwin' },
+            { title: 'Boléro', artist: 'Maurice Ravel' },
+            { title: 'Gymnopédie No. 1', artist: 'Erik Satie' },
+            { title: 'Canon in D', artist: 'Johann Pachelbel' },
+            { title: 'Take Five', artist: 'The Dave Brubeck Quartet' },
+            { title: 'The Pink Panther Theme', artist: 'Henry Mancini' },
+            { title: 'The Entertainer', artist: 'Scott Joplin' },
+            { title: 'Dance of the Sugar Plum Fairy', artist: 'Pyotr Ilyich Tchaikovsky' },
+            { title: '1812 Overture', artist: 'Pyotr Ilyich Tchaikovsky' },
+            { title: 'Also sprach Zarathustra', artist: 'Richard Strauss' },
+            { title: 'The Four Seasons: Winter', artist: 'Antonio Vivaldi' },
+            { title: 'Night on Bald Mountain', artist: 'Modest Mussorgsky' },
+            { title: "The Sorcerer's Apprentice", artist: 'Paul Dukas' },
+            { title: 'La Campanella', artist: 'Franz Liszt' },
+            { title: 'Hungarian Rhapsody No. 2', artist: 'Franz Liszt' },
+            { title: 'Prelude in E minor', artist: 'Frédéric Chopin' },
+            { title: 'Nocturne in E-flat major', artist: 'Frédéric Chopin' },
+            { title: 'Fantaisie-Impromptu', artist: 'Frédéric Chopin' },
+            { title: 'Symphony No. 5', artist: 'Ludwig van Beethoven' },
+            { title: 'Eine kleine Nachtmusik', artist: 'Wolfgang Amadeus Mozart' },
+            { title: 'The Planets: Mars', artist: 'Gustav Holst' },
+            { title: 'An American in Paris', artist: 'George Gershwin' },
+            { title: 'Vocalise', artist: 'Sergei Rachmaninoff', aside: 'there is a voice. it is not saying anything.' },
+            { title: 'Sleepwalk', artist: 'Santo & Johnny' },
+            { title: 'Frankenstein', artist: 'The Edgar Winter Group' },
+            { title: 'Jessica', artist: 'The Allman Brothers Band' },
+            { title: 'YYZ', artist: 'Rush' },
+            { title: 'Green Onions', artist: 'Booker T. & the M.G.’s' },
+            { title: 'Misirlou', artist: 'Dick Dale' },
+            { title: 'Wipe Out', artist: 'The Surfaris' },
+        ];
+        // the rare exception. one word. tell no one.
+        const TEQUILA = { title: 'Tequila', artist: 'The Champs', tequila: true };
+
+        const SECTION_TYPES = [
+            { label: 'Verse 1', asides: ['(instrumental)', '(no words here)', '(hum if you must)'] },
+            { label: 'Chorus', asides: ['(nothing, but louder)', '(the part everyone knows)', '(all together now: nothing)'] },
+            { label: 'Verse 2', asides: ['(still nothing)', '(the lyrics do not develop)', '(same as verse 1, wordwise)'] },
+            { label: 'Bridge', asides: ['(the emotional part)', '(feel something here)', '(key change, zero words)'] },
+            { label: 'Solo', asides: ['(finally, a section with no words on purpose)', '(shred)', '(this part is showing off)'] },
+            { label: 'Outro', asides: ['(fading to nothing)', '(the words never arrive)', '(hold the silence)'] },
         ];
 
-        let currentSongIndex = -1;
-
-        function nextSong() {
-            currentSongIndex = (currentSongIndex + 1) % instrumentalSongs.length;
-            const song = instrumentalSongs[currentSongIndex];
-            document.getElementById('songTitle').textContent = song.title;
-            document.getElementById('artist').textContent = song.artist;
-            document.getElementById('lyrics').textContent = song.lyrics;
+        // deterministic randomness: same song, same structure, forever
+        function hash(str) {
+            let h = 2166136261;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return h >>> 0;
+        }
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
         }
 
-        // Load first song when page loads
-        nextSong();
+        const $ = id => document.getElementById(id);
+        const linesEl = $('lines'), ball = $('ball');
+        const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        let order = [], orderPos = 0;
+        let song = null, structure = null, bpm = 110;
+        let playing = false, rafId = null;
+        let secIdx = 0, wordIdx = 0, wordStart = 0, pausedAt = 0;
+        let hummed = 0, finished = false;
+
+        function buildStructure(s) {
+            const rng = mulberry32(hash(s.title + s.artist));
+            bpm = 88 + Math.floor(rng() * 48);
+            const picks = [0, 1, 2, 1];
+            if (rng() < 0.7) picks.push(3);
+            if (rng() < 0.6) picks.push(4);
+            picks.push(5);
+            return picks.map((ti, i) => {
+                const type = SECTION_TYPES[ti];
+                const aside = (i === 0 && s.aside) ? s.aside : type.asides[Math.floor(rng() * type.asides.length)];
+                const lines = [];
+                const nLines = 2 + Math.floor(rng() * 2);
+                for (let l = 0; l < nLines; l++) {
+                    const words = [];
+                    const nWords = 3 + Math.floor(rng() * 4);
+                    for (let w = 0; w < nWords; w++) {
+                        words.push({ width: 20 + Math.floor(rng() * 48) });
+                    }
+                    lines.push(words);
+                }
+                // the tequila moment: last word of the final chorus is real
+                if (s.tequila && ti === 1 && i === picks.lastIndexOf(1)) {
+                    const lastLine = lines[lines.length - 1];
+                    lastLine[lastLine.length - 1] = { real: 'Tequila!' };
+                }
+                return { label: type.label, aside, lines };
+            });
+        }
+
+        function renderSection(i) {
+            const sec = structure[i];
+            $('sectionLabel').textContent = sec.label;
+            // retrigger the label pop
+            $('sectionLabel').style.animation = 'none';
+            void $('sectionLabel').offsetWidth;
+            $('sectionLabel').style.animation = '';
+            $('sectionAside').textContent = sec.aside;
+
+            [...linesEl.querySelectorAll('.line')].forEach(l => l.remove());
+            for (const line of sec.lines) {
+                const row = document.createElement('div');
+                row.className = 'line';
+                for (const w of line) {
+                    const el = document.createElement('span');
+                    if (w.real) {
+                        el.className = 'word real';
+                        el.textContent = w.real;
+                    } else {
+                        el.className = 'word';
+                        el.style.width = w.width + 'px';
+                    }
+                    row.appendChild(el);
+                }
+                linesEl.appendChild(row);
+            }
+        }
+
+        function sectionWords(i) {
+            return [...linesEl.querySelectorAll('.word')];
+        }
+
+        function loadSong(s, autoplay) {
+            stopLoop();
+            song = s;
+            structure = buildStructure(s);
+            secIdx = 0; wordIdx = 0; hummed = 0; finished = false; pausedAt = 0;
+            $('songTitle').textContent = s.title;
+            $('artist').textContent = s.artist;
+            $('wordCount').textContent = 'total words: ' + (s.tequila ? 1 : 0);
+            $('hummed').textContent = 'notes hummed: 0';
+            $('applause').classList.remove('show');
+            $('playBtn').textContent = 'Play';
+            renderSection(0);
+            ball.style.display = 'none';
+            if (autoplay) play();
+        }
+
+        function wordCenter(el) {
+            const wr = el.getBoundingClientRect();
+            const cr = linesEl.getBoundingClientRect();
+            return {
+                x: wr.left - cr.left + wr.width / 2,
+                y: wr.top - cr.top,
+            };
+        }
+
+        function placeBall(x, y) {
+            ball.style.left = (x - 11) + 'px';
+            ball.style.top = (y - 30) + 'px';
+        }
+
+        function play() {
+            if (finished) { loadSong(song, true); return; }
+            playing = true;
+            $('playBtn').textContent = 'Pause';
+            ball.style.display = 'block';
+            wordStart = performance.now() - pausedAt;
+            tick(performance.now());
+        }
+
+        function pause() {
+            playing = false;
+            $('playBtn').textContent = 'Play';
+            pausedAt = performance.now() - wordStart;
+            stopLoop();
+        }
+
+        function stopLoop() {
+            playing = false;
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+
+        function tick(now) {
+            if (!playing) return;
+            const beat = 60000 / bpm;
+            const words = sectionWords(secIdx);
+            const t = (now - wordStart) / beat;
+
+            if (t >= 1) {
+                // land on the word
+                const el = words[wordIdx];
+                if (el) {
+                    el.classList.add('sung');
+                    if (!el.classList.contains('real')) {
+                        el.style.background = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'][hummed % 8];
+                    }
+                    hummed++;
+                    $('hummed').textContent = 'notes hummed: ' + hummed;
+                }
+                wordIdx++;
+                wordStart = now;
+                if (wordIdx >= words.length) {
+                    secIdx++;
+                    wordIdx = 0;
+                    if (secIdx >= structure.length) { endSong(); return; }
+                    setTimeout(() => {
+                        if (!playing) return;
+                        renderSection(secIdx);
+                        wordStart = performance.now();
+                        rafId = requestAnimationFrame(tick);
+                    }, 700);
+                    ball.style.display = 'none';
+                    return;
+                }
+            }
+
+            // hop the ball toward the current word
+            ball.style.display = 'block';
+            const target = words[wordIdx] ? wordCenter(words[wordIdx]) : null;
+            if (target) {
+                const from = words[wordIdx - 1] ? wordCenter(words[wordIdx - 1]) : { x: target.x - 60, y: target.y };
+                const p = Math.min((now - wordStart) / beat, 1);
+                const x = from.x + (target.x - from.x) * p;
+                const hop = reduceMotion ? 0 : Math.sin(p * Math.PI) * 26;
+                const y = from.y + (target.y - from.y) * p - hop;
+                placeBall(x, y);
+            }
+            rafId = requestAnimationFrame(tick);
+        }
+
+        function endSong() {
+            stopLoop();
+            finished = true;
+            ball.style.display = 'none';
+            $('applause').classList.add('show');
+            $('playBtn').textContent = 'Encore';
+        }
+
+        // ── controls ──
+        $('playBtn').addEventListener('click', () => playing ? pause() : play());
+
+        $('nextBtn').addEventListener('click', () => {
+            orderPos = (orderPos + 1) % order.length;
+            // 4% of the time, the jukebox has other plans
+            loadSong(Math.random() < 0.04 ? TEQUILA : SONGS[order[orderPos]], true);
+        });
+
+        let toastT = null;
+        $('copyBtn').addEventListener('click', () => {
+            const words = song && song.tequila ? 'Tequila!' : '';
+            try { navigator.clipboard.writeText(words); } catch {}
+            const toast = $('toast');
+            toast.textContent = song && song.tequila
+                ? 'copied. all 1 word of it.'
+                : 'copied. all 0 words of it.';
+            toast.classList.add('show');
+            clearTimeout(toastT);
+            toastT = setTimeout(() => toast.classList.remove('show'), 2200);
+        });
+
+        // shuffled play order
+        order = [...SONGS.keys()];
+        for (let i = order.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [order[i], order[j]] = [order[j], order[i]];
+        }
+
+        loadSong(SONGS[order[0]], true);
     </script>
 </body>
 </html>

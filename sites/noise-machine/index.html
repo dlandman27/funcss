@@ -5,1085 +5,595 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Noise Machine</title>
+    <meta name="description" content="White, pink, brown, rain, thunder, fan — an ambient mixing desk, generated live in your browser.">
     <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
         }
 
-        :root {
-            --bg: #0d0f14;
-            --surface: #161a22;
-            --surface2: #1e2430;
-            --border: #2a3040;
-            --text: #c8d0e0;
-            --text-muted: #5a6478;
-            --accent: #4a9eff;
-            --accent-glow: rgba(74, 158, 255, 0.15);
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--paper);
+            color: var(--ink);
         }
 
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 24px 16px 48px;
-            overflow-x: hidden;
+            min-height: 100vh;
+            padding: 1.6rem 1rem 3rem;
+            font-family: Georgia, 'Times New Roman', serif;
         }
 
         header {
             text-align: center;
-            margin-bottom: 32px;
-            padding-top: 8px;
+            margin-bottom: 1.3rem;
+        }
+
+        header .dept {
+            font-style: italic;
+            font-size: 0.78rem;
+            letter-spacing: 0.18em;
+            opacity: 0.45;
         }
 
         header h1 {
-            font-size: clamp(1.6rem, 5vw, 2.4rem);
-            font-weight: 300;
-            letter-spacing: 0.25em;
-            text-transform: uppercase;
-            color: var(--text);
+            font-weight: normal;
+            font-variant: small-caps;
+            letter-spacing: 0.12em;
+            font-size: clamp(1.5rem, 5vw, 2.1rem);
+            margin: 0.4rem 0 0;
             opacity: 0.9;
         }
 
-        header p {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            letter-spacing: 0.08em;
-            margin-top: 6px;
-        }
-
-        /* Waveform canvas */
-        #waveform-canvas {
-            width: 100%;
-            max-width: 680px;
-            height: 64px;
-            margin-bottom: 28px;
-            opacity: 0;
-            transition: opacity 0.6s ease;
-        }
-
-        #waveform-canvas.visible {
-            opacity: 1;
-        }
-
-        /* Silence indicator */
-        #silence-indicator {
-            height: 64px;
-            max-width: 680px;
-            width: 100%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 28px;
-            color: var(--text-muted);
-            font-size: 0.82rem;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-        }
-
-        #silence-indicator.visible {
-            display: flex;
-        }
-
-        .silence-dot {
-            display: inline-block;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: var(--text-muted);
-            margin: 0 4px;
-            animation: silencePulse 2.4s ease-in-out infinite;
-        }
-
-        .silence-dot:nth-child(2) { animation-delay: 0.4s; }
-        .silence-dot:nth-child(3) { animation-delay: 0.8s; }
-
-        @keyframes silencePulse {
-            0%, 100% { opacity: 0.2; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.3); }
-        }
-
-        /* Power button */
-        .power-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 36px;
-        }
-
-        #power-btn {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            border: 2px solid var(--border);
-            background: var(--surface);
-            color: var(--text-muted);
-            cursor: pointer;
+        /* ---------- console top row ---------- */
+        .console {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.3rem;
+            width: min(94vw, 640px);
         }
 
-        #power-btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: radial-gradient(circle at center, var(--accent-glow), transparent 70%);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-
-        #power-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            transform: scale(1.06);
-        }
-
-        #power-btn.playing {
-            border-color: var(--accent);
-            color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.12), 0 0 20px rgba(74, 158, 255, 0.18);
-            animation: powerPulse 3s ease-in-out infinite;
-        }
-
-        #power-btn.playing::before {
-            opacity: 1;
-        }
-
-        @keyframes powerPulse {
-            0%, 100% { box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.12), 0 0 20px rgba(74, 158, 255, 0.18); }
-            50% { box-shadow: 0 0 0 6px rgba(74, 158, 255, 0.06), 0 0 32px rgba(74, 158, 255, 0.25); }
-        }
-
-        #power-btn svg {
-            width: 28px;
-            height: 28px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .power-label {
-            font-size: 0.75rem;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-        }
-
-        /* Master volume */
-        .master-volume {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            max-width: 280px;
-            width: 100%;
-            margin-bottom: 40px;
-        }
-
-        .master-volume label {
-            font-size: 0.72rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            white-space: nowrap;
-            min-width: 52px;
-        }
-
-        .master-volume .vol-icon {
+        #power {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
             font-size: 1rem;
-            opacity: 0.6;
-        }
-
-        /* Slider base */
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            background: transparent;
+            letter-spacing: 0.08em;
+            padding: 0.7rem 2rem;
+            background: var(--cream);
+            color: var(--ink);
+            border: 1px solid rgba(32, 26, 23, 0.4);
+            border-radius: 3px;
+            box-shadow: 0 1px 0 rgba(32, 26, 23, 0.15);
             cursor: pointer;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        #power.on {
+            background: #eaf4ee;
+            border-color: rgba(32, 26, 23, 0.6);
+        }
+
+        #power:hover { background: #fff; border-color: rgba(32, 26, 23, 0.65); }
+        #power:active { transform: translateY(1px); }
+
+        .scope-frame {
+            background: var(--cream);
+            border: 1px solid rgba(32, 26, 23, 0.3);
+            border-radius: 3px;
+            padding: 6px 8px 2px;
+            flex: 1;
+            min-width: 180px;
+            max-width: 320px;
+        }
+
+        #scope {
             width: 100%;
+            height: 44px;
+            display: block;
         }
 
-        input[type="range"]::-webkit-slider-runnable-track {
-            height: 3px;
-            background: var(--border);
-            border-radius: 2px;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--text-muted);
-            margin-top: -5.5px;
-            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-        }
-
-        input[type="range"]:hover::-webkit-slider-thumb,
-        input[type="range"]:focus::-webkit-slider-thumb {
-            background: var(--accent);
-            transform: scale(1.2);
-        }
-
-        input[type="range"]::-moz-range-track {
-            height: 3px;
-            background: var(--border);
-            border-radius: 2px;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--text-muted);
-            border: none;
-            transition: background 0.2s, transform 0.15s;
-        }
-
-        input[type="range"]:hover::-moz-range-thumb {
-            background: var(--accent);
-        }
-
-        /* Master slider specific */
-        #master-vol::-webkit-slider-runnable-track {
-            background: linear-gradient(to right, var(--accent) var(--pct, 70%), var(--border) var(--pct, 70%));
-        }
-
-        #master-vol::-moz-range-track {
-            background: var(--border);
-        }
-
-        #master-vol::-moz-range-progress {
-            background: var(--accent);
-            height: 3px;
-            border-radius: 2px;
-        }
-
-        /* Source grid */
-        .sources-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 14px;
-            max-width: 760px;
-            width: 100%;
-        }
-
-        .source-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 18px 14px 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .source-card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 14px;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            pointer-events: none;
-        }
-
-        .source-card.active {
-            border-color: rgba(74, 158, 255, 0.4);
-            background: var(--surface2);
-        }
-
-        .source-card.active::after {
-            opacity: 1;
-            box-shadow: inset 0 0 30px rgba(74, 158, 255, 0.04);
-        }
-
-        .source-card.active {
-            box-shadow: 0 0 18px rgba(74, 158, 255, 0.08);
-        }
-
-        /* Per-source glow colors */
-        .source-card[data-id="white"].active    { border-color: rgba(200,208,224, 0.35); box-shadow: 0 0 18px rgba(200,208,224,0.07); }
-        .source-card[data-id="brown"].active    { border-color: rgba(180,120,60, 0.45);  box-shadow: 0 0 20px rgba(180,120,60,0.12); }
-        .source-card[data-id="pink"].active     { border-color: rgba(255,130,170, 0.4);  box-shadow: 0 0 18px rgba(255,130,170,0.1); }
-        .source-card[data-id="rain"].active     { border-color: rgba(80,160,255, 0.4);   box-shadow: 0 0 18px rgba(80,160,255,0.1); }
-        .source-card[data-id="thunder"].active  { border-color: rgba(200,160,80, 0.4);   box-shadow: 0 0 18px rgba(200,160,80,0.1); }
-        .source-card[data-id="cafe"].active     { border-color: rgba(200,140,90, 0.4);   box-shadow: 0 0 18px rgba(200,140,90,0.1); }
-        .source-card[data-id="fan"].active      { border-color: rgba(100,200,180, 0.4);  box-shadow: 0 0 18px rgba(100,200,180,0.09); }
-
-        .source-icon {
-            font-size: 1.8rem;
-            line-height: 1;
-            user-select: none;
-        }
-
-        .source-name {
-            font-size: 0.72rem;
-            letter-spacing: 0.12em;
+        .scope-label {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 0.58rem;
+            letter-spacing: 0.15em;
             text-transform: uppercase;
-            color: var(--text-muted);
+            opacity: 0.5;
             text-align: center;
+            padding-bottom: 3px;
         }
 
-        .source-card.active .source-name {
-            color: var(--text);
-        }
-
-        .source-slider-wrap {
-            width: 100%;
+        .master-wrap {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 4px;
+            gap: 0.2rem;
+            min-width: 130px;
         }
 
-        .source-card input[type="range"] {
+        .master-wrap label {
+            font-style: italic;
+            font-size: 0.75rem;
+            letter-spacing: 0.14em;
+            text-align: center;
+            opacity: 0.55;
+        }
+
+        input[type="range"] {
+            accent-color: var(--ink);
+            height: 6px;
             width: 100%;
         }
 
-        /* Source-specific slider track fills via CSS custom property */
-        .source-card[data-id="white"]   input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(to right, rgba(200,208,224,0.6) var(--pct,0%), var(--border) var(--pct,0%)); }
-        .source-card[data-id="brown"]   input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(to right, rgba(180,120,60,0.7) var(--pct,0%), var(--border) var(--pct,0%)); }
-        .source-card[data-id="pink"]    input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(to right, rgba(255,130,170,0.7) var(--pct,0%), var(--border) var(--pct,0%)); }
-        .source-card[data-id="rain"]    input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(to right, rgba(80,160,255,0.7) var(--pct,0%), var(--border) var(--pct,0%)); }
-        .source-card[data-id="thunder"] input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(to right, rgba(200,160,80,0.7) var(--pct,0%), var(--border) var(--pct,0%)); }
-        .source-card[data-id="cafe"]    input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(to right, rgba(200,140,90,0.7) var(--pct,0%), var(--border) var(--pct,0%)); }
-        .source-card[data-id="fan"]     input[type="range"]::-webkit-slider-runnable-track { background: linear-gradient(to right, rgba(100,200,180,0.7) var(--pct,0%), var(--border) var(--pct,0%)); }
+        /* ---------- source cards ---------- */
+        .desk {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 0.9rem;
+            width: min(94vw, 640px);
+        }
 
-        .vol-readout {
-            font-size: 0.65rem;
-            color: var(--text-muted);
+        .card {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            background: var(--cream);
+            border: 1px solid rgba(32, 26, 23, 0.3);
+            border-radius: 3px;
+            box-shadow: 0 1px 2px rgba(32, 26, 23, 0.06);
+            padding: 0.7rem 0.9rem;
+            transition: background 0.4s, border-color 0.4s;
+        }
+
+        .card.live {
+            background: color-mix(in srgb, var(--live-color, var(--gold)) 14%, var(--cream));
+            border-color: rgba(32, 26, 23, 0.5);
+        }
+
+        .card canvas {
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+        }
+
+        .card .col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .card .name {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-variant: small-caps;
+            letter-spacing: 0.1em;
+            font-size: 0.95rem;
+            opacity: 0.85;
+        }
+
+        .card .pct {
+            font-size: 0.72rem;
+            font-style: italic;
+            opacity: 0.45;
             font-variant-numeric: tabular-nums;
-            letter-spacing: 0.05em;
         }
 
-        @media (max-width: 520px) {
-            .sources-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .source-card {
-                padding: 14px 10px 10px;
-            }
-
-            .source-icon {
-                font-size: 1.5rem;
-            }
-        }
-
-        @media (max-width: 340px) {
-            .sources-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        /* Breathing ring when paused */
-        .power-wrap.idle #power-btn {
-            animation: none;
+        #plaque {
+            font-style: italic;
+            font-size: clamp(0.78rem, 2.6vw, 0.92rem);
+            text-align: center;
+            line-height: 1.6;
+            max-width: min(94vw, 440px);
+            margin-top: 1.6rem;
+            opacity: 0.5;
         }
     </style>
 </head>
 <body>
+    <header>
+        <div class="dept">bureau of ambient conditions · certified quiet</div>
+        <h1>Noise Machine</h1>
+    </header>
 
-<header>
-    <h1>Noise Machine</h1>
-    <p>Browser-generated ambient sound mixer</p>
-</header>
+    <div class="console">
+        <button id="power">Power</button>
+        <div class="scope-frame">
+            <canvas id="scope"></canvas>
+            <div class="scope-label">output monitor</div>
+        </div>
+        <div class="master-wrap">
+            <label for="master">master</label>
+            <input type="range" id="master" min="0" max="100" value="70">
+        </div>
+    </div>
 
-<canvas id="waveform-canvas"></canvas>
-<div id="silence-indicator">
-    <span class="silence-dot"></span>
-    <span class="silence-dot"></span>
-    <span class="silence-dot"></span>
-    &nbsp;silence&nbsp;
-    <span class="silence-dot"></span>
-    <span class="silence-dot"></span>
-    <span class="silence-dot"></span>
-</div>
+    <div class="desk" id="desk"></div>
 
-<div class="power-wrap" id="power-wrap">
-    <button id="power-btn" title="Start / Stop">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/>
-            <line x1="12" y1="2" x2="12" y2="12"/>
-        </svg>
-    </button>
-    <span class="power-label" id="power-label">Start</span>
-</div>
+    <div id="plaque">the machine is off. flip the switch — every sound is synthesized on the spot, nothing is a recording.</div>
 
-<div class="master-volume">
-    <span class="vol-icon">🔈</span>
-    <label for="master-vol">Master</label>
-    <input type="range" id="master-vol" min="0" max="100" value="70">
-    <span class="vol-icon">🔊</span>
-</div>
+    <script>
+        (() => {
+            const INK = '#201a17';
+            const SOURCES = [
+                { id: 'white',   name: 'White',   color: '#fff8ef', icon: 'static' },
+                { id: 'pink',    name: 'Pink',    color: '#ff7fa5', icon: 'wave' },
+                { id: 'brown',   name: 'Brown',   color: '#f47b28', icon: 'lowwave' },
+                { id: 'rain',    name: 'Rain',    color: '#5aa0db', icon: 'rain' },
+                { id: 'thunder', name: 'Thunder', color: '#f7c948', icon: 'bolt' },
+                { id: 'fan',     name: 'Fan',     color: '#2fb0a3', icon: 'fan' }
+            ];
 
-<div class="sources-grid" id="sources-grid">
-    <!-- Cards injected by JS -->
-</div>
+            const desk = document.getElementById('desk');
+            const powerBtn = document.getElementById('power');
+            const masterSlider = document.getElementById('master');
+            const plaque = document.getElementById('plaque');
+            const scope = document.getElementById('scope');
+            const scopeCtx = scope.getContext('2d');
 
-<script>
-(() => {
-    'use strict';
+            let ctx = null;
+            let masterGain = null;
+            let analyser = null;
+            let powered = false;
+            let scopeRaf = null;
+            let dropletTimer = null;
+            let thunderTimer = null;
+            const chans = {};       // id -> { gain, slider, card, pctEl }
 
-    // ─── Source definitions ───────────────────────────────────────────────────
-    const SOURCES = [
-        { id: 'white',   icon: '⬜', name: 'White Noise',  defaultVol: 0 },
-        { id: 'brown',   icon: '🟫', name: 'Brown Noise',  defaultVol: 0 },
-        { id: 'pink',    icon: '🌸', name: 'Pink Noise',   defaultVol: 0 },
-        { id: 'rain',    icon: '🌧️', name: 'Rain',         defaultVol: 0 },
-        { id: 'thunder', icon: '⛈️', name: 'Thunder',      defaultVol: 0 },
-        { id: 'cafe',    icon: '☕', name: 'Café',          defaultVol: 0 },
-        { id: 'fan',     icon: '🌀', name: 'Fan / HVAC',   defaultVol: 0 },
-    ];
+            const curve = v => Math.pow(v / 100, 2);
 
-    // ─── DOM ──────────────────────────────────────────────────────────────────
-    const powerBtn         = document.getElementById('power-btn');
-    const powerLabel       = document.getElementById('power-label');
-    const masterSlider     = document.getElementById('master-vol');
-    const sourcesGrid      = document.getElementById('sources-grid');
-    const waveCanvas       = document.getElementById('waveform-canvas');
-    const silenceIndicator = document.getElementById('silence-indicator');
-    const waveCtx          = waveCanvas.getContext('2d');
+            // ---------- saved mix ----------
+            let saved = {};
+            try { saved = JSON.parse(localStorage.getItem('noise-mix')) || {}; } catch (e) {}
 
-    // ─── State ────────────────────────────────────────────────────────────────
-    let audioCtx    = null;
-    let masterGain  = null;
-    let analyser    = null;
-    let playing     = false;
-    let animFrameId = null;
+            function saveMix() {
+                const mix = { master: masterSlider.value };
+                for (const id in chans) mix[id] = chans[id].slider.value;
+                try { localStorage.setItem('noise-mix', JSON.stringify(mix)); } catch (e) {}
+            }
 
-    const nodes     = {};  // per-source: { gainNode, cleanup? }
-    const sliders   = {};  // per-source slider element
-    const cards     = {};  // per-source card element
+            // ---------- sticker icons (hand-drawn, no emoji) ----------
+            function drawIcon(canvas, kind, color) {
+                const dpr = Math.min(devicePixelRatio || 1, 2);
+                const S = 46;
+                canvas.width = S * dpr; canvas.height = S * dpr;
+                const c = canvas.getContext('2d');
+                c.setTransform(dpr, 0, 0, dpr, 0, 0);
+                c.lineJoin = 'round';
+                c.lineCap = 'round';
 
-    // ─── Build UI cards ───────────────────────────────────────────────────────
-    function buildCards() {
-        SOURCES.forEach(src => {
-            const card = document.createElement('div');
-            card.className = 'source-card';
-            card.dataset.id = src.id;
-            card.innerHTML = `
-                <div class="source-icon">${src.icon}</div>
-                <div class="source-name">${src.name}</div>
-                <div class="source-slider-wrap">
-                    <input type="range" min="0" max="100" value="${src.defaultVol}" data-id="${src.id}">
-                    <span class="vol-readout" id="readout-${src.id}">0%</span>
-                </div>
-            `;
-            sourcesGrid.appendChild(card);
-            cards[src.id]   = card;
-            sliders[src.id] = card.querySelector('input[type="range"]');
-            updateSliderStyle(sliders[src.id]);
-        });
+                // quiet register: hairline ring, soft tint, no hard shadow
+                c.beginPath(); c.arc(22, 22, 18, 0, Math.PI * 2);
+                c.globalAlpha = 0.22;
+                c.fillStyle = color; c.fill();
+                c.globalAlpha = 1;
+                c.lineWidth = 1;
+                c.strokeStyle = 'rgba(32,26,23,0.4)'; c.stroke();
 
-        // Slider events
-        sourcesGrid.addEventListener('input', e => {
-            if (e.target.tagName === 'INPUT') {
-                const id = e.target.dataset.id;
-                updateSliderStyle(e.target);
-                updateReadout(id);
-                if (audioCtx && nodes[id]) {
-                    nodes[id].gainNode.gain.setTargetAtTime(
-                        volumeCurve(+e.target.value),
-                        audioCtx.currentTime,
-                        0.05
-                    );
+                c.strokeStyle = 'rgba(32,26,23,0.75)';
+                c.fillStyle = 'rgba(32,26,23,0.75)';
+                c.lineWidth = 1.5;
+
+                if (kind === 'static') {
+                    for (let i = 0; i < 14; i++) {
+                        const a = (i * 137.5) * Math.PI / 180;
+                        const r = 3 + (i * 7919 % 11);
+                        c.fillRect(22 + Math.cos(a) * r - 1.2, 22 + Math.sin(a) * r - 1.2, 2.4, 2.4);
+                    }
+                } else if (kind === 'wave') {
+                    c.beginPath();
+                    for (let x = 0; x <= 24; x++) {
+                        const y = 22 - Math.sin(x / 24 * Math.PI * 2) * 6;
+                        x === 0 ? c.moveTo(10 + x, y) : c.lineTo(10 + x, y);
+                    }
+                    c.stroke();
+                } else if (kind === 'lowwave') {
+                    c.lineWidth = 3.5;
+                    c.beginPath();
+                    for (let x = 0; x <= 24; x++) {
+                        const y = 22 - Math.sin(x / 24 * Math.PI) * 8;
+                        x === 0 ? c.moveTo(10 + x, y) : c.lineTo(10 + x, y);
+                    }
+                    c.stroke();
+                } else if (kind === 'rain') {
+                    for (let i = 0; i < 4; i++) {
+                        c.beginPath();
+                        c.moveTo(14 + i * 6, 13 + (i % 2) * 3);
+                        c.lineTo(11 + i * 6, 22 + (i % 2) * 3);
+                        c.stroke();
+                        c.beginPath();
+                        c.moveTo(12 + i * 6, 26 + (i % 2) * 3);
+                        c.lineTo(10 + i * 6, 32 + (i % 2) * 3);
+                        c.stroke();
+                    }
+                } else if (kind === 'bolt') {
+                    c.beginPath();
+                    c.moveTo(25, 9); c.lineTo(16, 24); c.lineTo(21, 24);
+                    c.lineTo(18, 36); c.lineTo(29, 20); c.lineTo(23, 20);
+                    c.closePath();
+                    c.stroke();
+                } else if (kind === 'fan') {
+                    for (let i = 0; i < 3; i++) {
+                        c.save();
+                        c.translate(22, 22);
+                        c.rotate(i * Math.PI * 2 / 3);
+                        c.beginPath();
+                        c.ellipse(0, -9, 4.5, 8, 0, 0, Math.PI * 2);
+                        c.fillStyle = INK;
+                        c.fill();
+                        c.restore();
+                    }
+                    c.beginPath(); c.arc(22, 22, 3, 0, Math.PI * 2); c.fill();
                 }
-                updateActiveState(id);
-                checkSilence();
-            }
-        });
-
-        // Master volume
-        masterSlider.addEventListener('input', () => {
-            updateSliderStyle(masterSlider, true);
-            if (masterGain) {
-                masterGain.gain.setTargetAtTime(
-                    volumeCurve(+masterSlider.value),
-                    audioCtx.currentTime,
-                    0.06
-                );
-            }
-        });
-        updateSliderStyle(masterSlider, true);
-    }
-
-    function volumeCurve(v) {
-        // Exponential curve: more natural for audio
-        return v === 0 ? 0 : Math.pow(v / 100, 2) * 1.2;
-    }
-
-    function updateSliderStyle(input, isMaster) {
-        const pct = (+input.value / +input.max * 100).toFixed(1) + '%';
-        input.style.setProperty('--pct', pct);
-        if (isMaster) {
-            input.style.background = `linear-gradient(to right, var(--accent) ${pct}, var(--border) ${pct})`;
-        }
-    }
-
-    function updateReadout(id) {
-        const el = document.getElementById('readout-' + id);
-        if (el) el.textContent = sliders[id].value + '%';
-    }
-
-    function updateActiveState(id) {
-        cards[id].classList.toggle('active', +sliders[id].value > 0);
-    }
-
-    function checkSilence() {
-        if (!playing) return;
-        const allZero = SOURCES.every(s => +sliders[s.id].value === 0);
-        silenceIndicator.classList.toggle('visible', allZero);
-        waveCanvas.classList.toggle('visible', !allZero);
-    }
-
-    // ─── Audio context bootstrap ──────────────────────────────────────────────
-    function initAudio() {
-        audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
-        masterGain = audioCtx.createGain();
-        masterGain.gain.value = volumeCurve(+masterSlider.value);
-        masterGain.connect(audioCtx.destination);
-
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.82;
-        masterGain.connect(analyser);
-
-        SOURCES.forEach(src => startSource(src.id));
-        startWaveform();
-        checkSilence();
-    }
-
-    function teardownAudio() {
-        if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
-        SOURCES.forEach(src => stopSource(src.id));
-        if (audioCtx) { audioCtx.close(); audioCtx = null; }
-        masterGain = null;
-        analyser   = null;
-    }
-
-    // ─── Power toggle ─────────────────────────────────────────────────────────
-    powerBtn.addEventListener('click', () => {
-        if (!playing) {
-            playing = true;
-            powerBtn.classList.add('playing');
-            powerLabel.textContent = 'Stop';
-            initAudio();
-        } else {
-            playing = false;
-            powerBtn.classList.remove('playing');
-            powerLabel.textContent = 'Start';
-            silenceIndicator.classList.remove('visible');
-            waveCanvas.classList.remove('visible');
-            teardownAudio();
-            clearWaveform();
-        }
-    });
-
-    // ─── Noise buffers ────────────────────────────────────────────────────────
-    function createWhiteBuffer(seconds) {
-        const sr     = audioCtx.sampleRate;
-        const len    = sr * seconds;
-        const buf    = audioCtx.createBuffer(1, len, sr);
-        const data   = buf.getChannelData(0);
-        for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-        return buf;
-    }
-
-    // Voss-McCartney pink noise algorithm
-    function createPinkBuffer(seconds) {
-        const sr   = audioCtx.sampleRate;
-        const len  = sr * seconds;
-        const buf  = audioCtx.createBuffer(1, len, sr);
-        const data = buf.getChannelData(0);
-        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-        for (let i = 0; i < len; i++) {
-            const w = Math.random() * 2 - 1;
-            b0 = 0.99886 * b0 + w * 0.0555179;
-            b1 = 0.99332 * b1 + w * 0.0750759;
-            b2 = 0.96900 * b2 + w * 0.1538520;
-            b3 = 0.86650 * b3 + w * 0.3104856;
-            b4 = 0.55000 * b4 + w * 0.5329522;
-            b5 = -0.7616 * b5 - w * 0.0168980;
-            data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
-            b6 = w * 0.115926;
-        }
-        return buf;
-    }
-
-    // Brown noise: integrate white noise, then high-pass to remove DC
-    function createBrownBuffer(seconds) {
-        const sr    = audioCtx.sampleRate;
-        const len   = sr * seconds;
-        const buf   = audioCtx.createBuffer(1, len, sr);
-        const data  = buf.getChannelData(0);
-        let lastOut = 0;
-        for (let i = 0; i < len; i++) {
-            const w  = Math.random() * 2 - 1;
-            lastOut  = (lastOut + 0.02 * w) / 1.02;
-            data[i]  = lastOut * 3.5;
-        }
-        // normalize
-        let peak = 0;
-        for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(data[i]));
-        if (peak > 0) for (let i = 0; i < len; i++) data[i] /= peak;
-        return buf;
-    }
-
-    // ─── Source builders ──────────────────────────────────────────────────────
-    function makeGain(id) {
-        const g = audioCtx.createGain();
-        g.gain.value = volumeCurve(+sliders[id].value);
-        g.connect(masterGain);
-        return g;
-    }
-
-    function loopBuffer(buffer, gain) {
-        const src    = audioCtx.createBufferSource();
-        src.buffer   = buffer;
-        src.loop     = true;
-        src.loopStart = 0;
-        src.loopEnd  = buffer.duration;
-        src.connect(gain);
-        src.start();
-        return src;
-    }
-
-    function startSource(id) {
-        const gain = makeGain(id);
-        nodes[id]  = { gainNode: gain };
-
-        switch (id) {
-            case 'white': {
-                const buf = createWhiteBuffer(10);
-                const src = loopBuffer(buf, gain);
-                nodes[id].cleanup = () => src.stop();
-                break;
             }
 
-            case 'brown': {
-                // Brown noise: looped buffer + additional deep sub-bass shelf
-                const buf = createBrownBuffer(12);
-                const src = audioCtx.createBufferSource();
-                src.buffer   = buf;
-                src.loop     = true;
-                src.loopStart = 0;
-                src.loopEnd  = buf.duration;
+            // ---------- build cards ----------
+            SOURCES.forEach((src, i) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.setProperty('--live-color', src.color);
 
-                // Low-shelf boost at 80Hz to make it feel physically warm
-                const shelf = audioCtx.createBiquadFilter();
-                shelf.type = 'lowshelf';
-                shelf.frequency.value = 80;
-                shelf.gain.value = 8;
+                const icon = document.createElement('canvas');
+                drawIcon(icon, src.icon, src.color);
 
-                // High-pass to strip harsh highs, keep the rumble
-                const hp = audioCtx.createBiquadFilter();
-                hp.type = 'highpass';
-                hp.frequency.value = 18;
-                hp.Q.value = 0.5;
+                const col = document.createElement('div');
+                col.className = 'col';
+                col.innerHTML = '<div class="name"><span>' + src.name + '</span><span class="pct">0%</span></div>';
 
-                const lp = audioCtx.createBiquadFilter();
-                lp.type = 'lowpass';
-                lp.frequency.value = 400;
-                lp.Q.value = 0.4;
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.min = 0; slider.max = 100;
+                slider.value = saved[src.id] != null ? saved[src.id] : 0;
+                slider.setAttribute('aria-label', src.name + ' volume');
+                col.appendChild(slider);
 
-                src.connect(hp);
-                hp.connect(lp);
-                lp.connect(shelf);
-                shelf.connect(gain);
-                src.start();
-                nodes[id].cleanup = () => src.stop();
-                break;
+                card.appendChild(icon);
+                card.appendChild(col);
+                desk.appendChild(card);
+
+                chans[src.id] = { slider, card, pctEl: col.querySelector('.pct'), gain: null };
+
+                slider.addEventListener('input', () => {
+                    if (chans[src.id].gain) {
+                        chans[src.id].gain.gain.setTargetAtTime(curve(+slider.value), ctx.currentTime, 0.06);
+                    }
+                    refreshCard(src.id);
+                    saveMix();
+                });
+                refreshCard(src.id);
+            });
+
+            if (saved.master != null) masterSlider.value = saved.master;
+
+            function refreshCard(id) {
+                const ch = chans[id];
+                ch.pctEl.textContent = ch.slider.value + '%';
+                ch.card.classList.toggle('live', powered && +ch.slider.value > 0);
             }
 
-            case 'pink': {
-                const buf = createPinkBuffer(10);
-                const src = audioCtx.createBufferSource();
-                src.buffer  = buf;
-                src.loop    = true;
-                src.loopStart = 0;
-                src.loopEnd = buf.duration;
-
-                // Gentle low-pass to soften edges
-                const lp = audioCtx.createBiquadFilter();
-                lp.type = 'lowpass';
-                lp.frequency.value = 8000;
-                lp.Q.value = 0.3;
-
-                src.connect(lp);
-                lp.connect(gain);
-                src.start();
-                nodes[id].cleanup = () => src.stop();
-                break;
+            function refreshAllCards() {
+                for (const id in chans) refreshCard(id);
             }
 
-            case 'rain': {
-                // Rain: two layers of noise with bandpass + tremolo (amplitude modulation)
-                const buf  = createWhiteBuffer(8);
-                let stopped = false;
-
-                // Layer 1: high-ish band (droplets hitting surface)
-                const srcA = audioCtx.createBufferSource();
-                srcA.buffer = buf; srcA.loop = true;
-
-                const bpA = audioCtx.createBiquadFilter();
-                bpA.type = 'bandpass';
-                bpA.frequency.value = 1800;
-                bpA.Q.value = 0.6;
-
-                const gainA = audioCtx.createGain();
-                gainA.gain.value = 0.55;
-
-                srcA.connect(bpA);
-                bpA.connect(gainA);
-
-                // Layer 2: lower rumble of downpour
-                const srcB = audioCtx.createBufferSource();
-                const buf2 = createWhiteBuffer(9);
-                srcB.buffer = buf2; srcB.loop = true;
-
-                const bpB = audioCtx.createBiquadFilter();
-                bpB.type = 'bandpass';
-                bpB.frequency.value = 600;
-                bpB.Q.value = 0.45;
-
-                const gainB = audioCtx.createGain();
-                gainB.gain.value = 0.4;
-
-                srcB.connect(bpB);
-                bpB.connect(gainB);
-
-                // Mix both into a tremolo modulator
-                const mixGain = audioCtx.createGain();
-                mixGain.gain.value = 1.0;
-                gainA.connect(mixGain);
-                gainB.connect(mixGain);
-                mixGain.connect(gain);
-
-                // Tremolo: gentle LFO on the rain mix (simulates patter intensity)
-                const lfo = audioCtx.createOscillator();
-                lfo.frequency.value = 6.5; // ~6.5 Hz flutter
-                const lfoGain = audioCtx.createGain();
-                lfoGain.gain.value = 0.18;
-                lfo.connect(lfoGain);
-                lfoGain.connect(mixGain.gain);
-
-                // Slow modulation of LFO rate (rain varies in intensity)
-                const lfo2 = audioCtx.createOscillator();
-                lfo2.frequency.value = 0.07;
-                const lfo2Gain = audioCtx.createGain();
-                lfo2Gain.gain.value = 2.5;
-                lfo2.connect(lfo2Gain);
-                lfo2Gain.connect(lfo.frequency);
-
-                srcA.start(); srcB.start(); lfo.start(); lfo2.start();
-                nodes[id].cleanup = () => {
-                    if (stopped) return; stopped = true;
-                    try { srcA.stop(); srcB.stop(); lfo.stop(); lfo2.stop(); } catch(e){}
-                };
-                break;
+            // ---------- audio ----------
+            function noiseBuffer(kind) {
+                const len = ctx.sampleRate * 4;
+                const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                if (kind === 'white') {
+                    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+                } else if (kind === 'pink') {
+                    // Paul Kellet's economy pink filter
+                    let b0 = 0, b1 = 0, b2 = 0;
+                    for (let i = 0; i < len; i++) {
+                        const w = Math.random() * 2 - 1;
+                        b0 = 0.99765 * b0 + w * 0.0990460;
+                        b1 = 0.96300 * b1 + w * 0.2965164;
+                        b2 = 0.57000 * b2 + w * 1.0526913;
+                        d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.22;
+                    }
+                } else { // brown
+                    let last = 0;
+                    for (let i = 0; i < len; i++) {
+                        const w = Math.random() * 2 - 1;
+                        last = (last + 0.02 * w) / 1.02;
+                        d[i] = last * 3.5;
+                    }
+                }
+                return buf;
             }
 
-            case 'thunder': {
-                // Thunder: periodic low-freq burst with exponential decay envelope
-                let stopped = false;
-                const timeouts = [];
+            function looper(buffer) {
+                const s = ctx.createBufferSource();
+                s.buffer = buffer;
+                s.loop = true;
+                s.start();
+                return s;
+            }
 
-                function scheduleThunder() {
-                    if (stopped) return;
-                    const delay = 8000 + Math.random() * 22000; // 8–30 sec
-                    const id2 = setTimeout(() => {
-                        if (stopped || !audioCtx) return;
-                        fireThunder();
-                        scheduleThunder();
-                    }, delay);
-                    timeouts.push(id2);
+            function buildGraph() {
+                ctx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = ctx.createGain();
+                masterGain.gain.value = curve(+masterSlider.value);
+                analyser = ctx.createAnalyser();
+                analyser.fftSize = 512;
+                masterGain.connect(analyser);
+                analyser.connect(ctx.destination);
+
+                const white = noiseBuffer('white');
+                const pink = noiseBuffer('pink');
+                const brown = noiseBuffer('brown');
+
+                function chan(id, wire) {
+                    const g = ctx.createGain();
+                    g.gain.value = curve(+chans[id].slider.value);
+                    wire(g);
+                    g.connect(masterGain);
+                    chans[id].gain = g;
                 }
 
-                function fireThunder() {
-                    if (!audioCtx || audioCtx.state !== 'running') return;
-                    const now = audioCtx.currentTime;
-                    const dur = 2.8 + Math.random() * 2.2;
+                chan('white', g => looper(white).connect(g));
+                chan('pink', g => looper(pink).connect(g));
+                chan('brown', g => looper(brown).connect(g));
 
-                    // White noise source
-                    const buf = createWhiteBuffer(Math.ceil(dur) + 1);
-                    const src = audioCtx.createBufferSource();
-                    src.buffer = buf;
-
-                    // Very heavy low-pass — only sub 120 Hz gets through
-                    const lp = audioCtx.createBiquadFilter();
+                // rain: pink noise rounded off with a lowpass, plus scattered droplets
+                chan('rain', g => {
+                    const lp = ctx.createBiquadFilter();
                     lp.type = 'lowpass';
-                    lp.frequency.value = 90 + Math.random() * 50;
-                    lp.Q.value = 0.7;
+                    lp.frequency.value = 2200;
+                    looper(pink).connect(lp);
+                    lp.connect(g);
 
-                    // Secondary resonant peak around 50–70 Hz for the "boom"
-                    const peak = audioCtx.createBiquadFilter();
-                    peak.type = 'peaking';
-                    peak.frequency.value = 50 + Math.random() * 30;
-                    peak.gain.value = 14;
-                    peak.Q.value = 1.2;
+                    function droplet() {
+                        if (powered && +chans.rain.slider.value > 0) {
+                            const s = ctx.createBufferSource();
+                            s.buffer = white;
+                            s.loop = false;
+                            const dg = ctx.createGain();
+                            const hp = ctx.createBiquadFilter();
+                            hp.type = 'highpass';
+                            hp.frequency.value = 3500 + Math.random() * 3000;
+                            const t = ctx.currentTime;
+                            dg.gain.setValueAtTime(0.12 + Math.random() * 0.1, t);
+                            dg.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+                            s.connect(hp); hp.connect(dg); dg.connect(g);
+                            s.start(t, Math.random() * 3, 0.06);
+                        }
+                        dropletTimer = setTimeout(droplet, 60 + Math.random() * 240);
+                    }
+                    droplet();
+                });
 
-                    const env = audioCtx.createGain();
-                    // Attack
-                    env.gain.setValueAtTime(0, now);
-                    env.gain.linearRampToValueAtTime(1.1, now + 0.04);
-                    // Rumble decay
-                    env.gain.exponentialRampToValueAtTime(0.35, now + 0.5);
-                    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                // thunder: deep-filtered brown that swells at random intervals
+                chan('thunder', g => {
+                    const lp = ctx.createBiquadFilter();
+                    lp.type = 'lowpass';
+                    lp.frequency.value = 110;
+                    const env = ctx.createGain();
+                    env.gain.value = 0.08;       // distant baseline rumble
+                    looper(brown).connect(lp);
+                    lp.connect(env);
+                    env.connect(g);
 
-                    src.connect(lp);
-                    lp.connect(peak);
-                    peak.connect(env);
-                    env.connect(gain);
-                    src.start(now);
-                    src.stop(now + dur + 0.05);
-                }
+                    function rumble() {
+                        if (powered) {
+                            const t = ctx.currentTime;
+                            const peak = 1.2 + Math.random() * 1.4;
+                            env.gain.setTargetAtTime(peak, t, 0.35 + Math.random() * 0.4);
+                            env.gain.setTargetAtTime(0.08, t + 1.6 + Math.random() * 1.6, 1.4);
+                        }
+                        thunderTimer = setTimeout(rumble, 7000 + Math.random() * 16000);
+                    }
+                    thunderTimer = setTimeout(rumble, 2500 + Math.random() * 5000);
+                });
 
-                scheduleThunder();
-                nodes[id].cleanup = () => {
-                    stopped = true;
-                    timeouts.forEach(clearTimeout);
-                };
-                break;
-            }
-
-            case 'cafe': {
-                // Café: overlapping bandpass noise bursts (chatter) + occasional clink
-                let stopped = false;
-                const timeouts = [];
-                const buf = createWhiteBuffer(6);
-
-                // Continuous background murmur
-                const bgSrc = audioCtx.createBufferSource();
-                bgSrc.buffer = buf; bgSrc.loop = true;
-
-                const bgBp = audioCtx.createBiquadFilter();
-                bgBp.type = 'bandpass';
-                bgBp.frequency.value = 900;
-                bgBp.Q.value = 0.5;
-
-                const bgGn = audioCtx.createGain();
-                bgGn.gain.value = 0.3;
-
-                bgSrc.connect(bgBp); bgBp.connect(bgGn); bgGn.connect(gain);
-                bgSrc.start();
-
-                // Sporadic chatter bursts
-                function scheduleChatter() {
-                    if (stopped) return;
-                    const delay = 400 + Math.random() * 2200;
-                    const tid = setTimeout(() => {
-                        if (stopped || !audioCtx) return;
-                        fireChatter();
-                        scheduleChatter();
-                    }, delay);
-                    timeouts.push(tid);
-                }
-
-                function fireChatter() {
-                    if (!audioCtx || audioCtx.state !== 'running') return;
-                    const now = audioCtx.currentTime;
-                    const dur = 0.18 + Math.random() * 0.55;
-                    const freq = 700 + Math.random() * 1800;
-
-                    const src2 = audioCtx.createBufferSource();
-                    src2.buffer = buf;
-
-                    const bp = audioCtx.createBiquadFilter();
+                // fan: resonant low band with a slow wobble
+                chan('fan', g => {
+                    const bp = ctx.createBiquadFilter();
                     bp.type = 'bandpass';
-                    bp.frequency.value = freq;
-                    bp.Q.value = 2.5 + Math.random() * 3;
-
-                    const env = audioCtx.createGain();
-                    const peak = 0.08 + Math.random() * 0.22;
-                    env.gain.setValueAtTime(0, now);
-                    env.gain.linearRampToValueAtTime(peak, now + 0.01);
-                    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
-
-                    src2.connect(bp); bp.connect(env); env.connect(gain);
-                    src2.start(now); src2.stop(now + dur + 0.05);
-                }
-
-                // Occasional clink (short high-pitched burst)
-                function scheduleClink() {
-                    if (stopped) return;
-                    const delay = 3000 + Math.random() * 10000;
-                    const tid = setTimeout(() => {
-                        if (stopped || !audioCtx) return;
-                        fireClink();
-                        scheduleClink();
-                    }, delay);
-                    timeouts.push(tid);
-                }
-
-                function fireClink() {
-                    if (!audioCtx || audioCtx.state !== 'running') return;
-                    const now = audioCtx.currentTime;
-                    const osc = audioCtx.createOscillator();
-                    osc.type = 'sine';
-                    osc.frequency.value = 3200 + Math.random() * 1800;
-
-                    const env = audioCtx.createGain();
-                    env.gain.setValueAtTime(0, now);
-                    env.gain.linearRampToValueAtTime(0.045, now + 0.003);
-                    env.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-
-                    osc.connect(env); env.connect(gain);
-                    osc.start(now); osc.stop(now + 0.2);
-                }
-
-                scheduleChatter();
-                scheduleClink();
-                nodes[id].cleanup = () => {
-                    stopped = true;
-                    try { bgSrc.stop(); } catch(e){}
-                    timeouts.forEach(clearTimeout);
-                };
-                break;
+                    bp.frequency.value = 190;
+                    bp.Q.value = 0.7;
+                    const wob = ctx.createGain();
+                    wob.gain.value = 1;
+                    const lfo = ctx.createOscillator();
+                    lfo.frequency.value = 0.4;
+                    const depth = ctx.createGain();
+                    depth.gain.value = 0.12;
+                    lfo.connect(depth);
+                    depth.connect(wob.gain);
+                    lfo.start();
+                    looper(brown).connect(bp);
+                    bp.connect(wob);
+                    wob.connect(g);
+                });
             }
 
-            case 'fan': {
-                // Fan/HVAC: narrow bandpass white noise + subtle harmonic oscillator hum
-                const buf = createWhiteBuffer(12);
-                const src = audioCtx.createBufferSource();
-                src.buffer = buf; src.loop = true;
+            // ---------- scope ----------
+            function drawScope() {
+                if (!powered) return;
+                const dpr = Math.min(devicePixelRatio || 1, 2);
+                const w = scope.clientWidth, h = scope.clientHeight;
+                if (scope.width !== w * dpr) { scope.width = w * dpr; scope.height = h * dpr; }
+                scopeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                scopeCtx.clearRect(0, 0, w, h);
 
-                // Core fan whoosh: narrow band around 400–500 Hz
-                const bp1 = audioCtx.createBiquadFilter();
-                bp1.type = 'bandpass';
-                bp1.frequency.value = 450;
-                bp1.Q.value = 4.0;
-
-                // Secondary: mechanical hum band around 200 Hz
-                const bp2 = audioCtx.createBiquadFilter();
-                bp2.type = 'bandpass';
-                bp2.frequency.value = 200;
-                bp2.Q.value = 3.5;
-
-                const mixG = audioCtx.createGain();
-                mixG.gain.value = 0.75;
-
-                src.connect(bp1);
-                src.connect(bp2);
-                bp1.connect(mixG);
-                bp2.connect(mixG);
-
-                // Subtle motor hum oscillator (60 Hz power line hum)
-                const hum = audioCtx.createOscillator();
-                hum.type = 'sine';
-                hum.frequency.value = 120;
-                const humGain = audioCtx.createGain();
-                humGain.gain.value = 0.012;
-                hum.connect(humGain);
-                humGain.connect(gain);
-
-                // Very slow wobble on main pitch (motor speed variation)
-                const wobble = audioCtx.createOscillator();
-                wobble.frequency.value = 0.09;
-                const wobbleGain = audioCtx.createGain();
-                wobbleGain.gain.value = 4;
-                wobble.connect(wobbleGain);
-                wobbleGain.connect(bp1.frequency);
-
-                mixG.connect(gain);
-                src.start(); hum.start(); wobble.start();
-                nodes[id].cleanup = () => {
-                    try { src.stop(); hum.stop(); wobble.stop(); } catch(e){}
-                };
-                break;
+                const data = new Uint8Array(analyser.fftSize);
+                analyser.getByteTimeDomainData(data);
+                scopeCtx.beginPath();
+                for (let i = 0; i < data.length; i++) {
+                    const x = i / data.length * w;
+                    const y = (data[i] / 255) * h;
+                    i === 0 ? scopeCtx.moveTo(x, y) : scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.lineWidth = 2;
+                scopeCtx.strokeStyle = INK;
+                scopeCtx.stroke();
+                scopeRaf = requestAnimationFrame(drawScope);
             }
-        }
-    }
 
-    function stopSource(id) {
-        if (nodes[id]) {
-            if (nodes[id].cleanup) nodes[id].cleanup();
-            delete nodes[id];
-        }
-    }
-
-    // ─── Waveform visualizer ──────────────────────────────────────────────────
-    function resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = waveCanvas.getBoundingClientRect();
-        waveCanvas.width  = rect.width  * dpr;
-        waveCanvas.height = rect.height * dpr;
-        waveCtx.scale(dpr, dpr);
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-
-    function clearWaveform() {
-        const w = waveCanvas.getBoundingClientRect().width;
-        const h = waveCanvas.getBoundingClientRect().height;
-        waveCtx.clearRect(0, 0, w, h);
-    }
-
-    function startWaveform() {
-        resizeCanvas();
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-        function draw() {
-            if (!playing) return;
-            animFrameId = requestAnimationFrame(draw);
-
-            analyser.getByteTimeDomainData(dataArray);
-
-            const w = waveCanvas.getBoundingClientRect().width;
-            const h = waveCanvas.getBoundingClientRect().height;
-
-            waveCtx.clearRect(0, 0, w, h);
-
-            // Check if silence (all values near 128)
-            const allSilent = dataArray.every(v => Math.abs(v - 128) < 2);
-            if (allSilent) return;
-
-            waveCtx.beginPath();
-            waveCtx.strokeStyle = 'rgba(74, 158, 255, 0.55)';
-            waveCtx.lineWidth = 1.5;
-            waveCtx.shadowBlur = 8;
-            waveCtx.shadowColor = 'rgba(74, 158, 255, 0.3)';
-
-            const sliceW = w / dataArray.length;
-            let x = 0;
-
-            for (let i = 0; i < dataArray.length; i++) {
-                const v = dataArray[i] / 128;
-                const y = (v * h) / 2;
-                if (i === 0) waveCtx.moveTo(x, y);
-                else waveCtx.lineTo(x, y);
-                x += sliceW;
+            function flatline() {
+                const dpr = Math.min(devicePixelRatio || 1, 2);
+                const w = scope.clientWidth, h = scope.clientHeight;
+                scope.width = w * dpr; scope.height = h * dpr;
+                scopeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                scopeCtx.beginPath();
+                scopeCtx.moveTo(0, h / 2);
+                scopeCtx.lineTo(w, h / 2);
+                scopeCtx.lineWidth = 2;
+                scopeCtx.strokeStyle = 'rgba(32,26,23,0.3)';
+                scopeCtx.stroke();
             }
-            waveCtx.lineTo(w, h / 2);
-            waveCtx.stroke();
-            waveCtx.shadowBlur = 0;
-        }
 
-        draw();
-    }
+            // ---------- power ----------
+            function powerOn() {
+                if (!ctx) buildGraph();
+                ctx.resume();
+                powered = true;
+                powerBtn.classList.add('on');
+                powerBtn.textContent = 'On';
+                plaque.textContent = 'running. mix to taste — the sliders remember where you left them.';
+                refreshAllCards();
+                drawScope();
+            }
 
-    // ─── Init ─────────────────────────────────────────────────────────────────
-    buildCards();
+            function powerOff() {
+                powered = false;
+                if (ctx) ctx.suspend();
+                powerBtn.classList.remove('on');
+                powerBtn.textContent = 'Power';
+                plaque.textContent = 'the machine is off. your mix is held in escrow.';
+                cancelAnimationFrame(scopeRaf);
+                refreshAllCards();
+                flatline();
+            }
 
-    // Initialize readouts
-    SOURCES.forEach(s => updateReadout(s.id));
+            powerBtn.addEventListener('click', () => powered ? powerOff() : powerOn());
 
-})();
-</script>
+            masterSlider.addEventListener('input', () => {
+                if (masterGain) masterGain.gain.setTargetAtTime(curve(+masterSlider.value), ctx.currentTime, 0.06);
+                saveMix();
+            });
+
+            flatline();
+        })();
+    </script>
 </body>
 </html>

@@ -6,6 +6,18 @@ from the same hand: bold, tactile, a little deadpan.
 
 ---
 
+## Volume: loud vs. quiet
+
+The sticker recipe below is the **loud** register — for toys, games, tools, and jokes.
+Not every site plays at that volume. **Mindfulness and ambient sites** (breathing
+exercises, affirmations, slow tv, noise machines) use the **quiet** register: keep the
+ink/paper palette, the Georgia-italic voice, and the deadpan captions so the site still
+feels like family — but drop the hard offset shadows, the fat outlines, the crooked
+rotations, and Arial Black entirely. Soft radial fills, hairline borders at low opacity,
+generous whitespace, slow fades. If the visitor came to calm down, the page should not
+shout at them. When in doubt: does the page want a giggle or a deep breath? Giggle →
+loud. Breath → quiet.
+
 ## The look: "sticker comic"
 
 Everything reads like a sticker slapped on paper — flat color, fat ink outline, hard shadow.
