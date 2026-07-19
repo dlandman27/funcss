@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metronome</title>
+
+    <meta name="description" content="A big honest metronome. Tap the tempo, it keeps it.">
+    <meta name="keywords" content="metronome, tap tempo, bpm, practice, time signature">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><path d='M18 6h14l8 38H10z' fill='%23f0563e' stroke='%23201a17' stroke-width='3' stroke-linejoin='round'/><line x1='25' y1='38' x2='33' y2='12' stroke='%23201a17' stroke-width='3' stroke-linecap='round'/><circle cx='31' cy='18' r='4.5' fill='%23f7c948' stroke='%23201a17' stroke-width='2.5'/></svg>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/metronome/">
+    <meta property="og:title" content="Metronome">
+    <meta property="og:description" content="A big honest metronome. Tap the tempo, it keeps it.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/metronome/">
+    <meta property="twitter:title" content="Metronome">
+    <meta property="twitter:description" content="A big honest metronome. Tap the tempo, it keeps it.">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        body {
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        header {
+            text-align: center;
+            padding: 18px 16px 4px;
+            flex: 0 0 auto;
+        }
+
+        h1 {
+            display: inline-block;
+            margin: 0;
+            padding: 8px 22px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.15rem, 4.2vw, 1.8rem);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--purple);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-2deg);
+        }
+
+        .hint {
+            margin: 12px auto 0;
+            max-width: 460px;
+            padding: 0 16px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(0.9rem, 2.8vw, 1.02rem);
+            opacity: 0.75;
+            transition: opacity 2s ease;
+        }
+
+        .hint.gone { opacity: 0; }
+
+        .stage {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(16px, 5vw, 56px);
+            padding: 6px 16px 170px;
+        }
+
+        .metro-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        #metro {
+            display: block;
+            width: min(78vw, calc(min(46vh, 420px) * 0.8), 340px);
+            aspect-ratio: 4 / 5;
+            touch-action: none;
+        }
+
+        .dots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .dots span {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            box-shadow: 2px 2px 0 var(--ink);
+            transition: background 0.05s linear, transform 0.05s linear;
+        }
+
+        .dots span.on {
+            background: var(--coral);
+            transform: scale(1.25);
+        }
+
+        .dots span.on.accent {
+            background: var(--gold);
+            transform: scale(1.45);
+        }
+
+        .readout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .bpm-num {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(3rem, 11vw, 4.6rem);
+            line-height: 1;
+            color: var(--gold);
+            -webkit-text-stroke: 3px var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 4px 4px 0 var(--ink);
+            letter-spacing: 1px;
+        }
+
+        .bpm-cap {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .tempo-name {
+            margin-top: 6px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(1.1rem, 3.6vw, 1.45rem);
+            min-height: 1.6em;
+        }
+
+        .tap-wrap {
+            position: relative;
+            margin-top: 18px;
+        }
+
+        button {
+            font: inherit;
+            color: var(--ink);
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .tap {
+            width: clamp(104px, 24vw, 148px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: var(--gold);
+            border: 4px solid var(--ink);
+            box-shadow: 6px 6px 0 var(--ink);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transform: rotate(-5deg);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        .tap:hover {
+            transform: rotate(-5deg) translate(-2px, -2px);
+            box-shadow: 8px 8px 0 var(--ink);
+        }
+
+        .tap:active {
+            transform: rotate(-5deg) translate(3px, 3px) scale(0.96);
+            box-shadow: 2px 2px 0 var(--ink);
+        }
+
+        .burst {
+            position: absolute;
+            left: 50%;
+            top: -18px;
+            padding: 7px 16px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 1.15rem;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--pink);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: translate(-50%, -100%) rotate(7deg) scale(0);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .burst.show { animation: pop 1.3s ease forwards; }
+
+        @keyframes pop {
+            0%   { transform: translate(-50%, -100%) rotate(7deg) scale(0.2); opacity: 1; }
+            14%  { transform: translate(-50%, -100%) rotate(7deg) scale(1.15); opacity: 1; }
+            22%  { transform: translate(-50%, -100%) rotate(7deg) scale(1); opacity: 1; }
+            78%  { transform: translate(-50%, -100%) rotate(7deg) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -100%) rotate(7deg) scale(0.9); opacity: 0; }
+        }
+
+        .pill {
+            position: fixed;
+            left: 50%;
+            bottom: max(14px, env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px 12px;
+            max-width: min(94vw, 620px);
+            padding: 12px 18px;
+            background: rgba(32, 26, 23, 0.86);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid var(--ink);
+            border-radius: 26px;
+            box-shadow: 5px 5px 0 var(--ink);
+            z-index: 5;
+        }
+
+        .chip {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 3px solid var(--ink);
+            box-shadow: 3px 3px 0 var(--ink);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        .chip:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+        .chip:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        #minus { background: var(--sky); transform: rotate(-4deg); }
+        #minus:hover { transform: rotate(-4deg) translate(-1px, -1px); }
+        #minus:active { transform: rotate(-4deg) translate(2px, 2px); }
+        #plus { background: var(--lime); transform: rotate(4deg); }
+        #plus:hover { transform: rotate(4deg) translate(-1px, -1px); }
+        #plus:active { transform: rotate(4deg) translate(2px, 2px); }
+
+        #slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: clamp(120px, 28vw, 240px);
+            height: 14px;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            outline: none;
+            cursor: pointer;
+        }
+
+        #slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--orange);
+            border: 3px solid var(--ink);
+            box-shadow: 2px 2px 0 var(--ink);
+            cursor: grab;
+        }
+
+        #slider::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--orange);
+            border: 3px solid var(--ink);
+            box-shadow: 2px 2px 0 var(--ink);
+            cursor: grab;
+        }
+
+        .play {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: var(--coral);
+            border: 3px solid var(--ink);
+            box-shadow: 3px 3px 0 var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transform: rotate(3deg);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        .play:hover { transform: rotate(3deg) translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+        .play:active { transform: rotate(3deg) translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+        .play svg { display: block; }
+        .play .icon-stop { display: none; }
+        .play.playing .icon-play { display: none; }
+        .play.playing .icon-stop { display: block; }
+        .play.playing { background: var(--teal); }
+
+        .sigs {
+            display: flex;
+            gap: 7px;
+        }
+
+        .sig {
+            padding: 7px 11px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.82rem;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        .sig:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+
+        .sig.active {
+            background: var(--orange);
+            transform: translate(2px, 2px) rotate(-2deg);
+            box-shadow: 0 0 0 var(--ink);
+        }
+
+        @media (max-width: 640px) {
+            .stage {
+                flex-direction: column;
+                gap: 8px;
+                padding-bottom: 190px;
+            }
+            #metro { width: min(60vw, calc(min(34vh, 300px) * 0.8)); }
+            .readout { flex-direction: row; align-items: center; gap: 18px; }
+            .readout .num-stack { display: flex; flex-direction: column; align-items: center; }
+            .tap-wrap { margin-top: 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .burst.show {
+                animation: none;
+                transform: translate(-50%, -100%) rotate(7deg) scale(1);
+                opacity: 1;
+            }
+            .hint { transition: none; }
+            .dots span { transition: none; }
+            .tap, .chip, .play, .sig { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Metronome</h1>
+        <div class="hint" id="hint">hit TAP to the beat — three taps is enough, it does the math</div>
+    </header>
+
+    <main class="stage">
+        <div class="metro-col">
+            <canvas id="metro"></canvas>
+            <div class="dots" id="dots"></div>
+        </div>
+        <div class="readout">
+            <div class="num-stack">
+                <div class="bpm-num" id="bpmNum">120</div>
+                <div class="bpm-cap">bpm</div>
+                <div class="tempo-name" id="tempoName">moderato</div>
+            </div>
+            <div class="tap-wrap">
+                <button class="tap" id="tapBtn" aria-label="Tap tempo">TAP</button>
+                <div class="burst" id="tapBurst">120 BPM</div>
+            </div>
+        </div>
+    </main>
+
+    <div class="pill">
+        <button class="chip" id="minus" aria-label="Slower">&#8722;</button>
+        <input type="range" id="slider" min="30" max="260" step="1" value="120" aria-label="Beats per minute">
+        <button class="chip" id="plus" aria-label="Faster">+</button>
+        <button class="play" id="playBtn" aria-label="Start or stop">
+            <svg class="icon-play" width="22" height="22" viewBox="0 0 22 22"><path d="M5 3l14 8-14 8z" fill="#201a17"/></svg>
+            <svg class="icon-stop" width="20" height="20" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2" fill="#201a17"/></svg>
+        </button>
+        <div class="sigs" id="sigs"></div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var INK = '#201a17', CREAM = '#fff8ef', PAPER = '#f2ede2',
+            CORAL = '#f0563e', GOLD = '#f7c948', TEAL = '#2fb0a3', SKY = '#5aa0db';
+
+        var MIN_BPM = 30, MAX_BPM = 260;
+        var SIGS = [
+            { label: '2/4', beats: 2 },
+            { label: '3/4', beats: 3 },
+            { label: '4/4', beats: 4 },
+            { label: '6/8', beats: 6 }
+        ];
+
+        var bpm = 120;
+        var sigIndex = 2;
+        var playing = false;
+
+        // ---------- persistence ----------
+        try {
+            var saved = JSON.parse(localStorage.getItem('metronome-v1'));
+            if (saved) {
+                if (typeof saved.bpm === 'number') bpm = Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(saved.bpm)));
+                if (typeof saved.sig === 'number' && SIGS[saved.sig]) sigIndex = saved.sig;
+            }
+        } catch (e) {}
+
+        function persist() {
+            try { localStorage.setItem('metronome-v1', JSON.stringify({ bpm: bpm, sig: sigIndex })); } catch (e) {}
+        }
+
+        // ---------- dom ----------
+        var canvas = document.getElementById('metro');
+        var ctx = canvas.getContext('2d');
+        var bpmNum = document.getElementById('bpmNum');
+        var tempoName = document.getElementById('tempoName');
+        var slider = document.getElementById('slider');
+        var dotsEl = document.getElementById('dots');
+        var sigsEl = document.getElementById('sigs');
+        var playBtn = document.getElementById('playBtn');
+        var tapBtn = document.getElementById('tapBtn');
+        var tapBurst = document.getElementById('tapBurst');
+        var hint = document.getElementById('hint');
+
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        // ---------- tempo names ----------
+        function nameFor(b) {
+            if (b >= 260) return 'call a doctor';
+            if (b > 240) return 'unreasonable';
+            if (b <= 44) return 'grave';
+            if (b <= 60) return 'largo';
+            if (b <= 76) return 'adagio';
+            if (b <= 108) return 'andante';
+            if (b <= 120) return 'moderato';
+            if (b <= 156) return 'allegro';
+            if (b <= 176) return 'vivace';
+            if (b <= 200) return 'presto';
+            return 'prestissimo';
+        }
+
+        function setBpm(b) {
+            bpm = Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(b)));
+            bpmNum.textContent = bpm;
+            tempoName.textContent = nameFor(bpm);
+            slider.value = bpm;
+            persist();
+            if (!playing) render(0, false, null);
+        }
+
+        // ---------- audio: lazy context + lookahead scheduler ----------
+        var ac = null, master = null, noiseBuf = null;
+        var timer = null;
+        var nextNoteTime = 0, beatInBar = 0, side = 1;
+        var scheduleAheadTime = 0.15;   // seconds of audio scheduled ahead
+        var LOOKAHEAD_MS = 25;          // scheduler wakeup interval
+        var queue = [];                 // scheduled beats: {time, accent, side, beat}
+        var lastTicked = null;
+        var secretPending = false;
+
+        function ensureAudio() {
+            if (!ac) {
+                var AC = window.AudioContext || window.webkitAudioContext;
+                ac = new AC();
+                master = ac.createGain();
+                master.gain.value = 0.85;
+                master.connect(ac.destination);
+                noiseBuf = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.06), ac.sampleRate);
+                var d = noiseBuf.getChannelData(0);
+                for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+            }
+            if (ac.state === 'suspended') ac.resume();
+        }
+
+        // short filtered wood-block thunk; accent = higher pitch, a hair louder
+        function tick(t, accent) {
+            var n = ac.createBufferSource();
+            n.buffer = noiseBuf;
+            var bp = ac.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = accent ? 2100 : 1350;
+            bp.Q.value = 9;
+            var ng = ac.createGain();
+            ng.gain.setValueAtTime(accent ? 1.5 : 1.1, t);
+            ng.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+            n.connect(bp); bp.connect(ng); ng.connect(master);
+            n.start(t); n.stop(t + 0.06);
+
+            var o = ac.createOscillator();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(accent ? 1150 : 820, t);
+            o.frequency.exponentialRampToValueAtTime(accent ? 880 : 630, t + 0.03);
+            var og = ac.createGain();
+            og.gain.setValueAtTime(accent ? 0.62 : 0.5, t);
+            og.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+            o.connect(og); og.connect(master);
+            o.start(t); o.stop(t + 0.07);
+        }
+
+        // the secret: a tiny ding, then business as usual
+        function ding(t) {
+            var o = ac.createOscillator();
+            o.type = 'sine';
+            o.frequency.value = 1975;
+            var g = ac.createGain();
+            g.gain.setValueAtTime(0.45, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+            o.connect(g); g.connect(master);
+            o.start(t); o.stop(t + 0.55);
+
+            var o2 = ac.createOscillator();
+            o2.type = 'sine';
+            o2.frequency.value = 1975 * 2.76;
+            var g2 = ac.createGain();
+            g2.gain.setValueAtTime(0.12, t);
+            g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+            o2.connect(g2); g2.connect(master);
+            o2.start(t); o2.stop(t + 0.2);
+        }
+
+        function scheduler() {
+            while (nextNoteTime < ac.currentTime + scheduleAheadTime) {
+                var accent = beatInBar === 0;
+                if (secretPending) {
+                    ding(nextNoteTime);
+                    secretPending = false;
+                } else {
+                    tick(nextNoteTime, accent);
+                }
+                queue.push({ time: nextNoteTime, accent: accent, side: side, beat: beatInBar });
+                side = -side;
+                beatInBar = (beatInBar + 1) % SIGS[sigIndex].beats;
+                nextNoteTime += 60 / bpm;
+            }
+        }
+
+        function start() {
+            ensureAudio();
+            playing = true;
+            beatInBar = 0;
+            side = 1;
+            queue = [];
+            lastTicked = null;
+            secretPending = Math.random() < 0.02;
+            nextNoteTime = ac.currentTime + 0.12;
+            scheduler();
+            timer = setInterval(scheduler, LOOKAHEAD_MS);
+            playBtn.classList.add('playing');
+            wake();
+        }
+
+        function stop() {
+            playing = false;
+            clearInterval(timer);
+            timer = null;
+            queue = [];
+            lastTicked = null;
+            playBtn.classList.remove('playing');
+            clearDots();
+            render(0, false, null);
+        }
+
+        function toggle() {
+            dismissHint();
+            if (playing) stop(); else start();
+        }
+
+        // background tabs throttle setInterval to ~1s: widen the runway there
+        document.addEventListener('visibilitychange', function () {
+            scheduleAheadTime = document.hidden ? 1.2 : 0.15;
+            if (playing && ac) scheduler();
+        });
+
+        // ---------- beat dots ----------
+        var dotSpans = [];
+        function buildDots() {
+            dotsEl.innerHTML = '';
+            dotSpans = [];
+            for (var i = 0; i < SIGS[sigIndex].beats; i++) {
+                var s = document.createElement('span');
+                dotsEl.appendChild(s);
+                dotSpans.push(s);
+            }
+        }
+        function clearDots() {
+            for (var i = 0; i < dotSpans.length; i++) dotSpans[i].className = '';
+        }
+        function lightDot(beat, accent) {
+            for (var i = 0; i < dotSpans.length; i++) {
+                dotSpans[i].className = i === beat ? ('on' + (accent ? ' accent' : '')) : '';
+            }
+        }
+
+        // ---------- canvas: sticker metronome ----------
+        var W = 0, H = 0, dpr = 1;
+
+        function sizeCanvas() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            var r = canvas.getBoundingClientRect();
+            W = r.width; H = r.height;
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+        }
+
+        function bodyPath(c, inset) {
+            var topY = H * 0.08 + inset, botY = H * 0.88 - inset * 0.4;
+            var topHW = W * 0.20 - inset * 0.8, botHW = W * 0.40 - inset;
+            var cx = W / 2;
+            c.beginPath();
+            c.moveTo(cx - topHW, topY);
+            c.lineTo(cx + topHW, topY);
+            c.lineTo(cx + botHW, botY);
+            c.lineTo(cx - botHW, botY);
+            c.closePath();
+        }
+
+        function feetPath(c) {
+            var botY = H * 0.88, cx = W / 2, hw = W * 0.40;
+            var fw = W * 0.12, fh = H * 0.05;
+            c.beginPath();
+            c.rect(cx - hw + fw * 0.2, botY, fw, fh);
+            c.rect(cx + hw - fw * 1.2, botY, fw, fh);
+        }
+
+        // MAX swing angle in radians
+        var MAX_ANGLE = 28 * Math.PI / 180;
+
+        function render(angle, flash, pulse) {
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, H);
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            var cx = W / 2;
+            var pivotY = H * 0.80;
+            var armLen = H * 0.60;
+
+            // hard offset shadow pass (silhouette)
+            ctx.save();
+            ctx.translate(W * 0.02, W * 0.02);
+            bodyPath(ctx, 0); ctx.fillStyle = INK; ctx.fill();
+            feetPath(ctx); ctx.fill();
+            ctx.restore();
+
+            // feet
+            feetPath(ctx);
+            ctx.fillStyle = flash ? GOLD : CORAL;
+            ctx.fill();
+            ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+
+            // body
+            bodyPath(ctx, 0);
+            ctx.fillStyle = flash ? GOLD : CORAL;
+            ctx.fill();
+            ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+
+            // face plate
+            bodyPath(ctx, W * 0.055);
+            ctx.fillStyle = CREAM;
+            ctx.fill();
+            ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+
+            // slot + scale marks
+            var slotTop = H * 0.16;
+            ctx.beginPath();
+            ctx.moveTo(cx, pivotY - armLen * 0.16);
+            ctx.lineTo(cx, slotTop);
+            ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+
+            ctx.font = 'italic ' + Math.max(8, W * 0.033) + 'px Georgia, serif';
+            ctx.fillStyle = INK;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            var labels = [208, 144, 96, 60, 40];
+            for (var i = 0; i < 5; i++) {
+                var my = slotTop + (pivotY - armLen * 0.2 - slotTop) * (i / 4.6) + H * 0.015;
+                ctx.beginPath();
+                ctx.moveTo(cx - W * 0.045, my);
+                ctx.lineTo(cx + W * 0.045, my);
+                ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+                ctx.fillText(labels[i], cx + W * 0.06, my);
+            }
+
+            // brand plate, slightly crooked
+            var plateY = H * 0.79;
+            ctx.save();
+            ctx.translate(cx, plateY);
+            ctx.rotate(-0.05);
+            var pw = W * 0.34, ph = H * 0.052;
+            ctx.translate(2, 2);
+            ctx.fillStyle = INK;
+            ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
+            ctx.translate(-2, -2);
+            ctx.fillStyle = GOLD;
+            ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
+            ctx.lineWidth = 2; ctx.strokeStyle = INK;
+            ctx.strokeRect(-pw / 2, -ph / 2, pw, ph);
+            ctx.fillStyle = INK;
+            ctx.font = 'italic ' + Math.max(8, W * 0.036) + 'px Georgia, serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('steady & sons', 0, 1);
+            ctx.restore();
+
+            // pendulum arm (or beat pulse when reduced motion)
+            if (reduceMotion.matches) {
+                // static arm, centered
+                drawArm(cx, pivotY, armLen, 0);
+                if (pulse) {
+                    var pr = W * (pulse.accent ? 0.085 : 0.06);
+                    var py = H * 0.30;
+                    ctx.save();
+                    ctx.translate(2.5, 2.5);
+                    ctx.beginPath(); ctx.arc(cx, py, pr, 0, Math.PI * 2);
+                    ctx.fillStyle = INK; ctx.fill();
+                    ctx.restore();
+                    ctx.beginPath(); ctx.arc(cx, py, pr, 0, Math.PI * 2);
+                    ctx.fillStyle = pulse.accent ? GOLD : TEAL; ctx.fill();
+                    ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+                }
+            } else {
+                drawArm(cx, pivotY, armLen, angle);
+            }
+
+            // pivot cap
+            ctx.save();
+            ctx.translate(2, 2);
+            ctx.beginPath(); ctx.arc(cx, pivotY, W * 0.035, 0, Math.PI * 2);
+            ctx.fillStyle = INK; ctx.fill();
+            ctx.restore();
+            ctx.beginPath(); ctx.arc(cx, pivotY, W * 0.035, 0, Math.PI * 2);
+            ctx.fillStyle = SKY; ctx.fill();
+            ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+        }
+
+        function drawArm(cx, pivotY, armLen, angle) {
+            ctx.save();
+            ctx.translate(cx, pivotY);
+            ctx.rotate(angle);
+
+            // rod shadow
+            ctx.save();
+            ctx.translate(2.5, 2.5);
+            ctx.beginPath();
+            ctx.moveTo(0, armLen * 0.14);
+            ctx.lineTo(0, -armLen);
+            ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.stroke();
+            ctx.restore();
+
+            // rod
+            ctx.beginPath();
+            ctx.moveTo(0, armLen * 0.14);
+            ctx.lineTo(0, -armLen);
+            ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, armLen * 0.12);
+            ctx.lineTo(0, -armLen + 2);
+            ctx.lineWidth = 2.5; ctx.strokeStyle = CREAM; ctx.stroke();
+
+            // counterweight below pivot
+            ctx.beginPath(); ctx.arc(0, armLen * 0.14, W * 0.028, 0, Math.PI * 2);
+            ctx.fillStyle = INK; ctx.fill();
+
+            // sliding bob: slow = high on the rod, fast = near the pivot (like the real thing)
+            var frac = (bpm - MIN_BPM) / (MAX_BPM - MIN_BPM);
+            var bobY = -armLen * (0.92 - 0.62 * frac);
+            var bw = W * 0.115, bh = W * 0.085;
+
+            ctx.save();
+            ctx.translate(2.5, 2.5);
+            trapBob(ctx, 0, bobY, bw, bh);
+            ctx.fillStyle = INK; ctx.fill();
+            ctx.restore();
+            trapBob(ctx, 0, bobY, bw, bh);
+            ctx.fillStyle = GOLD; ctx.fill();
+            ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function trapBob(c, x, y, w, h) {
+            c.beginPath();
+            c.moveTo(x - w * 0.62, y + h / 2);
+            c.lineTo(x - w * 0.42, y - h / 2);
+            c.lineTo(x + w * 0.42, y - h / 2);
+            c.lineTo(x + w * 0.62, y + h / 2);
+            c.closePath();
+        }
+
+        // ---------- animation loop: syncs TO the audio clock, sleeps when stopped ----------
+        var rafId = 0;
+
+        function wake() {
+            if (!rafId) rafId = requestAnimationFrame(frame);
+        }
+
+        function frame() {
+            rafId = 0;
+            if (!playing || !ac) return; // sleep; stop() already drew the still frame
+
+            var now = ac.currentTime;
+
+            // drop beats that are fully in the past
+            while (queue.length > 1 && queue[1].time <= now) queue.shift();
+
+            // register the moment a beat lands
+            if (queue.length && queue[0].time <= now && lastTicked !== queue[0]) {
+                lastTicked = queue[0];
+                lightDot(lastTicked.beat, lastTicked.accent);
+            }
+
+            // pendulum angle from the audio clock: one swing per beat,
+            // cosine between scheduled extremes (tick lands at each extreme)
+            var angle = 0;
+            if (queue.length >= 2) {
+                var q0 = queue[0], q1 = queue[1];
+                if (now >= q0.time) {
+                    var u = Math.min(1, (now - q0.time) / (q1.time - q0.time));
+                    angle = MAX_ANGLE * q0.side * Math.cos(Math.PI * u);
+                } else {
+                    // lead-in: ease from center out to the first extreme
+                    var v = Math.max(0, 1 - (q0.time - now) / 0.12);
+                    angle = MAX_ANGLE * q0.side * Math.sin(v * Math.PI / 2);
+                }
+            }
+
+            var sinceTick = lastTicked ? now - lastTicked.time : 99;
+            var flash = !!(lastTicked && lastTicked.accent && sinceTick < 0.11);
+            var pulse = (reduceMotion.matches && lastTicked && sinceTick < Math.min(0.35, 30 / bpm))
+                ? { accent: lastTicked.accent } : null;
+
+            render(angle, flash, pulse);
+            rafId = requestAnimationFrame(frame);
+        }
+
+        // ---------- tap tempo ----------
+        var taps = [];
+
+        function tapTempo() {
+            ensureAudio(); // it's a gesture; warm the context so start is instant
+            var now = performance.now();
+            if (taps.length && now - taps[taps.length - 1] > 2500) taps = [];
+            taps.push(now);
+            if (taps.length > 9) taps.shift();
+            if (taps.length < 3) return;
+
+            var ivs = [];
+            for (var i = 1; i < taps.length; i++) ivs.push(taps[i] - taps[i - 1]);
+            var sorted = ivs.slice().sort(function (a, b) { return a - b; });
+            var median = sorted[Math.floor(sorted.length / 2)];
+            var kept = ivs.filter(function (iv) { return Math.abs(iv - median) < median * 0.25; });
+            if (kept.length < 2) kept = ivs;
+            var avg = kept.reduce(function (a, b) { return a + b; }, 0) / kept.length;
+
+            setBpm(60000 / avg);
+            tapBurst.textContent = bpm + ' BPM';
+            tapBurst.classList.remove('show');
+            void tapBurst.offsetWidth;
+            tapBurst.classList.add('show');
+        }
+
+        // ---------- controls ----------
+        slider.addEventListener('input', function () {
+            dismissHint();
+            setBpm(parseInt(slider.value, 10));
+        });
+
+        function holdable(btn, delta) {
+            var holdTimer = null, repeat = null;
+            btn.addEventListener('pointerdown', function (e) {
+                e.preventDefault();
+                dismissHint();
+                setBpm(bpm + delta);
+                holdTimer = setTimeout(function () {
+                    repeat = setInterval(function () { setBpm(bpm + delta); }, 60);
+                }, 420);
+            });
+            function release() {
+                clearTimeout(holdTimer);
+                clearInterval(repeat);
+                holdTimer = repeat = null;
+            }
+            btn.addEventListener('pointerup', release);
+            btn.addEventListener('pointercancel', release);
+            btn.addEventListener('pointerleave', release);
+        }
+        holdable(document.getElementById('minus'), -1);
+        holdable(document.getElementById('plus'), 1);
+
+        playBtn.addEventListener('click', toggle);
+
+        tapBtn.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            dismissHint();
+            tapTempo();
+        });
+
+        // time signatures
+        var sigBtns = [];
+        SIGS.forEach(function (sig, i) {
+            var b = document.createElement('button');
+            b.className = 'sig' + (i === sigIndex ? ' active' : '');
+            b.textContent = sig.label;
+            b.addEventListener('click', function () {
+                dismissHint();
+                sigIndex = i;
+                sigBtns.forEach(function (x, j) { x.classList.toggle('active', j === i); });
+                beatInBar = beatInBar % SIGS[i].beats;
+                buildDots();
+                persist();
+            });
+            sigsEl.appendChild(b);
+            sigBtns.push(b);
+        });
+
+        // keyboard: space starts/stops, T taps
+        document.addEventListener('keydown', function (e) {
+            if (e.repeat) return;
+            if (e.code === 'Space') { e.preventDefault(); toggle(); }
+            else if (e.key === 't' || e.key === 'T') tapTempo();
+        });
+
+        // ---------- hint ----------
+        var hintGone = false;
+        function dismissHint() {
+            if (hintGone) return;
+            hintGone = true;
+            hint.classList.add('gone');
+        }
+        setTimeout(dismissHint, 10000);
+
+        // ---------- resize (debounced) ----------
+        var resizeT = null;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeT);
+            resizeT = setTimeout(function () {
+                sizeCanvas();
+                if (!playing) render(0, false, null);
+            }, 150);
+        });
+
+        // ---------- boot (restore, never autoplay) ----------
+        buildDots();
+        setBpm(bpm);
+        sizeCanvas();
+        render(0, false, null);
+    })();
+    </script>
+</body>
+</html>

@@ -4,155 +4,328 @@
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Picsum Photo Browser - Find Template Images</title>
+    <title>Picsum Photo Generator</title>
 
-    <!-- Add metadata -->
-    <meta name="description" content="Browse and copy random high-quality photos from Lorem Picsum">
-    <meta name="keywords" content="photo browser, random images, Lorem Picsum">
+    <meta name="description" content="Endless stock photos pinned like polaroids — click one to copy its URL">
+    <meta name="keywords" content="photo browser, random images, Lorem Picsum, placeholder images">
     <meta name="author" content="Random Sites On The Web">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='5' y='5' width='40' height='40' rx='4' fill='none' stroke='%23000' stroke-width='2'/><circle cx='35' cy='15' r='4' fill='%23000'/><path d='M5 35l10-10 10 10 15-15v15h-35z' fill='%23000'/></svg>">
-    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='5' y='5' width='40' height='40' rx='4' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><circle cx='35' cy='15' r='4' fill='%23f7c948' stroke='%23201a17' stroke-width='2'/><path d='M8 35l10-10 9 9 12-12v18h-31z' fill='%235aa0db' stroke='%23201a17' stroke-width='2'/></svg>">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://randomsitesontheweb.com/sites/randomphotos/">
-    <meta property="og:title" content="Picsum Photo Browser - Find Template Images">
-    <meta property="og:description" content="Browse and copy random high-quality photos from Lorem Picsum">
+    <meta property="og:title" content="Picsum Photo Generator">
+    <meta property="og:description" content="Endless stock photos pinned like polaroids — click one to copy its URL">
     <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/randomphotos/">
-    <meta property="twitter:title" content="Picsum Photo Browser - Find Template Images">
-    <meta property="twitter:description" content="Browse and copy random high-quality photos from Lorem Picsum">
+    <meta property="twitter:title" content="Picsum Photo Generator">
+    <meta property="twitter:description" content="Endless stock photos pinned like polaroids — click one to copy its URL">
     <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
 
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
             margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            padding: 0 0 60px;
+            background: var(--paper);
+            color: var(--ink);
             min-height: 100vh;
         }
 
-        .collage {
-            padding: 10px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .photo-container {
-            aspect-ratio: 1;
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .photo-container:hover {
-            transform: scale(1.05);
-        }
-
-        .photo-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .copied-tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .copied-tooltip.show {
-            opacity: 1;
+        header {
+            text-align: center;
+            padding: 36px 20px 8px;
         }
 
         h1 {
-            margin: 20px 0;
-            color: #333;
-            font-family: system-ui, -apple-system, sans-serif;
-            text-align: center;
+            display: inline-block;
+            margin: 0;
+            padding: 10px 26px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.4rem, 5vw, 2.4rem);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--sky);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-2deg);
         }
 
-        p {
-            margin: 0 0 20px 0;
-            color: #666;
-            font-family: system-ui, -apple-system, sans-serif;
-            text-align: center;
-            max-width: 600px;
+        .hint {
+            margin: 22px auto 0;
+            max-width: 520px;
             padding: 0 20px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.05rem;
+            color: var(--ink);
+            opacity: 0.75;
+            transition: opacity 2s ease;
+        }
+
+        .hint.gone { opacity: 0; }
+
+        .tally {
+            display: inline-block;
+            margin-top: 18px;
+            padding: 5px 16px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.9rem;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(1.5deg);
+        }
+
+        .collage {
+            padding: 30px clamp(12px, 4vw, 40px);
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: clamp(18px, 3vw, 34px);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .polaroid {
+            position: relative;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 6px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 8px 8px 0;
+            cursor: pointer;
+            transform: rotate(var(--tilt));
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .polaroid:hover {
+            transform: rotate(var(--tilt)) translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--ink);
+            z-index: 2;
+        }
+
+        .polaroid:active {
+            transform: rotate(var(--tilt)) translate(2px, 2px);
+            box-shadow: 1px 1px 0 var(--ink);
+        }
+
+        .polaroid .frame {
+            aspect-ratio: 1;
+            overflow: hidden;
+            border: 2px solid var(--ink);
+            border-radius: 3px;
+            background:
+                repeating-linear-gradient(45deg, var(--paper) 0 8px, var(--cream) 8px 16px);
+        }
+
+        .polaroid img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+        }
+
+        .polaroid img.loaded {
+            opacity: 1;
+            animation: thunk 0.35s ease-out;
+        }
+
+        .polaroid .label {
+            padding: 7px 2px 9px;
+            text-align: center;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.85rem;
+            color: var(--ink);
+        }
+
+        .burst {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            padding: 8px 18px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--ink);
+            background: var(--accent, var(--gold));
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: translate(-50%, -50%) rotate(-8deg) scale(0);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .burst.show {
+            animation: pop 1.4s ease forwards;
+        }
+
+        @keyframes pop {
+            0%   { transform: translate(-50%, -50%) rotate(-8deg) scale(0.2); opacity: 1; }
+            12%  { transform: translate(-50%, -50%) rotate(-8deg) scale(1.15); opacity: 1; }
+            20%  { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
+            75%  { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-8deg) scale(0.9); opacity: 0; }
+        }
+
+        @keyframes thunk {
+            0%   { transform: scale(0.6); }
+            60%  { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .polaroid, .polaroid img.loaded, .burst.show { animation: none; transition: none; }
+            .burst.show { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
+            .hint { transition: none; }
         }
     </style>
 </head>
 <body>
-    <h1>Picsum Photo Browser</h1>
-    <p>Browse through endless randomly generated photos from Picsum. Click any image to copy its URL - perfect for finding placeholder images for your templates.</p>
-    <div class="collage" id="photoCollage"></div>
+    <header>
+        <h1>Picsum Photo Generator</h1>
+        <div class="hint" id="hint">click any photo to copy its url — free stock, no questions asked</div>
+        <div><span class="tally" id="tally">urls copied: 0</span></div>
+    </header>
+
+    <div class="collage" id="collage"></div>
 
     <script>
+        const INK_ACCENTS = ['var(--gold)', 'var(--coral)', 'var(--lime)', 'var(--pink)', 'var(--teal)', 'var(--orange)'];
+        const TILTS = [-2.2, 1.6, -1.1, 2.4, -2.8, 1.2, 2, -1.7];
+        const collage = document.getElementById('collage');
+        const hint = document.getElementById('hint');
+        const tallyEl = document.getElementById('tally');
+        let photoCount = 0;
+
+        let copies = 0;
+        try { copies = parseInt(localStorage.getItem('picsum-copies'), 10) || 0; } catch (e) {}
+        renderTally();
+
+        function renderTally() {
+            tallyEl.textContent = 'urls copied: ' + copies;
+        }
+
+        function bumpTally() {
+            copies++;
+            renderTally();
+            try { localStorage.setItem('picsum-copies', copies); } catch (e) {}
+        }
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
+                    observer.unobserve(entry.target);
                     addMorePhotos();
                 }
             });
-        }, {
-            rootMargin: '100px'
-        });
+        }, { rootMargin: '300px' });
 
-        function addMorePhotos() {
-            const collage = document.getElementById('photoCollage');
-            for (let i = 0; i < 12; i++) {
-                const container = document.createElement('div');
-                container.className = 'photo-container';
-                
-                const img = document.createElement('img');
-                img.src = `https://picsum.photos/seed/${Math.random()}/400`;
-                img.alt = 'Random photo';
-                
-                const tooltip = document.createElement('div');
-                tooltip.className = 'copied-tooltip';
-                tooltip.textContent = 'Copied!';
-                
-                container.addEventListener('click', () => {
-                    navigator.clipboard.writeText(img.src)
-                        .then(() => {
-                            tooltip.classList.add('show');
-                            setTimeout(() => tooltip.classList.remove('show'), 1500);
-                        })
-                        .catch(err => console.error('Failed to copy:', err));
-                });
-                
-                container.appendChild(img);
-                container.appendChild(tooltip);
-                collage.appendChild(container);
-
-                if (i === 11) {
-                    observer.observe(container);
-                }
+        function copyUrl(url, burst) {
+            const done = () => {
+                bumpTally();
+                burst.classList.remove('show');
+                void burst.offsetWidth;
+                burst.classList.add('show');
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(done).catch(() => fallbackCopy(url, done));
+            } else {
+                fallbackCopy(url, done);
             }
         }
 
-        window.onload = () => {
-            addMorePhotos();
-        };
+        function fallbackCopy(url, done) {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); done(); } catch (e) {}
+            document.body.removeChild(ta);
+        }
+
+        function addMorePhotos() {
+            for (let i = 0; i < 12; i++) {
+                const idx = photoCount++;
+                const seed = Math.floor(Math.random() * 90000 + 10000);
+                const url = 'https://picsum.photos/seed/' + seed + '/400';
+
+                const card = document.createElement('div');
+                card.className = 'polaroid';
+                card.style.setProperty('--tilt', TILTS[idx % TILTS.length] + 'deg');
+
+                const frame = document.createElement('div');
+                frame.className = 'frame';
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = 'Random stock photo no. ' + seed;
+                img.loading = 'lazy';
+                img.draggable = false;
+                img.addEventListener('load', () => img.classList.add('loaded'));
+                frame.appendChild(img);
+
+                const label = document.createElement('div');
+                label.className = 'label';
+                label.textContent = 'no. ' + seed;
+
+                const burst = document.createElement('div');
+                burst.className = 'burst';
+                burst.style.setProperty('--accent', INK_ACCENTS[idx % INK_ACCENTS.length]);
+                burst.textContent = 'Copied!';
+
+                card.addEventListener('click', () => {
+                    copyUrl(url, burst);
+                    dismissHint();
+                });
+
+                card.appendChild(frame);
+                card.appendChild(label);
+                card.appendChild(burst);
+                collage.appendChild(card);
+
+                if (i === 11) observer.observe(card);
+            }
+        }
+
+        let hintGone = false;
+        function dismissHint() {
+            if (hintGone) return;
+            hintGone = true;
+            hint.classList.add('gone');
+        }
+        setTimeout(dismissHint, 10000);
+
+        addMorePhotos();
     </script>
 </body>
 </html>

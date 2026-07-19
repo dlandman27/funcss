@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Many?</title>
+
+    <meta name="description" content="Dots flash for half a second — how many were there?">
+    <meta name="keywords" content="subitizing, counting game, estimation, calibration game, dots">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='4' y='4' width='42' height='42' rx='8' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><circle cx='17' cy='18' r='6' fill='%23f0563e' stroke='%23201a17' stroke-width='2.5'/><circle cx='33' cy='15' r='5' fill='%235aa0db' stroke='%23201a17' stroke-width='2.5'/><circle cx='24' cy='33' r='7' fill='%23f7c948' stroke='%23201a17' stroke-width='2.5'/></svg>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/howmany/">
+    <meta property="og:title" content="How Many?">
+    <meta property="og:description" content="Dots flash for half a second — how many were there?">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/howmany/">
+    <meta property="twitter:title" content="How Many?">
+    <meta property="twitter:description" content="Dots flash for half a second — how many were there?">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 18px 12px 42px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body.shake { animation: pageshake 0.25s linear; }
+        @keyframes pageshake {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-4px, 2px); }
+            40% { transform: translate(3px, -3px); }
+            60% { transform: translate(-3px, -2px); }
+            80% { transform: translate(4px, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        header { text-align: center; }
+
+        h1 {
+            display: inline-block;
+            margin: 6px 0 0;
+            padding: 10px 26px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.5rem, 6vw, 2.5rem);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--coral);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-2deg);
+        }
+
+        .scoreline {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        .tally {
+            display: inline-block;
+            padding: 5px 16px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.9rem;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+        }
+
+        .tally.streak { background: var(--teal); transform: rotate(-1.5deg); }
+        .tally.best { background: var(--gold); transform: rotate(1.8deg); }
+
+        .hint {
+            margin: 16px auto 0;
+            max-width: 460px;
+            padding: 0 16px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.02rem;
+            opacity: 0.75;
+            text-align: center;
+            transition: opacity 2s ease;
+        }
+        .hint.gone { opacity: 0; }
+
+        main {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stage {
+            position: relative;
+            margin-top: 20px;
+            width: min(660px, 94vw);
+            height: clamp(280px, 46vh, 440px);
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--ink);
+            transform: rotate(-0.6deg);
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+        .stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            max-width: 86%;
+            pointer-events: none;
+            z-index: 3;
+            text-align: center;
+            transform: translate(-50%, -50%) rotate(-7deg) scale(0);
+        }
+
+        .stamp.exact {
+            padding: 12px 30px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.6rem, 7vw, 2.6rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--ink);
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+        }
+
+        .stamp.miss {
+            padding: 10px 24px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+            color: var(--ink);
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: translate(-50%, -50%) rotate(2deg) scale(0);
+        }
+
+        .stamp.show { animation: stamppop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
+        @keyframes stamppop {
+            0%   { transform: translate(-50%, -50%) rotate(var(--rot, -7deg)) scale(0.2); opacity: 0; }
+            55%  { transform: translate(-50%, -50%) rotate(var(--rot, -7deg)) scale(1.15); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(var(--rot, -7deg)) scale(1); opacity: 1; }
+        }
+
+        .flavor {
+            margin-top: 16px;
+            min-height: 2.4em;
+            max-width: 480px;
+            padding: 0 16px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.02rem;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .flavor.show { opacity: 0.85; }
+
+        .controls {
+            margin-top: 14px;
+            min-height: 96px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            width: min(660px, 94vw);
+        }
+
+        button {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--ink);
+            border: 3px solid var(--ink);
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .bigbtn {
+            padding: 16px 34px;
+            font-size: clamp(1rem, 4.5vw, 1.3rem);
+            letter-spacing: 1px;
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .bigbtn.go { background: var(--coral); transform: rotate(-1.5deg); }
+        .bigbtn.again { background: var(--teal); transform: rotate(1.2deg); }
+        .bigbtn.lock { background: var(--gold); transform: rotate(-1deg); }
+
+        .bigbtn:hover { transform: translate(-2px, -2px) rotate(-1.5deg); box-shadow: 6px 6px 0 var(--ink); }
+        .bigbtn:active { transform: translate(2px, 2px) rotate(-1.5deg); box-shadow: 1px 1px 0 var(--ink); }
+
+        .guessrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            width: clamp(58px, 16vw, 74px);
+            height: clamp(58px, 16vw, 74px);
+            font-size: clamp(1.6rem, 7vw, 2.2rem);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            line-height: 1;
+            padding: 0;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .step.minus { background: var(--sky); transform: rotate(-4deg); }
+        .step.plus { background: var(--lime); transform: rotate(4deg); }
+        .step:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        .guessnum {
+            min-width: clamp(88px, 24vw, 110px);
+            padding: 8px 12px;
+            text-align: center;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(2rem, 9vw, 2.8rem);
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-1deg);
+        }
+
+        [hidden] { display: none !important; }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.shake { animation: none; }
+            .stamp.show { animation: none; transform: translate(-50%, -50%) rotate(var(--rot, -7deg)) scale(1); opacity: 1; }
+            .hint, .flavor, .bigbtn, .step { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>How Many?</h1>
+        <div class="scoreline">
+            <span class="tally streak" id="streakTally">streak: 0</span>
+            <span class="tally best" id="bestTally">best: 0</span>
+        </div>
+        <div class="hint" id="hint">dots flash for half a second. guess the count. exact answers make it worse.</div>
+    </header>
+
+    <main>
+        <div class="stage" id="stage">
+            <canvas id="cv"></canvas>
+            <div class="stamp" id="stamp"></div>
+        </div>
+
+        <div class="flavor" id="flavor"></div>
+
+        <div class="controls" id="controls">
+            <button class="bigbtn go" id="startBtn">Flash the dots</button>
+
+            <div class="guessrow" id="guessRow" hidden>
+                <button class="step minus" id="minusBtn" aria-label="decrease guess">&minus;</button>
+                <div class="guessnum" id="guessNum">0</div>
+                <button class="step plus" id="plusBtn" aria-label="increase guess">+</button>
+                <button class="bigbtn lock" id="lockBtn">Lock it in</button>
+            </div>
+
+            <button class="bigbtn again" id="againBtn" hidden>Again</button>
+        </div>
+    </main>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var INK = '#201a17';
+        var CREAM = '#fff8ef';
+        var GOLD = '#f7c948';
+        var PALETTE = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+
+        // difficulty ranges per level (1-indexed)
+        var RANGES = [[3, 8], [5, 12], [8, 18], [12, 26], [18, 38], [26, 50], [35, 60]];
+        var MAX_LEVEL = RANGES.length;
+
+        var REDUCED = false;
+        try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+        var stage = document.getElementById('stage');
+        var cv = document.getElementById('cv');
+        var ctx = cv.getContext('2d');
+        var stamp = document.getElementById('stamp');
+        var flavor = document.getElementById('flavor');
+        var hint = document.getElementById('hint');
+        var startBtn = document.getElementById('startBtn');
+        var againBtn = document.getElementById('againBtn');
+        var guessRow = document.getElementById('guessRow');
+        var guessNum = document.getElementById('guessNum');
+        var minusBtn = document.getElementById('minusBtn');
+        var plusBtn = document.getElementById('plusBtn');
+        var lockBtn = document.getElementById('lockBtn');
+        var streakTally = document.getElementById('streakTally');
+        var bestTally = document.getElementById('bestTally');
+
+        // ---- persisted state ----
+        var streak = 0, best = 0, level = 1;
+        try {
+            streak = parseInt(localStorage.getItem('howmany-streak'), 10) || 0;
+            best = parseInt(localStorage.getItem('howmany-best'), 10) || 0;
+            level = parseInt(localStorage.getItem('howmany-level'), 10) || 1;
+        } catch (e) {}
+        level = Math.min(Math.max(level, 1), MAX_LEVEL);
+
+        function save() {
+            try {
+                localStorage.setItem('howmany-streak', streak);
+                localStorage.setItem('howmany-best', best);
+                localStorage.setItem('howmany-level', level);
+            } catch (e) {}
+        }
+
+        function renderTallies() {
+            streakTally.textContent = 'streak: ' + streak;
+            bestTally.textContent = 'best: ' + best;
+        }
+        renderTallies();
+
+        // ---- canvas sizing ----
+        var cw = 0, ch = 0, dpr = 1;
+        function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            var r = stage.getBoundingClientRect();
+            cw = Math.max(1, Math.round(r.width) - 6);   // inside the 3px border
+            ch = Math.max(1, Math.round(r.height) - 6);
+            cv.width = Math.round(cw * dpr);
+            cv.height = Math.round(ch * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            redrawStatic();
+        }
+        var resizeT = null;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeT);
+            resizeT = setTimeout(resize, 150);
+        });
+
+        // ---- game state ----
+        // phases: 'ready' | 'fixate' | 'flash' | 'guess' | 'reveal' | 'verdict'
+        var phase = 'ready';
+        var dots = [];            // {fx, fy, rf, color} fractions of canvas; rf fraction of min(w,h)
+        var actual = 0;
+        var hiddenRound = false;
+        var hiddenIdx = -1;       // index in dots of the hidden one (drawn first, under its cover)
+        var coverIdx = -1;
+        var hiddenOut = null;     // {fx, fy} pulled-out position for reveal
+        var guess = 0;
+        var flashTimer = null, fixTimer = null;
+
+        function dotPx(d) {
+            var m = Math.min(cw, ch);
+            return { x: d.fx * cw, y: d.fy * ch, r: d.rf * m };
+        }
+
+        function drawDot(d, scale, ringed) {
+            var p = dotPx(d);
+            var r = p.r * (scale === undefined ? 1 : scale);
+            if (r <= 0.5) return;
+            // hard offset shadow
+            ctx.save();
+            ctx.translate(3, 3);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = INK;
+            ctx.fill();
+            ctx.restore();
+            // flat fill + ink outline
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = d.color;
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+            if (ringed) {
+                // double-stroked callout ring: ink wide, gold narrow
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, r + 8, 0, Math.PI * 2);
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = INK;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, r + 8, 0, Math.PI * 2);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = GOLD;
+                ctx.stroke();
+            }
+        }
+
+        function drawCounter(n) {
+            var size = Math.min(46, Math.max(30, cw * 0.08));
+            ctx.font = '900 ' + size + 'px "Arial Black", Arial, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = INK;
+            ctx.strokeText(String(n), 16, 12);
+            ctx.fillStyle = GOLD;
+            ctx.fillText(String(n), 16, 12);
+        }
+
+        function clear() { ctx.clearRect(0, 0, cw, ch); }
+
+        function drawFixation() {
+            clear();
+            var x = cw / 2, y = ch / 2, a = 10;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = INK;
+            ctx.beginPath();
+            ctx.moveTo(x - a, y); ctx.lineTo(x + a, y);
+            ctx.moveTo(x, y - a); ctx.lineTo(x, y + a);
+            ctx.stroke();
+        }
+
+        function drawReadyCard() {
+            clear();
+            ctx.font = 'italic ' + Math.min(20, Math.max(15, cw * 0.032)) + 'px Georgia, "Times New Roman", serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = INK;
+            ctx.globalAlpha = 0.55;
+            ctx.fillText('the dots are waiting.', cw / 2, ch / 2);
+            ctx.globalAlpha = 1;
+        }
+
+        function drawAllDots() {
+            clear();
+            for (var i = 0; i < dots.length; i++) drawDot(dots[i], 1);
+        }
+
+        function redrawStatic() {
+            if (phase === 'ready' || phase === 'verdict') {
+                if (phase === 'verdict' && dots.length) {
+                    drawVerdictBoard();
+                } else {
+                    drawReadyCard();
+                }
+            } else if (phase === 'flash') {
+                drawAllDots();
+            } else if (phase === 'guess') {
+                clear();
+            } else if (phase === 'fixate') {
+                drawFixation();
+            }
+            // 'reveal' redraws itself every frame
+        }
+
+        function drawVerdictBoard() {
+            clear();
+            for (var i = 0; i < dots.length; i++) {
+                if (hiddenRound && i === hiddenIdx) {
+                    drawDot({ fx: hiddenOut.fx, fy: hiddenOut.fy, rf: dots[i].rf, color: dots[i].color }, 1, true);
+                } else {
+                    drawDot(dots[i], 1);
+                }
+            }
+            drawCounter(actual);
+        }
+
+        // ---- round generation ----
+        function rand(a, b) { return a + Math.random() * (b - a); }
+
+        function makeRound() {
+            var range = RANGES[level - 1];
+            actual = Math.floor(rand(range[0], range[1] + 1));
+            hiddenRound = Math.random() < 0.03 && actual >= 4;
+            hiddenIdx = -1; coverIdx = -1; hiddenOut = null;
+
+            var m = Math.min(cw, ch);
+            var visibleN = hiddenRound ? actual - 1 : actual;
+            var base = Math.sqrt((cw * ch) / actual) * 0.21;
+            base = Math.min(24, Math.max(9, base));
+
+            var placed = [];
+            var gap = 6;
+            var tries;
+            for (var i = 0; i < visibleN; i++) {
+                var r = base * rand(0.8, 1.2);
+                var ok = false, x = 0, y = 0;
+                for (tries = 0; tries < 500; tries++) {
+                    x = rand(r + 8, cw - r - 8);
+                    y = rand(r + 8, ch - r - 8);
+                    ok = true;
+                    for (var j = 0; j < placed.length; j++) {
+                        var dx = x - placed[j].x, dy = y - placed[j].y;
+                        if (Math.sqrt(dx * dx + dy * dy) < r + placed[j].r + gap) { ok = false; break; }
+                    }
+                    if (ok) break;
+                    if (tries % 120 === 119) { r *= 0.9; gap = Math.max(2, gap - 1); }
+                }
+                placed.push({ x: x, y: y, r: r, color: PALETTE[Math.floor(Math.random() * PALETTE.length)] });
+            }
+
+            dots = [];
+            if (hiddenRound) {
+                // pick the biggest placed dot as cover; tuck one almost entirely behind it
+                var ci = 0;
+                for (var k = 1; k < placed.length; k++) if (placed[k].r > placed[ci].r) ci = k;
+                var cover = placed[ci];
+                var hr = cover.r * 0.85;
+                var ang = rand(0, Math.PI * 2);
+                var peek = cover.r - hr * 0.6; // only a sliver escapes the cover
+                var hx = cover.x + Math.cos(ang) * peek;
+                var hy = cover.y + Math.sin(ang) * peek;
+                // pulled-out position for the reveal, clamped inside the card
+                var ox = cover.x + Math.cos(ang) * (cover.r + hr + 14);
+                var oy = cover.y + Math.sin(ang) * (cover.r + hr + 14);
+                ox = Math.min(Math.max(ox, hr + 10), cw - hr - 10);
+                oy = Math.min(Math.max(oy, hr + 10), ch - hr - 10);
+                var hcolor = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+                if (hcolor === cover.color) hcolor = PALETTE[(PALETTE.indexOf(hcolor) + 3) % PALETTE.length];
+
+                // hidden dot goes FIRST so the cover draws over it
+                dots.push({ fx: hx / cw, fy: hy / ch, rf: hr / m, color: hcolor });
+                hiddenIdx = 0;
+                hiddenOut = { fx: ox / cw, fy: oy / ch };
+                for (var q = 0; q < placed.length; q++) {
+                    dots.push({ fx: placed[q].x / cw, fy: placed[q].y / ch, rf: placed[q].r / m, color: placed[q].color });
+                    if (q === ci) coverIdx = dots.length - 1;
+                }
+            } else {
+                for (var p = 0; p < placed.length; p++) {
+                    dots.push({ fx: placed[p].x / cw, fy: placed[p].y / ch, rf: placed[p].r / m, color: placed[p].color });
+                }
+            }
+        }
+
+        // ---- phases ----
+        function startRound() {
+            if (phase !== 'ready' && phase !== 'verdict') return;
+            phase = 'fixate';
+            stamp.className = 'stamp';
+            stamp.textContent = '';
+            flavor.classList.remove('show');
+            startBtn.hidden = true;
+            againBtn.hidden = true;
+            guessRow.hidden = true;
+            dismissHint();
+            makeRound();
+            drawFixation();
+            fixTimer = setTimeout(function () {
+                phase = 'flash';
+                drawAllDots();
+                var flashMs = Math.max(340, 520 - (level - 1) * 30);
+                flashTimer = setTimeout(hideDots, flashMs);
+            }, 500);
+        }
+
+        function hideDots() {
+            phase = 'guess';
+            clear();
+            var range = RANGES[level - 1];
+            setGuess(Math.round((range[0] + range[1]) / 2));
+            guessRow.hidden = false;
+        }
+
+        function setGuess(v) {
+            guess = Math.min(99, Math.max(0, v));
+            guessNum.textContent = guess;
+        }
+
+        // ---- reveal (the only rAF consumer; sleeps otherwise) ----
+        var raf = null;
+        var reveal = null;
+
+        function lockIn() {
+            if (phase !== 'guess') return;
+            phase = 'reveal';
+            guessRow.hidden = true;
+
+            var visible = [];
+            for (var i = 0; i < dots.length; i++) if (i !== hiddenIdx) visible.push(i);
+
+            if (REDUCED) {
+                phase = 'verdict';
+                drawVerdictBoard();
+                verdict();
+                return;
+            }
+
+            var tick = Math.min(130, Math.max(45, 2400 / actual));
+            reveal = {
+                start: performance.now(),
+                tick: tick,
+                order: visible,
+                popMs: 220,
+                hiddenDelay: visible.length * tick + 500,
+                hiddenSlideMs: 450,
+                done: false
+            };
+            raf = requestAnimationFrame(revealFrame);
+        }
+
+        function easeOutBack(t) {
+            var c1 = 1.70158, c3 = c1 + 1;
+            return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+        }
+
+        function revealFrame(now) {
+            var t = now - reveal.start;
+            clear();
+            var counted = 0;
+            for (var i = 0; i < reveal.order.length; i++) {
+                var born = i * reveal.tick;
+                if (t < born) break;
+                counted++;
+                var age = t - born;
+                var s = age >= reveal.popMs ? 1 : easeOutBack(age / reveal.popMs);
+                drawDot(dots[reveal.order[i]], Math.max(0.15, s));
+            }
+
+            var finished = false;
+            if (hiddenRound) {
+                if (t >= reveal.hiddenDelay) {
+                    var ht = Math.min(1, (t - reveal.hiddenDelay) / reveal.hiddenSlideMs);
+                    var e = 1 - Math.pow(1 - ht, 3);
+                    var hd = dots[hiddenIdx];
+                    var fx = hd.fx + (hiddenOut.fx - hd.fx) * e;
+                    var fy = hd.fy + (hiddenOut.fy - hd.fy) * e;
+                    drawDot({ fx: fx, fy: fy, rf: hd.rf, color: hd.color }, 1, ht > 0.65);
+                    if (ht >= 1) { counted++; finished = t >= reveal.hiddenDelay + reveal.hiddenSlideMs + 400; }
+                    else counted = reveal.order.length;
+                } else if (counted >= reveal.order.length) {
+                    counted = reveal.order.length;
+                }
+            } else {
+                finished = counted >= reveal.order.length && t >= reveal.order.length * reveal.tick + reveal.popMs + 350;
+            }
+
+            drawCounter(hiddenRound && counted > reveal.order.length ? actual : Math.min(counted, actual));
+
+            if (finished) {
+                raf = null;
+                phase = 'verdict';
+                drawVerdictBoard();
+                verdict();
+                return;
+            }
+            raf = requestAnimationFrame(revealFrame);
+        }
+
+        // ---- verdict + flavor ----
+        var EXACT_LINES = [
+            'humans can subitize about four. you appear to be human.',
+            'counted without counting. the dots are unsettled.',
+            'correct. the dots demand a recount.',
+            'your eyeballs have been calibrated at the factory.',
+            'exactly right. do not let it change you.',
+            'the census bureau has been notified of your talent.'
+        ];
+        var CLOSE_LINES = [
+            'off by {n}. an honorable failure.',
+            'so close the dots felt a breeze.',
+            'off by {n}. round it to correct. we cannot, but you may.',
+            'nearly. the dots respect the attempt.'
+        ];
+        var FAR_LINES = [
+            'off by {n}. were you even looking?',
+            'off by {n}. the dots were right there.',
+            'a bold estimate. wrong, but bold.',
+            'off by {n}. consider counting next time.',
+            'the dots would like an apology.'
+        ];
+
+        function pick(arr, n) {
+            var s = arr[Math.floor(Math.random() * arr.length)];
+            return s.replace('{n}', n);
+        }
+
+        function showStamp(text, cls, rot) {
+            stamp.textContent = text;
+            stamp.className = 'stamp ' + cls;
+            stamp.style.setProperty('--rot', rot);
+            void stamp.offsetWidth;
+            stamp.classList.add('show');
+        }
+
+        function showFlavor(text) {
+            flavor.textContent = text;
+            flavor.classList.add('show');
+        }
+
+        function verdict() {
+            var err = Math.abs(guess - actual);
+            var exact = err === 0;
+            var bigMiss = err >= Math.max(3, Math.ceil(actual * 0.2));
+
+            if (hiddenRound && !exact) {
+                showStamp('one was hiding', 'miss', '2deg');
+                showFlavor('one dot spent the whole flash behind another. that is on us. streak unharmed.');
+                // no penalty: streak and level untouched
+            } else if (exact) {
+                streak++;
+                if (streak > best) best = streak;
+                if (level < MAX_LEVEL) level++;
+                showStamp('Exact!', 'exact', '-7deg');
+                showFlavor(hiddenRound
+                    ? 'one dot was hiding behind another and you counted it anyway. we are frightened.'
+                    : pick(EXACT_LINES, 0));
+                if (!REDUCED) {
+                    document.body.classList.remove('shake');
+                    void document.body.offsetWidth;
+                    document.body.classList.add('shake');
+                }
+            } else {
+                streak = 0;
+                if (bigMiss && level > 1) level--;
+                showStamp('off by ' + err, 'miss', '2deg');
+                showFlavor(pick(bigMiss ? FAR_LINES : CLOSE_LINES, err));
+            }
+
+            renderTallies();
+            save();
+            againBtn.hidden = false;
+        }
+
+        // ---- input ----
+        startBtn.addEventListener('click', startRound);
+        againBtn.addEventListener('click', startRound);
+        lockBtn.addEventListener('click', lockIn);
+        stage.addEventListener('click', function () {
+            if (phase === 'ready' || phase === 'verdict') startRound();
+        });
+
+        // hold-to-repeat steppers (thumb friendly)
+        function bindHold(btn, step) {
+            var timer = null;
+            function stop() { clearTimeout(timer); timer = null; }
+            btn.addEventListener('pointerdown', function (e) {
+                e.preventDefault();
+                if (phase !== 'guess') return;
+                try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+                setGuess(guess + step);
+                var speed = 170;
+                timer = setTimeout(function rep() {
+                    setGuess(guess + step);
+                    speed = Math.max(45, speed * 0.88);
+                    timer = setTimeout(rep, speed);
+                }, 420);
+            });
+            btn.addEventListener('pointerup', stop);
+            btn.addEventListener('pointercancel', stop);
+            btn.addEventListener('lostpointercapture', stop);
+            btn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+        }
+        bindHold(minusBtn, -1);
+        bindHold(plusBtn, 1);
+
+        document.addEventListener('keydown', function (e) {
+            if (phase === 'guess') {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { setGuess(guess + 1); e.preventDefault(); }
+                else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { setGuess(guess - 1); e.preventDefault(); }
+                else if (e.key === 'Enter') { lockIn(); e.preventDefault(); }
+            } else if ((phase === 'ready' || phase === 'verdict') && (e.key === 'Enter' || e.key === ' ')) {
+                startRound(); e.preventDefault();
+            }
+        });
+
+        var hintGone = false;
+        function dismissHint() {
+            if (hintGone) return;
+            hintGone = true;
+            hint.classList.add('gone');
+        }
+        setTimeout(dismissHint, 10000);
+
+        // pause timers if the tab hides mid-flash (fairness + battery)
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden && (phase === 'flash' || phase === 'fixate')) {
+                clearTimeout(flashTimer);
+                clearTimeout(fixTimer);
+                if (raf) { cancelAnimationFrame(raf); raf = null; }
+                phase = 'ready';
+                startBtn.hidden = false;
+                drawReadyCard();
+            }
+        });
+
+        resize();
+    })();
+    </script>
+</body>
+</html>

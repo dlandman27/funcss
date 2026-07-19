@@ -1225,6 +1225,540 @@
             84% { transform: scale(1); opacity: 1; }
             100% { transform: scale(0.15); opacity: 0; }
         }
+
+        /* ── Page pet: a small creature lives on the floor of the page ── */
+        .pet-wrap {
+            position: fixed;
+            left: 0;
+            bottom: -2px;
+            z-index: 940;
+            cursor: pointer;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .pet-wrap canvas { display: block; }
+        .pet-heart {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            font-size: 1rem;
+            animation: pet-heart 1s ease-out forwards;
+        }
+        @keyframes pet-heart {
+            0%   { transform: translate(-50%, 0) scale(0.6); opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--dx, 0px)), -70px) scale(1.25) rotate(var(--r, 10deg)); opacity: 0; }
+        }
+        .pet-zzz {
+            position: fixed;
+            z-index: 940;
+            pointer-events: none;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: rgba(32, 26, 23, 0.55);
+            animation: pet-zzz 2.4s ease-out forwards;
+        }
+        @keyframes pet-zzz {
+            0%   { transform: translateY(0) scale(0.7); opacity: 0; }
+            15%  { opacity: 0.8; }
+            100% { transform: translateY(-46px) translateX(12px) scale(1.15); opacity: 0; }
+        }
+
+        /* ── Achievement stickers: album button, panel, toasts ── */
+        .ach-btn {
+            position: fixed;
+            left: 84px;
+            bottom: 20px;
+            z-index: 950;
+            width: 54px;
+            height: 54px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            background: #f7c948;
+            color: var(--ink);
+            border: var(--border);
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.08s ease;
+        }
+        .ach-btn:hover {
+            transform: translate(-2px, -2px) rotate(8deg);
+            box-shadow: 6px 6px 0 var(--ink);
+        }
+        .ach-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 var(--ink);
+        }
+        .ach-panel {
+            position: fixed;
+            left: 20px;
+            bottom: 84px;
+            z-index: 952;
+            width: min(320px, calc(100vw - 40px));
+            max-height: min(430px, 62vh);
+            overflow-y: auto;
+            background: var(--card);
+            border: var(--border);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--ink);
+            padding: 16px;
+            display: none;
+        }
+        .ach-panel.open { display: block; }
+        .ach-panel h3 {
+            margin: 0 0 10px;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--ink);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .ach-count {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            background: var(--lime);
+            border: 2px solid var(--ink);
+            border-radius: 6px;
+            padding: 0 6px;
+            transform: rotate(2deg);
+        }
+        .ach-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 7px 4px;
+            border-bottom: 2px dashed rgba(32, 26, 23, 0.12);
+        }
+        .ach-row:last-child { border-bottom: 0; }
+        .ach-ico {
+            flex: none;
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            font-size: 1.25rem;
+            background: var(--paper);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            transform: rotate(-3deg);
+            box-shadow: 2px 2px 0 var(--ink);
+        }
+        .ach-row.locked .ach-ico {
+            filter: grayscale(1);
+            opacity: 0.45;
+            transform: none;
+            box-shadow: none;
+        }
+        .ach-name {
+            display: block;
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--ink);
+        }
+        .ach-row.locked .ach-name { color: rgba(32, 26, 23, 0.45); }
+        .ach-how {
+            display: block;
+            font-size: 0.78rem;
+            color: rgba(32, 26, 23, 0.6);
+            line-height: 1.3;
+        }
+        .ach-toast {
+            position: fixed;
+            right: 20px;
+            bottom: 24px;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f7c948;
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 10px 14px;
+            animation: ach-toast-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both,
+                       ach-toast-out 0.35s ease 3.7s forwards;
+        }
+        .ach-toast-ico { font-size: 1.5rem; }
+        .ach-toast-txt { display: flex; flex-direction: column; line-height: 1.2; }
+        .ach-toast-txt b {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+        .ach-toast-txt span {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--ink);
+        }
+        @keyframes ach-toast-in {
+            from { transform: translateX(120%) rotate(3deg); }
+            to   { transform: none; }
+        }
+        @keyframes ach-toast-out {
+            to { transform: translateX(130%) rotate(2deg); opacity: 0; }
+        }
+
+        /* ── Search easter eggs: barrel roll, disco, gravity, cat ── */
+        body.barrel-roll { animation: barrel-roll 1.2s ease-in-out; }
+        @keyframes barrel-roll { to { transform: rotate(360deg); } }
+        .disco-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9990;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+            opacity: 0.45;
+            background: conic-gradient(from 0deg,
+                #ff5a5a, #ffd94a, #7bd45f, #5aa0db, #a98fd0, #ff7fa5, #ff5a5a);
+            animation: disco-hue 0.8s linear infinite;
+        }
+        @keyframes disco-hue { to { filter: hue-rotate(360deg); } }
+        body.disco .site-card,
+        body.disco .primary-button,
+        body.disco .logo-img {
+            animation: disco-dance 0.45s ease-in-out infinite alternate;
+        }
+        @keyframes disco-dance {
+            from { transform: rotate(-2deg) translateY(0); }
+            to   { transform: rotate(2deg) translateY(-6px); }
+        }
+        /* ── Idle doodler: a pencil sketches on the paper while you're away ── */
+        #doodleCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.9s ease;
+        }
+        #doodlePencil {
+            position: fixed;
+            z-index: 3;
+            pointer-events: none;
+            font-size: 26px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            transform: rotate(15deg);
+            filter: drop-shadow(2px 2px 0 rgba(32, 26, 23, 0.25));
+        }
+
+        /* ── Hold-to-charge Surprise Me ── */
+        .primary-button.charge-full { animation: charge-pulse 0.35s ease-in-out infinite; }
+        @keyframes charge-pulse {
+            0%, 100% { box-shadow: 4px 4px 0 var(--ink), 0 0 0 4px rgba(247, 201, 72, 0.65); }
+            50%      { box-shadow: 4px 4px 0 var(--ink), 0 0 0 12px rgba(247, 201, 72, 0.2); }
+        }
+        .dice-fly {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            font-size: 1.5rem;
+            transform: translate(-50%, -50%);
+            animation: dice-fly 1s cubic-bezier(0.15, 0.6, 0.4, 1) forwards;
+        }
+        @keyframes dice-fly {
+            0%   { transform: translate(-50%, -50%) scale(0.4) rotate(0deg); opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)))
+                              scale(1.3) rotate(var(--rr)); opacity: 0; }
+        }
+
+        /* ── The basement. You scrolled too far. It's dark down here. ── */
+        .basement {
+            position: relative;
+            margin-top: 60px;
+            background: #0c0906;
+            border-top: 6px solid var(--ink);
+            padding: 120px 20px 90px;
+            text-align: center;
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+        .basement.lit { background: #17120e; }
+        .basement-stuff { position: relative; z-index: 1; }
+
+        /* the darkness itself — a weak flashlight follows your pointer */
+        .basement-dark {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: radial-gradient(circle 130px at var(--fx, 50%) var(--fy, 45%),
+                rgba(12, 9, 6, 0.1) 0%,
+                rgba(12, 9, 6, 0.8) 62%,
+                rgba(6, 4, 3, 0.97) 100%);
+            transition: opacity 0.45s ease;
+        }
+        .basement.lit .basement-dark { opacity: 0; }
+
+        .basement-cord {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 3px;
+            height: 72px;
+            background: #4a4038;
+            transform-origin: top center;
+            z-index: 3;
+            cursor: pointer;
+            animation: cord-sway 4.5s ease-in-out infinite;
+        }
+        .basement-bulb {
+            position: absolute;
+            bottom: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #57504a;        /* off */
+            transition: background 0.2s ease;
+        }
+        .basement.lit .basement-bulb {
+            background: #ffd98a;
+            box-shadow:
+                0 0 24px 8px rgba(255, 214, 130, 0.5),
+                0 0 90px 42px rgba(255, 214, 130, 0.12);
+            animation: bulb-flicker 7s linear infinite;
+        }
+        @keyframes cord-sway {
+            0%, 100% { transform: rotate(2.5deg); }
+            50%      { transform: rotate(-2.5deg); }
+        }
+        @keyframes bulb-flicker {
+            0%, 91%, 93.5%, 100% { opacity: 1; }
+            92%, 93%             { opacity: 0.25; }
+            96%                  { opacity: 0.85; }
+        }
+
+        /* the pull-cord light switch (resets the page's chunky button styles) */
+        .basement-pull {
+            position: absolute;
+            top: 0;
+            left: calc(50% + 30px);
+            z-index: 3;
+            width: 26px;
+            height: 64px;
+            padding: 0;
+            background: none;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: top center;
+            animation: cord-sway 5.5s ease-in-out infinite reverse;
+        }
+        .basement-pull:hover,
+        .basement-pull:active { transform: none; box-shadow: none; }
+        .basement-pull .pull-string { width: 2px; flex: 1; background: #6b6257; }
+        .basement-pull .pull-handle {
+            width: 10px;
+            height: 16px;
+            border-radius: 4px;
+            background: #a5764a;
+            border: 2px solid var(--ink);
+        }
+        .basement-pull.yank { animation: pull-yank 0.3s ease; }
+        @keyframes pull-yank { 40% { transform: translateY(9px); } }
+
+        /* something lives down here (until the light comes on) */
+        .basement-eyes {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+        }
+        .basement.lit .basement-eyes { display: none; }
+        .beye { position: absolute; display: flex; gap: 7px; }
+        .beye span {
+            width: 7px;
+            height: 9px;
+            border-radius: 50%;
+            background: #ffd98a;
+            opacity: 0.85;
+            box-shadow: 0 0 6px 1px rgba(255, 217, 138, 0.4);
+            animation: eye-blink 5s ease-in-out infinite;
+        }
+        .beye:nth-child(1) { left: 12%; top: 38%; }
+        .beye:nth-child(2) { left: 79%; top: 30%; transform: scale(0.75); }
+        .beye:nth-child(2) span { animation-delay: 1.4s; }
+        .beye:nth-child(3) { left: 66%; top: 70%; transform: scale(0.6); }
+        .beye:nth-child(3) span { animation-delay: 2.6s; }
+        .beye:nth-child(4) { left: 24%; top: 74%; transform: scale(0.85); }
+        .beye:nth-child(4) span { animation-delay: 3.3s; }
+        @keyframes eye-blink {
+            0%, 6%, 100% { transform: scaleY(1); }
+            3%           { transform: scaleY(0.05); }
+        }
+
+        /* storage boxes */
+        .basement-boxes {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin: 0 0 26px;
+        }
+        .bbox {
+            --tilt: -2deg;
+            position: relative;
+            width: 112px;
+            height: 78px;
+            padding: 30px 8px 0;
+            background: #7d5f3d;
+            color: rgba(20, 14, 8, 0.85);
+            border: 3px solid var(--ink);
+            border-radius: 6px;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.45);
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.82rem;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            transform: rotate(var(--tilt));
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .bbox:nth-child(2) { --tilt: 1.5deg; margin-top: 6px; }
+        .bbox:nth-child(3) { --tilt: -1deg; background: #6d5236; }
+        .bbox:hover {
+            transform: rotate(var(--tilt)) translateY(-3px);
+            box-shadow: 4px 7px 0 rgba(0, 0, 0, 0.45);
+        }
+        .bbox:active {
+            transform: rotate(var(--tilt)) translateY(1px);
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+        }
+        .bbox .bbox-tape {
+            position: absolute;
+            top: 10px;
+            left: -4px;
+            right: -4px;
+            height: 12px;
+            background: rgba(214, 196, 161, 0.8);
+            border-top: 2px solid rgba(32, 26, 23, 0.5);
+            border-bottom: 2px solid rgba(32, 26, 23, 0.5);
+        }
+        .bbox.shake { animation: bbox-shake 0.4s ease; }
+        @keyframes bbox-shake {
+            0%, 100% { transform: rotate(var(--tilt)); }
+            25%      { transform: rotate(var(--tilt)) translateX(-4px); }
+            50%      { transform: rotate(var(--tilt)) translateX(4px); }
+            75%      { transform: rotate(var(--tilt)) translateX(-2px); }
+        }
+
+        /* a crumpled note out of a box */
+        .basement-note {
+            max-width: 300px;
+            margin: 0 auto 26px;
+            padding: 12px 16px;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.45;
+            border: 2px solid var(--ink);
+            border-radius: 2px 14px 4px 12px / 10px 3px 12px 5px;
+            transform: rotate(-1.5deg);
+            box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+            animation: note-in 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+        }
+        .basement-note[hidden] { display: none; }
+        .basement-note b {
+            display: block;
+            font-size: 0.62rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.55;
+            margin-bottom: 4px;
+        }
+        @keyframes note-in {
+            from { transform: rotate(-6deg) scale(0.4); opacity: 0; }
+        }
+
+        /* residents and debris */
+        .basement-rat {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            z-index: 3;
+            font-size: 1.7rem;
+            pointer-events: none;
+            animation: rat-skitter 1.6s cubic-bezier(0.3, 0, 0.8, 1) forwards;
+        }
+        @keyframes rat-skitter {
+            0%   { transform: translateX(0) scaleX(-1); }
+            100% { transform: translateX(60vw) scaleX(-1); }
+        }
+        .basement-ghost {
+            position: fixed;
+            z-index: 9999;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: ghost-float 3.5s ease-in forwards;
+        }
+        @keyframes ghost-float {
+            0%   { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+            12%  { opacity: 1; }
+            100% { transform: translate(-30vw, -80vh) rotate(-20deg); opacity: 0; }
+        }
+        .basement-dust {
+            position: absolute;
+            z-index: 3;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(214, 196, 161, 0.5);
+            pointer-events: none;
+            animation: dust-rise 1.4s ease-out forwards;
+        }
+        @keyframes dust-rise {
+            0%   { transform: translate(0, 0) scale(0.6); opacity: 0.9; }
+            100% { transform: translate(var(--dx, 0px), -46px) scale(1.4); opacity: 0; }
+        }
+
+        .basement-line {
+            font-family: var(--font-mono);
+            color: rgba(245, 236, 214, 0.55);
+            font-size: 0.85rem;
+            letter-spacing: 0.06em;
+            margin-bottom: 28px;
+        }
+        .basement-link {
+            display: inline-block;
+            font-family: var(--font-display);
+            font-weight: 600;
+            color: #ffd98a;
+            border: 2px dashed rgba(255, 217, 138, 0.5);
+            border-radius: 10px;
+            padding: 10px 18px;
+            text-decoration: none;
+            transform: rotate(-1deg);
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+        .basement-link:hover {
+            background: rgba(255, 217, 138, 0.1);
+            transform: rotate(1deg) scale(1.03);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .disco-overlay, .basement-cord, .basement-bulb,
+            .basement-pull, .beye span,
+            .ach-toast, .primary-button.charge-full { animation: none; }
+            body.barrel-roll, body.disco .site-card,
+            body.disco .primary-button, body.disco .logo-img { animation: none; }
+        }
     </style>
 </head>
 <body>
@@ -1247,7 +1781,7 @@
         </p>
         
         <div class="button-group">
-            <button onclick="getSites()" class="primary-button">
+            <button class="primary-button" id="surpriseBtn" title="hold me down to charge">
                 <i class="fas fa-dice"></i>
                 Surprise Me!
             </button>
@@ -1373,6 +1907,13 @@
                         <div class="category">Educational</div>
                     </a>
                 </div>
+                <div class="site-card" data-categories="educational" data-created="2026-07-19">
+                    <a href="hearingtest/">
+                        <h2>How High Can You Hear?</h2>
+                        <p>A tone climbs until it vanishes. Find out how old your ears are.</p>
+                        <div class="category">Educational</div>
+                    </a>
+                </div>
             </div>
 
             <!-- Fun & Interactive Section -->
@@ -1458,7 +1999,7 @@
                 <div class="site-card" data-categories="fun" data-created="2024-12-31">
                     <a href="passwordSecurity/">
                         <h2>Password Security Checker</h2>
-                        <p>Check how secure your password is with sassy feedback</p>
+                        <p>Type a password and get judged: crack-time estimates, itemized violations, and a lock that beefs up as you improve. Nothing leaves the page.</p>
                         <div class="category">Fun &amp; Interactive</div>
                     </a>
                 </div>
@@ -1547,13 +2088,6 @@
                     </a>
                 </div>
                 <div class="site-card" data-categories="fun" data-created="2026-07-16">
-                    <a href="gravitysearch/">
-                        <h2>Gravity Search</h2>
-                        <p>A perfectly normal search engine. Until you search.</p>
-                        <div class="category">Fun &amp; Interactive</div>
-                    </a>
-                </div>
-                <div class="site-card" data-categories="fun" data-created="2026-07-16">
                     <a href="thousandballs/">
                         <h2>2,500 Balls</h2>
                         <p>Exactly two thousand five hundred bouncing balls. Count them if you don't believe us.</p>
@@ -1592,6 +2126,13 @@
                     <a href="dummyfactory/">
                         <h2>The Dummy Factory</h2>
                         <p>A bear-headed helicopter in clown shoes. Or reroll for one of 29,000 others.</p>
+                        <div class="category">Fun &amp; Interactive</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="fun" data-created="2026-07-19">
+                    <a href="bubblewrap/">
+                        <h2>Bubble Wrap</h2>
+                        <p>An infinite sheet of bubble wrap. You know what to do.</p>
                         <div class="category">Fun &amp; Interactive</div>
                     </a>
                 </div>
@@ -1709,6 +2250,27 @@
                     <a href="paint-by-number/">
                         <h2>Paint by Number</h2>
                         <p>Upload a photo, get a numbered kit, and paint it back together. Drag to paint; stay true to the original.</p>
+                        <div class="category">Tools</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="tools" data-created="2025-01-24">
+                    <a href="randomphotos/">
+                        <h2>Picsum Photo Generator</h2>
+                        <p>Endless stock photos pinned like polaroids — click one to copy its URL</p>
+                        <div class="category">Tools</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="tools" data-created="2026-07-19">
+                    <a href="ruler/">
+                        <h2>Ruler</h2>
+                        <p>A real ruler on your screen — calibrate it with a credit card</p>
+                        <div class="category">Tools</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="tools" data-created="2026-07-19">
+                    <a href="metronome/">
+                        <h2>Metronome</h2>
+                        <p>A big honest metronome. Tap the tempo, it keeps it.</p>
                         <div class="category">Tools</div>
                     </a>
                 </div>
@@ -1854,6 +2416,27 @@
                     <a href="binary-sudoku/">
                         <h2>Binary Sudoku</h2>
                         <p>Sudoku with only 0s and 1s. The hardest mode is a 2×2 grid. You will win.</p>
+                        <div class="category">Games</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="games" data-created="2026-07-19">
+                    <a href="howmany/">
+                        <h2>How Many?</h2>
+                        <p>Dots flash for half a second — how many were there?</p>
+                        <div class="category">Games</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="games" data-created="2026-07-19">
+                    <a href="countasecond/">
+                        <h2>Count a Second</h2>
+                        <p>Count the seconds in your head. Find out how wrong your internal clock is.</p>
+                        <div class="category">Games</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="games" data-created="2026-07-19">
+                    <a href="perfectcircle/">
+                        <h2>Perfect Circle</h2>
+                        <p>Draw a circle freehand. Get judged to one decimal place.</p>
                         <div class="category">Games</div>
                     </a>
                 </div>
@@ -2023,13 +2606,6 @@
                         <div class="category">Entertainment</div>
                     </a>
                 </div>
-                <div class="site-card" data-categories="entertainment" data-created="2025-01-24">
-                    <a href="randomphotos/">
-                        <h2>Picsum Photo Generator</h2>
-                        <p>Browse and copy endless stock photos for your projects</p>
-                        <div class="category">Entertainment</div>
-                    </a>
-                </div>
                 <div class="site-card" data-categories="entertainment" data-created="2024-12-18">
                     <a href="shakespeareinsultmaker/">
                         <h2>Shakespeare Insult Maker</h2>
@@ -2069,6 +2645,13 @@
                     <a href="horoscope/">
                         <h2>Oddly Specific Horoscopes</h2>
                         <p>The stars have reviewed your file. Today's reading is uncomfortably precise.</p>
+                        <div class="category">Entertainment</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="entertainment" data-created="2026-07-19">
+                    <a href="onhold/">
+                        <h2>On Hold</h2>
+                        <p>Your call is important to us. Please continue to hold.</p>
                         <div class="category">Entertainment</div>
                     </a>
                 </div>
@@ -2152,13 +2735,6 @@
                         <div class="category">Art</div>
                     </a>
                 </div>
-                <div class="site-card" data-categories="art" data-created="2026-07-16">
-                    <a href="voicepaint/">
-                        <h2>Voice Paint</h2>
-                        <p>Your voice is the brush — hum, sing, or yell and watch it paint</p>
-                        <div class="category">Art</div>
-                    </a>
-                </div>
                 <div class="site-card" data-categories="art" data-created="2026-07-17">
                     <a href="inkdrop/">
                         <h2>Ink Drop</h2>
@@ -2230,6 +2806,32 @@
         </div>
     </section>
 
+    <!-- The basement. You scrolled too far. Find the light. -->
+    <section class="basement" id="basement">
+        <div class="basement-dark" aria-hidden="true"></div>
+        <div class="basement-cord"><span class="basement-bulb"></span></div>
+        <button class="basement-pull" id="basementPull" aria-label="Pull the light cord">
+            <span class="pull-string"></span>
+            <span class="pull-handle"></span>
+        </button>
+        <div class="basement-eyes" aria-hidden="true">
+            <span class="beye"><span></span><span></span></span>
+            <span class="beye"><span></span><span></span></span>
+            <span class="beye"><span></span><span></span></span>
+            <span class="beye"><span></span><span></span></span>
+        </div>
+        <div class="basement-stuff">
+            <p class="basement-line">you weren't supposed to scroll this far.</p>
+            <div class="basement-boxes">
+                <button class="bbox" data-box="ideas"><span class="bbox-tape"></span>old ideas</button>
+                <button class="bbox" data-box="2019"><span class="bbox-tape"></span>2019</button>
+                <button class="bbox" data-box="forbidden"><span class="bbox-tape"></span>DO NOT OPEN</button>
+            </div>
+            <div class="basement-note" id="basementNote" hidden></div>
+            <a class="basement-link" href="/sites/static/">the noise is coming from in here &rarr;</a>
+        </div>
+    </section>
+
     <button class="back-to-top" id="backToTop" aria-label="Back to top"
             onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">
         <i class="fas fa-arrow-up"></i>
@@ -2246,6 +2848,15 @@
             <input type="checkbox" id="trailToggle">
             leave a sparkle trail <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
         </label>
+    </div>
+
+    <!-- Achievement sticker album -->
+    <button class="ach-btn" id="achBtn" aria-label="Your sticker album" title="sticker album">
+        <i class="fas fa-trophy"></i>
+    </button>
+    <div class="ach-panel" id="achPanel" aria-label="Achievement stickers">
+        <h3>Sticker album <span class="ach-count" id="achCount"></span></h3>
+        <div id="achGrid"></div>
     </div>
 
     <div class="history-modal">
@@ -2336,8 +2947,6 @@
             '/parallel_lines/',
             '/colortheory/',
             '/library-of-everything/',
-            '/gravitysearch/',
-            '/voicepaint/',
             '/thousandballs/',
             '/binary-sudoku/',
             '/randommazegenerator/',
@@ -2360,6 +2969,14 @@
             '/infinitemaze/',
             '/dummyfactory/',
             '/horoscope/',
+            '/howmany/',
+            '/countasecond/',
+            '/perfectcircle/',
+            '/bubblewrap/',
+            '/onhold/',
+            '/ruler/',
+            '/metronome/',
+            '/hearingtest/',
         ];
 
         // Close modal when clicking outside of it
@@ -2405,6 +3022,7 @@
 
         function getSites() {
             document.querySelector('.loading').style.display = 'block';
+            if (window.rswTally) window.rswTally('gambler', 5);
             try {
                 // Calculate total weight
                 const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -2779,6 +3397,99 @@
             `;
             document.head.appendChild(confettiStyle);
 
+            // ---- more magic search words ----
+            function doBarrelRoll() {
+                document.body.style.transformOrigin =
+                    '50% ' + (window.scrollY + window.innerHeight / 2) + 'px';
+                document.body.classList.add('barrel-roll');
+                setTimeout(() => {
+                    document.body.classList.remove('barrel-roll');
+                    document.body.style.transformOrigin = '';
+                }, 1300);
+            }
+
+            function startDisco() {
+                if (document.getElementById('discoOverlay')) return;
+                const o = document.createElement('div');
+                o.id = 'discoOverlay';
+                o.className = 'disco-overlay';
+                document.body.appendChild(o);
+                document.body.classList.add('disco');
+                setTimeout(() => {
+                    o.remove();
+                    document.body.classList.remove('disco');
+                }, 8000);
+            }
+
+            function dropCards() {
+                const cards = document.querySelectorAll('.site-card:not(.hidden)');
+                cards.forEach(c => {
+                    c.style.setProperty('--rot', (Math.random() * 120 - 60) + 'deg');
+                    c.style.animationDelay = (Math.random() * 0.5) + 's';
+                    c.classList.add('sticker-fall');
+                });
+                // they re-stick on their own — search gravity is temporary
+                setTimeout(() => cards.forEach(c => {
+                    c.classList.remove('sticker-fall');
+                    c.style.animationDelay = '';
+                }), 2700);
+            }
+
+            function dropBalls() {
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                if (document.getElementById('ballCanvas')) return;
+                const cv = document.createElement('canvas');
+                cv.id = 'ballCanvas';
+                cv.style.cssText = 'position:fixed;inset:0;z-index:9992;pointer-events:none;';
+                cv.width = innerWidth;
+                cv.height = innerHeight;
+                document.body.appendChild(cv);
+                const g = cv.getContext('2d');
+                const BALL_COLORS = ['#f47b28', '#f0563e', '#5aa0db', '#a98fd0', '#b7ce3c', '#ff7fa5', '#2fb0a3'];
+                const balls = [];
+                for (let i = 0; i < 28; i++) {
+                    balls.push({
+                        x: Math.random() * cv.width,
+                        y: -30 - Math.random() * cv.height * 0.8,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: Math.random() * 2,
+                        r: 8 + Math.random() * 16,
+                        c: BALL_COLORS[(Math.random() * BALL_COLORS.length) | 0],
+                    });
+                }
+                const t0 = performance.now();
+                let last = t0;
+                (function step(now) {
+                    const dt = Math.min((now - last) / 16.7, 3);
+                    last = now;
+                    const life = now - t0;
+                    const fade = life > 7000 ? Math.max(1 - (life - 7000) / 1000, 0) : 1;
+                    g.clearRect(0, 0, cv.width, cv.height);
+                    g.globalAlpha = fade;
+                    balls.forEach(b => {
+                        b.vy += 0.45 * dt;
+                        b.x += b.vx * dt;
+                        b.y += b.vy * dt;
+                        if (b.y + b.r > cv.height) { b.y = cv.height - b.r; b.vy *= -0.75; b.vx *= 0.99; }
+                        if (b.x - b.r < 0 && b.vx < 0) { b.x = b.r; b.vx *= -0.8; }
+                        if (b.x + b.r > cv.width && b.vx > 0) { b.x = cv.width - b.r; b.vx *= -0.8; }
+                        // sticker treatment: hard ink shadow, fill, outline, glint
+                        g.beginPath(); g.arc(b.x + 2, b.y + 2, b.r, 0, Math.PI * 2);
+                        g.fillStyle = '#201a17'; g.fill();
+                        g.beginPath(); g.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                        g.fillStyle = b.c; g.fill();
+                        g.lineWidth = 2.5; g.strokeStyle = '#201a17'; g.stroke();
+                        g.beginPath(); g.arc(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.22, 0, Math.PI * 2);
+                        g.fillStyle = 'rgba(255,255,255,0.6)'; g.fill();
+                    });
+                    g.globalAlpha = 1;
+                    if (fade > 0) requestAnimationFrame(step);
+                    else cv.remove();
+                })(t0);
+            }
+
+            const firedEggs = new Set();
+
             function filterCards() {
                 const searchTerm = searchInput.value.toLowerCase();
 
@@ -2789,6 +3500,24 @@
                     window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
                     return;
                 }
+
+                // one-shot magic words — re-arm when the search is cleared.
+                // Spells are commands, not searches: while one is typed, the
+                // cards stay on the page (the eggs themselves fire further
+                // down, after the cards are back, so gravity has something
+                // to drop).
+                if (searchTerm === '') firedEggs.clear();
+                const isSpell = ['do a barrel roll', 'disco', 'gravity', 'balls', 'confetti', 'invert']
+                    .some(w => searchTerm.includes(w));
+                const term = isSpell ? '' : searchTerm;
+                const egg = (key, fn, test) => {
+                    const hit = test ? test.test(searchTerm) : searchTerm.includes(key);
+                    if (hit && !firedEggs.has(key)) {
+                        firedEggs.add(key);
+                        if (window.rswAward) window.rswAward('egg');
+                        fn();
+                    }
+                };
 
                 if (!document.querySelector('#filter-styles')) {
                     const s = document.createElement('style');
@@ -2807,7 +3536,7 @@
                 // rails don't participate in search/filter — hide them instead
                 const featuredEl = document.getElementById('featured');
                 if (featuredEl) {
-                    const filtering = searchTerm !== '' || activeCategories.length < categories.size;
+                    const filtering = term !== '' || activeCategories.length < categories.size;
                     featuredEl.style.display = filtering ? 'none' : '';
                 }
 
@@ -2816,7 +3545,7 @@
                     const description = card.querySelector('p').textContent.toLowerCase();
                     const cardCategories = card.dataset.categories.split(' ');
 
-                    const matchesSearch = title.includes(searchTerm) || description.includes(searchTerm);
+                    const matchesSearch = title.includes(term) || description.includes(term);
                     const matchesCategories = cardCategories.some(cat => activeCategories.includes(cat));
 
                     card.classList.toggle('hidden', !matchesSearch || !matchesCategories);
@@ -2829,6 +3558,12 @@
                     title.style.display = hasVisibleCards ? 'block' : 'none';
                     nextGrid.style.display = hasVisibleCards ? 'grid' : 'none';
                 });
+
+                // cast the spells now that the cards are back on the page
+                egg('do a barrel roll', doBarrelRoll);
+                egg('disco', startDisco);
+                egg('gravity', dropCards);
+                egg('balls', dropBalls);
             }
 
             function sortCards() {
@@ -4389,6 +5124,7 @@
                 if (!dragging) return;
                 dragging = false;
                 logo.style.cursor = 'grab';
+                if (Math.hypot(vx, vy) > 14 && window.rswAward) window.rswAward('yeet');
                 fly();
             }
             logo.addEventListener('pointerup', release);
@@ -4440,6 +5176,7 @@
 
             badge.addEventListener('click', function () {
                 bonus++;
+                if (window.rswTally) window.rswTally('inflation', 10);
                 badge.textContent = realCount() + bonus;
                 badge.classList.remove('badge-pop');
                 void badge.offsetWidth;
@@ -4478,14 +5215,19 @@
                 i = (k === SEQ[i]) ? i + 1 : (k === SEQ[0] ? 1 : 0);
                 if (i === SEQ.length) {
                     i = 0;
-                    if (!done) { done = true; collapse(); }
+                    if (!done) {
+                        done = true;
+                        if (window.rswAward) window.rswAward('konami');
+                        collapse();
+                    }
                 }
             });
 
             function collapse() {
                 const els = document.querySelectorAll(
                     '.site-card, .logo-img, .container h1, .description, .button-group, ' +
-                    '.scroll-hint, .sites-header-inner, .back-to-top, .made-by'
+                    '.scroll-hint, .sites-header-inner, .back-to-top, .made-by, ' +
+                    '.cursor-btn, .ach-btn'
                 );
                 els.forEach(function (el) {
                     el.style.setProperty('--rot', (Math.random() * 140 - 70) + 'deg');
@@ -4497,6 +5239,708 @@
                 toast.textContent = 'oops. refresh to re-stick everything.';
                 document.body.appendChild(toast);
             }
+        })();
+    </script>
+
+    <!-- Achievement stickers: silly toasts for things you didn't know were
+         achievements, collected in a little album (trophy button, bottom-left) -->
+    <script>
+        (function () {
+            const DEFS = [
+                { id: 'gambler',    icon: '🎲', name: 'Dice Addict',      how: 'hit Surprise Me 5 times' },
+                { id: 'charged',    icon: '⚡', name: 'Fully Loaded',     how: 'charge the Surprise Me button all the way up' },
+                { id: 'yeet',       icon: '🚀', name: 'Yeet',             how: 'fling the logo, hard' },
+                { id: 'inflation',  icon: '📈', name: 'Inflation',        how: 'add 10 fake sites to the count' },
+                { id: 'egg',        icon: '🍳', name: 'Egg Hunter',       how: 'type a magic word into search' },
+                { id: 'bestfriend', icon: '🐾', name: 'Best Friend',      how: 'pet the pet' },
+                { id: 'door',       icon: '🚪', name: 'The Door',         how: 'nobody talks about the door' },
+                { id: 'basement',   icon: '🕳️', name: 'Basement Dweller', how: 'scroll past the very bottom' },
+                { id: 'konami',     icon: '🕹️', name: 'Off the Sheet',    how: '↑↑↓↓←→←→BA' },
+                { id: 'nightowl',   icon: '🦉', name: 'Night Owl',        how: 'visit between midnight and 5am' },
+            ];
+            const load = (key) => {
+                try { return JSON.parse(localStorage.getItem(key)) || {}; }
+                catch (err) { return {}; }
+            };
+            const earned = load('rsw-ach');
+            const tallies = load('rsw-tally');
+            const save = () => {
+                try {
+                    localStorage.setItem('rsw-ach', JSON.stringify(earned));
+                    localStorage.setItem('rsw-tally', JSON.stringify(tallies));
+                } catch (err) {}
+            };
+
+            const btn = document.getElementById('achBtn');
+            const panel = document.getElementById('achPanel');
+            const grid = document.getElementById('achGrid');
+            const countEl = document.getElementById('achCount');
+            if (!btn || !panel || !grid) return;
+
+            function render() {
+                grid.innerHTML = DEFS.map(function (d) {
+                    const got = !!earned[d.id];
+                    return '<div class="ach-row' + (got ? '' : ' locked') + '">' +
+                        '<span class="ach-ico">' + (got ? d.icon : '❔') + '</span>' +
+                        '<span><span class="ach-name">' + (got ? d.name : '???') + '</span>' +
+                        '<span class="ach-how">' + d.how + '</span></span></div>';
+                }).join('');
+                countEl.textContent = Object.keys(earned).length + '/' + DEFS.length;
+            }
+
+            function toast(def) {
+                const el = document.createElement('div');
+                el.className = 'ach-toast';
+                el.innerHTML = '<span class="ach-toast-ico">' + def.icon + '</span>' +
+                    '<span class="ach-toast-txt"><b>sticker earned</b><span>' + def.name + '</span></span>';
+                const stacked = document.querySelectorAll('.ach-toast').length;
+                el.style.bottom = (24 + stacked * 70) + 'px';
+                document.body.appendChild(el);
+                setTimeout(function () { el.remove(); }, 4300);
+            }
+
+            window.rswAward = function (id) {
+                if (earned[id]) return;
+                const def = DEFS.find(d => d.id === id);
+                if (!def) return;
+                earned[id] = Date.now();
+                save();
+                render();
+                toast(def);
+            };
+            window.rswTally = function (id, goal) {
+                if (earned[id]) return;
+                tallies[id] = (tallies[id] || 0) + 1;
+                save();
+                if (tallies[id] >= goal) window.rswAward(id);
+            };
+
+            // awards that live here: the door, the basement, night owls
+            const door = document.querySelector('.secret-door');
+            if (door) door.addEventListener('click', function () { window.rswAward('door'); });
+
+            const hour = new Date().getHours();
+            if (hour >= 0 && hour < 5) window.rswAward('nightowl');
+
+            const basement = document.getElementById('basement');
+            if (basement && 'IntersectionObserver' in window) {
+                const io = new IntersectionObserver(function (entries) {
+                    if (entries.some(x => x.isIntersecting)) {
+                        window.rswAward('basement');
+                        io.disconnect();
+                    }
+                }, { threshold: 0.25 });
+                io.observe(basement);
+            }
+
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                panel.classList.toggle('open');
+            });
+            document.addEventListener('click', function (e) {
+                if (!panel.contains(e.target)) panel.classList.remove('open');
+            });
+
+            render();
+        })();
+    </script>
+
+    <!-- Page pet: a small creature lives on the floor of the page.
+         It walks, it naps, it can be petted and named. -->
+    <script>
+        (function () {
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const css = getComputedStyle(document.documentElement);
+            const INK = (css.getPropertyValue('--ink') || '#201a17').trim() || '#201a17';
+            const COLORS = ['--teal', '--coral', '--sky', '--purple', '--pink', '--orange']
+                .map(v => (css.getPropertyValue(v) || '').trim())
+                .filter(Boolean);
+
+            let pet;
+            try { pet = JSON.parse(localStorage.getItem('rsw-pet')) || {}; }
+            catch (err) { pet = {}; }
+            if (!pet.color || COLORS.indexOf(pet.color) === -1 && !/^#/.test(pet.color)) {
+                pet.color = COLORS[(Math.random() * COLORS.length) | 0] || '#2fb0a3';
+            }
+            pet.pets = pet.pets || 0;
+            const save = () => {
+                try { localStorage.setItem('rsw-pet', JSON.stringify(pet)); } catch (err) {}
+            };
+            save();
+
+            const W = 76, H = 58;
+            const DPR = Math.min(window.devicePixelRatio || 1, 2);
+            const wrap = document.createElement('div');
+            wrap.className = 'pet-wrap';
+            const cv = document.createElement('canvas');
+            cv.width = W * DPR;
+            cv.height = H * DPR;
+            cv.style.width = W + 'px';
+            cv.style.height = H + 'px';
+            wrap.appendChild(cv);
+            document.body.appendChild(wrap);
+            const g = cv.getContext('2d');
+            g.scale(DPR, DPR);
+
+            const title = () => {
+                wrap.title = (pet.name || 'a small creature') +
+                    (pet.pets ? ' · pets: ' + pet.pets : ' · click to pet');
+            };
+            title();
+
+            // keep off the corner buttons
+            const minX = () => 84;
+            const maxX = () => Math.max(minX() + 20, innerWidth - 150 - W);
+
+            let x = Math.min(Math.max(innerWidth * (0.3 + Math.random() * 0.4), minX()), maxX());
+            let dir = Math.random() < 0.5 ? -1 : 1;
+            let mode = 'pause';
+            let until = 800 + Math.random() * 1500;
+            let t = 0, last = performance.now();
+            let blinkAt = 2500, blinkFor = 0;
+            let squish = 0, zzzAt = 0;
+
+            function nextMode() {
+                if (mode === 'walk') {
+                    mode = Math.random() < 0.3 ? 'sleep' : 'pause';
+                    until = mode === 'sleep' ? 9000 + Math.random() * 9000 : 900 + Math.random() * 2200;
+                    if (mode === 'sleep') zzzAt = t + 800;
+                } else {
+                    mode = 'walk';
+                    until = 2500 + Math.random() * 4500;
+                    if (Math.random() < 0.45) dir = -dir;
+                }
+            }
+
+            function spawnZzz() {
+                const r = wrap.getBoundingClientRect();
+                const z = document.createElement('span');
+                z.className = 'pet-zzz';
+                z.textContent = 'z';
+                z.style.left = (r.left + W * 0.62) + 'px';
+                z.style.top = (r.top - 4) + 'px';
+                document.body.appendChild(z);
+                setTimeout(() => z.remove(), 2500);
+            }
+
+            function draw() {
+                g.clearRect(0, 0, W, H);
+                const cx = W / 2;
+                const walking = mode === 'walk';
+                const sleeping = mode === 'sleep';
+                const bob = walking ? Math.sin(t / 90) * 1.6 : (sleeping ? Math.sin(t / 600) * 1.2 : 0);
+                const by = 38 - bob;
+                const rx = 17 * (1 + squish * 0.3);
+                const ry = 13 * (1 - squish * 0.3) * (sleeping ? 0.85 : 1);
+
+                // feet: little ink stumps that alternate while walking
+                const step = walking ? Math.sin(t / 90) * 3.5 : 0;
+                g.fillStyle = INK;
+                g.beginPath(); g.ellipse(cx - 7 + step, 50, 4, 3.2, 0, 0, Math.PI * 2); g.fill();
+                g.beginPath(); g.ellipse(cx + 7 - step, 50, 4, 3.2, 0, 0, Math.PI * 2); g.fill();
+
+                // sticker treatment: hard ink shadow under the body
+                g.beginPath(); g.ellipse(cx + 2, by + 2, rx, ry, 0, 0, Math.PI * 2);
+                g.fillStyle = INK; g.fill();
+
+                // body
+                g.beginPath(); g.ellipse(cx, by, rx, ry, 0, 0, Math.PI * 2);
+                g.fillStyle = pet.color; g.fill();
+                g.lineWidth = 2.5; g.strokeStyle = INK; g.stroke();
+
+                // sprout on top
+                g.lineWidth = 2; g.lineCap = 'round';
+                g.beginPath(); g.moveTo(cx, by - ry); g.lineTo(cx + 2, by - ry - 6); g.stroke();
+                g.fillStyle = '#b7ce3c';
+                g.beginPath(); g.ellipse(cx + 3.5, by - ry - 8, 3.4, 2.4, 0.5, 0, Math.PI * 2); g.fill();
+                g.lineWidth = 1.5; g.stroke();
+
+                // face, looking where it's going
+                const fx = cx + dir * 5.5;
+                if (sleeping || blinkFor > 0) {
+                    g.strokeStyle = INK; g.lineWidth = 1.8;
+                    g.beginPath(); g.moveTo(fx - 7, by - 3); g.quadraticCurveTo(fx - 4.5, by - 1, fx - 2, by - 3); g.stroke();
+                    g.beginPath(); g.moveTo(fx + 2, by - 3); g.quadraticCurveTo(fx + 4.5, by - 1, fx + 7, by - 3); g.stroke();
+                } else {
+                    g.fillStyle = '#fff';
+                    g.beginPath(); g.arc(fx - 4.5, by - 3, 3.4, 0, Math.PI * 2); g.fill();
+                    g.beginPath(); g.arc(fx + 4.5, by - 3, 3.4, 0, Math.PI * 2); g.fill();
+                    g.lineWidth = 1.3; g.strokeStyle = INK;
+                    g.beginPath(); g.arc(fx - 4.5, by - 3, 3.4, 0, Math.PI * 2); g.stroke();
+                    g.beginPath(); g.arc(fx + 4.5, by - 3, 3.4, 0, Math.PI * 2); g.stroke();
+                    g.fillStyle = INK;
+                    g.beginPath(); g.arc(fx - 4.5 + dir * 1.2, by - 3, 1.6, 0, Math.PI * 2); g.fill();
+                    g.beginPath(); g.arc(fx + 4.5 + dir * 1.2, by - 3, 1.6, 0, Math.PI * 2); g.fill();
+                }
+                // cheeks + mouth
+                g.fillStyle = 'rgba(255, 127, 165, 0.55)';
+                g.beginPath(); g.arc(fx - 9, by + 2, 2, 0, Math.PI * 2); g.fill();
+                g.beginPath(); g.arc(fx + 9, by + 2, 2, 0, Math.PI * 2); g.fill();
+                g.strokeStyle = INK; g.lineWidth = 1.5;
+                g.beginPath();
+                if (sleeping) {
+                    g.arc(fx, by + 3, 1.6, 0, Math.PI * 2);
+                } else {
+                    g.arc(fx, by + 2, 2.6, 0.15 * Math.PI, 0.85 * Math.PI);
+                }
+                g.stroke();
+            }
+
+            function tick(now) {
+                const dt = Math.min(now - last, 60);
+                last = now;
+                t += dt;
+                until -= dt;
+                if (until <= 0) nextMode();
+                if (mode === 'walk') {
+                    x += dir * dt * 0.035;
+                    if (x < minX()) { x = minX(); dir = 1; }
+                    if (x > maxX()) { x = maxX(); dir = -1; }
+                }
+                if (mode === 'sleep' && t > zzzAt) { zzzAt = t + 2200; spawnZzz(); }
+                if (blinkFor > 0) blinkFor -= dt;
+                else if (t > blinkAt) { blinkFor = 140; blinkAt = t + 2500 + Math.random() * 3500; }
+                squish *= Math.pow(0.85, dt / 16);
+                if (squish < 0.01) squish = 0;
+                wrap.style.transform = 'translateX(' + x + 'px)';
+                draw();
+                requestAnimationFrame(tick);
+            }
+
+            wrap.addEventListener('pointerdown', function (e) {
+                squish = 1;
+                if (mode === 'sleep') { mode = 'pause'; until = 1600; }
+                pet.pets++;
+                if (!pet.name && !pet.asked) {
+                    pet.asked = true;
+                    const n = prompt('it likes you! give it a name?', 'crumb');
+                    if (n && n.trim()) pet.name = n.trim().slice(0, 24);
+                }
+                save();
+                title();
+                if (window.rswAward) window.rswAward('bestfriend');
+                for (let i = 0; i < 3; i++) {
+                    const h = document.createElement('span');
+                    h.className = 'pet-heart';
+                    h.textContent = '❤️';
+                    h.style.left = (e.clientX + (Math.random() * 24 - 12)) + 'px';
+                    h.style.top = (e.clientY - 8 - Math.random() * 10) + 'px';
+                    h.style.setProperty('--dx', (Math.random() * 30 - 15) + 'px');
+                    h.style.setProperty('--r', (Math.random() * 30 - 15) + 'deg');
+                    document.body.appendChild(h);
+                    setTimeout(() => h.remove(), 1100);
+                }
+                if (reduce) draw();
+            });
+
+            window.addEventListener('resize', function () {
+                x = Math.min(Math.max(x, minX()), maxX());
+            });
+
+            if (reduce) {
+                wrap.style.transform = 'translateX(' + x + 'px)';
+                draw();
+            } else {
+                requestAnimationFrame(tick);
+            }
+        })();
+    </script>
+
+    <!-- Idle doodler: leave the mouse alone for a while and a pencil
+         starts sketching in the gaps of the paper -->
+    <script>
+        (function () {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const IDLE_MS = 25000;
+            let canvas = null, g = null, pencil = null;
+            let idleTimer = 0, strokeTimer = 0, raf = 0, fadeTimer = 0;
+            let active = false;
+
+            function ensure() {
+                if (canvas) return;
+                canvas = document.createElement('canvas');
+                canvas.id = 'doodleCanvas';
+                document.body.appendChild(canvas);
+                g = canvas.getContext('2d');
+                pencil = document.createElement('div');
+                pencil.id = 'doodlePencil';
+                pencil.textContent = '✏️';
+                document.body.appendChild(pencil);
+                const size = () => {
+                    canvas.width = innerWidth;
+                    canvas.height = innerHeight;
+                };
+                window.addEventListener('resize', size);
+                size();
+            }
+
+            const jit = () => (Math.random() - 0.5) * 2.4;
+
+            function spiralPts(cx, cy, r) {
+                const pts = [];
+                const turns = 2.2 + Math.random();
+                for (let i = 0; i <= 90; i++) {
+                    const a = (i / 90) * turns * Math.PI * 2;
+                    const rr = r * (i / 90);
+                    pts.push([cx + Math.cos(a) * rr + jit(), cy + Math.sin(a) * rr + jit()]);
+                }
+                return pts;
+            }
+            function starPts(cx, cy, r) {
+                const pts = [];
+                for (let i = 0; i <= 10; i++) {
+                    const rr = i % 2 === 0 ? r : r * 0.42;
+                    const a = -Math.PI / 2 + (Math.PI * i) / 5;
+                    const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr;
+                    if (i === 0) { pts.push([px, py]); continue; }
+                    const prev = pts[pts.length - 1];
+                    for (let k = 1; k <= 7; k++) {
+                        pts.push([
+                            prev[0] + ((px - prev[0]) * k) / 7 + jit(),
+                            prev[1] + ((py - prev[1]) * k) / 7 + jit(),
+                        ]);
+                    }
+                }
+                return pts;
+            }
+            function loopPts(cx, cy, r) {
+                const pts = [];
+                const loops = 3;
+                for (let i = 0; i <= 100; i++) {
+                    const a = (i / 100) * loops * Math.PI * 2;
+                    pts.push([
+                        cx - r + (a * r * 0.32) + Math.cos(a) * r * 0.5 + jit(),
+                        cy + Math.sin(a) * r * 0.5 + jit(),
+                    ]);
+                }
+                return pts;
+            }
+            function flowerPts(cx, cy, r) {
+                const pts = [];
+                for (let i = 0; i <= 110; i++) {
+                    const a = (i / 110) * Math.PI * 2;
+                    const rr = r * Math.abs(Math.cos(2 * a)) + r * 0.12;
+                    pts.push([cx + Math.cos(a) * rr + jit(), cy + Math.sin(a) * rr + jit()]);
+                }
+                return pts;
+            }
+            const SHAPES = [spiralPts, starPts, loopPts, flowerPts];
+
+            function drawStroke() {
+                if (!active) return;
+                const r = 22 + Math.random() * 30;
+                const cx = r + 30 + Math.random() * (innerWidth - r * 2 - 60);
+                const cy = r + 80 + Math.random() * Math.max(innerHeight - r * 2 - 160, 60);
+                const pts = SHAPES[(Math.random() * SHAPES.length) | 0](cx, cy, r);
+                g.strokeStyle = 'rgba(90, 84, 78, 0.5)';
+                g.lineWidth = 2;
+                g.lineCap = 'round';
+                g.lineJoin = 'round';
+                let i = 1;
+                const perFrame = 1 + Math.random();
+                pencil.style.opacity = '1';
+                (function seg() {
+                    if (!active) return;
+                    const stop = Math.min(i + perFrame, pts.length - 1);
+                    g.beginPath();
+                    g.moveTo(pts[Math.floor(i) - 1][0], pts[Math.floor(i) - 1][1]);
+                    for (; i <= stop; i++) g.lineTo(pts[Math.floor(i)][0], pts[Math.floor(i)][1]);
+                    g.stroke();
+                    const tip = pts[Math.min(Math.floor(i), pts.length - 1)];
+                    pencil.style.left = (tip[0] + 2) + 'px';
+                    pencil.style.top = (tip[1] - 28) + 'px';
+                    if (i < pts.length - 1) {
+                        raf = requestAnimationFrame(seg);
+                    } else {
+                        strokeTimer = setTimeout(drawStroke, 900 + Math.random() * 1900);
+                    }
+                })();
+            }
+
+            function start() {
+                if (document.hidden) { poke(); return; }
+                ensure();
+                g.clearRect(0, 0, canvas.width, canvas.height);
+                active = true;
+                clearTimeout(fadeTimer);
+                canvas.style.opacity = '1';
+                drawStroke();
+            }
+
+            function poke() {
+                if (active) {
+                    active = false;
+                    cancelAnimationFrame(raf);
+                    clearTimeout(strokeTimer);
+                    canvas.style.opacity = '0';
+                    pencil.style.opacity = '0';
+                    fadeTimer = setTimeout(() => g && g.clearRect(0, 0, canvas.width, canvas.height), 1000);
+                }
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(start, IDLE_MS);
+            }
+
+            ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll']
+                .forEach(ev => window.addEventListener(ev, poke, { passive: true }));
+            poke();
+        })();
+    </script>
+
+    <!-- Tab tantrum: switch tabs and the page starts pleading -->
+    <script>
+        (function () {
+            const PLEAS = [
+                '👀 hey.',
+                'come back…',
+                'the sites miss you',
+                'one more random site?',
+                '🥺 hello?',
+                'we had something special',
+            ];
+            const origTitle = document.title;
+            let startTimer = null, interval = null, sadLink = null, idx = 0, sadHref = null;
+
+            function sadIcon() {
+                const c = document.createElement('canvas');
+                c.width = c.height = 64;
+                const x = c.getContext('2d');
+                x.font = '54px serif';
+                x.textAlign = 'center';
+                x.textBaseline = 'middle';
+                x.fillText('🥺', 32, 38);
+                return c.toDataURL('image/png');
+            }
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    startTimer = setTimeout(function () {
+                        if (!sadHref) { try { sadHref = sadIcon(); } catch (err) {} }
+                        if (sadHref) {
+                            sadLink = document.createElement('link');
+                            sadLink.rel = 'icon';
+                            sadLink.href = sadHref;
+                            document.head.appendChild(sadLink);
+                        }
+                        document.title = PLEAS[idx++ % PLEAS.length];
+                        interval = setInterval(function () {
+                            document.title = PLEAS[idx++ % PLEAS.length];
+                        }, 1900);
+                    }, 1500);
+                } else {
+                    clearTimeout(startTimer);
+                    clearInterval(interval);
+                    interval = null;
+                    if (sadLink) { sadLink.remove(); sadLink = null; }
+                    if (document.title !== origTitle) {
+                        document.title = '🎉 you came back!';
+                        setTimeout(function () { document.title = origTitle; }, 1800);
+                    }
+                }
+            });
+        })();
+    </script>
+
+    <!-- Hold-to-charge Surprise Me: a quick click works as always, but
+         holding the button charges up a mega send-off -->
+    <script>
+        (function () {
+            const btn = document.getElementById('surpriseBtn');
+            if (!btn) return;
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let raf = null, downAt = 0, charge = 0, released = 0, resetTimer = null;
+
+            function loop(now) {
+                charge = Math.min(Math.max(now - downAt - 250, 0) / 1400, 1);
+                const j = charge * 2.6;
+                btn.style.transform = 'rotate(-1.5deg) scale(' + (1 + charge * 0.14) + ') translate(' +
+                    ((Math.random() - 0.5) * j) + 'px,' + ((Math.random() - 0.5) * j) + 'px)';
+                btn.classList.toggle('charge-full', charge >= 1);
+                raf = requestAnimationFrame(loop);
+            }
+
+            function end() {
+                if (raf === null) return;
+                cancelAnimationFrame(raf);
+                raf = null;
+                released = charge;
+                charge = 0;
+                btn.style.transform = '';
+                btn.classList.remove('charge-full');
+                clearTimeout(resetTimer);
+                resetTimer = setTimeout(function () { released = 0; }, 500);
+            }
+
+            btn.addEventListener('pointerdown', function () {
+                if (reduce) return;
+                downAt = performance.now();
+                cancelAnimationFrame(raf);
+                raf = requestAnimationFrame(loop);
+            });
+            btn.addEventListener('pointerup', end);
+            btn.addEventListener('pointercancel', end);
+            btn.addEventListener('pointerleave', end);
+
+            function megaBurst() {
+                document.body.classList.add('page-shake');
+                setTimeout(function () { document.body.classList.remove('page-shake'); }, 400);
+                const r = btn.getBoundingClientRect();
+                const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+                const EMOJI = ['🎲', '⭐', '✨', '🎉', '❓'];
+                for (let i = 0; i < 26; i++) {
+                    const s = document.createElement('span');
+                    s.className = 'dice-fly';
+                    s.textContent = EMOJI[(Math.random() * EMOJI.length) | 0];
+                    const a = (Math.PI * 2 * i) / 26 + Math.random() * 0.3;
+                    const d = 90 + Math.random() * 180;
+                    s.style.left = cx + 'px';
+                    s.style.top = cy + 'px';
+                    s.style.setProperty('--dx', Math.cos(a) * d + 'px');
+                    s.style.setProperty('--dy', (Math.sin(a) * d - 40) + 'px');
+                    s.style.setProperty('--rr', (Math.random() * 500 - 250) + 'deg');
+                    s.style.animationDuration = (0.7 + Math.random() * 0.5) + 's';
+                    document.body.appendChild(s);
+                    setTimeout(function () { s.remove(); }, 1400);
+                }
+            }
+
+            btn.addEventListener('click', function () {
+                if (released >= 1) {
+                    released = 0;
+                    megaBurst();
+                    if (window.rswAward) window.rswAward('charged');
+                }
+                getSites();
+            });
+        })();
+    </script>
+
+    <!-- The basement: flashlight, pull-cord light, boxes worth rummaging
+         through, and whatever lives down there -->
+    <script>
+        (function () {
+            const basement = document.getElementById('basement');
+            if (!basement) return;
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const dark = basement.querySelector('.basement-dark');
+            const pull = document.getElementById('basementPull');
+            const note = document.getElementById('basementNote');
+            let ratShown = false;
+
+            // the flashlight follows the pointer while it's dark
+            basement.addEventListener('pointermove', function (e) {
+                const r = basement.getBoundingClientRect();
+                dark.style.setProperty('--fx', (e.clientX - r.left) + 'px');
+                dark.style.setProperty('--fy', (e.clientY - r.top) + 'px');
+            });
+
+            function toggleLight() {
+                pull.classList.remove('yank');
+                void pull.offsetWidth;
+                pull.classList.add('yank');
+                const lit = basement.classList.toggle('lit');
+                if (lit && !ratShown && !reduce) {
+                    ratShown = true;
+                    const rat = document.createElement('span');
+                    rat.className = 'basement-rat';
+                    rat.textContent = '🐀';
+                    basement.appendChild(rat);
+                    setTimeout(function () { rat.remove(); }, 1700);
+                }
+            }
+            pull.addEventListener('click', toggleLight);
+            basement.querySelector('.basement-cord').addEventListener('click', toggleLight);
+
+            function showNote(label, text) {
+                note.hidden = false;
+                note.innerHTML = '<b>' + label + '</b>' + text;
+                note.style.animation = 'none';
+                void note.offsetWidth;
+                note.style.animation = '';
+            }
+
+            const IDEAS = [
+                'a website that is just one pixel',
+                'count a second, but it lies to you',
+                'a todo list that adds items while you sleep',
+                'clicker game where the number goes down',
+                'a loading bar for nothing in particular',
+                'wikipedia but every link goes to the same page',
+                'the museum of unused buttons',
+                'a timer that times how long you look at the timer',
+                'click the button. the button moves. that\'s it. that\'s the site',
+                'this exact website but slightly worse',
+            ];
+            const shuffled = IDEAS.slice().sort(function () { return Math.random() - 0.5; });
+            let ideaIdx = -1;
+
+            const DUST_LINES = [
+                '(cough) it\'s just dust.',
+                'still dust.',
+                'so much dust.',
+                'you know what? keep the dust.',
+            ];
+            let dustIdx = -1;
+
+            function dustPuff(box) {
+                if (reduce) return;
+                const br = box.getBoundingClientRect();
+                const sr = basement.getBoundingClientRect();
+                for (let i = 0; i < 8; i++) {
+                    const d = document.createElement('span');
+                    d.className = 'basement-dust';
+                    d.style.left = (br.left - sr.left + Math.random() * br.width) + 'px';
+                    d.style.top = (br.top - sr.top + 6 + Math.random() * 10) + 'px';
+                    d.style.setProperty('--dx', (Math.random() * 40 - 20) + 'px');
+                    d.style.animationDelay = (Math.random() * 0.25) + 's';
+                    basement.appendChild(d);
+                    setTimeout(function () { d.remove(); }, 1800);
+                }
+            }
+
+            let forbiddenClicks = 0, ghostOut = false;
+
+            basement.querySelectorAll('.bbox').forEach(function (box) {
+                box.addEventListener('click', function () {
+                    const kind = box.dataset.box;
+                    if (kind === 'ideas') {
+                        ideaIdx = (ideaIdx + 1) % shuffled.length;
+                        showNote('rejected idea #' + (137 + ideaIdx), shuffled[ideaIdx]);
+                        dustPuff(box);
+                    } else if (kind === '2019') {
+                        dustIdx = Math.min(dustIdx + 1, DUST_LINES.length - 1);
+                        showNote('2019', DUST_LINES[dustIdx]);
+                        dustPuff(box);
+                    } else {
+                        if (ghostOut) {
+                            showNote('do not open', 'it\'s gone. you let it out.');
+                            return;
+                        }
+                        forbiddenClicks++;
+                        if (forbiddenClicks < 3) {
+                            box.classList.remove('shake');
+                            void box.offsetWidth;
+                            box.classList.add('shake');
+                            showNote('do not open', forbiddenClicks === 1
+                                ? 'it says do not open.'
+                                : 'seriously. it says right there.');
+                        } else {
+                            ghostOut = true;
+                            showNote('do not open', 'well. now it\'s out.');
+                            dustPuff(box);
+                            if (!reduce) {
+                                const br = box.getBoundingClientRect();
+                                const ghost = document.createElement('span');
+                                ghost.className = 'basement-ghost';
+                                ghost.textContent = '👻';
+                                ghost.style.left = (br.left + br.width / 2) + 'px';
+                                ghost.style.top = br.top + 'px';
+                                document.body.appendChild(ghost);
+                                setTimeout(function () { ghost.remove(); }, 3600);
+                            }
+                        }
+                    }
+                });
+            });
         })();
     </script>
 </body>

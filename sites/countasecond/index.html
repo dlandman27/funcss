@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Count a Second</title>
+
+    <meta name="description" content="Count the seconds in your head. Find out how wrong your internal clock is.">
+    <meta name="keywords" content="count a second, internal clock, time estimation game, calibration game">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='25' cy='25' r='20' fill='%23f7c948' stroke='%23201a17' stroke-width='3'/><circle cx='25' cy='25' r='2.5' fill='%23201a17'/><path d='M25 25V12' stroke='%23201a17' stroke-width='3' stroke-linecap='round'/><path d='M25 25l9 6' stroke='%23201a17' stroke-width='3' stroke-linecap='round'/></svg>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/countasecond/">
+    <meta property="og:title" content="Count a Second">
+    <meta property="og:description" content="Count the seconds in your head. Find out how wrong your internal clock is.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/countasecond/">
+    <meta property="twitter:title" content="Count a Second">
+    <meta property="twitter:description" content="Count the seconds in your head. Find out how wrong your internal clock is.">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 28px 16px 48px;
+        }
+
+        #page.shake { animation: shake 0.28s linear; }
+
+        @keyframes shake {
+            0%   { transform: translate(0, 0); }
+            15%  { transform: translate(-7px, 4px); }
+            30%  { transform: translate(6px, -6px); }
+            45%  { transform: translate(-5px, -4px); }
+            60%  { transform: translate(6px, 5px); }
+            75%  { transform: translate(-4px, 3px); }
+            90%  { transform: translate(3px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* everything that goes dark while counting */
+        .fadeable { transition: opacity 1.1s ease; }
+        body.counting .fadeable { opacity: 0.05; }
+
+        header { text-align: center; }
+
+        h1 {
+            display: inline-block;
+            margin: 0;
+            padding: 9px 24px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.3rem, 5vw, 2.1rem);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--teal);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-2deg);
+        }
+
+        .hint {
+            margin: 20px auto 0;
+            max-width: 460px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.02rem;
+            opacity: 0.75;
+            transition: opacity 2s ease;
+        }
+
+        .hint.gone { opacity: 0; }
+
+        #target {
+            margin: clamp(20px, 4vh, 40px) 0 clamp(18px, 3.5vh, 34px);
+            padding: 10px 26px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.5rem, 6.5vw, 2.7rem);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--ink);
+            transform: rotate(1.5deg);
+        }
+
+        #stage { position: relative; }
+
+        #bigbtn {
+            display: block;
+            width: min(72vw, 320px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: var(--coral);
+            color: var(--ink);
+            border: 4px solid var(--ink);
+            box-shadow: 10px 10px 0 var(--ink);
+            transform: rotate(-3deg);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.7rem, 8vw, 2.6rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.4s ease;
+        }
+
+        #bigbtn:hover {
+            transform: rotate(-3deg) translate(-3px, -3px);
+            box-shadow: 13px 13px 0 var(--ink);
+        }
+
+        #bigbtn:active {
+            transform: rotate(-3deg) translate(4px, 4px);
+            box-shadow: 3px 3px 0 var(--ink);
+        }
+
+        body.counting #bigbtn {
+            background: var(--cream);
+            transform: none;
+            box-shadow: 4px 4px 0 var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            font-weight: 400;
+            font-style: italic;
+            text-transform: none;
+            letter-spacing: 0;
+            font-size: 1.2rem;
+            color: var(--ink);
+        }
+
+        body.counting #bigbtn:hover { transform: none; box-shadow: 4px 4px 0 var(--ink); }
+        body.counting #bigbtn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+
+        #stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            padding: 14px 30px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.8rem, 9vw, 3.2rem);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            background: var(--gold);
+            border: 4px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 6px 6px 0 var(--ink);
+            transform: translate(-50%, -50%) rotate(-12deg) scale(0);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #stamp.show { animation: stamp-in 6s ease forwards; }
+
+        @keyframes stamp-in {
+            0%   { transform: translate(-50%, -50%) rotate(-12deg) scale(0.2); opacity: 1; }
+            8%   { transform: translate(-50%, -50%) rotate(-12deg) scale(1.2);  opacity: 1; }
+            13%  { transform: translate(-50%, -50%) rotate(-12deg) scale(1);    opacity: 1; }
+            70%  { transform: translate(-50%, -50%) rotate(-12deg) scale(1);    opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-12deg) scale(1);    opacity: 0; }
+        }
+
+        #resultwrap {
+            min-height: 150px;
+            margin-top: clamp(20px, 4vh, 38px);
+            text-align: center;
+        }
+
+        #result {
+            display: none;
+            padding: 8px 26px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.8rem, 8vw, 3rem);
+            background: var(--accent, var(--sky));
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-2deg);
+        }
+
+        #result.show { display: inline-block; animation: thunk 0.4s ease-out; }
+
+        @keyframes thunk {
+            0%   { transform: rotate(-2deg) scale(0.2); }
+            60%  { transform: rotate(-2deg) scale(1.15); }
+            100% { transform: rotate(-2deg) scale(1); }
+        }
+
+        #verdict {
+            margin: 16px auto 0;
+            max-width: 480px;
+            min-height: 1.5em;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(1.05rem, 3.5vw, 1.3rem);
+        }
+
+        #calib {
+            display: none;
+            margin-top: clamp(20px, 4vh, 34px);
+            padding: 6px 18px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.95rem;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(-1deg);
+        }
+
+        #calib.show { display: inline-block; }
+
+        #records {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 18px;
+            max-width: 520px;
+        }
+
+        .record {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(var(--tilt, -3deg));
+        }
+
+        .record .t {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 1.05rem;
+        }
+
+        .record .b {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.72rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #page.shake { animation: none; }
+            .fadeable, .hint, #bigbtn { transition: none; }
+            #result.show { animation: none; }
+            #stamp.show {
+                animation: none;
+                transform: translate(-50%, -50%) rotate(-12deg) scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="page">
+        <header class="fadeable">
+            <h1>Count a Second</h1>
+            <div class="hint" id="hint">press once, count the seconds in your head, press again — no peeking at clocks</div>
+        </header>
+
+        <div id="target" class="fadeable">Count 1 Second</div>
+
+        <div id="stage">
+            <button id="bigbtn" type="button" aria-live="polite">Start</button>
+            <div id="stamp" aria-hidden="true">Atomic</div>
+        </div>
+
+        <div id="resultwrap" class="fadeable" aria-live="polite">
+            <div id="result"></div>
+            <div id="verdict"></div>
+            <div><span id="calib"></span></div>
+            <div id="records"></div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            var TARGETS = [1, 3, 5, 10, 30]; // seconds, progressive
+            var STORE_KEY = 'countasecond-v1';
+            var MISFIRE_MS = 150;
+            var ATOMIC_MS = 10;
+
+            var body = document.body;
+            var page = document.getElementById('page');
+            var btn = document.getElementById('bigbtn');
+            var targetEl = document.getElementById('target');
+            var resultEl = document.getElementById('result');
+            var verdictEl = document.getElementById('verdict');
+            var calibEl = document.getElementById('calib');
+            var recordsEl = document.getElementById('records');
+            var stampEl = document.getElementById('stamp');
+            var hint = document.getElementById('hint');
+
+            var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            // persisted summary: n attempts, sum of drift ratios, best abs error per target
+            var stats = { n: 0, sum: 0, best: {} };
+            try {
+                var raw = localStorage.getItem(STORE_KEY);
+                if (raw) {
+                    var parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed.n === 'number' && typeof parsed.sum === 'number') {
+                        stats.n = parsed.n;
+                        stats.sum = parsed.sum;
+                        stats.best = (parsed.best && typeof parsed.best === 'object') ? parsed.best : {};
+                    }
+                }
+            } catch (e) {}
+
+            function save() {
+                try { localStorage.setItem(STORE_KEY, JSON.stringify(stats)); } catch (e) {}
+            }
+
+            var counting = false;
+            var startTime = 0;
+            var lockUntil = 0;
+            var lastTarget = null;
+            var misfireIdx = 0;
+            var currentTarget = pickTarget();
+
+            function pickTarget() {
+                if (stats.n < TARGETS.length) return TARGETS[stats.n];
+                // loop back with variety: any target, never the same twice in a row
+                var pool = TARGETS.filter(function (t) { return t !== lastTarget; });
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
+
+            var ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+                'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
+                'seventeen', 'eighteen', 'nineteen'];
+            var TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+            function words(n) {
+                if (n < 0 || n > 99) return String(n);
+                if (n < 20) return ONES[n];
+                var t = Math.floor(n / 10), o = n % 10;
+                return TENS[t] + (o ? '-' + ONES[o] : '');
+            }
+
+            var MISFIRES = [
+                'that was a twitch, not a second.',
+                'a reflex is not a count.',
+                'the clock barely noticed you.'
+            ];
+
+            function verdictFor(diffMs, targetMs, elapsedMs) {
+                var pct = Math.abs(diffMs) / targetMs * 100;
+                if (pct < 2) return 'suspiciously precise.';
+                if (pct < 5) return 'close enough for jazz.';
+                if (pct < 10) return 'a respectable internal clock.';
+                if (pct < 20) return 'in the neighborhood, at least.';
+                if (pct < 40) return diffMs > 0 ? 'those were some long seconds.' : 'those were some short seconds.';
+                if (pct < 75) return 'your clock needs winding.';
+                var secs = Math.round(elapsedMs / 1000);
+                var tsecs = Math.round(targetMs / 1000);
+                if (secs !== tsecs) {
+                    return 'that was ' + words(secs) + ' second' + (secs === 1 ? '' : 's') + '.';
+                }
+                return 'that was not ' + words(tsecs) + ' seconds.';
+            }
+
+            function accentFor(diffMs, targetMs) {
+                var pct = Math.abs(diffMs) / targetMs * 100;
+                if (Math.abs(diffMs) <= ATOMIC_MS) return 'var(--gold)';
+                if (pct < 5) return 'var(--lime)';
+                if (pct < 20) return 'var(--sky)';
+                if (pct < 40) return 'var(--orange)';
+                return 'var(--coral)';
+            }
+
+            function fmtDiff(diffMs) {
+                var sign = diffMs >= 0 ? '+' : '-';
+                var abs = Math.abs(diffMs);
+                if (abs < 1000) return sign + Math.round(abs) + 'ms';
+                return sign + (abs / 1000).toFixed(1) + 's';
+            }
+
+            function renderTarget() {
+                targetEl.textContent = 'Count ' + currentTarget + ' Second' + (currentTarget === 1 ? '' : 's');
+            }
+
+            function renderCalib() {
+                if (stats.n < 1) return;
+                var avg = stats.sum / stats.n; // elapsed / target; <1 means they stop early = clock runs fast
+                var pct = Math.round(Math.abs(1 - avg) * 100);
+                var line;
+                if (pct < 1) {
+                    line = 'your internal clock runs true';
+                } else if (avg < 1) {
+                    line = 'your internal clock runs ' + pct + '% fast';
+                } else {
+                    line = 'your internal clock runs ' + pct + '% slow';
+                }
+                calibEl.textContent = line + ' · ' + stats.n + ' attempt' + (stats.n === 1 ? '' : 's');
+                calibEl.classList.add('show');
+            }
+
+            function renderRecords() {
+                recordsEl.textContent = '';
+                var tilts = [-4, 3, -2, 4, -3];
+                TARGETS.forEach(function (t, i) {
+                    var best = stats.best[t];
+                    if (typeof best !== 'number') return;
+                    var chip = document.createElement('div');
+                    chip.className = 'record';
+                    chip.style.setProperty('--tilt', tilts[i % tilts.length] + 'deg');
+                    chip.title = 'best for ' + t + ' second' + (t === 1 ? '' : 's');
+                    var top = document.createElement('div');
+                    top.className = 't';
+                    top.textContent = t + 's';
+                    var bottom = document.createElement('div');
+                    bottom.className = 'b';
+                    bottom.textContent = '±' + Math.round(best) + 'ms';
+                    chip.appendChild(top);
+                    chip.appendChild(bottom);
+                    recordsEl.appendChild(chip);
+                });
+            }
+
+            function showResult(text, accent) {
+                resultEl.style.setProperty('--accent', accent);
+                resultEl.textContent = text;
+                resultEl.classList.remove('show');
+                void resultEl.offsetWidth;
+                resultEl.classList.add('show');
+            }
+
+            function atomicMoment() {
+                stampEl.classList.remove('show');
+                void stampEl.offsetWidth;
+                stampEl.classList.add('show');
+                if (reducedMotion) {
+                    // the fade-out animation is disabled, so clear the stamp by hand
+                    setTimeout(function () { stampEl.classList.remove('show'); }, 5000);
+                }
+                if (!reducedMotion) {
+                    page.classList.remove('shake');
+                    void page.offsetWidth;
+                    page.classList.add('shake');
+                }
+            }
+
+            function begin() {
+                counting = true;
+                startTime = performance.now();
+                body.classList.add('counting');
+                btn.textContent = '…';
+                dismissHint();
+            }
+
+            function finish() {
+                var elapsed = performance.now() - startTime;
+                counting = false;
+                body.classList.remove('counting');
+                lockUntil = performance.now() + 300;
+
+                if (elapsed < MISFIRE_MS) {
+                    // a double-tap, not an attempt
+                    btn.textContent = 'Again';
+                    resultEl.classList.remove('show');
+                    resultEl.style.display = 'none';
+                    verdictEl.textContent = MISFIRES[misfireIdx++ % MISFIRES.length];
+                    return;
+                }
+                resultEl.style.display = '';
+
+                var targetMs = currentTarget * 1000;
+                var diff = elapsed - targetMs;
+                var absDiff = Math.abs(diff);
+
+                stats.n += 1;
+                stats.sum += elapsed / targetMs;
+                var prev = stats.best[currentTarget];
+                if (typeof prev !== 'number' || absDiff < prev) stats.best[currentTarget] = Math.round(absDiff);
+                save();
+
+                showResult(fmtDiff(diff), accentFor(diff, targetMs));
+
+                if (absDiff <= ATOMIC_MS) {
+                    verdictEl.textContent = 'certified atomic.';
+                    atomicMoment();
+                } else {
+                    verdictEl.textContent = verdictFor(diff, targetMs, elapsed);
+                }
+
+                renderCalib();
+                renderRecords();
+
+                lastTarget = currentTarget;
+                currentTarget = pickTarget();
+                renderTarget();
+                btn.textContent = 'Again';
+            }
+
+            btn.addEventListener('click', function () {
+                var now = performance.now();
+                if (!counting && now < lockUntil) return; // ignore stray tap right after a result
+                if (counting) finish();
+                else begin();
+            });
+
+            var hintGone = false;
+            function dismissHint() {
+                if (hintGone) return;
+                hintGone = true;
+                hint.classList.add('gone');
+            }
+            setTimeout(dismissHint, 12000);
+
+            renderTarget();
+            renderCalib();
+            renderRecords();
+        })();
+    </script>
+</body>
+</html>

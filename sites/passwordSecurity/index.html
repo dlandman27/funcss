@@ -5,234 +5,641 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Security Checker</title>
-    <meta name="description" content="Check how secure your password is with sassy feedback">
+    <meta name="description" content="Type a password and get judged: real crack-time estimates, itemized violations, and a lock that beefs up as you improve. Nothing leaves the page.">
     <meta name="keywords" content="password, security, checker, password strength, password security">
     <meta name="author" content="@randomsitesontheweb">
     <meta property="og:title" content="Password Security Checker">
-    <meta property="og:description" content="Check how secure your password is with sassy feedback">
+    <meta property="og:description" content="Type a password and get judged. Nothing leaves the page.">
     <meta property="og:type" content="website">
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAABYklEQVR4nO2WPU7DQBCFv0NBES6QG1CmTsEVKKhyAIQoKHILGiQKzkDFT8kNwoXokKA4QrwSI43kZLOx1yvHhUda2bsz8+bN7K5h4L9hBEyBJbAGdsBn8m2dPJsAw5y8BbADPoCnpOFr8i3k2QI4y8pdAXfAGngHxsCwYGPgI3m3Ai5bJ78GnoG3kgRFWANPwFVV8jC5Bz5bJg5YAXd5yQV4aCh5wD1wnpc8AG47SA6wBO7ykoO2XHeQHLQl+JaXfNBBcoCfRgkEeBRNLsBzR8nfgBvpuQCvHSUHbTlrkiAm+UuTBDHJn5okiEn+2CRBFV6Ac+AEOAUmwHzPuqhJ6OQ6Bw6Bk+TbvEZN1CR0cp0Bh8AZcJ98q1ITVRM6uY6Sxsck36rURNWETq79pPExybeymqia0Ml1kDQ+JvlWVhNVEzq5RsnjY5JvZTVRNaGT6/88/h9ADN4B9HH0MXCxr0MAAAAASUVORK5CYII=">
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --card: #fff8ef;
+            --coral: #f0563e;
+            --orange: #f47b28;
+            --gold: #f7c948;
+            --lime: #b7ce3c;
+            --teal: #2fb0a3;
+            --sky: #5aa0db;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: Georgia, 'Times New Roman', serif;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #1a1b26;
-            color: #ffffff;
+            padding: 28px 16px 60px;
+            -webkit-user-select: none;
+            user-select: none;
         }
-        .container {
-            background-color: #24283b;
-            padding: 2rem;
-            width: 90%;
-            max-width: 600px;
-            margin: 1rem;
-            border-radius: 12px;
-        }
-        input {
-            padding: 1rem;
-            font-size: 1.2rem;
-            margin: 1.5rem 0;
-            width: 100%;
-            border: none;
-            border-radius: 5px;
-            background-color: #414868;
-            color: #ffffff;
-            transition: all 0.3s ease;
-        }
-        input::placeholder {
-            color: #a9b1d6;
-        }
-        input:focus {
-            outline: none;
-            background-color: #565f89;
-            transform: scale(1.01);
-        }
-        #result {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            border-radius: 5px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-align: center;
-            transition: all 0.3s ease;
-            transform-origin: center;
-            width: 100%;
-            box-sizing: border-box;
-            word-wrap: break-word;
-            text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
-        }
-        h1 {
-            text-align: center;
-            font-size: clamp(1.5rem, 5vw, 2.5rem);
-            margin-bottom: 2rem;
-            color: #ffffff;
-            text-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+        input { -webkit-user-select: text; user-select: text; }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(32, 26, 23, 0.05) 1.5px, transparent 1.6px);
+            background-size: 26px 26px;
+            z-index: -1;
         }
 
-        @media (max-width: 480px) {
-            .container {
-                padding: 1rem;
-                margin: 0.5rem;
-            }
-            input {
-                padding: 0.8rem;
-                font-size: 1rem;
-            }
-            #result {
-                padding: 1rem;
-                font-size: 1rem;
-            }
+        h1 {
+            font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(1.3rem, 5vw, 2.1rem);
+            letter-spacing: 0.5px;
+            background: var(--card);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 12px 22px;
+            transform: rotate(-1.5deg);
+            text-align: center;
+        }
+
+        .subline {
+            font-style: italic;
+            font-size: 0.95rem;
+            opacity: 0.65;
+            margin: 14px 0 6px;
+            text-align: center;
+        }
+
+        .rig {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #lock {
+            display: block;
+            margin: 4px 0 2px;
+            transition: transform 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
+        }
+        #lock.pop { animation: lock-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1); }
+        @keyframes lock-pop {
+            0%   { transform: scale(0.7) rotate(-4deg); }
+            60%  { transform: scale(1.12) rotate(2deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin: 14px 0 16px;
+        }
+        #pw {
+            flex: 1;
+            font-family: 'Courier New', ui-monospace, monospace;
+            font-weight: 700;
+            font-size: 1.05rem;
+            padding: 13px 18px;
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            background: var(--card);
+            color: var(--ink);
+            box-shadow: 4px 4px 0 var(--ink);
+            outline: none;
+            min-width: 0;
+        }
+        #pw:focus { box-shadow: 4px 4px 0 var(--ink), 0 0 0 3px rgba(90, 160, 219, 0.45); }
+        #pw::placeholder { color: rgba(32, 26, 23, 0.4); font-weight: 400; }
+
+        #peek {
+            font-family: 'Courier New', ui-monospace, monospace;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 0 16px;
+            background: var(--sky);
+            color: var(--ink);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            cursor: pointer;
+            transform: rotate(2deg);
+            transition: transform 0.08s ease, box-shadow 0.08s ease;
+        }
+        #peek:hover { transform: rotate(2deg) translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+        #peek:active { transform: rotate(2deg) translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        .meter {
+            display: flex;
+            gap: 7px;
+            width: 100%;
+            max-width: 380px;
+        }
+        .meter i {
+            flex: 1;
+            height: 20px;
+            border: 3px solid var(--ink);
+            border-radius: 7px;
+            background: var(--card);
+            box-shadow: 2px 2px 0 var(--ink);
+            transition: background 0.2s ease;
+        }
+        .meter i:nth-child(odd) { transform: rotate(-2deg); }
+        .meter i:nth-child(even) { transform: rotate(1.5deg); }
+
+        #verdict {
+            display: none;
+            margin-top: 26px;
+            max-width: 440px;
+            font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1rem, 3.6vw, 1.25rem);
+            line-height: 1.35;
+            text-align: center;
+            padding: 14px 22px;
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-1deg);
+            background: var(--coral);
+        }
+        #verdict.stamp { animation: stamp 0.3s cubic-bezier(0.2, 1.5, 0.4, 1); }
+        @keyframes stamp {
+            0%   { transform: scale(1.7) rotate(-7deg); opacity: 0; }
+            100% { transform: scale(1) rotate(-1deg); opacity: 1; }
+        }
+
+        #cracktime {
+            display: none;
+            margin-top: 16px;
+            font-style: italic;
+            font-size: 0.95rem;
+            opacity: 0.75;
+            text-align: center;
+            max-width: 420px;
+        }
+
+        #exhibits {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            width: 100%;
+            max-width: 440px;
+        }
+        .exhibit {
+            font-style: italic;
+            font-size: 0.9rem;
+            background: var(--card);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 8px 14px;
+            animation: exhibit-in 0.25s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+        }
+        .exhibit b {
+            font-family: 'Courier New', ui-monospace, monospace;
+            font-style: normal;
+            font-size: 0.68rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 5px;
+            padding: 0 5px;
+            margin-right: 8px;
+            display: inline-block;
+            transform: rotate(-2deg);
+        }
+        .exhibit:nth-child(odd)  { transform: rotate(-0.6deg); }
+        .exhibit:nth-child(even) { transform: rotate(0.7deg); }
+        @keyframes exhibit-in {
+            from { transform: scale(0.6) rotate(-4deg); opacity: 0; }
+        }
+
+        .plaque {
+            margin-top: 44px;
+            font-style: italic;
+            font-size: 0.8rem;
+            opacity: 0.55;
+            text-align: center;
+            max-width: 380px;
+            line-height: 1.5;
+        }
+
+        @keyframes page-shake {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-6px, 3px); }
+            50% { transform: translate(5px, -4px); }
+            75% { transform: translate(-4px, -2px); }
+        }
+        body.shake { animation: page-shake 0.3s linear; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #lock.pop, #verdict.stamp, .exhibit, body.shake { animation: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔒 Password Security Checker</h1>
-        <input type="password" id="passwordInput" placeholder="Enter your password">
-        <div id="result"></div>
+    <h1>Password Security Checker</h1>
+    <p class="subline">type a password. be judged.</p>
+
+    <div class="rig">
+        <canvas id="lock" width="180" height="180"></canvas>
+
+        <div class="input-row">
+            <input type="password" id="pw" placeholder="the password in question"
+                   autocomplete="off" autocapitalize="off" spellcheck="false">
+            <button id="peek" type="button">show</button>
+        </div>
+
+        <div class="meter" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+        </div>
+
+        <div id="verdict"></div>
+        <p id="cracktime"></p>
+        <div id="exhibits"></div>
     </div>
 
+    <p class="plaque">
+        this exhibit runs entirely in your browser. the password is judged
+        locally, harshly, and never transmitted anywhere.
+    </p>
+
     <script>
-        const passwordInput = document.getElementById('passwordInput');
-        const result = document.getElementById('result');
+        (function () {
+            'use strict';
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const INK = '#201a17';
+            const TIERS = [
+                { key: 'terrible', color: '#f0563e', label: 'TERRIBLE' },
+                { key: 'weak',     color: '#f47b28', label: 'WEAK' },
+                { key: 'okay',     color: '#f7c948', label: 'OKAY' },
+                { key: 'strong',   color: '#b7ce3c', label: 'STRONG' },
+                { key: 'overkill', color: '#2fb0a3', label: 'OVERKILL' },
+            ];
 
-        const funnyMessages = {
-            terrible: [
-                "Even your pet could hack this! 🐹",
-                "My grandma could guess this password! 👵",
-                "Might as well use 'password123' 🤦‍♂️",
-                "This password is so weak, it needs emotional support! 🤗",
-                "I've seen better security on a piggy bank! 🐷",
-                "Your password and my will to live have something in common... 😅",
-                "This is the kind of password a hacker would use as an example of what not to do! 🚫",
-                "Even a broken keyboard could generate a better password! ⌨️",
-                "This password belongs in a museum... of terrible ideas! 🏛️",
-                "Your password security is giving me trust issues! 😰",
-                "This password is weaker than my WiFi signal in the basement! 📶",
-                "A toddler mashing the keyboard would make a stronger password! 👶",
-                "Your password and my social life have something in common - they're both non-existent! 😭",
-                "This password is about as secure as a chocolate teapot! 🍫",
-                "Even a fortune cookie has better secrets than this! 🥠",
-                "This password needs therapy... and maybe a complete makeover! 💅",
-                "I've seen better protection on a screen door! 🚪",
-                "Your password is giving me second-hand embarrassment! 😳",
-                "This is the kind of password that keeps security experts awake at night! 😴",
-                "If this password was a superhero, its superpower would be disappointing everyone! 🦸‍♂️",
-                "I'm not saying this is bad, but... actually, yes I am! 🙈"
-            ],
-            weak: [
-                "Not great, not terrible. Like lukewarm coffee! ☕",
-                "Your password is as strong as a wet paper bag 📄",
-                "Better than nothing, I guess... barely 😅",
-                "Your password is like a bicycle lock - it might stop amateurs 🚲",
-                "This password needs some protein shakes 🥤",
-                "Better than '123456', but that's a low bar 📊",
-                "Your password is the equivalent of a 'Keep Out' sign 🚫",
-                "This would only slow down a lazy hacker ⏰",
-                "Your password is like diet security - less filling, less protecting 🥤",
-                "The password equivalent of wearing a paper bag as armor 📦",
-                "This password needs to level up! 🎮",
-                "Security level: Mall Cop 🚔",
-                "Your password is trying its best... but its best isn't great 😅",
-                "Your password is like a screen door on a submarine 🌊",
-                "This password needs to do some security push-ups 💪",
-                "Your password is the digital equivalent of a 'Please Don't Steal' sign 🚫",
-                "This password would make a security expert cry 😢",
-                "About as secure as a cardboard safe 📦",
-                "Your password is having an identity crisis 🤔",
-                "Security level: Thoughts and Prayers 🙏",
-                "This password needs adult supervision 👀",
-                "Like a fence made of marshmallows 🍡",
-                "Your password is basically wearing a 'Hack Me' sign 🎯",
-                "This password needs some serious self-improvement 📚",
-                "Security rating: Participation Trophy 🏆"
-            ],
-            medium: [
-                "Now we're getting somewhere! 🚀",
-                "Not bad, but your password could hit the gym more often 💪",
-                "Your password is like a decent cup of tea - satisfactory! 🫖",
-                "Getting better! Like a teenager learning karate 🥋",
-                "Your password has potential, like an unripe avocado 🥑",
-                "This password is trying its best, and it's not half bad! 👍",
-                "Your password is like a bouncer at a small club - decent but not intimidating 🚪",
-                "Not quite Fort Knox, but maybe Fort Cardboard Box? 📦",
-                "This password could probably stop your little brother 👦",
-                "Security level: Above Average Joe 🏃",
-                "Like a guard dog that's more golden retriever than german shepherd 🐕",
-                "Your password is the equivalent of a 'No Trespassing' sign with a fence 🚧",
-                "This password has graduated from security school... with a C+ 📝",
-                "Better than most, but still room for improvement! 📈",
-                "Your password is like a locked door with a window next to it 🚪",
-                "Security level: Determined Hall Monitor 🏫"
-            ],
-            strong: [
-                "This password is stronger than my morning coffee! ⚡",
-                "Hackers will need a time machine to crack this one! ⏰",
-                "Your password is like a digital fortress! 🏰",
-                "Even quantum computers would break a sweat! 💻",
-                "This password eats weak passwords for breakfast! 🍳",
-                "Your password is basically Chuck Norris in digital form! 💪",
-                "Hackers see this password and run away crying! 😭",
-                "This password could protect the nuclear codes! ☢️",
-                "Your password is wearing a titanium suit of armor! 🛡️",
-                "Security level: Legendary! 🏆",
-                "This password makes bank vaults look weak! 🏦",
-                "Your password is like a black belt in digital self-defense! 🥋",
-                "This password could survive a zombie apocalypse! 🧟",
-                "Your password is the superhero of passwords! 🦸",
-                "This is what peak security looks like! 📈",
-                "Your password deserves a security Oscar! 🏆"
-            ]
-        };
+            const MESSAGES = {
+                terrible: [
+                    "even your pet could hack this.",
+                    "might as well use 'password123'.",
+                    "i've seen better security on a piggy bank.",
+                    "a toddler mashing the keyboard would do better.",
+                    "about as secure as a chocolate teapot.",
+                    "this belongs in a museum of terrible ideas.",
+                    "security experts feel this one in their sleep.",
+                    "a fortune cookie keeps better secrets.",
+                ],
+                weak: [
+                    "not great, not terrible. like lukewarm coffee.",
+                    "as strong as a wet paper bag.",
+                    "like a bicycle lock. it might stop amateurs.",
+                    "security level: mall cop.",
+                    "a screen door on a submarine.",
+                    "security level: thoughts and prayers.",
+                    "a fence made of marshmallows.",
+                    "security rating: participation trophy.",
+                ],
+                okay: [
+                    "now we're getting somewhere.",
+                    "like a decent cup of tea. satisfactory.",
+                    "has potential, like an unripe avocado.",
+                    "this would stop your little brother.",
+                    "graduated security school with a C+.",
+                    "a locked door with a window next to it.",
+                    "security level: determined hall monitor.",
+                ],
+                strong: [
+                    "hackers will need a time machine.",
+                    "a digital fortress.",
+                    "eats weak passwords for breakfast.",
+                    "hackers see this and file for early retirement.",
+                    "could protect the nuclear codes.",
+                    "this is what peak security looks like.",
+                    "security level: legendary.",
+                ],
+                overkill: [
+                    "at this point you won't get in either.",
+                    "the password is now stronger than whatever it protects.",
+                    "somewhere, a supercomputer just sighed.",
+                    "you will forget this by tomorrow. worth it.",
+                    "the museum called. they want it behind glass.",
+                    "this doesn't need an account. it needs a containment protocol.",
+                ],
+            };
 
-        function getRandomMessage(category) {
-            const messages = funnyMessages[category];
-            return messages[Math.floor(Math.random() * messages.length)];
-        }
+            const COMMON = [
+                'password', '123456', '123456789', '12345678', '12345', 'qwerty',
+                'abc123', 'football', 'monkey', 'letmein', 'dragon', '111111',
+                'baseball', 'iloveyou', 'trustno1', 'sunshine', 'master', 'welcome',
+                'shadow', 'ashley', 'freedom', 'whatever', 'qazwsx', 'michael',
+                'ninja', 'mustang', 'password1', 'password123', 'admin', 'login',
+                'starwars', 'princess', 'superman', 'batman', 'hello', 'charlie',
+                'secret', '000000', '654321', '696969', 'pokemon', 'computer',
+            ];
 
-        function checkPassword() {
-            const password = passwordInput.value;
-            let strength = 0;
-            
-            // Length check
-            if (password.length >= 8) strength += 1;
-            if (password.length >= 12) strength += 1;
-            
-            // Complexity checks
-            if (/[A-Z]/.test(password)) strength += 1;
-            if (/[a-z]/.test(password)) strength += 1;
-            if (/[0-9]/.test(password)) strength += 1;
-            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+            const WALKS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm', '1234567890',
+                           'poiuytrewq', 'lkjhgfdsa', 'mnbvcxz', '0987654321'];
 
-            // Set result message and color
-            let category;
-            let color;
-            
-            if (strength <= 2) {
-                category = 'terrible';
-                color = '#ff4d4d';
-            } else if (strength <= 3) {
-                category = 'weak';
-                color = '#ffa64d';
-            } else if (strength <= 4) {
-                category = 'medium';
-                color = '#4d94ff';
-            } else {
-                category = 'strong';
-                color = '#2ecc71';
+            // ---- scoring -------------------------------------------------
+            function hasRun(s, alphaOnly) {
+                // 4+ chars that step by exactly +1 or -1 (abcd, 4321)
+                let up = 1, down = 1;
+                for (let i = 1; i < s.length; i++) {
+                    const a = s.charCodeAt(i - 1), b = s.charCodeAt(i);
+                    if (alphaOnly && !/[a-z0-9]/i.test(s[i])) { up = down = 1; continue; }
+                    up = (b - a === 1) ? up + 1 : 1;
+                    down = (a - b === 1) ? down + 1 : 1;
+                    if (up >= 4 || down >= 4) return true;
+                }
+                return false;
             }
 
-            result.style.backgroundColor = color;
-            result.style.transform = 'scale(1.02)';
-            setTimeout(() => result.style.transform = 'scale(1)', 200);
-            result.textContent = getRandomMessage(category);
-        }
+            function judge(pw) {
+                const lower = pw.toLowerCase();
+                const exhibits = [];
+                let pool = 0;
+                if (/[a-z]/.test(pw)) pool += 26;
+                if (/[A-Z]/.test(pw)) pool += 26;
+                if (/[0-9]/.test(pw)) pool += 10;
+                if (/[^A-Za-z0-9]/.test(pw)) pool += 33;
+                let bits = pw.length * Math.log2(pool || 1);
 
-        passwordInput.addEventListener('input', checkPassword);
+                const isCommon = COMMON.indexOf(lower) !== -1;
+                if (isCommon) {
+                    bits = Math.min(bits, 8);
+                    exhibits.push('one of the most used passwords on earth. all of it.');
+                }
+                if (/password/.test(lower) && !isCommon) {
+                    bits = Math.min(bits, 14);
+                    exhibits.push("it contains the word 'password'. the actual word.");
+                }
+                if (WALKS.some(w => {
+                    for (let i = 0; i + 4 <= w.length; i++) {
+                        if (lower.indexOf(w.slice(i, i + 4)) !== -1) return true;
+                    }
+                    return false;
+                })) {
+                    bits *= 0.6;
+                    exhibits.push('keyboard walk detected. we can see your hand doing it.');
+                }
+                if (hasRun(lower, false)) {
+                    bits *= 0.65;
+                    exhibits.push('counting is not encryption.');
+                }
+                if (/(.)\1{3,}/.test(pw)) {
+                    bits *= 0.6;
+                    exhibits.push('the same key, over and over. it heard you the first time.');
+                }
+                if (/^(..?)\1{2,}$/.test(pw)) {
+                    bits *= 0.5;
+                    exhibits.push('a pattern on repeat. hackers can also copy-paste.');
+                }
+                if (/(19|20)\d{2}/.test(pw)) {
+                    bits -= 8;
+                    exhibits.push('a year. your birth year? bold of you.');
+                }
+                if (pw.length > 0 && pw.length < 8) {
+                    exhibits.push("it's just short.");
+                }
+                if (pool <= 26 && pw.length > 0) {
+                    exhibits.push('one flavor of character only.');
+                }
+                if (/[a-zA-Z]+1$/.test(pw)) {
+                    exhibits.push("the classic 'add a 1 at the end' maneuver.");
+                }
+                if (/[a-zA-Z0-9]+!$/.test(pw)) {
+                    exhibits.push('that exclamation mark is doing a lot of heavy lifting.');
+                }
+                if (/randomsites/.test(lower)) {
+                    exhibits.push('the name of this website. flattering. still no.');
+                }
+
+                bits = Math.max(bits, 0);
+                let tier;
+                if (bits < 28) tier = 0;
+                else if (bits < 40) tier = 1;
+                else if (bits < 60) tier = 2;
+                else if (bits < 80) tier = 3;
+                else tier = 4;
+
+                return { bits: bits, tier: tier, exhibits: exhibits };
+            }
+
+            // ---- crack time ---------------------------------------------
+            function crackLabel(bits) {
+                const secs = Math.pow(2, Math.max(bits - 1, 0)) / 1e10;
+                const n = (v) => Math.round(v).toLocaleString();
+                if (secs < 0.001) return "instantly. it was over before it began.";
+                if (secs < 1) return "under a second. a blink, generously.";
+                if (secs < 60) return n(secs) + " seconds. a sneeze, maybe two.";
+                if (secs < 3600) return n(secs / 60) + " minutes. one decent lunch break.";
+                if (secs < 86400) return n(secs / 3600) + " hours. a long meeting that could've been an email.";
+                if (secs < 2.6e6) return n(secs / 86400) + " days. the active phase of a gym membership.";
+                if (secs < 3.15e7) return n(secs / 2.6e6) + " months. a houseplant's whole career.";
+                if (secs < 3.15e9) return n(secs / 3.15e7) + " years. longer than most phones live.";
+                if (secs < 3.15e12) return n(secs / 3.15e9) + " centuries. older than this website by a lot.";
+                return "heat death of the universe territory. show-off.";
+            }
+
+            // ---- the lock ------------------------------------------------
+            const cv = document.getElementById('lock');
+            const DPR = Math.min(window.devicePixelRatio || 1, 2);
+            cv.width = 180 * DPR;
+            cv.height = 180 * DPR;
+            cv.style.width = '180px';
+            cv.style.height = '180px';
+            const g = cv.getContext('2d');
+            g.scale(DPR, DPR);
+
+            function rounded(x, y, w, h, r) {
+                g.beginPath();
+                g.moveTo(x + r, y);
+                g.arcTo(x + w, y, x + w, y + h, r);
+                g.arcTo(x + w, y + h, x, y + h, r);
+                g.arcTo(x, y + h, x, y, r);
+                g.arcTo(x, y, x + w, y, r);
+                g.closePath();
+            }
+
+            function drawLock(tier, empty) {
+                g.clearRect(0, 0, 180, 180);
+                const scale = empty ? 0.85 : [0.72, 0.82, 0.92, 1.02, 1.12][tier];
+                const color = empty ? '#d8d0bf' : TIERS[tier].color;
+                const open = !empty && tier === 0;
+
+                g.save();
+                g.translate(90, 96);
+                g.scale(scale, scale);
+                if (open) g.rotate(-0.06);
+
+                const bw = 84, bh = 62, bx = -bw / 2, by = -8;
+
+                // shackle: double-stroked arc (ink wide, color narrow)
+                g.save();
+                if (open) { g.translate(26, -6); g.rotate(0.55); }
+                g.lineCap = 'round';
+                g.strokeStyle = INK;
+                g.lineWidth = 17;
+                g.beginPath(); g.arc(0, by, 26, Math.PI, 0); g.stroke();
+                g.strokeStyle = '#cfc8b8';
+                g.lineWidth = 9;
+                g.beginPath(); g.arc(0, by, 26, Math.PI, 0); g.stroke();
+                g.restore();
+
+                // body: sticker treatment (ink shadow, fill, outline)
+                g.save();
+                g.translate(3, 3);
+                rounded(bx, by, bw, bh, 12);
+                g.fillStyle = INK; g.fill();
+                g.restore();
+                rounded(bx, by, bw, bh, 12);
+                g.fillStyle = color; g.fill();
+                g.lineWidth = 3.5; g.lineJoin = 'round';
+                g.strokeStyle = INK; g.stroke();
+
+                // keyhole
+                g.fillStyle = INK;
+                g.beginPath(); g.arc(0, by + 24, 7, 0, Math.PI * 2); g.fill();
+                g.beginPath();
+                g.moveTo(-4, by + 28); g.lineTo(4, by + 28);
+                g.lineTo(6, by + 46); g.lineTo(-6, by + 46);
+                g.closePath(); g.fill();
+
+                // rivets for the heavy tiers
+                if (!empty && tier >= 3) {
+                    g.fillStyle = INK;
+                    [[bx + 10, by + 10], [bx + bw - 10, by + 10],
+                     [bx + 10, by + bh - 10], [bx + bw - 10, by + bh - 10]]
+                        .forEach(p => {
+                            g.beginPath(); g.arc(p[0], p[1], 3.4, 0, Math.PI * 2); g.fill();
+                        });
+                }
+
+                // cracks for the disaster tier
+                if (open) {
+                    g.strokeStyle = INK;
+                    g.lineWidth = 2.5;
+                    g.lineJoin = 'round';
+                    g.beginPath();
+                    g.moveTo(bx + 14, by + 4);
+                    g.lineTo(bx + 24, by + 20);
+                    g.lineTo(bx + 16, by + 32);
+                    g.lineTo(bx + 26, by + 48);
+                    g.stroke();
+                }
+
+                // action lines for overkill
+                if (!empty && tier === 4) {
+                    g.strokeStyle = INK;
+                    g.lineWidth = 3;
+                    g.lineCap = 'round';
+                    for (let i = 0; i < 8; i++) {
+                        const a = (Math.PI * 2 * i) / 8 + 0.4;
+                        const r1 = 66, r2 = 78;
+                        g.beginPath();
+                        g.moveTo(Math.cos(a) * r1, by + bh / 2 - 30 + Math.sin(a) * r1 * 0.8);
+                        g.lineTo(Math.cos(a) * r2, by + bh / 2 - 30 + Math.sin(a) * r2 * 0.8);
+                        g.stroke();
+                    }
+                }
+                g.restore();
+            }
+
+            // ---- wiring ---------------------------------------------------
+            const pwEl = document.getElementById('pw');
+            const peek = document.getElementById('peek');
+            const verdict = document.getElementById('verdict');
+            const cracktime = document.getElementById('cracktime');
+            const exhibitsEl = document.getElementById('exhibits');
+            const segs = document.querySelectorAll('.meter i');
+            let lastTier = -1;
+
+            function pickMessage(tierKey) {
+                const pool = MESSAGES[tierKey];
+                return pool[(Math.random() * pool.length) | 0];
+            }
+
+            function update() {
+                const pw = pwEl.value;
+                if (!pw) {
+                    lastTier = -1;
+                    drawLock(0, true);
+                    verdict.style.display = 'none';
+                    cracktime.style.display = 'none';
+                    exhibitsEl.innerHTML = '';
+                    segs.forEach(s => { s.style.background = ''; });
+                    return;
+                }
+
+                const res = judge(pw);
+                const tier = res.tier;
+                const t = TIERS[tier];
+
+                segs.forEach((s, i) => {
+                    s.style.background = i <= tier ? t.color : '';
+                });
+
+                cracktime.style.display = 'block';
+                cracktime.textContent = 'estimated crack time: ' + crackLabel(res.bits);
+
+                exhibitsEl.innerHTML = '';
+                res.exhibits.slice(0, 5).forEach((text, i) => {
+                    const d = document.createElement('div');
+                    d.className = 'exhibit';
+                    const b = document.createElement('b');
+                    b.textContent = 'exhibit ' + String.fromCharCode(65 + i);
+                    d.appendChild(b);
+                    d.appendChild(document.createTextNode(text));
+                    exhibitsEl.appendChild(d);
+                });
+
+                // undocumented visitors
+                const lower = pw.toLowerCase();
+                let special = null;
+                if (lower === 'hunter2') special = 'all we can see is *******.';
+                if (lower.replace(/\s/g, '') === 'correcthorsebatterystaple') {
+                    special = 'everyone read that comic. that is now the problem.';
+                }
+
+                if (tier !== lastTier || special) {
+                    verdict.style.display = 'block';
+                    verdict.style.background = t.color;
+                    verdict.style.color = tier >= 3 ? '#201a17' : '#fff8ef';
+                    verdict.textContent = special || (t.label + ' — ' + pickMessage(t.key));
+                    if (!reduce) {
+                        verdict.classList.remove('stamp');
+                        void verdict.offsetWidth;
+                        verdict.classList.add('stamp');
+                        cv.classList.remove('pop');
+                        void cv.offsetWidth;
+                        cv.classList.add('pop');
+                        if (tier === 4 && lastTier !== 4 && lastTier !== -1) {
+                            document.body.classList.add('shake');
+                            setTimeout(() => document.body.classList.remove('shake'), 350);
+                        }
+                    }
+                    lastTier = tier;
+                }
+                drawLock(tier, false);
+            }
+
+            peek.addEventListener('click', function () {
+                const showing = pwEl.type === 'text';
+                pwEl.type = showing ? 'password' : 'text';
+                peek.textContent = showing ? 'show' : 'hide';
+                pwEl.focus();
+            });
+
+            pwEl.addEventListener('input', update);
+            drawLock(0, true);
+        })();
     </script>
 </body>
 </html>

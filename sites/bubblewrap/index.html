@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Bubble Wrap</title>
+
+    <meta name="description" content="An infinite sheet of bubble wrap. You know what to do.">
+    <meta name="keywords" content="bubble wrap, pop, popping, satisfying, fidget, thumb toy">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='3' y='3' width='44' height='44' rx='8' fill='%23f2ede2' stroke='%23201a17' stroke-width='3'/><circle cx='25' cy='25' r='14' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><circle cx='20' cy='19' r='4' fill='white'/></svg>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/bubblewrap/">
+    <meta property="og:title" content="Bubble Wrap">
+    <meta property="og:description" content="An infinite sheet of bubble wrap. You know what to do.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/bubblewrap/">
+    <meta property="twitter:title" content="Bubble Wrap">
+    <meta property="twitter:description" content="An infinite sheet of bubble wrap. You know what to do.">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            background: var(--paper);
+        }
+
+        body {
+            position: fixed;
+            inset: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #wrap {
+            position: fixed;
+            inset: 0;
+            touch-action: none;
+            cursor: pointer;
+            display: block;
+        }
+
+        .title {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 3;
+            pointer-events: none;
+            padding: 6px 14px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(0.8rem, 2.6vw, 1.15rem);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--ink);
+            background: var(--sky);
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-2.5deg);
+        }
+
+        .tallywrap {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 3;
+            pointer-events: none;
+            text-align: right;
+        }
+
+        .tally {
+            display: inline-block;
+            padding: 5px 15px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(0.78rem, 2.4vw, 0.95rem);
+            color: var(--ink);
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(1.8deg);
+        }
+
+        .subline {
+            margin-top: 9px;
+            padding-right: 4px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+            color: var(--ink);
+            opacity: 0.65;
+        }
+
+        .hint {
+            position: fixed;
+            top: 74px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            pointer-events: none;
+            width: max-content;
+            max-width: 90vw;
+            text-align: center;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.05rem;
+            color: var(--ink);
+            opacity: 0.75;
+            transition: opacity 2s ease;
+        }
+
+        .hint.gone { opacity: 0; }
+
+        .popburst {
+            position: fixed;
+            z-index: 4;
+            pointer-events: none;
+            padding: 9px 20px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--cream);
+            -webkit-text-stroke: 4px var(--ink);
+            paint-order: stroke fill;
+            background: var(--coral);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: translate(-50%, -50%) rotate(-8deg) scale(0);
+            animation: burstpop 1.1s ease forwards;
+        }
+
+        @keyframes burstpop {
+            0%   { transform: translate(-50%, -50%) rotate(-8deg) scale(0.2); opacity: 1; }
+            14%  { transform: translate(-50%, -50%) rotate(-8deg) scale(1.18); opacity: 1; }
+            24%  { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
+            72%  { transform: translate(-50%, -52%) rotate(-8deg) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -80%) rotate(-8deg) scale(0.9); opacity: 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .popburst { animation: burstfade 1.1s ease forwards; }
+            @keyframes burstfade {
+                0%   { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
+                80%  { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 1; }
+                100% { transform: translate(-50%, -50%) rotate(-8deg) scale(1); opacity: 0; }
+            }
+            .hint { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="wrap"></canvas>
+    <div class="title">Bubble Wrap</div>
+    <div class="tallywrap">
+        <span class="tally" id="tally">bubbles popped: 0</span>
+        <div class="subline" id="subline">fresh off the roll</div>
+    </div>
+    <div class="hint" id="hint">pop them. all of them.</div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var INK = '#201a17';
+        var PAPER = '#f2ede2';
+        var CREAM = '#fff8ef';
+        var PALETTE = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+        var GOLD = '#f7c948';
+
+        var reduceMotion = false;
+        try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+        var canvas = document.getElementById('wrap');
+        var ctx = canvas.getContext('2d');
+        var hintEl = document.getElementById('hint');
+        var tallyEl = document.getElementById('tally');
+        var sublineEl = document.getElementById('subline');
+
+        // ------- persisted tally -------
+        var popCount = 0;
+        try { popCount = parseInt(localStorage.getItem('bubblewrap-pops'), 10) || 0; } catch (e) {}
+
+        var MILESTONES = [
+            [100000, 'you are the bubble now'],
+            [50000, 'please, they were saving that'],
+            [25000, 'the warehouse has noticed'],
+            [10000, "that's a whole mattress"],
+            [5000, 'certified calm, probably'],
+            [2500, 'the dish set never stood a chance'],
+            [1000, 'somewhere, a mover weeps'],
+            [500, "a small box's worth"],
+            [100, "an envelope's worth"],
+            [0, 'fresh off the roll']
+        ];
+
+        function sublineFor(n) {
+            for (var i = 0; i < MILESTONES.length; i++) {
+                if (n >= MILESTONES[i][0]) return MILESTONES[i][1];
+            }
+            return MILESTONES[MILESTONES.length - 1][1];
+        }
+
+        var lastSubline = '';
+        function renderTally() {
+            tallyEl.textContent = 'bubbles popped: ' + popCount.toLocaleString('en-US');
+            var s = sublineFor(popCount);
+            if (s !== lastSubline) { lastSubline = s; sublineEl.textContent = s; }
+        }
+        renderTally();
+
+        var saveTimer = null;
+        function scheduleSave() {
+            if (saveTimer) return;
+            saveTimer = setTimeout(function () {
+                saveTimer = null;
+                try { localStorage.setItem('bubblewrap-pops', popCount); } catch (e) {}
+            }, 400);
+        }
+        function flushSave() {
+            try { localStorage.setItem('bubblewrap-pops', popCount); } catch (e) {}
+        }
+        window.addEventListener('pagehide', flushSave);
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') flushSave();
+        });
+
+        function addPops(n) {
+            popCount += n;
+            renderTally();
+            scheduleSave();
+        }
+
+        // ------- hint -------
+        var hintGone = false;
+        function dismissHint() {
+            if (hintGone) return;
+            hintGone = true;
+            hintEl.classList.add('gone');
+        }
+        setTimeout(dismissHint, 10000);
+
+        // ------- deterministic per-bubble randomness -------
+        var SEED = (Math.random() * 0x7fffffff) | 0;
+
+        function hash2(r, c) {
+            var h = (Math.imul(r, 0x9E3779B1) ^ Math.imul(c, 0x85EBCA77) ^ SEED) >>> 0;
+            h = Math.imul(h ^ (h >>> 15), 0x2C1B3C6D) >>> 0;
+            h = Math.imul(h ^ (h >>> 12), 0x297A2D39) >>> 0;
+            h ^= h >>> 15;
+            return h >>> 0;
+        }
+
+        function isStubborn(r, c) {
+            return ((hash2(r, c) >>> 8) & 0xffff) / 65536 < 0.02;
+        }
+
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = (a + 0x6D2B79F5) | 0;
+                var t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        // ------- grid -------
+        var dpr = 1, W = 0, H = 0;
+        var nCols = 8, cellW = 60, rowH = 52, rad = 26;
+        var scrollOffset = 0;
+
+        function computeGrid() {
+            nCols = Math.max(4, Math.round(W / 62));
+            cellW = W / nCols;
+            rad = cellW * 0.44;
+            rowH = cellW * 0.87;
+        }
+
+        function colCount(r) { return (r & 1) ? nCols - 1 : nCols; }
+        function cxFor(r, c) { return (c + 0.5 + ((r & 1) ? 0.5 : 0)) * cellW; }
+        function cyFor(r) { return (r + 0.5) * rowH; }
+
+        // bubble states: only touched bubbles are stored. key "r,c"
+        // { p: popped, t: popTime, press: stubborn presses, sq: squashTime }
+        var states = new Map();
+        function getState(key) {
+            var st = states.get(key);
+            if (!st) { st = { p: 0, t: 0, press: 0, sq: 0 }; states.set(key, st); }
+            return st;
+        }
+
+        function pruneStates() {
+            // keep memory tidy: drop rows far above the current view
+            if (states.size < 6000) return;
+            var minRow = Math.floor(scrollOffset / rowH) - 400;
+            states.forEach(function (v, k) {
+                if (parseInt(k, 10) < minRow) states.delete(k);
+            });
+        }
+
+        function pickBubble(x, wy) {
+            var r0 = Math.round(wy / rowH - 0.5);
+            var best = null, bestD = Infinity;
+            for (var i = -1; i <= 1; i++) {
+                var r = r0 + i;
+                if (r < 0) continue;
+                var count = colCount(r);
+                var off = (r & 1) ? 0.5 : 0;
+                var c = Math.round(x / cellW - 0.5 - off);
+                if (c < 0) c = 0;
+                if (c > count - 1) c = count - 1;
+                var cx = cxFor(r, c), cy = cyFor(r);
+                var d = (x - cx) * (x - cx) + (wy - cy) * (wy - cy);
+                if (d < bestD) { bestD = d; best = { r: r, c: c, cx: cx, cy: cy }; }
+            }
+            if (!best) return null;
+            var reach = rad * 1.15;
+            if (bestD > reach * reach) return null;
+            best.key = best.r + ',' + best.c;
+            best.stub = isStubborn(best.r, best.c);
+            return best;
+        }
+
+        // ------- sprites -------
+        var bubbleSprites = [], poppedSprites = [], spriteSize = 0;
+
+        function drawBubbleBody(g, cx, cy, R) {
+            // hard offset ink shadow (sticker treatment)
+            g.beginPath();
+            g.arc(cx + R * 0.06 + 1.2, cy + R * 0.08 + 1.2, R, 0, Math.PI * 2);
+            g.fillStyle = INK;
+            g.fill();
+            // translucent plastic dome: cream over paper
+            var grad = g.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.1, cx, cy, R);
+            grad.addColorStop(0, '#fffdf6');
+            grad.addColorStop(0.65, CREAM);
+            grad.addColorStop(1, '#f0e7d6');
+            g.beginPath();
+            g.arc(cx, cy, R, 0, Math.PI * 2);
+            g.fillStyle = grad;
+            g.fill();
+            // faint inner seam ring (printed plastic feel)
+            g.beginPath();
+            g.arc(cx, cy, R * 0.78, 0, Math.PI * 2);
+            g.lineWidth = 1;
+            g.strokeStyle = 'rgba(32,26,23,0.12)';
+            g.stroke();
+            // ink outline, non-negotiable
+            g.beginPath();
+            g.arc(cx, cy, R, 0, Math.PI * 2);
+            g.lineWidth = 2;
+            g.lineJoin = 'round';
+            g.strokeStyle = INK;
+            g.stroke();
+        }
+
+        function drawHighlight(g, cx, cy, R, ang, size) {
+            g.save();
+            g.translate(cx - R * 0.32, cy - R * 0.36);
+            g.rotate(ang);
+            g.beginPath();
+            g.ellipse(0, 0, R * size, R * size * 0.55, 0, 0, Math.PI * 2);
+            g.fillStyle = 'rgba(255,255,255,0.85)';
+            g.fill();
+            g.restore();
+            g.beginPath();
+            g.arc(cx + R * 0.3, cy + R * 0.22, R * 0.08, 0, Math.PI * 2);
+            g.fillStyle = 'rgba(255,255,255,0.6)';
+            g.fill();
+        }
+
+        function buildSprites() {
+            spriteSize = Math.ceil(cellW + 12);
+            bubbleSprites = [];
+            poppedSprites = [];
+            var v, g, cv, cx, cy, rng;
+
+            for (v = 0; v < 5; v++) {
+                cv = document.createElement('canvas');
+                cv.width = cv.height = Math.ceil(spriteSize * dpr);
+                g = cv.getContext('2d');
+                g.scale(dpr, dpr);
+                cx = spriteSize / 2; cy = spriteSize / 2;
+                rng = mulberry32(v * 7919 + 17);
+                var R = rad * (0.96 + rng() * 0.05);
+                drawBubbleBody(g, cx, cy, R);
+                drawHighlight(g, cx, cy, R, -0.5 + rng() * 0.7, 0.28 + rng() * 0.1);
+                bubbleSprites.push(cv);
+            }
+
+            for (v = 0; v < 6; v++) {
+                cv = document.createElement('canvas');
+                cv.width = cv.height = Math.ceil(spriteSize * dpr);
+                g = cv.getContext('2d');
+                g.scale(dpr, dpr);
+                cx = spriteSize / 2; cy = spriteSize / 2;
+                rng = mulberry32(v * 104729 + 31);
+                var R2 = rad * 0.96;
+                // crinkled deflated outline: jittered polygon
+                var pts = 12, k;
+                g.beginPath();
+                for (k = 0; k <= pts; k++) {
+                    var a = (k % pts) / pts * Math.PI * 2 + rng() * 0.1;
+                    var rr = R2 * (0.8 + rng() * 0.17);
+                    var px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr;
+                    if (k === 0) g.moveTo(px, py); else g.lineTo(px, py);
+                }
+                g.closePath();
+                g.fillStyle = 'rgba(255,248,239,0.5)';
+                g.fill();
+                g.lineWidth = 1.8;
+                g.lineJoin = 'round';
+                g.strokeStyle = 'rgba(32,26,23,0.55)';
+                g.stroke();
+                // ink crease lines
+                var creases = 3 + ((v & 1) ? 1 : 0);
+                g.lineWidth = 1.2;
+                g.strokeStyle = 'rgba(32,26,23,0.5)';
+                for (k = 0; k < creases; k++) {
+                    var ca = rng() * Math.PI * 2;
+                    var l1 = R2 * (0.25 + rng() * 0.4);
+                    var l2 = R2 * (0.25 + rng() * 0.4);
+                    var ox = (rng() - 0.5) * R2 * 0.5, oy = (rng() - 0.5) * R2 * 0.5;
+                    g.beginPath();
+                    g.moveTo(cx + ox - Math.cos(ca) * l1, cy + oy - Math.sin(ca) * l1);
+                    g.lineTo(cx + ox + Math.cos(ca) * l2, cy + oy + Math.sin(ca) * l2);
+                    g.stroke();
+                }
+                poppedSprites.push(cv);
+            }
+        }
+
+        // straining stubborn bubble, drawn procedurally (rare)
+        function drawStrain(x, y, press, now, sqT) {
+            var squash = 0;
+            if (sqT && !reduceMotion) {
+                var q = (now - sqT) / 180;
+                if (q >= 0 && q < 1) squash = Math.sin(q * Math.PI) * 0.13;
+            }
+            var scale = 1 + press * 0.06;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale * (1 + squash), scale * (1 - squash));
+            var R = rad * 0.98;
+            drawBubbleBody(ctx, 0, 0, R);
+            // stress blush
+            ctx.beginPath();
+            ctx.arc(0, 0, R * 0.92, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,127,165,' + (press * 0.09) + ')';
+            ctx.fill();
+            drawHighlight(ctx, 0, 0, R, -0.3, 0.3);
+            // thicker outline as it strains
+            ctx.beginPath();
+            ctx.arc(0, 0, R, 0, Math.PI * 2);
+            ctx.lineWidth = 2 + press * 0.5;
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+            // strain ticks radiating just outside
+            ctx.lineWidth = 1.6;
+            ctx.strokeStyle = INK;
+            var i, ticks = press * 2;
+            for (i = 0; i < ticks; i++) {
+                var a = i / ticks * Math.PI * 2 + 0.4;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * R * 1.12, Math.sin(a) * R * 1.12);
+                ctx.lineTo(Math.cos(a) * (R * 1.12 + 3 + press), Math.sin(a) * (R * 1.12 + 3 + press));
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // ------- audio (lazy, synthesized) -------
+        var AC = null, master = null, noiseBuf = null;
+
+        function ensureAudio() {
+            if (!AC) {
+                try {
+                    var Ctor = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctor) return;
+                    AC = new Ctor();
+                    var comp = AC.createDynamicsCompressor();
+                    comp.threshold.value = -14;
+                    comp.ratio.value = 8;
+                    comp.connect(AC.destination);
+                    master = AC.createGain();
+                    master.gain.value = 0.85;
+                    master.connect(comp);
+                    var len = Math.floor(AC.sampleRate * 0.2);
+                    noiseBuf = AC.createBuffer(1, len, AC.sampleRate);
+                    var d = noiseBuf.getChannelData(0);
+                    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+                } catch (e) { AC = null; }
+            }
+            if (AC && AC.state === 'suspended') AC.resume().catch(function () {});
+        }
+
+        var sndWin = 0, sndCount = 0;
+        function soundBudget() {
+            var now = performance.now();
+            if (now - sndWin > 60) { sndWin = now; sndCount = 0; }
+            return ++sndCount <= 4;
+        }
+
+        function popSound(loud, snappy) {
+            if (!AC || !noiseBuf || !soundBudget()) return;
+            var t = AC.currentTime;
+            // noise burst
+            var src = AC.createBufferSource();
+            src.buffer = noiseBuf;
+            src.playbackRate.value = 0.6 + Math.random() * 0.9;
+            var bp = AC.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = 650 + Math.random() * 1700;
+            bp.Q.value = 0.8 + Math.random() * 6;
+            var g = AC.createGain();
+            var dur = Math.max(0.03, (0.06 + Math.random() * 0.05) * snappy);
+            g.gain.setValueAtTime(0.4 * loud * (0.8 + Math.random() * 0.4), t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            src.connect(bp); bp.connect(g); g.connect(master);
+            src.start(t); src.stop(t + dur + 0.03);
+            // hollow thump body
+            var o = AC.createOscillator();
+            o.type = 'sine';
+            var f0 = 130 + Math.random() * 180;
+            o.frequency.setValueAtTime(f0, t);
+            o.frequency.exponentialRampToValueAtTime(f0 * 0.45, t + 0.07);
+            var og = AC.createGain();
+            og.gain.setValueAtTime(0.3 * loud, t);
+            og.gain.exponentialRampToValueAtTime(0.001, t + 0.09 * snappy);
+            o.connect(og); og.connect(master);
+            o.start(t); o.stop(t + 0.12);
+        }
+
+        function strainSound(press) {
+            if (!AC || !soundBudget()) return;
+            var t = AC.currentTime;
+            var o = AC.createOscillator();
+            o.type = 'sawtooth';
+            var f = 70 + press * 32;
+            o.frequency.setValueAtTime(f, t);
+            o.frequency.linearRampToValueAtTime(f * 1.35, t + 0.09);
+            var lp = AC.createBiquadFilter();
+            lp.type = 'lowpass';
+            lp.frequency.value = 280 + press * 90;
+            var g = AC.createGain();
+            g.gain.setValueAtTime(0.16 + press * 0.03, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+            o.connect(lp); lp.connect(g); g.connect(master);
+            o.start(t); o.stop(t + 0.16);
+        }
+
+        function megaSound() {
+            if (!AC || !noiseBuf) return;
+            var t = AC.currentTime;
+            var src = AC.createBufferSource();
+            src.buffer = noiseBuf;
+            src.playbackRate.value = 0.5;
+            var bp = AC.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = 380;
+            bp.Q.value = 1.2;
+            var g = AC.createGain();
+            g.gain.setValueAtTime(1.1, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+            src.connect(bp); bp.connect(g); g.connect(master);
+            src.start(t); src.stop(t + 0.25);
+            // sub thump
+            var o = AC.createOscillator();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(95, t);
+            o.frequency.exponentialRampToValueAtTime(38, t + 0.22);
+            var og = AC.createGain();
+            og.gain.setValueAtTime(0.75, t);
+            og.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
+            o.connect(og); og.connect(master);
+            o.start(t); o.stop(t + 0.3);
+        }
+
+        // ------- particles (world coords) -------
+        var particles = [];
+
+        function spawnPuff(wx, wy, mega) {
+            if (reduceMotion) return;
+            var color = PALETTE[(Math.random() * PALETTE.length) | 0];
+            var n = mega ? 22 : 5 + ((Math.random() * 3) | 0);
+            var now = performance.now();
+            for (var i = 0; i < n; i++) {
+                var a = Math.random() * Math.PI * 2;
+                var sp = mega ? 130 + Math.random() * 220 : 55 + Math.random() * 130;
+                particles.push({
+                    kind: Math.random() < 0.3 ? 'spark' : 'puff',
+                    x: wx, y: wy,
+                    vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - (mega ? 60 : 20),
+                    r: mega ? 3 + Math.random() * 3.5 : 1.8 + Math.random() * 2.2,
+                    color: mega ? (Math.random() < 0.5 ? GOLD : color) : color,
+                    born: now,
+                    life: mega ? 700 : 420
+                });
+            }
+            if (mega) {
+                particles.push({ kind: 'ring', x: wx, y: wy, vx: 0, vy: 0, r: rad * 0.6, color: GOLD, born: now, life: 480 });
+            }
+            while (particles.length > 300) particles.shift();
+        }
+
+        function updateParticles(now, dt) {
+            for (var i = particles.length - 1; i >= 0; i--) {
+                var p = particles[i];
+                if (now - p.born > p.life) { particles.splice(i, 1); continue; }
+                if (p.kind === 'ring') {
+                    p.r += 130 * dt;
+                } else {
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.vy += 520 * dt;
+                }
+            }
+        }
+
+        function drawParticles(now) {
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                var t = (now - p.born) / p.life;
+                var alpha = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+                var sx = p.x, sy = p.y - scrollOffset;
+                if (sy < -30 || sy > H + 30) continue;
+                ctx.globalAlpha = Math.max(0, alpha);
+                if (p.kind === 'ring') {
+                    // double-stroked ring: ink wide, color narrow
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, p.r, 0, Math.PI * 2);
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = INK;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, p.r, 0, Math.PI * 2);
+                    ctx.lineWidth = 2.2;
+                    ctx.strokeStyle = p.color;
+                    ctx.stroke();
+                } else if (p.kind === 'spark') {
+                    var len = p.r * 2.6;
+                    var m = Math.hypot(p.vx, p.vy) || 1;
+                    var dx = p.vx / m * len, dy = p.vy / m * len;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(sx - dx, sy - dy);
+                    ctx.lineTo(sx + dx, sy + dy);
+                    ctx.lineWidth = 3.4;
+                    ctx.strokeStyle = INK;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(sx - dx, sy - dy);
+                    ctx.lineTo(sx + dx, sy + dy);
+                    ctx.lineWidth = 1.4;
+                    ctx.strokeStyle = p.color;
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    ctx.lineWidth = 1.4;
+                    ctx.strokeStyle = INK;
+                    ctx.stroke();
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // ------- POP!! burst sticker -------
+        function popBurst(sx, sy) {
+            var div = document.createElement('div');
+            div.className = 'popburst';
+            div.textContent = 'POP!!';
+            div.style.left = Math.max(60, Math.min(W - 60, sx)) + 'px';
+            div.style.top = Math.max(40, sy) + 'px';
+            document.body.appendChild(div);
+            setTimeout(function () { div.remove(); }, 1250);
+        }
+
+        // ------- shake -------
+        var shakeUntil = 0, shakeAmp = 0;
+        function kick(amp) {
+            if (reduceMotion) return;
+            shakeAmp = Math.max(shakeAmp, amp);
+            shakeUntil = performance.now() + 170;
+            wake();
+        }
+
+        // ------- streak -------
+        var streak = 0, lastPopTime = 0;
+
+        // ------- auto-advance when the visible sheet is cleared -------
+        var autoScroll = null;
+        var advTimer = null;
+
+        function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+        function scheduleAdvanceCheck() {
+            if (advTimer) return;
+            advTimer = setTimeout(function () {
+                advTimer = null;
+                checkAdvance();
+            }, 90);
+        }
+
+        function checkAdvance() {
+            if (autoScroll) return;
+            var topW = scrollOffset - rad * 0.3;
+            var botW = scrollOffset + H + rad * 0.3;
+            var rFirst = Math.max(0, Math.floor(topW / rowH) - 1);
+            var rLast = Math.floor(botW / rowH) + 1;
+            for (var r = rFirst; r <= rLast; r++) {
+                var cy = cyFor(r);
+                if (cy < topW || cy > botW) continue;
+                var count = colCount(r);
+                for (var c = 0; c < count; c++) {
+                    var st = states.get(r + ',' + c);
+                    if (!st || !st.p) return; // something unpopped remains
+                }
+            }
+            // all clear: feed a fresh screenful
+            var target = scrollOffset + Math.max(rowH * 2, H * 0.9);
+            if (reduceMotion) {
+                scrollOffset = target;
+                pruneStates();
+                wake();
+            } else {
+                autoScroll = { from: scrollOffset, to: target, start: performance.now(), dur: 750 };
+                wake();
+            }
+        }
+
+        // ------- popping -------
+        var lastAnimEnd = 0;
+
+        function tryPop(x, sy, ptr) {
+            var wy = sy + scrollOffset;
+            var b = pickBubble(x, wy);
+            if (!b) return;
+            if (ptr.lastKey === b.key) return;
+            ptr.lastKey = b.key;
+            var st = getState(b.key);
+            if (st.p) return;
+
+            var now = performance.now();
+
+            if (b.stub && st.press < 4) {
+                // the stubborn one refuses. it strains.
+                st.press++;
+                st.sq = now;
+                strainSound(st.press);
+                lastAnimEnd = Math.max(lastAnimEnd, now + 220);
+                dismissHint();
+                wake();
+                return;
+            }
+
+            st.p = 1;
+            st.t = reduceMotion ? 0 : now;
+            var mega = b.stub;
+
+            if (now - lastPopTime < 600) streak++; else streak = 1;
+            lastPopTime = now;
+            var loud = 1 + Math.min(streak, 24) * 0.03;
+            var snappy = 1 - Math.min(streak, 20) * 0.012;
+
+            addPops(mega ? 5 : 1);
+            spawnPuff(b.cx, b.cy, mega);
+
+            if (mega) {
+                megaSound();
+                popBurst(b.cx, b.cy - scrollOffset);
+                kick(5);
+            } else {
+                popSound(loud, snappy);
+                if (streak >= 6) kick(Math.min(3.5, (streak - 4) * 0.3));
+            }
+
+            dismissHint();
+            lastAnimEnd = Math.max(lastAnimEnd, now + 260);
+            wake();
+            scheduleAdvanceCheck();
+        }
+
+        // ------- render -------
+        function draw(now) {
+            ctx.fillStyle = PAPER;
+            ctx.fillRect(0, 0, W, H);
+
+            var rFirst = Math.max(0, Math.floor((scrollOffset - cellW) / rowH));
+            var rLast = Math.floor((scrollOffset + H + cellW) / rowH);
+            var half = spriteSize / 2;
+
+            for (var r = rFirst; r <= rLast; r++) {
+                var cy = cyFor(r) - scrollOffset;
+                var count = colCount(r);
+                for (var c = 0; c < count; c++) {
+                    var cx = cxFor(r, c);
+                    var h = hash2(r, c);
+                    var st = states.get(r + ',' + c);
+
+                    if (st && st.p) {
+                        var pv = poppedSprites[h % 6];
+                        var t = st.t ? (now - st.t) / 220 : 1;
+                        if (t < 1) {
+                            // crossfade: dome shrinks away, crinkle settles in
+                            ctx.globalAlpha = t;
+                            ctx.drawImage(pv, cx - half, cy - half, spriteSize, spriteSize);
+                            ctx.globalAlpha = 1 - t;
+                            var s = 1 - 0.45 * t;
+                            var bs = bubbleSprites[h % 5];
+                            ctx.drawImage(bs, cx - half * s, cy - half * s, spriteSize * s, spriteSize * s);
+                            ctx.globalAlpha = 1;
+                        } else {
+                            ctx.drawImage(pv, cx - half, cy - half, spriteSize, spriteSize);
+                        }
+                    } else if (st && st.press > 0 && isStubborn(r, c)) {
+                        drawStrain(cx, cy, st.press, now, st.sq);
+                    } else {
+                        ctx.drawImage(bubbleSprites[h % 5], cx - half, cy - half, spriteSize, spriteSize);
+                    }
+                }
+            }
+
+            drawParticles(now);
+        }
+
+        // ------- rAF loop that sleeps when idle -------
+        var animating = false;
+        var lastTick = 0;
+
+        function hasActivity(now) {
+            return particles.length > 0 || now < lastAnimEnd || now < shakeUntil || !!autoScroll;
+        }
+
+        function tick(now) {
+            var dt = Math.min(0.05, (now - lastTick) / 1000) || 0.016;
+            lastTick = now;
+
+            if (autoScroll) {
+                var t = (now - autoScroll.start) / autoScroll.dur;
+                if (t >= 1) {
+                    scrollOffset = autoScroll.to;
+                    autoScroll = null;
+                    pruneStates();
+                } else {
+                    scrollOffset = autoScroll.from + (autoScroll.to - autoScroll.from) * easeInOut(t);
+                }
+            }
+
+            updateParticles(now, dt);
+
+            if (now < shakeUntil) {
+                canvas.style.transform = 'translate(' +
+                    ((Math.random() * 2 - 1) * shakeAmp).toFixed(1) + 'px,' +
+                    ((Math.random() * 2 - 1) * shakeAmp).toFixed(1) + 'px)';
+            } else if (canvas.style.transform) {
+                canvas.style.transform = '';
+                shakeAmp = 0;
+            }
+
+            draw(now);
+
+            if (hasActivity(now)) {
+                requestAnimationFrame(tick);
+            } else {
+                animating = false;
+            }
+        }
+
+        function wake() {
+            if (animating) return;
+            animating = true;
+            lastTick = performance.now();
+            requestAnimationFrame(tick);
+        }
+
+        function drawOnce() {
+            wake(); // renders one frame, then sleeps if nothing is moving
+        }
+
+        // ------- pointer input -------
+        var pointers = new Map();
+
+        canvas.addEventListener('pointerdown', function (e) {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            ensureAudio();
+            try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+            var ptr = { x: e.clientX, y: e.clientY, lastKey: null };
+            pointers.set(e.pointerId, ptr);
+            tryPop(e.clientX, e.clientY, ptr);
+        });
+
+        canvas.addEventListener('pointermove', function (e) {
+            var ptr = pointers.get(e.pointerId);
+            if (!ptr) return;
+            var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+            if (!evs.length) evs = [e];
+            for (var i = 0; i < evs.length; i++) {
+                var x = evs[i].clientX, y = evs[i].clientY;
+                // walk the line between samples: fast sweeps leave no gaps
+                var dx = x - ptr.x, dy = y - ptr.y;
+                var dist = Math.hypot(dx, dy);
+                var step = Math.max(5, rad * 0.65);
+                var n = Math.max(1, Math.ceil(dist / step));
+                for (var k = 1; k <= n; k++) {
+                    tryPop(ptr.x + dx * k / n, ptr.y + dy * k / n, ptr);
+                }
+                ptr.x = x; ptr.y = y;
+            }
+        });
+
+        function endPointer(e) {
+            pointers.delete(e.pointerId);
+        }
+        canvas.addEventListener('pointerup', endPointer);
+        canvas.addEventListener('pointercancel', endPointer);
+        canvas.addEventListener('lostpointercapture', endPointer);
+
+        canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+        // desktop scrolling through the roll
+        window.addEventListener('wheel', function (e) {
+            autoScroll = null;
+            scrollOffset = Math.max(0, scrollOffset + e.deltaY);
+            drawOnce();
+        }, { passive: true });
+
+        window.addEventListener('keydown', function (e) {
+            var jump = 0;
+            if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') jump = H * 0.85;
+            else if (e.key === 'ArrowUp' || e.key === 'PageUp') jump = -H * 0.85;
+            else return;
+            autoScroll = null;
+            scrollOffset = Math.max(0, scrollOffset + jump);
+            drawOnce();
+        });
+
+        // ------- resize (debounced, dpr capped at 2) -------
+        function resize() {
+            dpr = Math.min(2, window.devicePixelRatio || 1);
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            computeGrid();
+            buildSprites();
+            drawOnce();
+        }
+
+        var resizeTimer = null;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(resize, 150);
+        });
+
+        resize();
+    })();
+    </script>
+</body>
+</html>

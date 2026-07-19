@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfect Circle</title>
+
+    <meta name="description" content="Draw a circle freehand. Get judged to one decimal place.">
+    <meta name="keywords" content="perfect circle, draw a circle, circle game, freehand circle">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='25' cy='25' r='18' fill='%23f7c948' stroke='%23201a17' stroke-width='3'/><circle cx='25' cy='25' r='3' fill='%23201a17'/></svg>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/perfectcircle/">
+    <meta property="og:title" content="Perfect Circle">
+    <meta property="og:description" content="Draw a circle freehand. Get judged to one decimal place.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/perfectcircle/">
+    <meta property="twitter:title" content="Perfect Circle">
+    <meta property="twitter:description" content="Draw a circle freehand. Get judged to one decimal place.">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            overscroll-behavior: none;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            display: block;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        #title {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            padding: 7px 16px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(0.75rem, 2.6vw, 1rem);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--coral);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(-3deg);
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        #hint {
+            position: fixed;
+            top: calc(50% + 42px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(0.95rem, 3vw, 1.1rem);
+            color: var(--ink);
+            opacity: 0.7;
+            white-space: nowrap;
+            pointer-events: none;
+            transition: opacity 1.6s ease;
+            z-index: 3;
+        }
+
+        #hint.gone { opacity: 0; }
+
+        #verdict {
+            position: fixed;
+            top: 6vh;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 5;
+        }
+
+        #verdict.show { opacity: 1; }
+
+        #score {
+            position: relative;
+            display: inline-block;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(3.4rem, 16vw, 8rem);
+            line-height: 1;
+            color: var(--accent, var(--gold));
+            -webkit-text-stroke: 0.065em var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 0.08em 0.08em 0 var(--ink);
+            transform: rotate(-4deg);
+        }
+
+        /* comic burst behind the number */
+        #score::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 175%;
+            aspect-ratio: 1;
+            transform: translate(-50%, -50%) rotate(9deg);
+            background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='98,50 77,57.2 91.6,74 69.8,69.8 74,91.6 57.2,77 50,98 42.8,77 26,91.6 30.2,69.8 8.4,74 23,57.2 2,50 23,42.8 8.4,26 30.2,30.2 26,8.4 42.8,23 50,2 57.2,23 74,8.4 69.8,30.2 91.6,26 77,42.8' fill='%23f7c948' stroke='%23201a17' stroke-width='2.5' stroke-linejoin='round'/></svg>") center / contain no-repeat;
+            z-index: -1;
+        }
+
+        #remark {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 7px 18px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(0.95rem, 3.2vw, 1.15rem);
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(1.5deg);
+        }
+
+        #newbest {
+            display: none;
+            margin-top: 12px;
+            padding: 5px 14px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(3deg);
+        }
+
+        #verdict.show #score  { animation: thunk 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
+        #verdict.show #remark { animation: thunk 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s backwards; }
+        #verdict.show #newbest{ animation: thunk 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s backwards; }
+
+        @keyframes thunk {
+            0%   { transform: scale(0.2) rotate(-4deg); }
+            60%  { transform: scale(1.12) rotate(-4deg); }
+            100% { transform: scale(1) rotate(-4deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #verdict.show #score,
+            #verdict.show #remark,
+            #verdict.show #newbest { animation: none; }
+            #hint { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <div id="title">Perfect Circle</div>
+    <div id="hint">draw a circle around the dot</div>
+    <div id="verdict">
+        <div><span id="score">0.0</span></div>
+        <div><span id="remark"></span></div>
+        <div><span id="newbest">new personal best</span></div>
+    </div>
+
+    <script>
+        'use strict';
+        const INK = '#201a17';
+        const PAPER = '#f2ede2';
+        const CREAM = '#fff8ef';
+        const GOLD = '#f7c948';
+        const FILLS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+        const TAU = Math.PI * 2;
+        const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const hintEl = document.getElementById('hint');
+        const verdictEl = document.getElementById('verdict');
+        const scoreEl = document.getElementById('score');
+        const remarkEl = document.getElementById('remark');
+        const newbestEl = document.getElementById('newbest');
+
+        let W = 0, H = 0, cx = 0, cy = 0;
+        let drawing = false;
+        let stroke = [];
+        let attempt = null;        // last judged loop (sticker or failed ink line)
+        let particles = [];
+        let best = null;           // { score, pts (unit-normalized), color }
+
+        try {
+            const raw = localStorage.getItem('perfectcircle-best');
+            if (raw) {
+                const b = JSON.parse(raw);
+                if (b && typeof b.score === 'number' && Array.isArray(b.pts) && b.pts.length > 2) best = b;
+            }
+        } catch (e) {}
+
+        // ---------- canvas sizing ----------
+        function setup() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            cx = W / 2;
+            cy = H / 2;
+        }
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                drawing = false;
+                stroke = [];
+                attempt = null;
+                particles = [];
+                hideVerdict();
+                setup();
+                requestRender();
+            }, 180);
+        });
+
+        // ---------- rAF loop (sleeps when idle) ----------
+        let raf = 0;
+        let animUntil = 0;
+        function requestRender() {
+            if (!raf) raf = requestAnimationFrame(frame);
+        }
+        function frame() {
+            raf = 0;
+            const now = performance.now();
+            render(now);
+            if (drawing || now < animUntil) requestRender();
+        }
+
+        // ---------- drawing helpers ----------
+        function easeOutBack(k) {
+            const c1 = 1.70158, c3 = c1 + 1;
+            return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2);
+        }
+
+        function tracePath(pts, close) {
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+            if (close) ctx.closePath();
+        }
+
+        function drawInkLine(pts) {
+            if (pts.length < 2) return;
+            tracePath(pts, false);
+            ctx.lineWidth = 7;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+        }
+
+        function drawCrown(x, y, s) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(-0.18);
+            ctx.scale(s, s);
+            const path = () => {
+                ctx.beginPath();
+                ctx.moveTo(-0.5, 0);
+                ctx.lineTo(-0.52, -0.38);
+                ctx.lineTo(-0.24, -0.16);
+                ctx.lineTo(0, -0.52);
+                ctx.lineTo(0.24, -0.16);
+                ctx.lineTo(0.52, -0.38);
+                ctx.lineTo(0.5, 0);
+                ctx.closePath();
+            };
+            ctx.save();
+            ctx.translate(0.09, 0.09);
+            path();
+            ctx.fillStyle = INK;
+            ctx.fill();
+            ctx.restore();
+            path();
+            ctx.fillStyle = GOLD;
+            ctx.fill();
+            ctx.lineWidth = 0.09;
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawMuseum() {
+            if (!best) return;
+            const r = Math.min(36, Math.max(26, Math.min(W, H) * 0.055));
+            const mx = Math.max(58, r + 26);
+            const my = H - r - 74;
+
+            // the miniature loop, sticker treatment, slightly crooked
+            ctx.save();
+            ctx.translate(mx, my);
+            ctx.rotate(-0.06);
+            ctx.beginPath();
+            ctx.moveTo(best.pts[0][0] * r, best.pts[0][1] * r);
+            for (let i = 1; i < best.pts.length; i++) ctx.lineTo(best.pts[i][0] * r, best.pts[i][1] * r);
+            ctx.closePath();
+            ctx.save();
+            ctx.translate(3, 3);
+            ctx.fillStyle = INK;
+            ctx.fill();
+            ctx.restore();
+            ctx.fillStyle = best.color || GOLD;
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = INK;
+            ctx.stroke();
+            ctx.restore();
+
+            // serif plaque
+            const label = 'personal best — ' + best.score.toFixed(1);
+            ctx.font = 'italic 12px Georgia, "Times New Roman", serif';
+            const tw = ctx.measureText(label).width;
+            const pw = tw + 22, ph = 24;
+            ctx.save();
+            ctx.translate(mx, my + r + 26);
+            ctx.rotate(0.03);
+            ctx.fillStyle = INK;
+            ctx.fillRect(-pw / 2 + 2, -ph / 2 + 2, pw, ph);
+            ctx.fillStyle = CREAM;
+            ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = INK;
+            ctx.strokeRect(-pw / 2, -ph / 2, pw, ph);
+            ctx.fillStyle = INK;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, 0, 1);
+            ctx.restore();
+        }
+
+        function render(now) {
+            ctx.fillStyle = PAPER;
+            ctx.fillRect(0, 0, W, H);
+
+            drawMuseum();
+
+            // the judged attempt
+            if (attempt) {
+                if (attempt.ok) {
+                    const k = RM ? 1 : Math.min(1, (now - attempt.born) / 380);
+                    const s = RM ? 1 : easeOutBack(k);
+                    ctx.save();
+                    ctx.translate(attempt.mx, attempt.my);
+                    ctx.rotate(attempt.rot * s);
+                    ctx.scale(s, s);
+                    ctx.translate(-attempt.mx, -attempt.my);
+                    // hard offset shadow
+                    ctx.save();
+                    ctx.translate(7, 7);
+                    tracePath(attempt.pts, true);
+                    ctx.fillStyle = INK;
+                    ctx.fill();
+                    ctx.restore();
+                    // flat fill + fat ink outline
+                    tracePath(attempt.pts, true);
+                    ctx.fillStyle = attempt.color;
+                    ctx.fill();
+                    ctx.lineWidth = 5;
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = INK;
+                    ctx.stroke();
+                    if (attempt.crown) drawCrown(attempt.top.x, attempt.top.y - 6, 34);
+                    ctx.restore();
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = 0.85;
+                    drawInkLine(attempt.pts);
+                    ctx.restore();
+                }
+            }
+
+            // live stroke
+            if (drawing) drawInkLine(stroke);
+
+            // the dot (always on top: the specimen stays pinned)
+            ctx.beginPath();
+            ctx.arc(cx, cy, 5, 0, TAU);
+            ctx.fillStyle = INK;
+            ctx.fill();
+
+            // burst particles: double-stroked spikes (ink under color)
+            if (particles.length) {
+                let alive = false;
+                for (const p of particles) {
+                    const t = (now - p.born) / p.life;
+                    if (t >= 1) continue;
+                    alive = true;
+                    const r1 = p.r0 + p.v * t;
+                    const r2 = r1 + 16 * (1 - t);
+                    const x1 = p.ox + Math.cos(p.a) * r1, y1 = p.oy + Math.sin(p.a) * r1;
+                    const x2 = p.ox + Math.cos(p.a) * r2, y2 = p.oy + Math.sin(p.a) * r2;
+                    ctx.globalAlpha = 1 - t;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = INK;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.lineWidth = 2.5;
+                    ctx.strokeStyle = p.color;
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+                if (!alive) particles = [];
+            }
+        }
+
+        // ---------- input ----------
+        function addPoint(x, y) {
+            const last = stroke[stroke.length - 1];
+            if (last) {
+                const dx = x - last.x, dy = y - last.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 1.2) return;
+                // interpolate so fast strokes leave no gaps in the sample train
+                if (d > 6) {
+                    const n = Math.floor(d / 4);
+                    for (let i = 1; i <= n; i++) {
+                        stroke.push({ x: last.x + dx * i / (n + 1), y: last.y + dy * i / (n + 1) });
+                    }
+                }
+            }
+            stroke.push({ x, y });
+        }
+
+        canvas.addEventListener('pointerdown', (e) => {
+            if (drawing) return;
+            drawing = true;
+            try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+            attempt = null;
+            particles = [];
+            hideVerdict();
+            dismissHint();
+            stroke = [{ x: e.clientX, y: e.clientY }];
+            requestRender();
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (!drawing) return;
+            const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+            for (const ev of evs) addPoint(ev.clientX, ev.clientY);
+            requestRender();
+        });
+
+        canvas.addEventListener('pointerup', endStroke);
+        canvas.addEventListener('pointercancel', endStroke);
+
+        function endStroke() {
+            if (!drawing) return;
+            drawing = false;
+            judge();
+            requestRender();
+        }
+
+        // ---------- judging ----------
+        function pointInPoly(px, py, pts) {
+            let inside = false;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                const xi = pts[i].x, yi = pts[i].y, xj = pts[j].x, yj = pts[j].y;
+                if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+            }
+            return inside;
+        }
+
+        function remarkFor(s) {
+            if (s >= 97) return 'are you a compass. be honest.';
+            if (s >= 93) return 'the judges are standing.';
+            if (s >= 88) return 'genuinely round.';
+            if (s >= 78) return 'the judges have seen worse.';
+            if (s >= 60) return 'a proud ellipse.';
+            if (s >= 40) return 'a potato with ambition.';
+            return 'round the way a brick is round.';
+        }
+
+        function judge() {
+            const pts = stroke;
+            stroke = [];
+            if (pts.length < 8) return; // a tap is not a circle. it is not anything.
+
+            let pathLen = 0;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (let i = 0; i < pts.length; i++) {
+                if (i) pathLen += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+                if (pts[i].x < minX) minX = pts[i].x;
+                if (pts[i].x > maxX) maxX = pts[i].x;
+                if (pts[i].y < minY) minY = pts[i].y;
+                if (pts[i].y > maxY) maxY = pts[i].y;
+            }
+            if (pathLen < 40) return;
+            const diag = Math.hypot(maxX - minX, maxY - minY);
+
+            // every sample's angle + distance from the center dot
+            const rs = [];
+            let sumR = 0;
+            let prevA = Math.atan2(pts[0].y - cy, pts[0].x - cx);
+            let acc = 0, lo = 0, hi = 0;
+            for (const p of pts) {
+                const dx = p.x - cx, dy = p.y - cy;
+                const r = Math.hypot(dx, dy);
+                rs.push(r);
+                sumR += r;
+                const a = Math.atan2(dy, dx);
+                let d = a - prevA;
+                if (d > Math.PI) d -= TAU;
+                else if (d < -Math.PI) d += TAU;
+                acc += d;
+                if (acc < lo) lo = acc;
+                if (acc > hi) hi = acc;
+                prevA = a;
+            }
+            const coverage = (hi - lo) * 180 / Math.PI;   // degrees actually swept around the dot
+            const meanR = sumR / pts.length;
+            let varSum = 0;
+            for (const r of rs) varSum += (r - meanR) * (r - meanR);
+            const cv = Math.sqrt(varSum / pts.length) / (meanR || 1);
+
+            const endGap = Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y);
+            const closedLoop = endGap < 0.35 * diag && pathLen > 2 * diag;
+            const dotInside = pointInPoly(cx, cy, pts);
+
+            const born = performance.now();
+
+            // --- edge cases, judged deadpan ---
+            if (coverage < 300) {
+                attempt = { ok: false, pts, born };
+                if (closedLoop && !dotInside) {
+                    showVerdict(null, 'the dot was supposed to be inside.', null, false);
+                } else {
+                    showVerdict(null, 'that is an arc.', null, false);
+                }
+                return;
+            }
+            if (!dotInside) {
+                attempt = { ok: false, pts, born };
+                showVerdict(null, 'the dot was supposed to be inside.', null, false);
+                return;
+            }
+            if (meanR < Math.max(30, Math.min(W, H) * 0.08)) {
+                attempt = { ok: false, pts, born };
+                showVerdict(null, 'too close to the dot. show some respect.', null, false);
+                return;
+            }
+
+            // --- the score: 100 minus normalized radius deviation, minus a gap penalty ---
+            const gapPen = Math.max(0, 360 - Math.min(coverage, 360)) * 0.08;
+            const raw = 100 - cv * 300 - gapPen;
+            const score = Math.round(Math.max(0, Math.min(99.9, raw)) * 10) / 10;
+
+            // centroid + topmost point for the sticker + crown
+            let sx = 0, sy = 0, top = pts[0];
+            for (const p of pts) {
+                sx += p.x; sy += p.y;
+                if (p.y < top.y) top = p;
+            }
+            const color = FILLS[Math.floor(Math.random() * FILLS.length)];
+            const crown = score > 95 && Math.random() < 0.03;   // the secret
+
+            attempt = {
+                ok: true,
+                pts, born, color, crown, top,
+                mx: sx / pts.length,
+                my: sy / pts.length,
+                rot: (Math.random() < 0.5 ? -1 : 1) * (0.03 + Math.random() * 0.035)
+            };
+
+            // burst of spikes off the ring
+            if (!RM) {
+                const a0 = Math.random() * TAU;
+                for (let i = 0; i < 16; i++) {
+                    particles.push({
+                        a: a0 + (i / 16) * TAU,
+                        r0: meanR + 8,
+                        v: 110 + Math.random() * 120,
+                        ox: attempt.mx, oy: attempt.my,
+                        born, life: 520,
+                        color: i % 2 ? color : GOLD
+                    });
+                }
+            }
+            animUntil = born + 700;
+            requestRender();
+
+            // museum acquisition
+            let newBest = false;
+            if (!best || score > best.score) {
+                newBest = true;
+                const step = Math.max(1, Math.ceil(pts.length / 100));
+                const norm = [];
+                for (let i = 0; i < pts.length; i += step) {
+                    norm.push([
+                        Math.round((pts[i].x - attempt.mx) / meanR * 1000) / 1000,
+                        Math.round((pts[i].y - attempt.my) / meanR * 1000) / 1000
+                    ]);
+                }
+                best = { score, pts: norm, color };
+                try { localStorage.setItem('perfectcircle-best', JSON.stringify(best)); } catch (e) {}
+            }
+
+            showVerdict(score.toFixed(1), remarkFor(score), color, newBest);
+        }
+
+        // ---------- verdict DOM ----------
+        function showVerdict(scoreText, remark, color, newBest) {
+            scoreEl.parentElement.style.display = scoreText ? 'block' : 'none';
+            if (scoreText) {
+                scoreEl.textContent = scoreText;
+                scoreEl.style.setProperty('--accent', color);
+            }
+            remarkEl.textContent = remark;
+            newbestEl.style.display = newBest ? 'inline-block' : 'none';
+            verdictEl.classList.remove('show');
+            void verdictEl.offsetWidth;
+            verdictEl.classList.add('show');
+        }
+
+        function hideVerdict() {
+            verdictEl.classList.remove('show');
+        }
+
+        // ---------- hint ----------
+        let hintGone = false;
+        function dismissHint() {
+            if (hintGone) return;
+            hintGone = true;
+            hintEl.classList.add('gone');
+        }
+        setTimeout(dismissHint, 10000);
+
+        setup();
+        requestRender();
+    </script>
+</body>
+</html>

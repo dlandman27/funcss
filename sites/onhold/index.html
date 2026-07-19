@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On Hold</title>
+
+    <meta name="description" content="Your call is important to us. Please continue to hold.">
+    <meta name="keywords" content="on hold, hold music, customer service, waiting, queue">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='6' y='4' width='38' height='42' rx='8' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><path d='M16 14c0 12 8 20 18 22l3-6-6-4-3 3c-4-2-7-5-8-9l4-2-3-7z' fill='%23f0563e' stroke='%23201a17' stroke-width='2' stroke-linejoin='round'/></svg>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/onhold/">
+    <meta property="og:title" content="On Hold">
+    <meta property="og:description" content="Your call is important to us. Please continue to hold.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/onhold/">
+    <meta property="twitter:title" content="On Hold">
+    <meta property="twitter:description" content="Your call is important to us. Please continue to hold.">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0 0 120px;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px 6px;
+        }
+
+        h1 {
+            display: inline-block;
+            margin: 0;
+            padding: 10px 28px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.4rem, 5.5vw, 2.3rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: var(--sky);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(-2deg);
+        }
+
+        .subplaque {
+            margin: 18px auto 0;
+            max-width: 460px;
+            padding: 0 20px;
+            font-style: italic;
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        main {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 12px 20px 0;
+            text-align: center;
+        }
+
+        section[hidden] { display: none; }
+
+        /* ---- idle screen ---- */
+        #callBtn, #callAgainBtn {
+            display: inline-block;
+            margin-top: 44px;
+            padding: 24px 58px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.6rem, 8vw, 2.6rem);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--ink);
+            background: var(--coral);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 6px 6px 0 var(--ink);
+            transform: rotate(-3deg);
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #callAgainBtn { font-size: clamp(1.1rem, 5vw, 1.6rem); padding: 16px 40px; transform: rotate(2deg); }
+
+        #callBtn:hover, #callAgainBtn:hover {
+            transform: rotate(-3deg) translate(-2px, -2px);
+            box-shadow: 8px 8px 0 var(--ink);
+        }
+        #callAgainBtn:hover { transform: rotate(2deg) translate(-2px, -2px); }
+
+        #callBtn:active, #callAgainBtn:active {
+            transform: rotate(-3deg) translate(3px, 3px);
+            box-shadow: 1px 1px 0 var(--ink);
+        }
+        #callAgainBtn:active { transform: rotate(2deg) translate(3px, 3px); }
+
+        .hint {
+            margin: 26px auto 0;
+            max-width: 420px;
+            font-style: italic;
+            font-size: 1.05rem;
+            opacity: 0.75;
+            transition: opacity 2s ease;
+        }
+        .hint.gone { opacity: 0; }
+
+        .tally {
+            display: inline-block;
+            margin-top: 26px;
+            padding: 5px 16px;
+            font-style: italic;
+            font-size: 0.9rem;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(1.5deg);
+        }
+
+        /* ---- call screen ---- */
+        .stamp {
+            display: inline-block;
+            margin-top: 24px;
+            padding: 8px 24px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1rem, 4.5vw, 1.4rem);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            background: var(--lime);
+            border: 3px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(2.5deg);
+        }
+
+        .stamp.ended { background: var(--coral); transform: rotate(-2deg); }
+
+        .pop-in { animation: thunk 0.4s ease-out; }
+
+        .caller-card {
+            margin: 30px auto 0;
+            max-width: 420px;
+            padding: 22px 24px 14px;
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--ink);
+            transform: rotate(-1deg);
+        }
+
+        .caller-label {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(0.8rem, 3.4vw, 1rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #callerNum {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(4.5rem, 26vw, 8rem);
+            line-height: 1.05;
+            color: var(--coral);
+            -webkit-text-stroke: 3px var(--ink);
+            paint-order: stroke fill;
+        }
+
+        #callerNum.bump { animation: numpop 0.35s ease-out; }
+
+        #holdTimer {
+            margin-top: 20px;
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+
+        #voice {
+            margin: 26px auto 0;
+            max-width: 440px;
+            min-height: 3.2em;
+            font-style: italic;
+            font-size: 1.15rem;
+            line-height: 1.5;
+            opacity: 0.9;
+            transition: opacity 2.5s ease;
+        }
+        #voice.fade { opacity: 0; }
+
+        /* ---- ended screen ---- */
+        .flatline {
+            margin: 26px auto 0;
+            max-width: 400px;
+            font-style: italic;
+            font-size: 1.15rem;
+        }
+
+        .stats-card {
+            margin: 26px auto 0;
+            max-width: 360px;
+            padding: 18px 24px;
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 5px 5px 0 var(--ink);
+            transform: rotate(1deg);
+            font-style: italic;
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ---- control pill ---- */
+        #pill {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 14px;
+            background: rgba(32, 26, 23, 0.85);
+            border-radius: 999px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10;
+        }
+
+        #pill[hidden] { display: none; }
+
+        #muteBtn {
+            padding: 7px 18px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.9rem;
+            color: var(--ink);
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            cursor: pointer;
+            transform: rotate(-1deg);
+        }
+
+        #muteBtn:active { transform: rotate(-1deg) translate(1px, 1px); box-shadow: 0 0 0 var(--ink); }
+
+        #hangupBtn {
+            padding: 10px 24px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--ink);
+            background: var(--coral);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            cursor: pointer;
+            transform: rotate(1.5deg);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        #hangupBtn:hover { transform: rotate(1.5deg) translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+        #hangupBtn:active { transform: rotate(1.5deg) translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        @keyframes thunk {
+            0%   { transform: scale(0.2) rotate(2.5deg); }
+            60%  { transform: scale(1.12) rotate(2.5deg); }
+            100% { transform: scale(1) rotate(2.5deg); }
+        }
+
+        @keyframes numpop {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.16); }
+            100% { transform: scale(1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>The Department</h1>
+        <div class="subplaque">customer service line &mdash; hours of operation: yes</div>
+    </header>
+
+    <main>
+        <section id="screenIdle">
+            <button id="callBtn" type="button">Call</button>
+            <div class="hint" id="hint">our representatives are standing by, somewhere</div>
+            <div><span class="tally" id="lifetimeIdle" hidden></span></div>
+        </section>
+
+        <section id="screenCall" hidden>
+            <div class="stamp" id="holdStamp" hidden>On Hold</div>
+            <div class="caller-card" id="callerCard" hidden>
+                <div class="caller-label">You Are Caller Number</div>
+                <div id="callerNum">&nbsp;</div>
+            </div>
+            <div id="holdTimer"></div>
+            <div id="voice" aria-live="polite"></div>
+            <div><span class="tally" id="lifetimeCall" hidden></span></div>
+        </section>
+
+        <section id="screenEnded" hidden>
+            <div class="stamp ended">Call Ended</div>
+            <div class="flatline">nothing was resolved.</div>
+            <div class="stats-card" id="statsCard"></div>
+            <button id="callAgainBtn" type="button">Call Again</button>
+            <div><span class="tally" id="lifetimeEnded" hidden></span></div>
+        </section>
+    </main>
+
+    <div id="pill" hidden>
+        <button id="muteBtn" type="button">mute music</button>
+        <button id="hangupBtn" type="button">Hang Up</button>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        // ---------- dom ----------
+        var $ = function (id) { return document.getElementById(id); };
+        var screenIdle = $('screenIdle'), screenCall = $('screenCall'), screenEnded = $('screenEnded');
+        var callBtn = $('callBtn'), callAgainBtn = $('callAgainBtn');
+        var holdStamp = $('holdStamp'), callerCard = $('callerCard'), callerNumEl = $('callerNum');
+        var holdTimerEl = $('holdTimer'), voice = $('voice'), statsCard = $('statsCard');
+        var pill = $('pill'), muteBtn = $('muteBtn'), hangupBtn = $('hangupBtn');
+        var hint = $('hint');
+        var lifetimeIdle = $('lifetimeIdle'), lifetimeCall = $('lifetimeCall'), lifetimeEnded = $('lifetimeEnded');
+
+        // ---------- persistence ----------
+        var LS_LIFE = 'onhold-lifetime-seconds';
+        var LS_MUTE = 'onhold-muted';
+        function loadLifetime() {
+            try { return parseInt(localStorage.getItem(LS_LIFE), 10) || 0; } catch (e) { return 0; }
+        }
+        function storeLifetime(sec) {
+            try { localStorage.setItem(LS_LIFE, String(sec)); } catch (e) {}
+        }
+        var muted = false;
+        try { muted = localStorage.getItem(LS_MUTE) === '1'; } catch (e) {}
+
+        // ---------- state ----------
+        var callToken = 0;            // increments each call / hangup; async steps bail if stale
+        var callActive = false;
+        var holding = false;          // true once muzak begins
+        var callStartTs = 0;          // Date.now() at call start
+        var baseLifetime = loadLifetime();
+        var caller = 0;
+        var lastCaller = 0;
+        var pending = [];             // tracked timeouts
+        var tickInterval = null;
+
+        function later(fn, ms) {
+            var id = setTimeout(fn, ms);
+            pending.push(id);
+            return id;
+        }
+        function clearPending() {
+            pending.forEach(clearTimeout);
+            pending = [];
+        }
+
+        // ---------- audio ----------
+        var ctx = null, musicBus = null, musicGain = null, sfxGain = null;
+        var BASE_MUSIC = 0.12;        // slightly too quiet, as intended
+        var dipMult = 1;
+        var schedInterval = null;
+
+        function ensureAudio() {
+            if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            ctx = new AC();
+            var lp = ctx.createBiquadFilter();
+            lp.type = 'lowpass';
+            lp.frequency.value = 1200;
+            lp.Q.value = 0.5;
+            musicGain = ctx.createGain();
+            musicGain.gain.value = muted ? 0 : BASE_MUSIC;
+            musicBus = ctx.createGain();
+            musicBus.connect(lp);
+            lp.connect(musicGain);
+            musicGain.connect(ctx.destination);
+            sfxGain = ctx.createGain();
+            sfxGain.gain.value = 0.5;
+            sfxGain.connect(ctx.destination);
+        }
+
+        function applyMusicGain(rampSec) {
+            if (!ctx) return;
+            var v = muted ? 0 : BASE_MUSIC * dipMult;
+            musicGain.gain.cancelScheduledValues(ctx.currentTime);
+            musicGain.gain.setTargetAtTime(v, ctx.currentTime, (rampSec || 0.5) / 3);
+        }
+
+        function mf(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+        function tone(freq, start, dur, peak, type, dest) {
+            if (!ctx) return;
+            var o = ctx.createOscillator();
+            o.type = type || 'sine';
+            o.frequency.value = freq;
+            var g = ctx.createGain();
+            g.gain.setValueAtTime(0, start);
+            g.gain.linearRampToValueAtTime(peak, start + 0.02);
+            g.gain.setValueAtTime(peak, start + dur - 0.04);
+            g.gain.linearRampToValueAtTime(0, start + dur);
+            o.connect(g);
+            g.connect(dest || sfxGain);
+            o.start(start);
+            o.stop(start + dur + 0.05);
+        }
+
+        // -- muzak: 8-bar loop, 74 bpm, triangle lead over sine pads --
+        var SPB = 60 / 74;
+        var LOOP_BEATS = 32;
+        var CHORDS = {
+            C:  { bass: 48, notes: [60, 64, 67] },
+            Am: { bass: 45, notes: [57, 60, 64] },
+            F:  { bass: 41, notes: [53, 57, 60] },
+            G:  { bass: 43, notes: [55, 59, 62] },
+            Em: { bass: 40, notes: [55, 59, 64] }
+        };
+        var PROG = ['C', 'Am', 'F', 'G', 'C', 'Em', 'F', 'G'];
+        var MELODY = [
+            [0, 76, 1], [1, 74, 1], [2, 72, 2],
+            [4, 72, 1], [5, 69, 1], [6, 67, 2],
+            [8, 65, 1], [9, 69, 1], [10, 72, 2],
+            [12, 74, 1], [13, 71, 1], [14, 67, 2],
+            [16, 76, 1.5], [17.5, 77, 0.5], [18, 76, 1], [19, 74, 1],
+            [20, 71, 1], [21, 72, 1], [22, 74, 2],
+            [24, 72, 1], [25, 69, 1], [26, 65, 2],
+            [28, 67, 2], [30, 71, 1], [31, 74, 1]
+        ];
+        var EVENTS = [];
+        (function buildEvents() {
+            PROG.forEach(function (name, bar) {
+                EVENTS.push({ t: bar * 4, type: 'chord', chord: CHORDS[name] });
+            });
+            MELODY.forEach(function (n) {
+                EVENTS.push({ t: n[0], type: 'lead', midi: n[1], dur: n[2] });
+            });
+            EVENTS.sort(function (a, b) { return a.t - b.t; });
+        })();
+
+        var loopStart = 0, evPtr = 0;
+
+        function playChord(time, chord) {
+            var barDur = 4 * SPB;
+            // bass
+            var ob = ctx.createOscillator();
+            ob.type = 'sine';
+            ob.frequency.value = mf(chord.bass);
+            var gb = ctx.createGain();
+            gb.gain.setValueAtTime(0, time);
+            gb.gain.linearRampToValueAtTime(0.11, time + 0.25);
+            gb.gain.setValueAtTime(0.11, time + barDur - 0.4);
+            gb.gain.linearRampToValueAtTime(0, time + barDur);
+            ob.connect(gb); gb.connect(musicBus);
+            ob.start(time); ob.stop(time + barDur + 0.1);
+            // pad
+            chord.notes.forEach(function (m) {
+                var o = ctx.createOscillator();
+                o.type = 'sine';
+                o.frequency.value = mf(m);
+                var g = ctx.createGain();
+                g.gain.setValueAtTime(0, time);
+                g.gain.linearRampToValueAtTime(0.05, time + 0.35);
+                g.gain.setValueAtTime(0.05, time + barDur - 0.5);
+                g.gain.linearRampToValueAtTime(0, time + barDur);
+                o.connect(g); g.connect(musicBus);
+                o.start(time); o.stop(time + barDur + 0.1);
+            });
+        }
+
+        function playLead(time, midi, durBeats) {
+            var dur = durBeats * SPB;
+            var o = ctx.createOscillator();
+            o.type = 'triangle';
+            o.frequency.value = mf(midi);
+            // cheap cheese: gentle vibrato
+            var lfo = ctx.createOscillator();
+            lfo.frequency.value = 5.2;
+            var lg = ctx.createGain();
+            lg.gain.value = 3.5;
+            lfo.connect(lg); lg.connect(o.detune);
+            var g = ctx.createGain();
+            g.gain.setValueAtTime(0, time);
+            g.gain.linearRampToValueAtTime(0.17, time + 0.04);
+            g.gain.setValueAtTime(0.15, time + dur * 0.6);
+            g.gain.linearRampToValueAtTime(0, time + dur - 0.02);
+            o.connect(g); g.connect(musicBus);
+            o.start(time); o.stop(time + dur + 0.1);
+            lfo.start(time); lfo.stop(time + dur + 0.1);
+        }
+
+        function schedulerTick() {
+            if (!ctx) return;
+            var ahead = ctx.currentTime + 0.35;
+            var guard = 0;
+            while (guard++ < 64) {
+                var ev = EVENTS[evPtr];
+                var when = loopStart + ev.t * SPB;
+                if (when >= ahead) break;
+                if (ev.type === 'chord') playChord(when, ev.chord);
+                else playLead(when, ev.midi, ev.dur);
+                evPtr++;
+                if (evPtr >= EVENTS.length) {
+                    evPtr = 0;
+                    loopStart += LOOP_BEATS * SPB;
+                }
+            }
+        }
+
+        function startMusic() {
+            if (!ctx || schedInterval) return;
+            loopStart = ctx.currentTime + 0.15;
+            evPtr = 0;
+            schedulerTick();
+            schedInterval = setInterval(schedulerTick, 100);
+        }
+
+        function stopMusic() {
+            if (schedInterval) { clearInterval(schedInterval); schedInterval = null; }
+        }
+
+        // -- telephony sfx --
+        function playDialTone(t0) {
+            tone(350, t0, 1.1, 0.045);
+            tone(440, t0, 1.1, 0.045);
+        }
+        function playRing(t0) {
+            tone(440, t0, 1.2, 0.05);
+            tone(480, t0, 1.2, 0.05);
+        }
+        function playClick(t0) {
+            tone(620, t0, 0.05, 0.07, 'square');
+        }
+        function playHopeful(t0) {
+            tone(mf(72), t0, 0.28, 0.09, 'triangle');
+            tone(mf(76), t0 + 0.22, 0.28, 0.09, 'triangle');
+            tone(mf(79), t0 + 0.44, 0.55, 0.1, 'triangle');
+        }
+
+        // ---------- copy ----------
+        var LINES = [
+            'Did you know you can also wait online?',
+            'Your patience is being monitored.',
+            'This call may be recorded for no reason.',
+            'Menu options have recently changed. There is no menu.',
+            'Your estimated wait time is a number.',
+            'Please have your account information ready. It will not be needed.',
+            'A representative will be with you.',
+            'Thank you for continuing to hold. You had no other option.',
+            'For quality purposes, this hold is being held.',
+            'Your call will be answered in the order it was forgotten.',
+            'The Department appreciates your continued existence.',
+            'If this is an emergency, please remain calm and hold.',
+            'Callers who hang up lose their place in line, and our respect.',
+            'Most questions answer themselves, given time.',
+            'You may experience longer than normal everything.',
+            'Please do not adjust your expectations.'
+        ];
+        var linePool = [];
+        function nextLine() {
+            if (linePool.length === 0) {
+                linePool = LINES.slice();
+                for (var i = linePool.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var tmp = linePool[i]; linePool[i] = linePool[j]; linePool[j] = tmp;
+                }
+            }
+            return linePool.pop();
+        }
+
+        // ---------- typing ----------
+        function typeInto(el, text, token) {
+            return new Promise(function (resolve) {
+                el.classList.remove('fade');
+                el.textContent = '';
+                var i = 0;
+                (function step() {
+                    if (token !== callToken) { resolve(false); return; }
+                    i++;
+                    el.textContent = text.slice(0, i);
+                    if (i >= text.length) { resolve(true); return; }
+                    later(step, 34 + Math.random() * 24);
+                })();
+            });
+        }
+        function fadeVoiceLater(token, ms) {
+            later(function () {
+                if (token === callToken) voice.classList.add('fade');
+            }, ms);
+        }
+
+        // ---------- time / stats ----------
+        function getElapsed() {
+            return callActive ? Math.floor((Date.now() - callStartTs) / 1000) : 0;
+        }
+        function fmtClock(sec) {
+            var m = Math.floor(sec / 60);
+            var s = sec % 60;
+            return m + ':' + (s < 10 ? '0' : '') + s;
+        }
+        function fmtLifetime(sec) {
+            if (sec < 60) return sec + ' second' + (sec === 1 ? '' : 's');
+            var m = Math.round(sec / 60);
+            return m + ' minute' + (m === 1 ? '' : 's');
+        }
+        function renderLifetime() {
+            var total = baseLifetime + getElapsed();
+            var txt = 'lifetime time on hold: ' + fmtLifetime(total);
+            [lifetimeIdle, lifetimeCall, lifetimeEnded].forEach(function (el) {
+                el.textContent = txt;
+                el.hidden = total <= 0;
+            });
+        }
+        function saveLifetimeNow() {
+            storeLifetime(baseLifetime + getElapsed());
+        }
+
+        var lastSave = 0;
+        function tick() {
+            if (!callActive) return;
+            if (holding) holdTimerEl.textContent = 'you have been holding for ' + fmtClock(getElapsed());
+            renderLifetime();
+            var now = Date.now();
+            if (now - lastSave > 10000) { lastSave = now; saveLifetimeNow(); }
+        }
+
+        // ---------- caller number ----------
+        function renderCaller() {
+            callerNumEl.textContent = caller;
+            callerNumEl.classList.remove('bump');
+            void callerNumEl.offsetWidth;
+            callerNumEl.classList.add('bump');
+        }
+        function scheduleCallerChange(token) {
+            var delay = caller === 1
+                ? 45000 + Math.random() * 35000   // linger at 1, agonizingly
+                : 4000 + Math.random() * 9000;
+            later(function () { changeCaller(token); }, delay);
+        }
+        function changeCaller(token) {
+            if (token !== callToken) return;
+            if (caller === 1) {
+                caller += 7 + Math.floor(Math.random() * 9);
+                typeInto(voice, 'we are experiencing higher than normal call volume.', token)
+                    .then(function (done) { if (done) fadeVoiceLater(token, 6000); });
+            } else if (Math.random() < 0.14) {
+                caller = Math.min(99, caller + 2 + Math.floor(Math.random() * 4)); // no acknowledgment
+            } else {
+                caller = Math.max(1, caller - (Math.random() < 0.2 ? 2 : 1));
+            }
+            lastCaller = caller;
+            renderCaller();
+            scheduleCallerChange(token);
+        }
+
+        // ---------- interstitials ----------
+        function scheduleInterstitial(token) {
+            later(function () { runInterstitial(token); }, 30000 + Math.random() * 30000);
+        }
+        function runInterstitial(token) {
+            if (token !== callToken) return;
+            if (getElapsed() >= 180 && Math.random() < 0.02) { runSecret(token); return; }
+            dipMult = 0.35;
+            applyMusicGain(0.8);
+            typeInto(voice, nextLine(), token).then(function (done) {
+                if (!done) return;
+                later(function () {
+                    if (token !== callToken) return;
+                    voice.classList.add('fade');
+                    dipMult = 1;
+                    applyMusicGain(1.2);
+                }, 6000);
+                scheduleInterstitial(token);
+            });
+        }
+        function runSecret(token) {
+            dipMult = 0;
+            applyMusicGain(0.4);
+            later(function () {
+                if (token !== callToken || !ctx) return;
+                playHopeful(ctx.currentTime + 0.05);
+            }, 700);
+            later(function () {
+                if (token !== callToken) return;
+                typeInto(voice, 'connecting you now…', token).then(function (done) {
+                    if (!done) return;
+                    later(function () {
+                        if (token !== callToken) return;
+                        typeInto(voice, 'just kidding.', token).then(function (d2) {
+                            if (!d2) return;
+                            later(function () {
+                                if (token !== callToken) return;
+                                dipMult = 1;
+                                applyMusicGain(1.5);
+                                fadeVoiceLater(token, 4500);
+                                scheduleInterstitial(token);
+                            }, 900);
+                        });
+                    }, 2000);
+                });
+            }, 900);
+        }
+
+        // ---------- call lifecycle ----------
+        function startCall() {
+            ensureAudio();
+            callToken++;
+            var token = callToken;
+            callActive = true;
+            holding = false;
+            callStartTs = Date.now();
+            baseLifetime = loadLifetime();
+            lastSave = Date.now();
+
+            screenIdle.hidden = true;
+            screenEnded.hidden = true;
+            screenCall.hidden = false;
+            holdStamp.hidden = true;
+            callerCard.hidden = true;
+            holdTimerEl.textContent = '';
+            voice.classList.remove('fade');
+            voice.textContent = '';
+            pill.hidden = true;
+
+            caller = lastCaller > 0
+                ? Math.min(99, lastCaller + 2 + Math.floor(Math.random() * 7)) // your place was not saved
+                : 14 + Math.floor(Math.random() * 27);
+
+            if (tickInterval) clearInterval(tickInterval);
+            tickInterval = setInterval(tick, 1000);
+            renderLifetime();
+
+            // dial sequence
+            var t0 = ctx ? ctx.currentTime + 0.08 : 0;
+            if (ctx) {
+                playDialTone(t0);
+                playRing(t0 + 1.7);
+                playRing(t0 + 3.7);
+                playClick(t0 + 5.1);
+            }
+            voice.textContent = 'dialing…';
+            later(function () {
+                if (token !== callToken) return;
+                voice.textContent = 'ringing…';
+            }, 1700);
+            later(function () {
+                if (token !== callToken) return;
+                typeInto(voice, 'You have reached the Department. Your call is important to us. Please continue to hold.', token)
+                    .then(function (done) {
+                        if (!done) return;
+                        beginHold(token);
+                    });
+            }, 5200);
+        }
+
+        function beginHold(token) {
+            if (token !== callToken) return;
+            holding = true;
+            dipMult = 1;
+            applyMusicGain(1);
+            startMusic();
+            holdStamp.hidden = false;
+            holdStamp.classList.remove('pop-in');
+            void holdStamp.offsetWidth;
+            holdStamp.classList.add('pop-in');
+            callerCard.hidden = false;
+            renderCaller();
+            pill.hidden = false;
+            tick();
+            fadeVoiceLater(token, 5000);
+            scheduleCallerChange(token);
+            scheduleInterstitial(token);
+        }
+
+        function hangUp() {
+            if (!callActive) return;
+            var held = getElapsed();
+            lastCaller = caller;
+            saveLifetimeNow();
+            baseLifetime = loadLifetime();
+            callToken++;               // invalidate all pending async work
+            callActive = false;
+            holding = false;
+            clearPending();
+            if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+            stopMusic();
+            if (ctx) {
+                playClick(ctx.currentTime + 0.02);
+                musicGain.gain.cancelScheduledValues(ctx.currentTime);
+                musicGain.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+            }
+
+            screenCall.hidden = true;
+            pill.hidden = true;
+            screenEnded.hidden = false;
+            statsCard.innerHTML = '';
+            var l1 = document.createElement('div');
+            l1.textContent = 'time held this call: ' + fmtClock(held);
+            var l2 = document.createElement('div');
+            l2.textContent = 'callers still ahead of you: ' + caller;
+            var l3 = document.createElement('div');
+            l3.textContent = 'issues resolved: 0';
+            statsCard.appendChild(l1);
+            statsCard.appendChild(l2);
+            statsCard.appendChild(l3);
+            renderLifetime();
+        }
+
+        // ---------- controls ----------
+        function renderMuteBtn() {
+            muteBtn.textContent = muted ? 'unmute music' : 'mute music';
+        }
+        muteBtn.addEventListener('click', function () {
+            muted = !muted;
+            try { localStorage.setItem(LS_MUTE, muted ? '1' : '0'); } catch (e) {}
+            renderMuteBtn();
+            applyMusicGain(0.3);
+        });
+        renderMuteBtn();
+
+        callBtn.addEventListener('click', function () {
+            dismissHint();
+            startCall();
+        });
+        callAgainBtn.addEventListener('click', startCall);
+        hangupBtn.addEventListener('click', hangUp);
+
+        // ---------- hint ----------
+        var hintGone = false;
+        function dismissHint() {
+            if (hintGone) return;
+            hintGone = true;
+            hint.classList.add('gone');
+        }
+        setTimeout(dismissHint, 10000);
+
+        // ---------- visibility / unload ----------
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                saveLifetimeNow();
+                if (ctx && callActive) ctx.suspend();
+                if (schedInterval) { clearInterval(schedInterval); schedInterval = null; }
+            } else {
+                if (ctx && callActive) {
+                    ctx.resume();
+                    if (holding && !schedInterval) schedInterval = setInterval(schedulerTick, 100);
+                }
+                tick(); // hold time counted from timestamps; catch the display up
+            }
+        });
+        window.addEventListener('pagehide', saveLifetimeNow);
+        window.addEventListener('beforeunload', saveLifetimeNow);
+
+        renderLifetime();
+    })();
+    </script>
+</body>
+</html>
