@@ -2906,6 +2906,9 @@
                       fx: { trail: 'inkdots', click: 'stamp', color: '#c0392b', every: 70 } },
                     { id: 'lens', name: 'the lens', hot: [13, 13], draw: lensDraw,
                       fx: { trail: 'glints', click: 'lens', color: '#5aa0db', every: 80 } },
+                    { id: 'die', name: 'lucky die', hot: [16, 16],
+                      draw: (x) => drawDieP(x, 16.5, 16.5, 21, -0.2, 5, 1),
+                      fx: { trail: 'pips', click: 'roll', color: GOLD, every: 85 } },
                     { id: 'dylan', name: 'dylan', hot: [16, 16],
                       draw: (x) => { x.imageSmoothingEnabled = false; x.drawImage(faceImg, 2, 2, 28, 28); },
                       fx: { trail: 'faces', click: 'facePop', color: null, every: 80 } }
@@ -3371,6 +3374,44 @@
                                 fxCtx.restore();
                                 break;
                             }
+                            case 'die': {
+                                if (!p.mini && !p.settled) {
+                                    if (p.vy > 12) p.vy = 12;   // terminal velocity
+                                    // walls
+                                    if (p.x - p.s / 2 < 0 && p.vx < 0) { p.x = p.s / 2; p.vx = -p.vx * 0.8; }
+                                    if (p.x + p.s / 2 > fxCanvas.width && p.vx > 0) {
+                                        p.x = fxCanvas.width - p.s / 2; p.vx = -p.vx * 0.8;
+                                    }
+                                    const floor = window.innerHeight - 4;
+                                    if (p.y + p.s / 2 >= floor) {
+                                        p.y = floor - p.s / 2;
+                                        if (Math.abs(p.vy) > 1.6) {
+                                            p.vy = -p.vy * 0.55;
+                                            p.vx *= 0.75;
+                                            p.vrot = jit(0.4);
+                                            p.face = 1 + ((Math.random() * 6) | 0);  // still tumbling
+                                        } else {
+                                            p.vy = 0; p.vx = 0; p.vrot = 0; p.g = 0;
+                                            p.rot = 0;
+                                            p.settled = true;
+                                            p.face = p.result;   // the actual roll
+                                            p.decay = 0.0035;    // linger, then fade
+                                            push({ kind: 'text',
+                                                   txt: p.result === 7 ? 'wait.' : p.result + '!',
+                                                   x: p.x, y: p.y - p.s - 8, vy: -0.9,
+                                                   size: 22,
+                                                   color: p.result === 7 ? color('--coral', '#f0563e') : GOLD,
+                                                   life: 1, decay: 0.016 });
+                                        }
+                                    } else if (Math.random() < 0.1) {
+                                        p.face = 1 + ((Math.random() * 6) | 0);      // mid-air flicker
+                                    }
+                                } else if (p.settled) {
+                                    p.rot *= 0.7;
+                                }
+                                drawDieP(fxCtx, p.x, p.y, p.s, p.rot, p.face, Math.min(1, p.life));
+                                break;
+                            }
                             case 'text': {
                                 fxCtx.globalAlpha = a;
                                 const fs = p.size * (1 + (1 - p.life) * 0.15);
@@ -3575,6 +3616,46 @@
                 }
 
                 // ---- trails, one flavor per cursor ----
+                // sticker die: ink shadow, cream body, outline, pips (7 exists. don't ask.)
+                function drawDieP(g, x, y, s, rot, face, alpha) {
+                    g.save();
+                    g.globalAlpha = alpha;
+                    g.translate(x, y);
+                    g.rotate(rot || 0);
+                    const h = s / 2, r = s * 0.22;
+                    const body = (ox, oy) => {
+                        g.beginPath();
+                        g.moveTo(-h + r + ox, -h + oy);
+                        g.arcTo(h + ox, -h + oy, h + ox, h + oy, r);
+                        g.arcTo(h + ox, h + oy, -h + ox, h + oy, r);
+                        g.arcTo(-h + ox, h + oy, -h + ox, -h + oy, r);
+                        g.arcTo(-h + ox, -h + oy, h + ox, -h + oy, r);
+                        g.closePath();
+                    };
+                    body(s * 0.07, s * 0.07);
+                    g.fillStyle = INK; g.fill();
+                    body(0, 0);
+                    g.fillStyle = '#fff8ef'; g.fill();
+                    g.lineWidth = Math.max(s * 0.08, 1.4);
+                    g.lineJoin = 'round';
+                    g.strokeStyle = INK; g.stroke();
+                    const q = s * 0.24, pr = Math.max(s * 0.1, 1.2);
+                    const PIPS = {
+                        1: [[0, 0]],
+                        2: [[-q, -q], [q, q]],
+                        3: [[-q, -q], [0, 0], [q, q]],
+                        4: [[-q, -q], [q, -q], [-q, q], [q, q]],
+                        5: [[-q, -q], [q, -q], [0, 0], [-q, q], [q, q]],
+                        6: [[-q, -q], [q, -q], [-q, 0], [q, 0], [-q, q], [q, q]],
+                        7: [[-q, -q], [q, -q], [-q, 0], [q, 0], [-q, q], [q, q], [0, 0]],
+                    };
+                    g.fillStyle = INK;
+                    (PIPS[face] || PIPS[1]).forEach(pt => {
+                        g.beginPath(); g.arc(pt[0], pt[1], pr, 0, Math.PI * 2); g.fill();
+                    });
+                    g.restore();
+                }
+
                 const TRAILS = {
                     rainbow: (x, y, c) => push({
                         kind: 'spark', x: x + jit(10), y: y + jit(10),
@@ -3654,6 +3735,13 @@
                         kind: 'plus', x: x + jit(14), y: y + jit(12),
                         vy: -0.3, s: 2.5 + Math.random() * 2,
                         color: '#ffffff', life: 0.8, decay: 0.04,
+                    }),
+                    pips: (x, y, c) => push({
+                        kind: 'die', mini: true, x: x + jit(10), y: y + jit(8),
+                        vy: 0.4, g: 0.06, s: 7 + Math.random() * 4,
+                        rot: Math.random() * Math.PI, vrot: jit(0.2),
+                        face: 1 + ((Math.random() * 6) | 0),
+                        life: 0.9, decay: 0.03,
                     }),
                 };
 
@@ -3865,6 +3953,21 @@
                         const lenses = document.querySelectorAll('.filter-lens');
                         if (lenses.length > 6) lenses[0].remove();
                         push({ kind: 'ring', x, y, r: 8, vr: 2.4, lw: 2, color: '#5aa0db', life: 0.6, decay: 0.07 });
+                    },
+                    // die: hurl one — it tumbles, bounces off the floor and walls,
+                    // and settles on what you rolled
+                    roll: (x, y) => {
+                        const resting = particles.filter(q => q.kind === 'die' && q.settled);
+                        if (resting.length >= 8) resting[0].decay = 0.05;   // oldest gets swept up
+                        const dir = Math.random() < 0.5 ? -1 : 1;
+                        push({ kind: 'die', x, y,
+                               vx: dir * (2.5 + Math.random() * 3.5),
+                               vy: -(3 + Math.random() * 3), g: 0.35,
+                               s: 24 + Math.random() * 10,
+                               rot: jit(0.6), vrot: jit(0.35),
+                               face: 1 + ((Math.random() * 6) | 0),
+                               result: Math.random() < 0.02 ? 7 : 1 + ((Math.random() * 6) | 0),
+                               life: 1, decay: 0 });
                     },
                     // dylan: dylans, everywhere
                     facePop: (x, y) => {

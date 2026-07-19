@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Can't Touch Me</title>
+
+    <meta name="description" content="A button you cannot press. Go ahead, try.">
+    <meta name="keywords" content="evasive button, impossible button, catch the button">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='6' y='16' width='38' height='18' rx='9' fill='%23f0563e' stroke='%23201a17' stroke-width='3'/><path d='M10 42l8-8M14 44l8-8' stroke='%23201a17' stroke-width='2' fill='none'/></svg>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sites/canttouchme/">
+    <meta property="og:title" content="Can't Touch Me">
+    <meta property="og:description" content="A button you cannot press. Go ahead, try.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://randomsitesontheweb.com/sites/canttouchme/">
+    <meta property="twitter:title" content="Can't Touch Me">
+    <meta property="twitter:description" content="A button you cannot press. Go ahead, try.">
+    <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            background: var(--paper);
+        }
+
+        body {
+            position: fixed;
+            inset: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+        }
+
+        #fx {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .title {
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            z-index: 3;
+            pointer-events: none;
+            padding: 7px 16px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(0.85rem, 2.8vw, 1.2rem);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--lime);
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-2.5deg);
+        }
+
+        .tally {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            z-index: 3;
+            pointer-events: none;
+            padding: 5px 15px;
+            font-style: italic;
+            font-size: clamp(0.78rem, 2.4vw, 0.95rem);
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            transform: rotate(1.8deg);
+        }
+
+        .hint {
+            position: fixed;
+            top: 78px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            pointer-events: none;
+            font-style: italic;
+            font-size: 1.05rem;
+            opacity: 0.75;
+            transition: opacity 2s ease;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .hint.gone { opacity: 0; }
+
+        #btn {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 2;
+            padding: 20px 44px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.1rem, 4vw, 1.6rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--ink);
+            background: var(--coral);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 5px 5px 0 var(--ink);
+            cursor: pointer;
+            will-change: transform;
+            outline: none;
+        }
+
+        #btn.tripped {
+            background: var(--pink);
+        }
+
+        #btn.won {
+            background: var(--gold);
+        }
+
+        .bubble {
+            position: fixed;
+            z-index: 4;
+            pointer-events: none;
+            max-width: 240px;
+            padding: 8px 14px;
+            font-style: italic;
+            font-size: 0.95rem;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 3px 3px 0 var(--ink);
+            opacity: 0;
+            transform: scale(0.2);
+        }
+
+        .bubble.show {
+            animation: bubblein 2.6s ease forwards;
+        }
+
+        @keyframes bubblein {
+            0%   { transform: scale(0.2); opacity: 0; }
+            8%   { transform: scale(1.12); opacity: 1; }
+            14%  { transform: scale(1); opacity: 1; }
+            78%  { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.96); opacity: 0; }
+        }
+
+        .stamp {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            z-index: 6;
+            pointer-events: none;
+            padding: 18px 40px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.6rem, 7vw, 3rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--cream);
+            -webkit-text-stroke: 5px var(--ink);
+            paint-order: stroke fill;
+            background: var(--gold);
+            border: 4px solid var(--ink);
+            border-radius: 18px;
+            box-shadow: 7px 7px 0 var(--ink);
+            transform: translate(-50%, -50%) rotate(-7deg) scale(0);
+        }
+
+        .stamp.show { animation: stampin 2.8s ease forwards; }
+
+        @keyframes stampin {
+            0%   { transform: translate(-50%, -50%) rotate(-7deg) scale(0.2); opacity: 1; }
+            10%  { transform: translate(-50%, -50%) rotate(-7deg) scale(1.18); opacity: 1; }
+            18%  { transform: translate(-50%, -50%) rotate(-7deg) scale(1); opacity: 1; }
+            82%  { transform: translate(-50%, -50%) rotate(-7deg) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-7deg) scale(0.92); opacity: 0; }
+        }
+
+        @keyframes pageshake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-7px, 4px); }
+            40% { transform: translate(6px, -5px); }
+            60% { transform: translate(-5px, -3px); }
+            80% { transform: translate(4px, 5px); }
+        }
+
+        body.shake { animation: pageshake 0.28s linear; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bubble.show, .stamp.show { animation: none; opacity: 1; transform: scale(1); }
+            .stamp.show { transform: translate(-50%, -50%) rotate(-7deg) scale(1); }
+            body.shake { animation: none; }
+            .hint { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fx"></canvas>
+    <div class="title">Can't Touch Me</div>
+    <div class="tally" id="tally">attempts: 0</div>
+    <div class="hint" id="hint">just press the button.</div>
+    <button id="btn" tabindex="0">Touch Me</button>
+    <div class="bubble" id="bubble"></div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var INK = '#201a17';
+        var PALETTE = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+        var GOLD = '#f7c948';
+
+        var reduceMotion = false;
+        try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+        var btn = document.getElementById('btn');
+        var bubbleEl = document.getElementById('bubble');
+        var tallyEl = document.getElementById('tally');
+        var hintEl = document.getElementById('hint');
+        var fx = document.getElementById('fx');
+        var fxCtx = fx.getContext('2d');
+
+        var W = 0, H = 0, dpr = 1;
+
+        // ------- persisted stats -------
+        var attempts = 0, touches = 0;
+        try {
+            attempts = parseInt(localStorage.getItem('canttouchme-attempts'), 10) || 0;
+            touches = parseInt(localStorage.getItem('canttouchme-touches'), 10) || 0;
+        } catch (e) {}
+
+        function renderTally() {
+            tallyEl.textContent = 'attempts: ' + attempts.toLocaleString('en-US') +
+                (touches > 0 ? ' · touches: ' + touches : '');
+        }
+        renderTally();
+
+        function save() {
+            try {
+                localStorage.setItem('canttouchme-attempts', attempts);
+                localStorage.setItem('canttouchme-touches', touches);
+            } catch (e) {}
+        }
+
+        // ------- hint -------
+        var hintGone = false;
+        function dismissHint() {
+            if (hintGone) return;
+            hintGone = true;
+            hintEl.classList.add('gone');
+        }
+        setTimeout(dismissHint, 10000);
+
+        // ------- taunts -------
+        var TAUNTS = [
+            'nope.', 'close.', 'not really.', "you're getting slower.",
+            'that was the floor.', 'the button has filed a complaint.',
+            'try stretching first.', 'your cursor telegraphs everything.',
+            'attempt logged.', 'the button respects the effort.',
+            'maybe try the other hand.', 'it heard you coming.',
+            'statistically, you should have won by now.',
+            'the warranty does not cover this.', 'have you tried being faster?',
+            'that one was embarrassing.', 'the button is not even winded.',
+            'your persistence has been noted in the file.',
+            'so close it felt a breeze.', 'no.'
+        ];
+        var tauntBag = [];
+        function nextTaunt() {
+            if (attempts === 50) return 'fifty attempts. the button is flattered.';
+            if (attempts === 100) return 'one hundred attempts. the button suggests a walk.';
+            if (attempts === 250) return 'two hundred and fifty. this is a relationship now.';
+            if (tauntBag.length === 0) {
+                tauntBag = TAUNTS.slice();
+                for (var i = tauntBag.length - 1; i > 0; i--) {
+                    var j = (Math.random() * (i + 1)) | 0;
+                    var t = tauntBag[i]; tauntBag[i] = tauntBag[j]; tauntBag[j] = t;
+                }
+            }
+            return tauntBag.pop();
+        }
+
+        var bubbleTimer = null;
+        function speak(text) {
+            bubbleEl.textContent = text;
+            bubbleEl.classList.remove('show');
+            void bubbleEl.offsetWidth;
+            var bx = Math.max(10, Math.min(W - 250, pos.x + bw / 2 + 14));
+            var by = Math.max(10, pos.y - 52);
+            bubbleEl.style.left = bx + 'px';
+            bubbleEl.style.top = by + 'px';
+            bubbleEl.classList.add('show');
+            if (reduceMotion) {
+                clearTimeout(bubbleTimer);
+                bubbleTimer = setTimeout(function () { bubbleEl.classList.remove('show'); }, 2200);
+            }
+        }
+
+        // ------- particles -------
+        var particles = [];
+        function burst(cx, cy, n, gold) {
+            if (reduceMotion) return;
+            var now = performance.now();
+            for (var i = 0; i < n; i++) {
+                var a = Math.random() * Math.PI * 2;
+                var sp = 120 + Math.random() * 260;
+                particles.push({
+                    x: cx, y: cy,
+                    vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 80,
+                    r: 3 + Math.random() * 4,
+                    color: gold && Math.random() < 0.5 ? GOLD : PALETTE[(Math.random() * PALETTE.length) | 0],
+                    born: now, life: 750
+                });
+            }
+            while (particles.length > 200) particles.shift();
+            wake();
+        }
+
+        function dizzyStars(now) {
+            // three little gold stars orbiting above a tripped button
+            var cx = pos.x + bw / 2, cy = pos.y - 16;
+            for (var i = 0; i < 3; i++) {
+                var a = now / 300 + i * (Math.PI * 2 / 3);
+                drawStar(cx + Math.cos(a) * 26, cy + Math.sin(a) * 8, 6);
+            }
+        }
+
+        function drawStar(x, y, r) {
+            fxCtx.save();
+            fxCtx.translate(x, y);
+            fxCtx.beginPath();
+            for (var i = 0; i < 10; i++) {
+                var rr = (i % 2 === 0) ? r : r * 0.45;
+                var a = -Math.PI / 2 + i * Math.PI / 5;
+                if (i === 0) fxCtx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+                else fxCtx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+            }
+            fxCtx.closePath();
+            fxCtx.fillStyle = GOLD;
+            fxCtx.fill();
+            fxCtx.lineWidth = 1.5;
+            fxCtx.lineJoin = 'round';
+            fxCtx.strokeStyle = INK;
+            fxCtx.stroke();
+            fxCtx.restore();
+        }
+
+        function drawParticles(now) {
+            for (var i = particles.length - 1; i >= 0; i--) {
+                var p = particles[i];
+                var t = (now - p.born) / p.life;
+                if (t >= 1) { particles.splice(i, 1); continue; }
+                fxCtx.globalAlpha = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+                fxCtx.beginPath();
+                fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                fxCtx.fillStyle = p.color;
+                fxCtx.fill();
+                fxCtx.lineWidth = 1.4;
+                fxCtx.strokeStyle = INK;
+                fxCtx.stroke();
+            }
+            fxCtx.globalAlpha = 1;
+        }
+
+        function stepParticles(dt) {
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vy += 620 * dt;
+            }
+        }
+
+        // ------- button physics -------
+        var pos = { x: 0, y: 0 };      // top-left of button
+        var vel = { x: 0, y: 0 };
+        var bw = 0, bh = 0;
+        var pointer = { x: -9999, y: -9999 };
+        var tripped = false, tripUntil = 0;
+        var won = false;
+        var MARGIN = 8;
+
+        function measure() {
+            var r = btn.getBoundingClientRect();
+            bw = r.width; bh = r.height;
+        }
+
+        function place(x, y) {
+            pos.x = Math.max(MARGIN, Math.min(W - bw - MARGIN, x));
+            pos.y = Math.max(MARGIN, Math.min(H - bh - MARGIN, y));
+        }
+
+        function render() {
+            var speed = Math.hypot(vel.x, vel.y);
+            var lean = Math.max(-10, Math.min(10, vel.x * 0.012));
+            var stretch = reduceMotion ? 0 : Math.min(0.18, speed * 0.00022);
+            var sq = tripped ? ' scaleY(0.55) rotate(4deg)' : ' rotate(' + lean.toFixed(1) + 'deg) scale(' + (1 + stretch).toFixed(3) + ',' + (1 - stretch).toFixed(3) + ')';
+            btn.style.transform = 'translate(' + pos.x.toFixed(1) + 'px,' + pos.y.toFixed(1) + 'px)' + sq;
+        }
+
+        function tier() {
+            var a = attempts;
+            if (a >= 50) return 3;
+            if (a >= 25) return 2;
+            if (a >= 10) return 1;
+            return 0;
+        }
+
+        function dodgeRadius() { return [130, 155, 175, 195][tier()]; }
+        function accel() { return [2600, 3200, 3900, 4600][tier()]; }
+        function maxSpeed() { return [900, 1100, 1350, 1600][tier()]; }
+
+        function teleport() {
+            // somewhere comfortably far from the pointer
+            var tries = 0, x, y;
+            do {
+                x = MARGIN + Math.random() * (W - bw - MARGIN * 2);
+                y = MARGIN + Math.random() * (H - bh - MARGIN * 2);
+                tries++;
+            } while (tries < 30 && Math.hypot(x + bw / 2 - pointer.x, y + bh / 2 - pointer.y) < Math.min(W, H) * 0.35);
+            place(x, y);
+            vel.x = 0; vel.y = 0;
+            render();
+        }
+
+        function maybeTrip() {
+            if (tripped || won) return;
+            if (attempts < 6) return;
+            if (Math.random() < 0.03) {
+                tripped = true;
+                tripUntil = performance.now() + 950;
+                vel.x = 0; vel.y = 0;
+                btn.classList.add('tripped');
+                btn.textContent = 'oof';
+                wake();
+            }
+        }
+
+        function endTrip() {
+            tripped = false;
+            btn.classList.remove('tripped');
+            btn.textContent = 'Touch Me';
+            // scramble away, mildly embarrassed
+            teleport();
+            speak('you saw nothing.');
+        }
+
+        function victory() {
+            if (won) return;
+            won = true;
+            tripped = false;
+            touches++;
+            renderTally();
+            save();
+            btn.classList.remove('tripped');
+            btn.classList.add('won');
+            btn.textContent = 'fine. you win.';
+            var stamp = document.createElement('div');
+            stamp.className = 'stamp show';
+            stamp.textContent = 'You Touched It';
+            document.body.appendChild(stamp);
+            setTimeout(function () { stamp.remove(); }, 3000);
+            burst(pos.x + bw / 2, pos.y + bh / 2, 36, true);
+            if (!reduceMotion) {
+                document.body.classList.add('shake');
+                setTimeout(function () { document.body.classList.remove('shake'); }, 320);
+            }
+            setTimeout(function () {
+                won = false;
+                btn.classList.remove('won');
+                btn.textContent = 'Touch Me';
+                measure();
+                teleport();
+                speak('best of three.');
+            }, 3200);
+        }
+
+        function registerAttempt(px, py) {
+            attempts++;
+            renderTally();
+            save();
+            dismissHint();
+            // hard kick away from the poke
+            var cx = pos.x + bw / 2, cy = pos.y + bh / 2;
+            var dx = cx - px, dy = cy - py;
+            var m = Math.hypot(dx, dy) || 1;
+            var kick = accel() * 0.42;
+            vel.x += dx / m * kick;
+            vel.y += dy / m * kick;
+            speak(nextTaunt());
+            maybeTrip();
+            wake();
+        }
+
+        // ------- main loop (sleeps when idle) -------
+        var animating = false;
+        var lastTick = 0;
+
+        function nearButton() {
+            var cx = pos.x + bw / 2, cy = pos.y + bh / 2;
+            return Math.hypot(pointer.x - cx, pointer.y - cy) < dodgeRadius() + 120;
+        }
+
+        function hasActivity() {
+            return particles.length > 0 || tripped ||
+                Math.hypot(vel.x, vel.y) > 4 || (nearButton() && !won);
+        }
+
+        function tick(now) {
+            var dt = Math.min(0.04, (now - lastTick) / 1000) || 0.016;
+            lastTick = now;
+
+            if (tripped && now >= tripUntil) endTrip();
+
+            if (!tripped && !won) {
+                var cx = pos.x + bw / 2, cy = pos.y + bh / 2;
+                var dx = cx - pointer.x, dy = cy - pointer.y;
+                var d = Math.hypot(dx, dy);
+                var R = dodgeRadius();
+
+                if (d < R) {
+                    if (reduceMotion) {
+                        teleport();
+                    } else {
+                        var f = (1 - d / R) * accel();
+                        var m = d || 1;
+                        // flee, with a curl so it slips sideways instead of pinning to walls
+                        var side = ((cx < W / 2) === (dy > 0)) ? 1 : -1;
+                        vel.x += (dx / m * f + (-dy / m) * f * 0.35 * side) * dt;
+                        vel.y += (dy / m * f + (dx / m) * f * 0.35 * side) * dt;
+                    }
+                }
+
+                var sp = Math.hypot(vel.x, vel.y);
+                var cap = maxSpeed();
+                if (sp > cap) { vel.x *= cap / sp; vel.y *= cap / sp; }
+
+                pos.x += vel.x * dt;
+                pos.y += vel.y * dt;
+
+                // bounce off the walls
+                if (pos.x < MARGIN) { pos.x = MARGIN; vel.x = Math.abs(vel.x) * 0.7; }
+                if (pos.x > W - bw - MARGIN) { pos.x = W - bw - MARGIN; vel.x = -Math.abs(vel.x) * 0.7; }
+                if (pos.y < MARGIN) { pos.y = MARGIN; vel.y = Math.abs(vel.y) * 0.7; }
+                if (pos.y > H - bh - MARGIN) { pos.y = H - bh - MARGIN; vel.y = -Math.abs(vel.y) * 0.7; }
+
+                // cornered with nowhere to go: vanish, reappear elsewhere
+                var pinnedX = pos.x <= MARGIN || pos.x >= W - bw - MARGIN;
+                var pinnedY = pos.y <= MARGIN || pos.y >= H - bh - MARGIN;
+                if (pinnedX && pinnedY && d < R * 0.75) teleport();
+
+                vel.x *= Math.exp(-3.2 * dt);
+                vel.y *= Math.exp(-3.2 * dt);
+            }
+
+            render();
+
+            fxCtx.clearRect(0, 0, W, H);
+            if (particles.length) { stepParticles(dt); drawParticles(now); }
+            if (tripped && !reduceMotion) dizzyStars(now);
+
+            if (hasActivity()) {
+                requestAnimationFrame(tick);
+            } else {
+                animating = false;
+            }
+        }
+
+        function wake() {
+            if (animating) return;
+            animating = true;
+            lastTick = performance.now();
+            requestAnimationFrame(tick);
+        }
+
+        // ------- input -------
+        window.addEventListener('pointermove', function (e) {
+            pointer.x = e.clientX;
+            pointer.y = e.clientY;
+            if (nearButton()) wake();
+        }, { passive: true });
+
+        window.addEventListener('pointerdown', function (e) {
+            pointer.x = e.clientX;
+            pointer.y = e.clientY;
+            if (won) return;
+            var cx = pos.x + bw / 2, cy = pos.y + bh / 2;
+            var d = Math.hypot(e.clientX - cx, e.clientY - cy);
+            var onBtn = e.clientX >= pos.x && e.clientX <= pos.x + bw &&
+                        e.clientY >= pos.y && e.clientY <= pos.y + bh;
+            if (tripped && onBtn) { victory(); return; }
+            if (onBtn || d < dodgeRadius() + 40) registerAttempt(e.clientX, e.clientY);
+        });
+
+        // no cheating with the keyboard
+        btn.addEventListener('focus', function () {
+            if (won || tripped) return;
+            btn.blur();
+            teleport();
+            speak('keyboard? really.');
+            dismissHint();
+        });
+        btn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') e.preventDefault();
+        });
+        // a genuine click that somehow lands is honored
+        btn.addEventListener('click', function () {
+            if (tripped || won) return;
+            victory();
+        });
+
+        // ------- resize -------
+        function resize() {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            dpr = Math.min(2, window.devicePixelRatio || 1);
+            fx.width = Math.round(W * dpr);
+            fx.height = Math.round(H * dpr);
+            fx.style.width = W + 'px';
+            fx.style.height = H + 'px';
+            fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            measure();
+            place(pos.x || (W - bw) / 2, pos.y || (H - bh) / 2);
+            render();
+        }
+
+        var resizeTimer = null;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(resize, 150);
+        });
+
+        resize();
+    })();
+    </script>
+</body>
+</html>
