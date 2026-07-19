@@ -508,21 +508,41 @@
             }, 3200);
         }
 
-        function registerAttempt(px, py) {
+        function registerAttempt(px, py, direct) {
             attempts++;
             renderTally();
             save();
             dismissHint();
-            // hard kick away from the poke
-            var cx = pos.x + bw / 2, cy = pos.y + bh / 2;
-            var dx = cx - px, dy = cy - py;
-            var m = Math.hypot(dx, dy) || 1;
-            var kick = accel() * 0.42;
-            vel.x += dx / m * kick;
-            vel.y += dy / m * kick;
+            if (direct) {
+                // the poke landed on it — it slips away before the press completes
+                teleport();
+            } else {
+                // hard kick away from the poke
+                var cx = pos.x + bw / 2, cy = pos.y + bh / 2;
+                var dx = cx - px, dy = cy - py;
+                var m = Math.hypot(dx, dy) || 1;
+                var kick = accel() * 0.42;
+                vel.x += dx / m * kick;
+                vel.y += dy / m * kick;
+            }
             speak(nextTaunt());
             maybeTrip();
             wake();
+        }
+
+        // the invariant: outside a trip, the pointer may never rest on the button
+        function overButton(px, py, pad) {
+            return px >= pos.x - pad && px <= pos.x + bw + pad &&
+                   py >= pos.y - pad && py <= pos.y + bh + pad;
+        }
+
+        function emergencyEscape() {
+            if (tripped || won) return false;
+            if (overButton(pointer.x, pointer.y, 10)) {
+                teleport();
+                return true;
+            }
+            return false;
         }
 
         // ------- main loop (sleeps when idle) -------
@@ -582,6 +602,9 @@
                 var pinnedY = pos.y <= MARGIN || pos.y >= H - bh - MARGIN;
                 if (pinnedX && pinnedY && d < R * 0.75) teleport();
 
+                // the pointer outran the physics: bail out instantly
+                emergencyEscape();
+
                 vel.x *= Math.exp(-3.2 * dt);
                 vel.y *= Math.exp(-3.2 * dt);
             }
@@ -610,6 +633,8 @@
         window.addEventListener('pointermove', function (e) {
             pointer.x = e.clientX;
             pointer.y = e.clientY;
+            // hover may never land on it, even between frames
+            emergencyEscape();
             if (nearButton()) wake();
         }, { passive: true });
 
@@ -619,10 +644,9 @@
             if (won) return;
             var cx = pos.x + bw / 2, cy = pos.y + bh / 2;
             var d = Math.hypot(e.clientX - cx, e.clientY - cy);
-            var onBtn = e.clientX >= pos.x && e.clientX <= pos.x + bw &&
-                        e.clientY >= pos.y && e.clientY <= pos.y + bh;
+            var onBtn = overButton(e.clientX, e.clientY, 0);
             if (tripped && onBtn) { victory(); return; }
-            if (onBtn || d < dodgeRadius() + 40) registerAttempt(e.clientX, e.clientY);
+            if (onBtn || d < dodgeRadius() + 40) registerAttempt(e.clientX, e.clientY, onBtn);
         });
 
         // no cheating with the keyboard
@@ -636,10 +660,11 @@
         btn.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') e.preventDefault();
         });
-        // a genuine click that somehow lands is honored
-        btn.addEventListener('click', function () {
-            if (tripped || won) return;
-            victory();
+        // the only way in is the trip window — a stray click gets nothing
+        btn.addEventListener('click', function (e) {
+            if (won) return;
+            e.preventDefault();
+            if (!tripped) emergencyEscape();
         });
 
         // ------- resize -------

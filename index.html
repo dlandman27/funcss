@@ -3773,6 +3773,31 @@
                 const GRAPHITE = '#3a3733';
                 const ZAP_YELLOW = '#ffd94a';
                 const anyPaint = () => PALETTE[(Math.random() * PALETTE.length) | 0][1];
+                const PURPLE = color('--purple', '#a98fd0');
+                const CARD_RED = '#c0392b';
+                const WOOD = '#c99a5b';
+
+                // playing-card deck for the card thrower
+                const SUITS = [
+                    { ch: '♠', color: INK },       // spade
+                    { ch: '♥', color: CARD_RED },  // heart
+                    { ch: '♦', color: CARD_RED },  // diamond
+                    { ch: '♣', color: INK },       // club
+                ];
+                const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+                const anySuit = () => SUITS[(Math.random() * SUITS.length) | 0];
+                const anyRank = () => RANKS[(Math.random() * RANKS.length) | 0];
+
+                // rounded rectangle path (cards, in the sticker + the fx layer)
+                function rrect(g, x, y, w, h, r) {
+                    g.beginPath();
+                    g.moveTo(x + r, y);
+                    g.arcTo(x + w, y, x + w, y + h, r);
+                    g.arcTo(x + w, y + h, x, y + h, r);
+                    g.arcTo(x, y + h, x, y, r);
+                    g.arcTo(x, y, x + w, y, r);
+                    g.closePath();
+                }
 
                 // Dylan's pixel portrait, from the made-by sticker
                 const faceImg = new Image();
@@ -3924,6 +3949,95 @@
                     x.lineWidth = 1.2; x.stroke();
                 };
 
+                // recurve bow, drawn back with an arrow nocked, pointing right
+                const bowDraw = (x) => {
+                    const cx = 10, cy = 16, R = 12, spread = Math.PI * 0.62;
+                    const ex = cx + Math.cos(spread) * R;   // string anchor x (both limbs)
+                    const ty = cy - Math.sin(spread) * R;   // top limb tip
+                    const by = cy + Math.sin(spread) * R;   // bottom limb tip
+                    x.lineCap = 'round';
+                    // limb shadow
+                    x.save(); x.translate(1.3, 1.3);
+                    x.strokeStyle = INK; x.lineWidth = 4.6;
+                    x.beginPath(); x.arc(cx, cy, R, -spread, spread); x.stroke();
+                    x.restore();
+                    // wooden limb
+                    x.strokeStyle = '#8a5a2b'; x.lineWidth = 3;
+                    x.beginPath(); x.arc(cx, cy, R, -spread, spread); x.stroke();
+                    // string, pulled back to the nock
+                    x.strokeStyle = INK; x.lineWidth = 1.3;
+                    x.beginPath(); x.moveTo(ex, ty); x.lineTo(9, cy); x.lineTo(ex, by); x.stroke();
+                    // arrow shaft
+                    x.strokeStyle = INK; x.lineWidth = 3;
+                    x.beginPath(); x.moveTo(8, cy); x.lineTo(27, cy); x.stroke();
+                    x.strokeStyle = WOOD; x.lineWidth = 1.4;
+                    x.beginPath(); x.moveTo(8, cy); x.lineTo(27, cy); x.stroke();
+                    // arrowhead, tip at the right edge
+                    x.fillStyle = '#dfe4ea'; x.strokeStyle = INK; x.lineWidth = 1.4; x.lineJoin = 'round';
+                    x.beginPath(); x.moveTo(31, cy); x.lineTo(25, cy - 3.5); x.lineTo(25, cy + 3.5); x.closePath();
+                    x.fill(); x.stroke();
+                    // fletching at the nock
+                    x.fillStyle = color('--coral', '#f0563e');
+                    x.beginPath(); x.moveTo(8, cy); x.lineTo(13, cy - 4); x.lineTo(15, cy); x.closePath(); x.fill();
+                    x.beginPath(); x.moveTo(8, cy); x.lineTo(13, cy + 4); x.lineTo(15, cy); x.closePath(); x.fill();
+                };
+
+                // a fanned hand of three cards, the front one an ace of hearts
+                const cardsDraw = (x) => {
+                    const one = (rot, front) => {
+                        x.save();
+                        x.translate(16, 21);
+                        x.rotate(rot);
+                        // shadow
+                        rrect(x, -6.5 + 1.2, -13 + 1.2, 13, 19, 2.4);
+                        x.fillStyle = INK; x.fill();
+                        // face
+                        rrect(x, -6.5, -13, 13, 19, 2.4);
+                        x.fillStyle = '#fff8ef'; x.fill();
+                        x.lineWidth = 1.4; x.lineJoin = 'round'; x.strokeStyle = INK; x.stroke();
+                        if (front) {
+                            x.fillStyle = CARD_RED;
+                            x.font = "700 6px 'Segoe UI', system-ui, sans-serif";
+                            x.textAlign = 'left'; x.textBaseline = 'top';
+                            x.fillText('A', -5.5, -12);
+                            x.font = "700 10px 'Segoe UI', system-ui, sans-serif";
+                            x.textAlign = 'center'; x.textBaseline = 'middle';
+                            x.fillText('♥', 0, -2.5);
+                        }
+                        x.restore();
+                    };
+                    one(0.42, false);    // right of the fan
+                    one(-0.42, false);   // left of the fan
+                    one(0, true);        // front and centre
+                };
+
+                // a little black hole: dark disk, purple accretion ring, swirl
+                const holeDraw = (x) => {
+                    x.save();
+                    x.translate(16, 16);
+                    // accretion ring
+                    x.strokeStyle = INK; x.lineWidth = 3.4;
+                    x.beginPath(); x.arc(0, 0, 11, 0, Math.PI * 2); x.stroke();
+                    x.strokeStyle = PURPLE; x.lineWidth = 2.2;
+                    x.beginPath(); x.arc(0, 0, 11, 0, Math.PI * 2); x.stroke();
+                    x.strokeStyle = '#e3d5f5'; x.lineWidth = 1.5; x.lineCap = 'round';
+                    x.beginPath(); x.arc(0, 0, 11, -Math.PI * 0.85, -Math.PI * 0.2); x.stroke();
+                    // event horizon
+                    x.beginPath(); x.arc(0, 0, 8, 0, Math.PI * 2);
+                    x.fillStyle = '#1b1524'; x.fill();
+                    x.lineWidth = 1.4; x.strokeStyle = INK; x.stroke();
+                    // inward swirl
+                    x.strokeStyle = 'rgba(217, 198, 240, 0.8)'; x.lineWidth = 1.2;
+                    x.beginPath();
+                    for (let i = 0; i < 26; i++) {
+                        const t = i / 25, a = t * Math.PI * 3.2, r = 7.5 * (1 - t);
+                        i === 0 ? x.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+                                : x.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+                    }
+                    x.stroke();
+                    x.restore();
+                };
+
                 // every cursor brings its own trail + click burst. The first —
                 // the site's black arrow — is the default, and clicks with it
                 // keep the page's comic splat (fx.click: null = splat handles it).
@@ -3974,6 +4088,12 @@
                     { id: 'die', name: 'lucky die', hot: [16, 16],
                       draw: (x) => drawDieP(x, 16.5, 16.5, 21, -0.2, 5, 1),
                       fx: { trail: 'pips', click: 'roll', color: GOLD, every: 85 } },
+                    { id: 'bow', name: 'bow & arrow', hot: [30, 16], draw: bowDraw,
+                      fx: { trail: 'aim', click: 'fire', color: color('--coral', '#f0563e'), every: 26 } },
+                    { id: 'cards', name: 'card thrower', hot: [16, 16], draw: cardsDraw,
+                      fx: { trail: 'suits', click: 'deal', color: CARD_RED, every: 70 } },
+                    { id: 'hole', name: 'black hole', hot: [16, 16], draw: holeDraw,
+                      fx: { trail: 'swirl', click: 'collapse', color: PURPLE, every: 30 } },
                     { id: 'dylan', name: 'dylan', hot: [16, 16],
                       draw: (x) => { x.imageSmoothingEnabled = false; x.drawImage(faceImg, 2, 2, 28, 28); },
                       fx: { trail: 'faces', click: 'facePop', color: null, every: 80 } }
@@ -4221,6 +4341,21 @@
                         if (p.sway) p.x += Math.sin(p.life * 9 + p.phase) * p.sway;
                         if (p.vr) p.r += p.vr;
                         if (p.vrot) p.rot += p.vrot;
+                        // caught in a black hole: spiral inward, shrink, wink out
+                        if (p.pull) {
+                            const dx = p.pull.cx - p.x, dy = p.pull.cy - p.y;
+                            const d = Math.hypot(dx, dy) || 1;
+                            p._ps = Math.min(15, (p._ps || 2.5) + 0.85);
+                            const ux = dx / d, uy = dy / d, spd = Math.min(d, p._ps);
+                            p.x += ux * spd - uy * spd * 0.5;   // radial + tangential = spiral
+                            p.y += uy * spd + ux * spd * 0.5;
+                            if (p.r) p.r *= 0.9;
+                            if (p.s) p.s *= 0.9;
+                            if (p.size) p.size *= 0.9;
+                            if (p.w) p.w *= 0.9;
+                            if (p.h) p.h *= 0.9;
+                            if (d < 12) p.life = 0;
+                        }
                         const a = Math.min(1, p.life);
                         switch (p.kind) {
                             case 'dot': {
@@ -4671,6 +4806,124 @@
                                 }
                                 break;
                             }
+                            case 'arrow': {
+                                if (!p.stuck) {
+                                    const W = fxCanvas.width, H = fxCanvas.height;
+                                    // the leading tip is ~14px ahead of centre
+                                    const tx = p.x + Math.cos(p.angle) * 14;
+                                    const ty = p.y + Math.sin(p.angle) * 14;
+                                    if (tx <= 2 || tx >= W - 2 || ty <= 2 || ty >= H - 2) {
+                                        p.stuck = true; p.vx = 0; p.vy = 0; p.qt = 0;
+                                        // pin the tip to the wall
+                                        p.x = Math.max(-12, Math.min(W + 12, tx)) - Math.cos(p.angle) * 14;
+                                        p.y = Math.max(-12, Math.min(H + 12, ty)) - Math.sin(p.angle) * 14;
+                                        push({ kind: 'ring', x: tx, y: ty, r: 3, vr: 1.7, lw: 1.6,
+                                               color: p.color, life: 0.5, decay: 0.09 });
+                                        for (let k = 0; k < 5; k++) {
+                                            const aa = Math.random() * Math.PI * 2, vv = 1 + Math.random() * 2;
+                                            push({ kind: 'dot', x: tx, y: ty, vx: Math.cos(aa) * vv, vy: Math.sin(aa) * vv,
+                                                   r: 1.3 + Math.random() * 1.6, color: WOOD, life: 0.7, decay: 0.05 });
+                                        }
+                                    }
+                                } else {
+                                    p.qt++;
+                                    if (p.qt > 26 && p.decay === 0) p.decay = 0.02;   // linger, then fade
+                                }
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.rotate(p.angle);
+                                // quiver: perpendicular wobble that damps out
+                                if (p.stuck && p.qt < 22) fxCtx.translate(0, Math.sin(p.qt * 0.9) * 3 * (1 - p.qt / 22));
+                                fxCtx.globalAlpha = Math.min(1, p.life);
+                                fxCtx.lineCap = 'round'; fxCtx.lineJoin = 'round';
+                                fxCtx.strokeStyle = INK; fxCtx.lineWidth = 3.4;
+                                fxCtx.beginPath(); fxCtx.moveTo(-16, 0); fxCtx.lineTo(9, 0); fxCtx.stroke();
+                                fxCtx.strokeStyle = WOOD; fxCtx.lineWidth = 1.8;
+                                fxCtx.beginPath(); fxCtx.moveTo(-16, 0); fxCtx.lineTo(9, 0); fxCtx.stroke();
+                                fxCtx.fillStyle = '#dfe4ea'; fxCtx.strokeStyle = INK; fxCtx.lineWidth = 1.4;
+                                fxCtx.beginPath(); fxCtx.moveTo(14, 0); fxCtx.lineTo(7, -4); fxCtx.lineTo(7, 4);
+                                fxCtx.closePath(); fxCtx.fill(); fxCtx.stroke();
+                                fxCtx.fillStyle = p.color;
+                                fxCtx.beginPath(); fxCtx.moveTo(-16, 0); fxCtx.lineTo(-11, -4); fxCtx.lineTo(-8, 0); fxCtx.closePath(); fxCtx.fill();
+                                fxCtx.beginPath(); fxCtx.moveTo(-16, 0); fxCtx.lineTo(-11, 4); fxCtx.lineTo(-8, 0); fxCtx.closePath(); fxCtx.fill();
+                                fxCtx.restore();
+                                break;
+                            }
+                            case 'card': {
+                                p.spin += p.vspin;
+                                p.vx *= 0.99;
+                                const flip = Math.abs(Math.cos(p.spin));   // 0 = seen edge-on
+                                const sc = 0.14 + flip * 0.86;
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.rotate(Math.sin(p.spin * 0.5) * 0.28 + p.vx * 0.012);
+                                fxCtx.scale(sc, 1);
+                                fxCtx.globalAlpha = a;
+                                rrect(fxCtx, -p.w / 2, -p.h / 2, p.w, p.h, 2.5);
+                                fxCtx.fillStyle = '#fff8ef'; fxCtx.fill();
+                                fxCtx.lineWidth = 1.6; fxCtx.lineJoin = 'round'; fxCtx.strokeStyle = INK; fxCtx.stroke();
+                                if (flip > 0.4) {
+                                    fxCtx.fillStyle = p.suitColor;
+                                    fxCtx.font = "700 7px 'Segoe UI', system-ui, sans-serif";
+                                    fxCtx.textAlign = 'left'; fxCtx.textBaseline = 'top';
+                                    fxCtx.fillText(p.rank, -p.w / 2 + 2, -p.h / 2 + 2);
+                                    fxCtx.font = "700 11px 'Segoe UI', system-ui, sans-serif";
+                                    fxCtx.textAlign = 'center'; fxCtx.textBaseline = 'middle';
+                                    fxCtx.fillText(p.suit, 0, 1);
+                                }
+                                fxCtx.restore();
+                                break;
+                            }
+                            case 'inswirl': {
+                                p.rad += p.vrad;
+                                p.ang += p.vang;
+                                if (p.rad <= 1.5) p.life = 0;
+                                const ix = p.cx + Math.cos(p.ang) * Math.max(0, p.rad);
+                                const iy = p.cy + Math.sin(p.ang) * Math.max(0, p.rad);
+                                fxCtx.globalAlpha = a;
+                                fxCtx.beginPath();
+                                fxCtx.arc(ix, iy, Math.max(0.6, p.r * (0.4 + a * 0.6)), 0, Math.PI * 2);
+                                fxCtx.fillStyle = p.color; fxCtx.fill();
+                                break;
+                            }
+                            case 'hole': {
+                                p.t++;
+                                const SWELL = 10, HOLD = 30, IMPL = 12, PEAK = 4 + SWELL * 1.1;
+                                let R;
+                                if (p.t <= SWELL) R = 4 + p.t * 1.1;
+                                else if (p.t <= HOLD) R = PEAK;
+                                else R = Math.max(0, PEAK * (1 - (p.t - HOLD) / IMPL));
+                                if (p.t === HOLD) {
+                                    // implosion: a bright pop and a rebound shockwave
+                                    push({ kind: 'flash', x: p.x, y: p.y, r: 4, vr: 5, a: 0.6,
+                                           color: '#e9defb', life: 0.5, decay: 0.08 });
+                                    push({ kind: 'ring', x: p.x, y: p.y, r: 2, vr: 5.5, lw: 3,
+                                           color: PURPLE, life: 0.9, decay: 0.04 });
+                                    push({ kind: 'ring', x: p.x, y: p.y, r: 2, vr: 3.4, lw: 1.6,
+                                           color: '#ffffff', life: 0.7, decay: 0.05, delay: 3 });
+                                }
+                                if (p.t > HOLD + IMPL + 2) { p.life = 0; break; }
+                                fxCtx.save();
+                                fxCtx.translate(p.x, p.y);
+                                fxCtx.rotate(p.t * 0.3);
+                                fxCtx.globalAlpha = Math.min(1, p.life);
+                                fxCtx.strokeStyle = PURPLE; fxCtx.lineWidth = 2.4;
+                                fxCtx.beginPath(); fxCtx.arc(0, 0, R + 3, 0, Math.PI * 2); fxCtx.stroke();
+                                fxCtx.beginPath(); fxCtx.arc(0, 0, R, 0, Math.PI * 2);
+                                fxCtx.fillStyle = '#1b1524'; fxCtx.fill();
+                                if (R > 3) {
+                                    fxCtx.strokeStyle = 'rgba(217, 198, 240, 0.8)'; fxCtx.lineWidth = 1.3;
+                                    fxCtx.beginPath();
+                                    for (let k = 0; k < 26; k++) {
+                                        const t = k / 25, ang = t * Math.PI * 3.2, r2 = R * (1 - t);
+                                        k === 0 ? fxCtx.moveTo(Math.cos(ang) * r2, Math.sin(ang) * r2)
+                                                : fxCtx.lineTo(Math.cos(ang) * r2, Math.sin(ang) * r2);
+                                    }
+                                    fxCtx.stroke();
+                                }
+                                fxCtx.restore();
+                                break;
+                            }
                         }
                     }
                     fxCtx.globalAlpha = 1;
@@ -4807,6 +5060,23 @@
                         rot: Math.random() * Math.PI, vrot: jit(0.2),
                         face: 1 + ((Math.random() * 6) | 0),
                         life: 0.9, decay: 0.03,
+                    }),
+                    aim: (x, y, c) => push({
+                        kind: 'dot', x: x + jit(4), y: y + jit(4),
+                        r: 1.3 + Math.random(), color: c, life: 0.65, decay: 0.045,
+                    }),
+                    suits: (x, y) => {
+                        const s = anySuit();
+                        push({ kind: 'text', txt: s.ch, x: x + jit(10), y: y + jit(6),
+                               vy: 0.55, sway: 0.4, phase: Math.random() * 6,
+                               size: 11 + Math.random() * 4, color: s.color, life: 0.85, decay: 0.03 });
+                    },
+                    swirl: (x, y, c) => push({
+                        kind: 'inswirl', x: 0, y: 0, cx: x + jit(5), cy: y + jit(5),
+                        ang: Math.random() * Math.PI * 2, rad: 13 + Math.random() * 9,
+                        vrad: -(0.6 + Math.random() * 0.5), vang: 0.22,
+                        r: 1.5 + Math.random() * 1.4,
+                        color: Math.random() < 0.5 ? c : '#e3d5f5', life: 1, decay: 0.02,
                     }),
                 };
 
@@ -5045,7 +5315,74 @@
                                    life: 1, decay: 0.022 });
                         }
                     },
+                    // bow: loose an arrow that flies where you were headed and
+                    // thunks into the nearest wall, quivering
+                    fire: (x, y, c) => {
+                        let ax = aimVX, ay = aimVY, m = Math.hypot(ax, ay);
+                        if (m < 0.5) {   // standing still: fire at the nearer side wall
+                            ax = x < window.innerWidth / 2 ? -1 : 1; ay = 0; m = 1;
+                        }
+                        const speed = 26;
+                        const stuck = particles.filter(q => q.kind === 'arrow' && q.stuck);
+                        if (stuck.length >= 10) stuck[0].decay = 0.06;   // oldest works loose
+                        push({ kind: 'arrow', x, y,
+                               vx: ax / m * speed, vy: ay / m * speed,
+                               angle: Math.atan2(ay, ax), stuck: false, qt: 0,
+                               color: c, life: 1, decay: 0 });
+                    },
+                    // card thrower: a flourish of cards spins out and flutters down
+                    deal: (x, y) => {
+                        const base = -Math.PI / 2;   // up and out
+                        for (let i = 0; i < 9; i++) {
+                            const a = base + jit(1.6);
+                            const v = 5 + Math.random() * 5;
+                            const s = anySuit();
+                            push({ kind: 'card', x, y,
+                                   vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.24,
+                                   w: 15, h: 21, rank: anyRank(), suit: s.ch, suitColor: s.color,
+                                   spin: Math.random() * 6,
+                                   vspin: (Math.random() < 0.5 ? -1 : 1) * (0.22 + Math.random() * 0.28),
+                                   life: 1, decay: 0.012 });
+                        }
+                        push({ kind: 'ring', x, y, r: 4, vr: 1.6, lw: 2, color: CARD_RED, life: 0.6, decay: 0.08 });
+                    },
+                    // black hole: drags the whole field into a point, then implodes
+                    collapse: (x, y, c) => {
+                        const NO_PULL = { block: 1, die: 1, slot: 1, bomb: 1, stamp: 1,
+                                          boomstar: 1, hole: 1, arrow: 1, inswirl: 1 };
+                        for (const p of particles) {
+                            if (!NO_PULL[p.kind] && !p.pull) {
+                                p.pull = { cx: x, cy: y };
+                                p.vx = 0; p.vy = 0; p.g = 0; p.sway = 0;
+                                if (p.decay < 0.001) p.decay = 0.001;
+                            }
+                        }
+                        push({ kind: 'hole', x, y, t: 0, life: 1, decay: 0 });
+                        // debris spiralling in from all around
+                        for (let i = 0; i < 22; i++) {
+                            push({ kind: 'inswirl', x: 0, y: 0, cx: x, cy: y,
+                                   ang: Math.random() * Math.PI * 2, rad: 55 + Math.random() * 120,
+                                   vrad: -(1.6 + Math.random() * 1.6), vang: 0.12 + Math.random() * 0.1,
+                                   r: 2 + Math.random() * 2.5,
+                                   color: i % 3 === 0 ? '#e3d5f5' : c, life: 1, decay: 0.012, delay: i % 6 });
+                        }
+                        push({ kind: 'ring', x, y, r: 95, vr: -3.4, lw: 3, color: c, life: 1, decay: 0.03 });
+                        push({ kind: 'ring', x, y, r: 140, vr: -4.2, lw: 1.6, color: PURPLE, life: 1, decay: 0.026, delay: 3 });
+                    },
                 };
+
+                // smoothed pointer heading, so the bow fires where you're moving
+                let aimVX = 1, aimVY = 0, lastAX = null, lastAY = null;
+                window.addEventListener('mousemove', (e) => {
+                    if (lastAX !== null) {
+                        const dx = e.clientX - lastAX, dy = e.clientY - lastAY;
+                        if (dx * dx + dy * dy > 4) {
+                            aimVX = 0.7 * aimVX + 0.3 * dx;
+                            aimVY = 0.7 * aimVY + 0.3 * dy;
+                        }
+                    }
+                    lastAX = e.clientX; lastAY = e.clientY;
+                }, { passive: true });
 
                 let lastTrail = 0;
                 document.addEventListener('mousemove', (e) => {
