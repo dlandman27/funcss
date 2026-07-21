@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Punctuation Cemetery</title>
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body.shaking { animation: pageshake 0.25s linear; }
+        @keyframes pageshake {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 3px); }
+            40% { transform: translate(5px, -4px); }
+            60% { transform: translate(-4px, -2px); }
+            80% { transform: translate(3px, 3px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* ---------- header ---------- */
+        header {
+            text-align: center;
+            padding: 46px 16px 8px;
+            position: relative;
+        }
+
+        .gate-sign {
+            display: inline-block;
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--ink);
+            padding: 18px 30px 14px;
+            transform: rotate(-1.5deg);
+        }
+
+        .gate-sign h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(1.3rem, 5.5vw, 2.4rem);
+            letter-spacing: 0.04em;
+            line-height: 1.05;
+        }
+
+        .gate-sign .est {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(0.5rem, 1.8vw, 0.68rem);
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            margin-top: 6px;
+            color: var(--coral);
+        }
+
+        .subtitle {
+            font-style: italic;
+            font-size: clamp(0.85rem, 2.6vw, 1.05rem);
+            margin: 22px auto 0;
+            max-width: 34em;
+        }
+
+        .respects-badge {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            z-index: 40;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 8px 16px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.62rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            transform: rotate(2.5deg);
+        }
+
+        /* ---------- cemetery grid ---------- */
+        .cemetery {
+            max-width: 1060px;
+            margin: 0 auto;
+            padding: 40px 20px 90px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+            gap: 34px 22px;
+            align-items: end;
+        }
+
+        .grave {
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            padding: 0;
+            font-family: inherit;
+            color: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .stone {
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 70px 70px 10px 10px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: 20px 10px 22px;
+            position: relative;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .grave:nth-child(odd) .stone { transform: rotate(-1.4deg); }
+        .grave:nth-child(even) .stone { transform: rotate(1.2deg); }
+        .grave:nth-child(3n) .stone { transform: rotate(-0.6deg); }
+
+        .grave:hover .stone,
+        .grave:focus-visible .stone {
+            transform: translate(-2px, -2px) rotate(-1.8deg);
+            box-shadow: 8px 8px 0 var(--ink);
+        }
+
+        .grave:active .stone {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 var(--ink);
+        }
+
+        .grave:focus-visible { outline: none; }
+        .grave:focus-visible .stone { border-color: var(--coral); }
+
+        .stone svg.glyph {
+            display: block;
+            height: 84px;
+            margin: 0 auto 10px;
+            color: var(--ink);
+        }
+
+        .stone .g-name {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            line-height: 1.25;
+        }
+
+        .stone .g-yrs {
+            font-style: italic;
+            font-size: 0.72rem;
+            margin-top: 5px;
+            opacity: 0.75;
+        }
+
+        .ribbon {
+            position: absolute;
+            top: -10px;
+            right: -8px;
+            z-index: 2;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 4px 10px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.5rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            transform: rotate(7deg);
+        }
+
+        .mound {
+            height: 24px;
+            margin: -8px 4% 0;
+            background: var(--lime);
+            border: 3px solid var(--ink);
+            border-radius: 50%;
+            box-shadow: 3px 3px 0 var(--ink);
+            position: relative;
+            z-index: 1;
+        }
+
+        .flowers {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 14px;
+            height: 30px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .flowers svg {
+            position: absolute;
+            bottom: 0;
+            height: 26px;
+            transform-origin: 50% 100%;
+        }
+
+        .flowers svg.pop { animation: flowerpop 0.4s cubic-bezier(0.2, 2.2, 0.5, 1) both; }
+        @keyframes flowerpop {
+            from { transform: scale(0.2) rotate(var(--rot, 0deg)); }
+            60% { transform: scale(1.18) rotate(var(--rot, 0deg)); }
+            to { transform: scale(1) rotate(var(--rot, 0deg)); }
+        }
+
+        .flower-extra {
+            position: absolute;
+            right: 2px;
+            bottom: 2px;
+            background: var(--pink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            padding: 1px 6px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.5rem;
+            transform: rotate(-5deg);
+            z-index: 3;
+        }
+
+        /* ---------- hint ---------- */
+        .hint {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-style: italic;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            transition: opacity 1.6s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 30;
+        }
+        .hint.gone { opacity: 0; }
+
+        /* ---------- plaque modal ---------- */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(32, 26, 23, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 100;
+        }
+        .overlay.open { display: flex; }
+
+        .plaque {
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 8px 8px 0 var(--ink);
+            width: min(480px, 94vw);
+            max-height: 88vh;
+            overflow-y: auto;
+            padding: 26px 26px 24px;
+            transform: rotate(-0.8deg);
+            animation: plaquepop 0.35s cubic-bezier(0.2, 1.8, 0.4, 1) both;
+            position: relative;
+        }
+        @keyframes plaquepop {
+            from { transform: scale(0.3) rotate(-6deg); }
+            65% { transform: scale(1.06) rotate(0.5deg); }
+            to { transform: scale(1) rotate(-0.8deg); }
+        }
+
+        .plaque-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 34px;
+            height: 34px;
+            background: var(--coral);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.85rem;
+            color: var(--ink);
+            cursor: pointer;
+            transform: rotate(4deg);
+        }
+        .plaque-close:hover { transform: translate(-1px, -1px) rotate(4deg); box-shadow: 3px 3px 0 var(--ink); }
+        .plaque-close:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+
+        .plaque-glyph {
+            width: 118px;
+            height: 118px;
+            margin: 0 auto 14px;
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-3deg);
+        }
+        .plaque-glyph svg { height: 78px; color: var(--ink); }
+
+        .plaque h2 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            text-transform: uppercase;
+            text-align: center;
+            font-size: 1.25rem;
+            letter-spacing: 0.03em;
+        }
+
+        .plaque .alias {
+            text-align: center;
+            font-style: italic;
+            font-size: 0.92rem;
+            margin: 3px 0 16px;
+            opacity: 0.8;
+        }
+
+        .field { margin-bottom: 11px; }
+        .field .label {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.56rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--coral);
+            display: block;
+            margin-bottom: 2px;
+        }
+        .field .value { font-size: 0.95rem; line-height: 1.45; }
+
+        .sample {
+            background: var(--paper);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin: 16px 0;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .sample svg { height: 1.05em; vertical-align: -0.14em; color: var(--ink); }
+        .sample .label {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.52rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 5px;
+            opacity: 0.6;
+        }
+
+        .epitaph {
+            text-align: center;
+            font-style: italic;
+            font-size: 0.98rem;
+            margin: 16px 10px;
+        }
+
+        .pay-btn {
+            display: block;
+            margin: 18px auto 0;
+            background: var(--gold);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 12px 26px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transform: rotate(-1.5deg);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .pay-btn:hover { transform: translate(-2px, -2px) rotate(-1.5deg); box-shadow: 5px 5px 0 var(--ink); }
+        .pay-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        .plaque .grave-count {
+            text-align: center;
+            font-style: italic;
+            font-size: 0.82rem;
+            margin-top: 10px;
+            opacity: 0.75;
+        }
+
+        /* ---------- ghost ---------- */
+        .ghost {
+            position: fixed;
+            z-index: 90;
+            pointer-events: none;
+            opacity: 0;
+            animation: ghostrise 4.2s ease-out forwards;
+        }
+        .ghost svg { height: 74px; color: var(--cream); }
+        @keyframes ghostrise {
+            0% { transform: translate(-50%, 0) rotate(0deg); opacity: 0; }
+            12% { opacity: 0.95; }
+            100% { transform: translate(calc(-50% + 38px), -48vh) rotate(11deg); opacity: 0; }
+        }
+
+        /* ---------- resurrection ---------- */
+        .rise-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        .rise-overlay svg {
+            height: min(46vh, 46vw);
+            color: var(--coral);
+            animation: risepop 0.45s cubic-bezier(0.2, 2, 0.4, 1) both;
+        }
+        .rise-stamp {
+            margin-top: 8px;
+            background: var(--coral);
+            color: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 10px 22px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(1.1rem, 5vw, 1.9rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transform: rotate(-7deg);
+            -webkit-text-stroke: 1px var(--ink);
+            animation: risepop 0.4s 0.15s cubic-bezier(0.2, 2, 0.4, 1) both;
+        }
+        .rise-overlay.fading { transition: opacity 0.9s ease; opacity: 0; }
+        @keyframes risepop {
+            from { transform: scale(0.15); }
+            65% { transform: scale(1.18); }
+            to { transform: scale(1); }
+        }
+        .rise-stamp { animation-name: risepopstamp; }
+        @keyframes risepopstamp {
+            from { transform: scale(0.15) rotate(-7deg); }
+            65% { transform: scale(1.18) rotate(-7deg); }
+            to { transform: scale(1) rotate(-7deg); }
+        }
+
+        footer {
+            text-align: center;
+            font-style: italic;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            padding: 0 16px 110px;
+        }
+
+        @media (max-width: 520px) {
+            .cemetery { gap: 26px 14px; padding: 30px 14px 80px; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); }
+            .stone svg.glyph { height: 68px; }
+            .respects-badge { font-size: 0.55rem; padding: 6px 12px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ghost, .rise-overlay { display: none !important; }
+            body.shaking { animation: none; }
+            .plaque, .flowers svg.pop, .rise-overlay svg, .rise-stamp { animation: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="respects-badge">Respects paid: <span id="totalRespects">0</span></div>
+
+    <header>
+        <div class="gate-sign">
+            <h1>The Punctuation<br>Cemetery</h1>
+            <div class="est">Est. 63 BC &mdash; Perpetual Care</div>
+        </div>
+        <p class="subtitle">Final resting place of marks the language no longer requires.
+        Grounds open dawn to dusk. The residents enjoy visitors.</p>
+    </header>
+
+    <main class="cemetery" id="cemetery"></main>
+
+    <footer>Plots available. Inquire within&mdash; the semicolon has been shown the brochure.</footer>
+
+    <div class="hint" id="hint">click a headstone &mdash; every resident has a story</div>
+
+    <div class="overlay" id="overlay">
+        <div class="plaque" role="dialog" aria-modal="true" id="plaque"></div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var INK = '#201a17';
+        var FLOWER_COLORS = ['#f0563e', '#ff7fa5', '#f7c948', '#a98fd0', '#5aa0db', '#f47b28'];
+        var STORE_KEY = 'punctuation-cemetery-v1';
+
+        /* ---------- hand-drawn glyphs (viewBox 0 0 100 150) ---------- */
+        function circ(cx, cy, r) {
+            return 'M' + (cx - r) + ' ' + cy +
+                ' a' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0' +
+                ' a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0 z';
+        }
+
+        var GLYPHS = {
+            'exclamation-comma': [
+                { d: 'M50 14 L50 82', w: 14 },
+                { d: circ(50, 110, 12), fill: 1 },
+                { d: 'M58 119 C56 132 49 140 39 145', w: 9 }
+            ],
+            'question-comma': [
+                { d: 'M30 38 C30 12 70 12 70 38 C70 56 52 56 50 73', w: 13 },
+                { d: circ(50, 110, 12), fill: 1 },
+                { d: 'M58 119 C56 132 49 140 39 145', w: 9 }
+            ],
+            'interrobang': [
+                { d: 'M30 36 C30 12 70 12 70 36 C70 54 52 54 50 70', w: 13 },
+                { d: 'M50 18 L50 88', w: 13 },
+                { d: circ(50, 118, 11), fill: 1 }
+            ],
+            'percontation': [
+                { d: 'M70 38 C70 12 30 12 30 38 C30 56 48 56 50 73', w: 13 },
+                { d: circ(50, 113, 11), fill: 1 }
+            ],
+            'hedera': [
+                { d: 'M50 34 C42 16 16 18 16 40 C16 60 38 66 50 86 C62 66 84 60 84 40 C84 18 58 16 50 34 z', fill: 1 },
+                { d: 'M50 86 C50 104 66 108 61 128', w: 8 }
+            ],
+            'pilcrow': [
+                { d: 'M58 16 C26 16 26 76 58 76 L58 16 z', fill: 1 },
+                { d: 'M58 16 L58 132', w: 11 },
+                { d: 'M80 16 L80 132', w: 11 },
+                { d: 'M54 16 L92 16', w: 11 }
+            ],
+            'capitulum': [
+                { d: 'M76 40 A34 36 0 1 0 76 96', w: 13 },
+                { d: 'M58 12 L58 136', w: 9 }
+            ],
+            'manicule': [
+                { d: 'M8 56 L26 56 L26 100 L8 100 z', fill: 1 },
+                { d: 'M26 56 L62 56 C76 56 76 100 62 100 L26 100 z', fill: 1 },
+                { d: 'M58 66 L91 66', w: 16 },
+                { d: 'M56 56 C60 44 71 44 73 53', w: 9 },
+                { d: 'M62 82 L72 82', w: 5 },
+                { d: 'M62 91 L72 91', w: 5 }
+            ],
+            'tironian-et': [
+                { d: 'M24 36 L78 36', w: 13 },
+                { d: 'M54 36 C58 68 46 96 38 122', w: 13 }
+            ],
+            'asterism': [
+                { d: 'M50 26 L50 62', w: 8 }, { d: 'M34 35 L66 53', w: 8 }, { d: 'M66 35 L34 53', w: 8 },
+                { d: 'M28 82 L28 118', w: 8 }, { d: 'M12 91 L44 109', w: 8 }, { d: 'M44 91 L12 109', w: 8 },
+                { d: 'M72 82 L72 118', w: 8 }, { d: 'M56 91 L88 109', w: 8 }, { d: 'M88 91 L56 109', w: 8 }
+            ],
+            'diple': [
+                { d: 'M32 32 L74 74 L32 116', w: 13 }
+            ],
+            'snark': [
+                { d: circ(27, 116, 10), fill: 1 },
+                { d: 'M44 110 C53 93 63 123 78 104', w: 10 }
+            ]
+        };
+
+        function glyphSVG(slug, cls) {
+            var parts = GLYPHS[slug];
+            var out = '<svg class="' + (cls || '') + '" viewBox="0 0 100 150" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">';
+            for (var i = 0; i < parts.length; i++) {
+                var p = parts[i];
+                if (p.fill) {
+                    out += '<path d="' + p.d + '" fill="currentColor" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>';
+                } else {
+                    out += '<path d="' + p.d + '" fill="none" stroke="' + INK + '" stroke-width="' + (p.w + 7) + '" stroke-linecap="round" stroke-linejoin="round"/>';
+                    out += '<path d="' + p.d + '" fill="none" stroke="currentColor" stroke-width="' + p.w + '" stroke-linecap="round" stroke-linejoin="round"/>';
+                }
+            }
+            return out + '</svg>';
+        }
+
+        /* ---------- the residents ---------- */
+        var GRAVES = [
+            {
+                slug: 'exclamation-comma', name: 'Exclamation Comma', alias: 'the Enthusiast',
+                yrs: '1992 – 1995',
+                born: '1992, the United States Patent Office.',
+                died: '1995.',
+                cause: 'Patent maintenance fees, unpaid.',
+                lastSeen: 'Expiring quietly in a filing cabinet in Virginia.',
+                sample: 'It’s a boy¤ and he has your nose.',
+                epitaph: 'It couldn’t wait for the end of the sentence.'
+            },
+            {
+                slug: 'question-comma', name: 'Question Comma', alias: 'the Doubter',
+                yrs: '1992 – 1995',
+                born: '1992, same patent as its twin. See adjacent plot.',
+                died: '1995. Also see adjacent plot.',
+                cause: 'Whatever took its twin took it too. The Bureau is not investigating.',
+                lastSeen: 'Same filing cabinet. Different drawer.',
+                sample: 'You’re sure¤ because the map disagrees.',
+                epitaph: 'Are we there yet.'
+            },
+            {
+                slug: 'interrobang', name: 'Interrobang', alias: 'the Gasp',
+                yrs: '1962 –', status: 'ENDANGERED', ribbon: '#f0563e',
+                born: '1962, a Manhattan advertising agency. Its father was in the business of shouting questions.',
+                died: 'Plot purchased in advance. Occupant declines to use it.',
+                cause: 'Fashion, sometime in the 1970s. Condition stabilized.',
+                lastSeen: 'On life support in Unicode, bed U+203D. Visitors welcome.',
+                sample: 'They rescheduled the wedding again¤',
+                epitaph: 'Not dead. Just resting. LOUDLY.'
+            },
+            {
+                slug: 'percontation', name: 'Percontation Point', alias: 'the Rhetorical',
+                yrs: '1580s – 1600s',
+                born: 'The 1580s, in Henry Denham’s print shop, London. A question mark, printed backwards, for questions that expect no answer.',
+                died: 'Around the 1600s. Briefly revived in 1899 as the “irony point.” Died again immediately.',
+                cause: 'Readers could not tell when it was being serious. That was the entire job.',
+                lastSeen: 'Backwards, which is how it preferred to be seen.',
+                sample: 'Oh, what a brilliant plan¤',
+                epitaph: 'As if anyone was really asking.'
+            },
+            {
+                slug: 'hedera', name: 'Hedera', alias: 'the Ivy Leaf',
+                yrs: '100 BC – 1400s',
+                born: 'Around 100 BC, carved into Greek and Latin stone to keep one thought off the next.',
+                died: 'The late Middle Ages, of obsolescence.',
+                cause: 'Lost its job to a blank line.',
+                lastSeen: 'Doing ornamental work at the ends of fancy chapters. It did not discuss the demotion.',
+                sample: 'The end of one thought ¤ the beginning of another.',
+                epitaph: 'The prettiest mark that ever held a job.'
+            },
+            {
+                slug: 'pilcrow', name: 'Pilcrow', alias: 'the Paragraph Mark',
+                yrs: '1200s –', status: 'IN HIDING', ribbon: '#5aa0db',
+                born: 'The 1200s, from the letter C, for capitulum. A working mark from a working family.',
+                died: 'Whereabouts known. The Cemetery maintains the plot out of respect.',
+                cause: 'Missed a deadline. Printers left blank spaces for the rubricator to paint it in, red and beautiful. The rubricator never came. The blank space got the job — you know it as the indent.',
+                lastSeen: 'Inside every word processor, behind the button you were warned about.',
+                sample: '¤ A new paragraph begins. You never saw it happen.',
+                epitaph: 'Behind every paragraph, still.'
+            },
+            {
+                slug: 'capitulum', name: 'Capitulum', alias: 'the Ancestor',
+                yrs: 'Rome – 1300s',
+                born: 'Ancient Rome. A plain C, for capitulum — “little head,” the start of a chapter.',
+                died: 'The Middle Ages, gradually, of natural causes.',
+                cause: 'Old age. It grew a second stroke, then a second stem, and one morning it was somebody else.',
+                lastSeen: 'Slowly turning into its own son.',
+                sample: '¤ Chapter the First, in which nothing survives.',
+                epitaph: 'Survived by its son, the Pilcrow.'
+            },
+            {
+                slug: 'manicule', name: 'Manicule', alias: 'the Pointer',
+                yrs: '1100s – 1800s',
+                born: 'The 1100s, in the margins of manuscripts, drawn by readers who needed you to see this part specifically.',
+                died: 'The 1800s, professionally. It kept freelancing.',
+                cause: 'The highlighter.',
+                lastSeen: 'Circus posters, WANTED signs, and one very old envelope marked RETURN TO SENDER.',
+                sample: '¤ pay particular attention to this part.',
+                epitaph: 'It only ever wanted you to look.'
+            },
+            {
+                slug: 'tironian-et', name: 'Tironian Et', alias: 'the Other And',
+                yrs: '63 BC –', status: 'IN IRELAND', ribbon: '#b7ce3c',
+                born: '63 BC. Invented by Tiro, Cicero’s secretary, who took dictation faster than anyone alive and needed “and” to take less time.',
+                died: 'The plot is maintained. The occupant is on holiday. The holiday has lasted several centuries.',
+                cause: 'Outcompeted nearly everywhere by a flashier rival, the ampersand.',
+                lastSeen: 'On road signs across Ireland, meaning agus. Alive. Sends postcards.',
+                sample: 'tea ¤ biscuits',
+                epitaph: 'Two thousand years of meaning “and.”',
+            },
+            {
+                slug: 'asterism', name: 'Asterism', alias: 'the Constellation',
+                yrs: '1700s – 1900s',
+                born: 'The 1700s. Three asterisks in formation, announcing a break between sections with appropriate ceremony.',
+                died: 'The early 1900s, of budget cuts.',
+                cause: 'Replaced by three asterisks in a trench coat.',
+                lastSeen: 'Announcing a section break that nobody read.',
+                sample: '¤ (three hours later)',
+                epitaph: '* * * is not the same, and never will be.'
+            },
+            {
+                slug: 'diple', name: 'Diple', alias: 'the Margin Arrow',
+                yrs: 'Greece –', status: 'REBORN', ribbon: '#a98fd0',
+                born: 'Ancient Greece, in the margins of Homer, pointing at lines worth a second look.',
+                died: 'Technically never. The Cemetery’s lawyers have asked us to say “transcended.”',
+                cause: 'Reincarnation. It became the quotation mark. Then it became the angle bracket. Then it became the email reply.',
+                lastSeen: 'At the start of the line you’re ignoring in every reply-all.',
+                sample: '¤ as I said in my previous email',
+                epitaph: 'It always did repeat other people.'
+            },
+            {
+                slug: 'snark', name: 'Snark Mark', alias: 'the Sarcasm Mark',
+                yrs: '2006 – pending', status: 'PENDING', ribbon: '#f7c948',
+                born: 'Proposed around 2006: a period, then a tilde, for sentences that mean the opposite of themselves.',
+                died: 'Pending. Cause pending. Everything pending.',
+                cause: 'Proposed. Seconded by no one.',
+                lastSeen: 'In a forum thread, arguing for its own existence.',
+                sample: 'No, really, I loved the meeting¤',
+                epitaph: 'Sure. Great mark. Really useful.'
+            }
+        ];
+
+        /* ---------- storage ---------- */
+        var state = { t: 0, g: {} };
+        try {
+            var raw = localStorage.getItem(STORE_KEY);
+            if (raw) { var parsed = JSON.parse(raw); if (parsed && parsed.g) state = parsed; }
+        } catch (e) { /* the cemetery keeps paper records too */ }
+
+        function save() {
+            try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { }
+        }
+
+        /* ---------- deterministic flower placement ---------- */
+        function hashStr(s) {
+            var h = 2166136261;
+            for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+            return h >>> 0;
+        }
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = (a + 0x6D2B79F5) | 0;
+                var t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function flowerSVG(color, rot) {
+            var petals = '';
+            for (var i = 0; i < 5; i++) {
+                var a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+                petals += '<circle cx="' + (20 + Math.cos(a) * 7.5).toFixed(1) + '" cy="' + (11 + Math.sin(a) * 7.5).toFixed(1) +
+                    '" r="5.5" fill="' + color + '" stroke="' + INK + '" stroke-width="2"/>';
+            }
+            return '<svg viewBox="0 0 40 44" style="--rot:' + rot + 'deg; transform: rotate(' + rot + 'deg)">' +
+                '<path d="M20 18 L20 40" stroke="' + INK + '" stroke-width="5" stroke-linecap="round"/>' +
+                '<path d="M20 18 L20 40" stroke="#b7ce3c" stroke-width="2.5" stroke-linecap="round"/>' +
+                petals +
+                '<circle cx="20" cy="11" r="4" fill="#f7c948" stroke="' + INK + '" stroke-width="2"/>' +
+                '</svg>';
+        }
+
+        var MAX_FLOWERS = 7;
+
+        function renderFlowers(grave) {
+            var slug = grave.getAttribute('data-slug');
+            var n = state.g[slug] || 0;
+            var box = grave.querySelector('.flowers');
+            var rand = mulberry32(hashStr(slug));
+            var html = '';
+            var shown = Math.min(n, MAX_FLOWERS);
+            for (var i = 0; i < shown; i++) {
+                var left = 6 + rand() * 76;
+                var rot = (rand() * 30 - 15).toFixed(1);
+                var color = FLOWER_COLORS[Math.floor(rand() * FLOWER_COLORS.length)];
+                html += '<span style="position:absolute; left:' + left.toFixed(1) + '%; bottom:0; height:26px; display:inline-block">' +
+                    flowerSVG(color, rot) + '</span>';
+            }
+            box.innerHTML = html;
+            var extra = grave.querySelector('.flower-extra');
+            if (n > MAX_FLOWERS) {
+                if (!extra) {
+                    extra = document.createElement('span');
+                    extra.className = 'flower-extra';
+                    grave.querySelector('.mound').appendChild(extra);
+                }
+                extra.textContent = '×' + n;
+            } else if (extra) {
+                extra.remove();
+            }
+        }
+
+        /* ---------- build the cemetery ---------- */
+        var cemetery = document.getElementById('cemetery');
+        var frag = '';
+        GRAVES.forEach(function (g) {
+            frag += '<button class="grave" data-slug="' + g.slug + '" aria-label="' + g.name + '">' +
+                (g.status ? '<span class="ribbon" style="background:' + g.ribbon + '">' + g.status + '</span>' : '') +
+                '<div class="stone">' + glyphSVG(g.slug, 'glyph') +
+                '<div class="g-name">' + g.name + '</div>' +
+                '<div class="g-yrs">' + g.yrs + '</div></div>' +
+                '<div class="flowers"></div>' +
+                '<div class="mound"></div>' +
+                '</button>';
+        });
+        cemetery.innerHTML = frag;
+
+        var graveEls = {};
+        Array.prototype.forEach.call(cemetery.children, function (el) {
+            graveEls[el.getAttribute('data-slug')] = el;
+            renderFlowers(el);
+        });
+
+        var totalEl = document.getElementById('totalRespects');
+        totalEl.textContent = state.t;
+
+        /* ---------- plaque ---------- */
+        var overlay = document.getElementById('overlay');
+        var plaque = document.getElementById('plaque');
+        var current = null;
+
+        function inlineSample(g) {
+            var svg = glyphSVG(g.slug, '');
+            return g.sample.split('¤').join(svg);
+        }
+
+        function openPlaque(slug) {
+            var g = null;
+            for (var i = 0; i < GRAVES.length; i++) if (GRAVES[i].slug === slug) g = GRAVES[i];
+            if (!g) return;
+            current = g;
+            var n = state.g[slug] || 0;
+            plaque.innerHTML =
+                '<button class="plaque-close" aria-label="Close">✕</button>' +
+                '<div class="plaque-glyph">' + glyphSVG(slug, '') + '</div>' +
+                '<h2>' + g.name + '</h2>' +
+                '<p class="alias">“' + g.alias + '”</p>' +
+                '<div class="field"><span class="label">Born</span><span class="value">' + g.born + '</span></div>' +
+                '<div class="field"><span class="label">Died</span><span class="value">' + g.died + '</span></div>' +
+                '<div class="field"><span class="label">Cause of death</span><span class="value">' + g.cause + '</span></div>' +
+                '<div class="field"><span class="label">Last seen</span><span class="value">' + g.lastSeen + '</span></div>' +
+                '<div class="sample"><span class="label">In service</span>' + inlineSample(g) + '</div>' +
+                '<p class="epitaph">“' + g.epitaph + '”</p>' +
+                '<button class="pay-btn">Leave a flower</button>' +
+                '<p class="grave-count">flowers left here: <span class="gc">' + n + '</span></p>';
+            overlay.classList.add('open');
+            plaque.querySelector('.plaque-close').addEventListener('click', closePlaque);
+            plaque.querySelector('.pay-btn').addEventListener('click', payRespects);
+        }
+
+        function closePlaque() {
+            overlay.classList.remove('open');
+            current = null;
+        }
+
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) closePlaque(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && overlay.classList.contains('open')) closePlaque(); });
+
+        cemetery.addEventListener('click', function (e) {
+            var btn = e.target.closest('.grave');
+            if (btn) openPlaque(btn.getAttribute('data-slug'));
+        });
+
+        /* ---------- respects ---------- */
+        function payRespects() {
+            if (!current) return;
+            var slug = current.slug;
+            state.g[slug] = (state.g[slug] || 0) + 1;
+            state.t += 1;
+            save();
+            totalEl.textContent = state.t;
+            var gc = plaque.querySelector('.gc');
+            if (gc) gc.textContent = state.g[slug];
+            var grave = graveEls[slug];
+            renderFlowers(grave);
+            var fresh = grave.querySelectorAll('.flowers svg');
+            if (fresh.length) fresh[fresh.length - 1].classList.add('pop');
+            spawnGhost(slug, grave);
+            if (Math.random() < 0.03) resurrect(slug);
+        }
+
+        function spawnGhost(slug, grave) {
+            var rect = grave.getBoundingClientRect();
+            var el = document.createElement('div');
+            el.className = 'ghost';
+            el.style.left = (rect.left + rect.width / 2) + 'px';
+            el.style.top = (rect.top - 10) + 'px';
+            el.innerHTML = glyphSVG(slug, '');
+            document.body.appendChild(el);
+            setTimeout(function () { el.remove(); }, 4400);
+        }
+
+        /* not documented anywhere. as it should be. */
+        function resurrect(slug) {
+            var el = document.createElement('div');
+            el.className = 'rise-overlay';
+            el.innerHTML = glyphSVG(slug, '') + '<div class="rise-stamp">It lives</div>';
+            document.body.appendChild(el);
+            document.body.classList.add('shaking');
+            setTimeout(function () { document.body.classList.remove('shaking'); }, 300);
+            setTimeout(function () { el.classList.add('fading'); }, 1700);
+            setTimeout(function () { el.remove(); }, 2700);
+        }
+
+        /* ---------- hint ---------- */
+        var hint = document.getElementById('hint');
+        var hintTimer = setTimeout(function () { hint.classList.add('gone'); }, 10000);
+        document.addEventListener('pointerdown', function once() {
+            clearTimeout(hintTimer);
+            hint.classList.add('gone');
+            document.removeEventListener('pointerdown', once);
+        });
+    })();
+    </script>
+</body>
+</html>
