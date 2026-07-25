@@ -183,6 +183,30 @@ test('injectOgBlock falls back to after </title> when no description meta', () =
   assert.ok(out.indexOf('rsotw:og:end') < out.indexOf('</head>'), 'block stays inside <head>');
 });
 
+test('ensureGlobalJs inserts the global.js tag after <head> when missing', () => {
+  const { ensureGlobalJs } = require('../scripts/build.js');
+  const noJs = '<!DOCTYPE html>\n<html>\n<head>\n    <title>X</title>\n</head>\n<body></body>\n</html>';
+  const out = ensureGlobalJs(noJs);
+  assert.match(out, /globals\/global\.js/);
+  assert.ok(out.indexOf('<head>') < out.indexOf('global.js'), 'inserted inside head');
+  assert.ok(out.indexOf('global.js') < out.indexOf('<title>'), 'inserted right after <head>');
+});
+
+test('ensureGlobalJs is a no-op when global.js is already present', () => {
+  const { ensureGlobalJs } = require('../scripts/build.js');
+  const withJs = '<head>\n    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>\n    <title>X</title>\n</head>';
+  assert.equal(ensureGlobalJs(withJs), withJs);
+  // even if referenced with a different attribute order / path form
+  const alt = '<head><script src="/globals/global.js"></script></head>';
+  assert.equal(ensureGlobalJs(alt), alt);
+});
+
+test('ensureGlobalJs leaves HTML untouched when there is no <head>', () => {
+  const { ensureGlobalJs } = require('../scripts/build.js');
+  const frag = '<div>no head here</div>';
+  assert.equal(ensureGlobalJs(frag), frag);
+});
+
 test('generateSitemap lists the home page and every visible toy, clean URLs', () => {
   const { generateSitemap } = require('../scripts/build.js');
   const xml = generateSitemap(CATALOG);

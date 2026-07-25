@@ -82,6 +82,20 @@ function ogMetaBlock(site) {
   return lines.join('\n    ');
 }
 
+const GLOBAL_JS_TAG =
+  '<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>';
+
+// Ensure a toy loads global.js (play counter, share/shuffle control, analytics).
+// Idempotent: no-op if already present; otherwise inserts right after <head>.
+function ensureGlobalJs(html) {
+  if (/globals\/global\.js/.test(html)) return html;
+  const headRe = /<head[^>]*>/i;
+  if (headRe.test(html)) {
+    return html.replace(headRe, (m) => `${m}\n    ${GLOBAL_JS_TAG}`);
+  }
+  return html;
+}
+
 // Idempotently insert/replace the managed OG block in a toy's HTML <head>.
 // Replaces an existing block if present; otherwise inserts after the description
 // meta, falling back to just after </title>. Returns the HTML unchanged if it
@@ -192,27 +206,33 @@ function generateHtml(template, catalog) {
   return out;
 }
 
-// Rewrite the managed OG block into every visible toy's index.html. Skips toys
-// whose file is missing (warns) and reports how many were updated.
-function injectOgIntoToys(catalog) {
-  let updated = 0;
+// Per-toy build pass: guarantee global.js on every toy (play counter, share
+// control, analytics) and rewrite the managed OG block on visible toys.
+// Idempotent; skips (and warns about) visible toys whose file is missing.
+function processToys(catalog) {
+  let ogUpdated = 0;
+  let jsAdded = 0;
   let missing = 0;
   for (const site of catalog.sites) {
-    if (!site.visible) continue;
     const file = path.join(ROOT, 'sites', site.slug, 'index.html');
     if (!fs.existsSync(file)) {
-      console.warn(`WARN: no index.html for visible toy "${site.slug}" — skipped OG`);
-      missing += 1;
+      if (site.visible) {
+        console.warn(`WARN: no index.html for visible toy "${site.slug}" — skipped`);
+        missing += 1;
+      }
       continue;
     }
     const html = fs.readFileSync(file, 'utf8');
-    const next = injectOgBlock(html, site);
-    if (next !== html) {
-      fs.writeFileSync(file, next);
-      updated += 1;
+    let next = ensureGlobalJs(html);
+    if (next !== html) jsAdded += 1;
+    if (site.visible) {
+      const withOg = injectOgBlock(next, site);
+      if (withOg !== next) ogUpdated += 1;
+      next = withOg;
     }
+    if (next !== html) fs.writeFileSync(file, next);
   }
-  return { updated, missing };
+  return { ogUpdated, jsAdded, missing };
 }
 
 function build() {
@@ -224,7 +244,7 @@ function build() {
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), generateSitemap(catalog));
   fs.writeFileSync(path.join(ROOT, 'robots.txt'), generateRobots());
 
-  const og = injectOgIntoToys(catalog);
+  const toys = processToys(catalog);
   const { generateOgImages } = require('./og-image');
   const img = generateOgImages(catalog, { outDir: path.join(ROOT, 'og') });
 
@@ -232,13 +252,13 @@ function build() {
   const pool = catalog.sites.filter((s) => s.random).length;
   console.log(`index.html built: ${visible} visible / ${catalog.sites.length} total sites, ${pool} in random pool`);
   console.log(`sitemap.xml + robots.txt written (${visible + 1} urls)`);
-  console.log(`OG meta injected into ${og.updated} toy page(s)${og.missing ? `, ${og.missing} missing` : ''}`);
+  console.log(`global.js added to ${toys.jsAdded} toy page(s); OG meta into ${toys.ogUpdated}${toys.missing ? `, ${toys.missing} missing` : ''}`);
   console.log(`OG images written: ${img.count} card(s) -> ${path.relative(ROOT, img.outDir)}/`);
 }
 
 module.exports = {
   escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, generateHtml,
-  injectOgBlock, ogMetaBlock, toyUrl, ogImageUrl,
+  injectOgBlock, ogMetaBlock, ensureGlobalJs, toyUrl, ogImageUrl,
   generateSitemap, generateRobots, renderJsonLd,
 };
 
