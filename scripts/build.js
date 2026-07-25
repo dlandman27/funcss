@@ -103,6 +103,44 @@ function injectOgBlock(html, site) {
   return html;
 }
 
+// sitemap.xml for all visible toys + the home page, using clean canonical URLs.
+function generateSitemap(catalog) {
+  const visible = catalog.sites.filter((s) => s.visible);
+  const dates = visible.map((s) => s.created).filter(Boolean).sort();
+  const homeLast = dates[dates.length - 1] || '';
+  const entries = [{ loc: `${SITE_ORIGIN}/`, lastmod: homeLast }];
+  for (const s of visible) entries.push({ loc: toyUrl(s.slug), lastmod: s.created });
+  const body = entries.map((e) => {
+    const last = e.lastmod ? `\n    <lastmod>${e.lastmod}</lastmod>` : '';
+    return `  <url>\n    <loc>${e.loc}</loc>${last}\n  </url>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n`
+    + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+}
+
+function generateRobots() {
+  return `User-agent: *\nAllow: /\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`;
+}
+
+// schema.org CollectionPage + ItemList for the home page (SEO / rich results).
+// Returns a full <script type="application/ld+json"> block; "<" is escaped so
+// the JSON can't break out of the script element.
+function renderJsonLd(catalog) {
+  const items = catalog.sites.filter((s) => s.visible).map((s, i) => ({
+    '@type': 'ListItem', position: i + 1, url: toyUrl(s.slug), name: s.name,
+  }));
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Random Sites on the Web',
+    url: `${SITE_ORIGIN}/`,
+    description: 'A curated collection of tiny interactive websites, games, and toys.',
+    mainEntity: { '@type': 'ItemList', numberOfItems: items.length, itemListElement: items },
+  };
+  const json = JSON.stringify(data, null, 2).replace(/</g, '\\u003c');
+  return `<script type="application/ld+json">\n${json}\n</script>`;
+}
+
 function renderCard(site, sectionTitle) {
   return [
     `                <div class="site-card" data-categories="${site.section}" data-created="${site.created}">`,
@@ -144,9 +182,14 @@ function generateHtml(template, catalog) {
     if (!template.includes(ph)) throw new Error(`template missing placeholder ${ph}`);
   }
   // Function replacers so "$&"-style patterns in content are inert.
-  return template
+  let out = template
     .replace('{{SECTIONS}}', () => renderSections(catalog))
     .replace('{{FOLDERS}}', () => renderFolders(catalog));
+  // JSON-LD is optional so minimal test templates need not include it.
+  if (out.includes('{{JSONLD}}')) {
+    out = out.replace('{{JSONLD}}', () => renderJsonLd(catalog));
+  }
+  return out;
 }
 
 // Rewrite the managed OG block into every visible toy's index.html. Skips toys
@@ -178,6 +221,9 @@ function build() {
   const html = generateHtml(template, catalog); // validates catalog
   fs.writeFileSync(path.join(ROOT, 'index.html'), html);
 
+  fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), generateSitemap(catalog));
+  fs.writeFileSync(path.join(ROOT, 'robots.txt'), generateRobots());
+
   const og = injectOgIntoToys(catalog);
   const { generateOgImages } = require('./og-image');
   const img = generateOgImages(catalog, { outDir: path.join(ROOT, 'og') });
@@ -185,6 +231,7 @@ function build() {
   const visible = catalog.sites.filter((s) => s.visible).length;
   const pool = catalog.sites.filter((s) => s.random).length;
   console.log(`index.html built: ${visible} visible / ${catalog.sites.length} total sites, ${pool} in random pool`);
+  console.log(`sitemap.xml + robots.txt written (${visible + 1} urls)`);
   console.log(`OG meta injected into ${og.updated} toy page(s)${og.missing ? `, ${og.missing} missing` : ''}`);
   console.log(`OG images written: ${img.count} card(s) -> ${path.relative(ROOT, img.outDir)}/`);
 }
@@ -192,6 +239,7 @@ function build() {
 module.exports = {
   escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, generateHtml,
   injectOgBlock, ogMetaBlock, toyUrl, ogImageUrl,
+  generateSitemap, generateRobots, renderJsonLd,
 };
 
 if (require.main === module) build();

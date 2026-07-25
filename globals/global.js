@@ -26,6 +26,16 @@ function rsotwSlug() {
     return m ? m[1].toLowerCase() : null;
 }
 
+// Send a GA event (prod only, fail silent). Uses gtag's arguments mechanism.
+function rsotwTrack(name, params) {
+    try {
+        if (location.hostname !== 'randomsitesontheweb.com') return;
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { window.dataLayer.push(arguments); }
+        gtag('event', name, params || {});
+    } catch (e) { /* never break a site over analytics */ }
+}
+
 // Play counter: report one open per site per tab session. Prod only, fail silent.
 (function () {
     try {
@@ -102,20 +112,20 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
         };
 
         var chips = [
-            { icon: ICONS.shuffle, label: 'Random site', act: shuffle },
-            { icon: ICONS.share, label: 'Share this', act: share },
-            { icon: ICONS.coffee, label: 'Buy me a coffee', href: RSOTW_KOFI_URL },
-            { icon: ICONS.home, label: 'All sites', href: RSOTW_HOME_URL }
+            { icon: ICONS.shuffle, label: 'Random site', act: shuffle, ev: 'shuffle' },
+            { icon: ICONS.share, label: 'Share this', act: share, ev: 'share' },
+            { icon: ICONS.coffee, label: 'Buy me a coffee', href: RSOTW_KOFI_URL, ev: 'tip_click' },
+            { icon: ICONS.home, label: 'All sites', href: RSOTW_HOME_URL, ev: 'nav_home' }
         ];
 
         var html = '<style>' + css + '</style><div class="bar" role="group" aria-label="Random Sites controls">';
         for (var i = 0; i < chips.length; i++) {
             var c = chips[i];
             if (c.href) {
-                html += '<a class="chip" href="' + c.href + '" title="' + c.label + '" aria-label="' + c.label + '"'
+                html += '<a class="chip" href="' + c.href + '" title="' + c.label + '" aria-label="' + c.label + '" data-ev="' + c.ev + '"'
                     + (c.href === RSOTW_KOFI_URL ? ' target="_blank" rel="noopener"' : '') + '>' + c.icon + '</a>';
             } else {
-                html += '<button class="chip" type="button" data-act="' + i + '" title="' + c.label
+                html += '<button class="chip" type="button" data-act="' + i + '" data-ev="' + c.ev + '" title="' + c.label
                     + '" aria-label="' + c.label + '">' + c.icon + '</button>';
             }
         }
@@ -135,6 +145,17 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
         for (var b = 0; b < buttons.length; b++) {
             buttons[b].addEventListener('click', function () {
                 try { chips[Number(this.getAttribute('data-act'))].act(); } catch (e) {}
+            });
+        }
+
+        // Track every chip click (buttons + links) in GA.
+        var bar = root.querySelector('.bar');
+        if (bar) {
+            bar.addEventListener('click', function (e) {
+                var chip = e.target && e.target.closest ? e.target.closest('.chip') : null;
+                if (chip && chip.getAttribute('data-ev')) {
+                    rsotwTrack(chip.getAttribute('data-ev'), { item_id: slug });
+                }
             });
         }
 

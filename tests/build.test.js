@@ -183,6 +183,53 @@ test('injectOgBlock falls back to after </title> when no description meta', () =
   assert.ok(out.indexOf('rsotw:og:end') < out.indexOf('</head>'), 'block stays inside <head>');
 });
 
+test('generateSitemap lists the home page and every visible toy, clean URLs', () => {
+  const { generateSitemap } = require('../scripts/build.js');
+  const xml = generateSitemap(CATALOG);
+  assert.match(xml, /^<\?xml version="1.0" encoding="UTF-8"\?>/);
+  assert.match(xml, /<loc>https:\/\/randomsitesontheweb\.com\/<\/loc>/); // home
+  assert.match(xml, /<loc>https:\/\/randomsitesontheweb\.com\/prefixsuffix\/<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/randomsitesontheweb\.com\/doodle\/<\/loc>/);
+  assert.ok(!xml.includes('/hidden-one/'), 'invisible toys must be excluded');
+  assert.match(xml, /<lastmod>2025-03-09<\/lastmod>/); // toy created date used
+});
+
+test('generateRobots allows all and points at the sitemap', () => {
+  const { generateRobots } = require('../scripts/build.js');
+  const txt = generateRobots();
+  assert.match(txt, /User-agent: \*/);
+  assert.match(txt, /Allow: \//);
+  assert.match(txt, /Sitemap: https:\/\/randomsitesontheweb\.com\/sitemap\.xml/);
+});
+
+test('renderJsonLd emits a CollectionPage ItemList of visible toys, script-safe', () => {
+  const { renderJsonLd } = require('../scripts/build.js');
+  const html = renderJsonLd(CATALOG);
+  assert.match(html, /<script type="application\/ld\+json">/);
+  const json = html.replace(/^<script[^>]*>\n/, '').replace(/\n<\/script>$/, '').replace(/\\u003c/g, '<');
+  const data = JSON.parse(json);
+  assert.equal(data['@type'], 'CollectionPage');
+  assert.equal(data.mainEntity['@type'], 'ItemList');
+  assert.equal(data.mainEntity.numberOfItems, 2); // prefixsuffix + doodle, not hidden-one
+  assert.equal(data.mainEntity.itemListElement[0].url, 'https://randomsitesontheweb.com/prefixsuffix/');
+  assert.ok(!html.includes('</script>x'), 'no unescaped closing script');
+});
+
+test('renderJsonLd escapes < so it cannot break out of the script tag', () => {
+  const { renderJsonLd } = require('../scripts/build.js');
+  const c = clone(CATALOG);
+  c.sites[0].name = 'Tag <script> Bomb';
+  const html = renderJsonLd(c);
+  assert.ok(!html.includes('<script> Bomb'), 'raw < must be escaped in JSON body');
+  assert.match(html, /\\u003cscript> Bomb/); // only "<" needs escaping to prevent breakout
+});
+
+test('generateHtml injects JSON-LD when the placeholder is present', () => {
+  const out = generateHtml('{{JSONLD}} {{SECTIONS}} {{FOLDERS}}', CATALOG);
+  assert.match(out, /application\/ld\+json/);
+  assert.ok(!out.includes('{{JSONLD}}'));
+});
+
 test('generated homepage includes the play-counts fetch', () => {
   const fs = require('fs');
   const path = require('path');

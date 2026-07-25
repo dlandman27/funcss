@@ -25,6 +25,7 @@
     <meta property="twitter:image" content="https://randomsitesontheweb.com/og-image.jpg">
 
     <title>Random Sites On The Web - Discover Fun Random Websites</title>
+    {{JSONLD}}
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -1987,6 +1988,9 @@
                 localStorage.setItem(`weight_${selectedFolder}`, weights[selectedFolder].toString());
                 
                 saveSiteVisit(selectedFolder);
+                if (typeof rsotwTrack === 'function') {
+                    rsotwTrack('surprise_me', { item_id: selectedFolder.replace(/\//g, '') });
+                }
                 window.open(window.location.origin + selectedFolder, '_blank');
             } finally {
                 document.querySelector('.loading').style.display = 'none';
@@ -5704,6 +5708,9 @@
             }
 
             btn.addEventListener('click', function () {
+                if (typeof rsotwTrack === 'function') {
+                    rsotwTrack('share_collection', { method: navigator.share ? 'web_share' : 'copy' });
+                }
                 if (navigator.share) {
                     navigator.share({ title: SHARE_TITLE, url: SHARE_URL }).catch(function () {});
                 } else {
