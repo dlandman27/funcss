@@ -96,6 +96,20 @@ function ensureGlobalJs(html) {
   return html;
 }
 
+// Ensure a toy has a <meta name="description"> for search snippets. Sourced
+// from the catalog. Idempotent, and never overrides a description the toy
+// already wrote for itself — only fills the gap.
+function ensureMetaDescription(html, description) {
+  if (!description || !description.trim()) return html;
+  if (/<meta\s+name=["']description["']/i.test(html)) return html;
+  const tag = `<meta name="description" content="${escapeHtml(description.trim())}">`;
+  const titleRe = /<\/title>/i;
+  if (titleRe.test(html)) return html.replace(titleRe, (m) => `${m}\n    ${tag}`);
+  const headRe = /<head[^>]*>/i;
+  if (headRe.test(html)) return html.replace(headRe, (m) => `${m}\n    ${tag}`);
+  return html;
+}
+
 // Idempotently insert/replace the managed OG block in a toy's HTML <head>.
 // Replaces an existing block if present; otherwise inserts after the description
 // meta, falling back to just after </title>. Returns the HTML unchanged if it
@@ -212,6 +226,7 @@ function generateHtml(template, catalog) {
 function processToys(catalog) {
   let ogUpdated = 0;
   let jsAdded = 0;
+  let descAdded = 0;
   let missing = 0;
   for (const site of catalog.sites) {
     const file = path.join(ROOT, 'sites', site.slug, 'index.html');
@@ -225,6 +240,9 @@ function processToys(catalog) {
     const html = fs.readFileSync(file, 'utf8');
     let next = ensureGlobalJs(html);
     if (next !== html) jsAdded += 1;
+    const withDesc = ensureMetaDescription(next, site.description);
+    if (withDesc !== next) descAdded += 1;
+    next = withDesc;
     if (site.visible) {
       const withOg = injectOgBlock(next, site);
       if (withOg !== next) ogUpdated += 1;
@@ -232,7 +250,7 @@ function processToys(catalog) {
     }
     if (next !== html) fs.writeFileSync(file, next);
   }
-  return { ogUpdated, jsAdded, missing };
+  return { ogUpdated, jsAdded, descAdded, missing };
 }
 
 function build() {
@@ -252,13 +270,13 @@ function build() {
   const pool = catalog.sites.filter((s) => s.random).length;
   console.log(`index.html built: ${visible} visible / ${catalog.sites.length} total sites, ${pool} in random pool`);
   console.log(`sitemap.xml + robots.txt written (${visible + 1} urls)`);
-  console.log(`global.js added to ${toys.jsAdded} toy page(s); OG meta into ${toys.ogUpdated}${toys.missing ? `, ${toys.missing} missing` : ''}`);
+  console.log(`toys: +global.js ${toys.jsAdded}, +meta description ${toys.descAdded}, OG into ${toys.ogUpdated}${toys.missing ? `, ${toys.missing} missing` : ''}`);
   console.log(`OG images written: ${img.count} card(s) -> ${path.relative(ROOT, img.outDir)}/`);
 }
 
 module.exports = {
   escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, generateHtml,
-  injectOgBlock, ogMetaBlock, ensureGlobalJs, toyUrl, ogImageUrl,
+  injectOgBlock, ogMetaBlock, ensureGlobalJs, ensureMetaDescription, toyUrl, ogImageUrl,
   generateSitemap, generateRobots, renderJsonLd,
 };
 

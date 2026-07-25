@@ -207,6 +207,27 @@ test('ensureGlobalJs leaves HTML untouched when there is no <head>', () => {
   assert.equal(ensureGlobalJs(frag), frag);
 });
 
+test('ensureMetaDescription fills a missing description from the catalog', () => {
+  const { ensureMetaDescription } = require('../scripts/build.js');
+  const html = '<head>\n    <title>X</title>\n</head>';
+  const out = ensureMetaDescription(html, 'A tiny toy that does <things> & "stuff"');
+  assert.match(out, /<meta name="description" content="A tiny toy that does &lt;things&gt; &amp; &quot;stuff&quot;">/);
+  assert.ok(out.indexOf('</title>') < out.indexOf('name="description"'), 'placed after title');
+});
+
+test('ensureMetaDescription never overrides an existing description', () => {
+  const { ensureMetaDescription } = require('../scripts/build.js');
+  const html = '<head><meta name="description" content="hand written"><title>X</title></head>';
+  assert.equal(ensureMetaDescription(html, 'from catalog'), html);
+});
+
+test('ensureMetaDescription is a no-op with no catalog description', () => {
+  const { ensureMetaDescription } = require('../scripts/build.js');
+  const html = '<head><title>X</title></head>';
+  assert.equal(ensureMetaDescription(html, ''), html);
+  assert.equal(ensureMetaDescription(html, '   '), html);
+});
+
 test('generateSitemap lists the home page and every visible toy, clean URLs', () => {
   const { generateSitemap } = require('../scripts/build.js');
   const xml = generateSitemap(CATALOG);
