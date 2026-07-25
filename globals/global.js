@@ -48,8 +48,7 @@ function rsotwSlug() {
 // ── Corner control: Share · Shuffle · Home · Tip ──────────────────────────
 // Injected on every toy page (never the homepage). Fully isolated in a shadow
 // root so a toy's CSS can't touch it, and wrapped so it can never break a toy.
-// TODO(owner): set your Ko-fi handle below to enable the tip jar.
-var RSOTW_KOFI_URL = 'https://ko-fi.com/YOURHANDLE';
+var RSOTW_KOFI_URL = 'https://ko-fi.com/dylanlandmandev';
 var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
 
 (function () {
@@ -128,12 +127,6 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             buttons[b].addEventListener('click', function () {
                 try { chips[Number(this.getAttribute('data-act'))].act(); } catch (e) {}
             });
-        }
-
-        // Hide the Ko-fi chip until a real handle is configured.
-        if (RSOTW_KOFI_URL.indexOf('YOURHANDLE') !== -1) {
-            var kofi = root.querySelector('a.chip[href*="YOURHANDLE"]');
-            if (kofi) kofi.style.display = 'none';
         }
 
         function share() {
