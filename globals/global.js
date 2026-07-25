@@ -85,18 +85,27 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             + 'box-shadow:4px 4px 0 #201a17;outline:none}'
             + '.chip:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #201a17}'
             + '.chip:focus-visible{outline:3px solid #5aa0db;outline-offset:2px}'
+            + '.chip svg{width:22px;height:22px;display:block}'
             + '.toast{position:absolute;right:0;bottom:56px;white-space:nowrap;'
             + 'background:#201a17;color:#f5ecd6;font-size:14px;font-weight:700;'
             + 'padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;'
             + (reduce ? '' : 'transition:opacity .18s ease;') + '}'
             + '.toast.show{opacity:1}'
-            + '@media (max-width:520px){.chip{width:40px;height:40px;font-size:18px}}';
+            + '@media (max-width:520px){.chip{width:40px;height:40px}.chip svg{width:20px;height:20px}}';
+
+        var SVG = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"';
+        var ICONS = {
+            shuffle: '<svg ' + SVG + '><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>',
+            share: '<svg ' + SVG + '><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>',
+            coffee: '<svg ' + SVG + '><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>',
+            home: '<svg ' + SVG + '><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'
+        };
 
         var chips = [
-            { emoji: '🔀', label: 'Random site', act: shuffle },
-            { emoji: '🔗', label: 'Share this', act: share },
-            { emoji: '☕', label: 'Buy me a coffee', href: RSOTW_KOFI_URL },
-            { emoji: '🏠', label: 'All sites', href: RSOTW_HOME_URL }
+            { icon: ICONS.shuffle, label: 'Random site', act: shuffle },
+            { icon: ICONS.share, label: 'Share this', act: share },
+            { icon: ICONS.coffee, label: 'Buy me a coffee', href: RSOTW_KOFI_URL },
+            { icon: ICONS.home, label: 'All sites', href: RSOTW_HOME_URL }
         ];
 
         var html = '<style>' + css + '</style><div class="bar" role="group" aria-label="Random Sites controls">';
@@ -104,10 +113,10 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             var c = chips[i];
             if (c.href) {
                 html += '<a class="chip" href="' + c.href + '" title="' + c.label + '" aria-label="' + c.label + '"'
-                    + (c.href === RSOTW_KOFI_URL ? ' target="_blank" rel="noopener"' : '') + '>' + c.emoji + '</a>';
+                    + (c.href === RSOTW_KOFI_URL ? ' target="_blank" rel="noopener"' : '') + '>' + c.icon + '</a>';
             } else {
                 html += '<button class="chip" type="button" data-act="' + i + '" title="' + c.label
-                    + '" aria-label="' + c.label + '">' + c.emoji + '</button>';
+                    + '" aria-label="' + c.label + '">' + c.icon + '</button>';
             }
         }
         html += '</div><div class="toast" role="status" aria-live="polite"></div>';
