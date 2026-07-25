@@ -20,14 +20,34 @@
 ## Scope
 
 In scope:
-1. Per-toy + home Open Graph / Twitter meta (build-time).
-2. Dynamic branded OG card endpoint.
-3. Universal corner control (Share / Shuffle / Home) via `global.js`.
-4. Ko-fi tip jar (home footer + corner overflow).
-5. Home page "share this collection" nudge.
+1. Clean canonical URLs: `/<slug>/` served via Vercel rewrite + 301 from `/sites/<slug>/`.
+2. Per-toy + home Open Graph / Twitter meta (build-time), using the clean canonical URL.
+3. Branded OG card images, **generated statically at build time** into `/og/<slug>.png`.
+4. Universal corner control (Share / Shuffle / Home) via `global.js`.
+5. Ko-fi tip jar (home footer + corner overflow).
+6. Home page "share this collection" nudge.
+
+**Decision — clean URLs (2026-07-25):** canonical toy URL becomes
+`https://randomsitesontheweb.com/<slug>/` (trailing slash, matching the existing home-card
+hrefs). A `vercel.json` rewrite maps `/:slug` and `/:slug/` → `/sites/:slug/index.html`; a 301
+redirect maps the old `/sites/:slug(/)` → `/:slug/` so existing shared links consolidate. The
+`global.js` play counter is updated to key off either path. Surprise Me and the secret-door
+links are updated to emit clean URLs directly (no redirect hop).
+
+**Decision — static OG cards (2026-07-25):** superseded the earlier dynamic `/api/og`
+endpoint. `build.js` rasterizes an SVG card template per visible toy → `/og/<slug>.png` using
+`@resvg/resvg-js` (build-only dependency), plus `/og/home.png` for the collection. Fits the
+repo's commit-generated-output model; no edge runtime, no JSX. `og:image` points at the static
+PNG.
 
 Out of scope: display ads, premium tier, per-toy result-sharing (possible future), any
 redesign of individual toys.
+
+**Follow-up track (separate spec, after this ships):** a "How this is made / Make your own"
+page + open-sourcing/sharing the site-building skill (`new-site`/`site-style`/`refactor-site`)
+as a build-in-public growth + monetization play (open template vs. paid starter vs. tip-jar
+gated — TBD). This is the highest-leverage top-of-funnel/monetization idea and gets its own
+brainstorm; it must not block or bloat the current pass.
 
 ## Components
 

@@ -1781,6 +1781,11 @@
                 <i class="fas fa-dice"></i>
                 Surprise Me!
             </button>
+            <button class="secondary-button" id="shareBtn" title="copy a link to this collection"
+                    style="background-color: var(--sky);">
+                <i class="fas fa-share-nodes"></i>
+                <span id="shareLabel">Share this</span>
+            </button>
         </div>
 
         <div class="loading">
@@ -1838,7 +1843,7 @@
             </div>
 
             <!-- Nobody is told about the door. -->
-            <a class="secret-door" href="/sites/404/" aria-label="A small door">
+            <a class="secret-door" href="/404/" aria-label="A small door">
                 <span class="door-plaque">404</span>
                 <span class="door-frame"><span class="door-knob"></span></span>
             </a>
@@ -1867,7 +1872,7 @@
                 <button class="bbox" data-box="forbidden"><span class="bbox-tape"></span>DO NOT OPEN</button>
             </div>
             <div class="basement-note" id="basementNote" hidden></div>
-            <a class="basement-link" href="/sites/static/">the noise is coming from in here &rarr;</a>
+            <a class="basement-link" href="/static/">the noise is coming from in here &rarr;</a>
         </div>
     </section>
 
@@ -1982,7 +1987,7 @@
                 localStorage.setItem(`weight_${selectedFolder}`, weights[selectedFolder].toString());
                 
                 saveSiteVisit(selectedFolder);
-                window.open(window.location.origin + '/sites' + selectedFolder, '_blank');
+                window.open(window.location.origin + selectedFolder, '_blank');
             } finally {
                 document.querySelector('.loading').style.display = 'none';
             }
@@ -2036,7 +2041,7 @@
                 favBtn.onclick = () => toggleFavorite(site.path);
 
                 const link = document.createElement('a');
-                link.href = window.location.origin + '/sites' + site.path;
+                link.href = window.location.origin + site.path;
                 link.target = '_blank';
                 link.textContent = site.title;
 
@@ -2104,13 +2109,14 @@
             const toggleCategories = document.getElementById('toggleCategories'); // may be null
 
             // The directory cards use folder-relative links (e.g. "pi/").
-            // Now that they live on the root page, point them at /sites/.
+            // Point them at the clean canonical URL (/pi/), served via the
+            // vercel.json rewrite (and the app.js mirror locally).
             siteCards.forEach(card => {
                 const link = card.querySelector('a');
                 if (link) {
                     const href = link.getAttribute('href');
                     if (href && !href.startsWith('/') && !href.startsWith('http')) {
-                        link.setAttribute('href', '/sites/' + href);
+                        link.setAttribute('href', '/' + href);
                     }
                 }
             });
@@ -2180,7 +2186,7 @@
                 if (!grid) return;
                 grid.querySelectorAll('.site-card a').forEach(link => {
                     const folder = (link.getAttribute('href') || '')
-                        .replace('/sites/', '').replace(/\/$/, '').toLowerCase();
+                        .replace(/^\/?(?:sites\/)?/, '').replace(/\/$/, '').toLowerCase();
                     const emoji = FOLDER_EMOJI[folder] || meta.emoji;
                     const thumb = document.createElement('div');
                     thumb.className = 'thumb';
@@ -2214,7 +2220,7 @@
             const cardSlug = (card) => {
                 const link = card.querySelector('a');
                 return link
-                    ? (link.getAttribute('href') || '').replace('/sites/', '').replace(/\/$/, '').toLowerCase()
+                    ? (link.getAttribute('href') || '').replace(/^\/?(?:sites\/)?/, '').replace(/\/$/, '').toLowerCase()
                     : '';
             };
 
@@ -2276,7 +2282,7 @@
 
                     document.querySelectorAll('.site-card a').forEach(link => {
                         const slug = (link.getAttribute('href') || '')
-                            .replace('/sites/', '').replace(/\/$/, '').toLowerCase();
+                            .replace(/^\/?(?:sites\/)?/, '').replace(/\/$/, '').toLowerCase();
                         const n = countsBySlug[slug];
                         if (!n || n < 5) return; // hide sparse counts
                         const el = document.createElement('div');
@@ -5648,6 +5654,61 @@
                         }
                     }
                 });
+            });
+        })();
+    </script>
+
+    <!-- Share-this-collection button (hero) -->
+    <script>
+        (function () {
+            var btn = document.getElementById('shareBtn');
+            var label = document.getElementById('shareLabel');
+            if (!btn) return;
+            var SHARE_URL = 'https://randomsitesontheweb.com';
+            var SHARE_TITLE = 'Random Sites on the Web';
+            var reverting;
+
+            function flash(text) {
+                if (!label) return;
+                if (!btn.dataset.original) btn.dataset.original = label.textContent;
+                label.textContent = text;
+                clearTimeout(reverting);
+                reverting = setTimeout(function () {
+                    label.textContent = btn.dataset.original;
+                }, 1800);
+            }
+
+            function copyLink() {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(SHARE_URL).then(function () {
+                        flash('Copied! ✓');
+                    }).catch(fallback);
+                } else {
+                    fallback();
+                }
+            }
+            function fallback() {
+                try {
+                    var ta = document.createElement('textarea');
+                    ta.value = SHARE_URL;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.focus(); ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    flash('Copied! ✓');
+                } catch (e) {
+                    flash('Copy failed');
+                }
+            }
+
+            btn.addEventListener('click', function () {
+                if (navigator.share) {
+                    navigator.share({ title: SHARE_TITLE, url: SHARE_URL }).catch(function () {});
+                } else {
+                    copyLink();
+                }
             });
         })();
     </script>

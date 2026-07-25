@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, generateHtml,
+  injectOgBlock,
 } = require('../scripts/build.js');
 
 const CATALOG = {
@@ -115,6 +116,71 @@ test('generateHtml is safe when content contains $& replacement patterns', () =>
   c.sites[0].description = 'costs $& and $1 dollars';
   const out = generateHtml('{{SECTIONS}} {{FOLDERS}}', c);
   assert.ok(out.includes('costs $&amp; and $1 dollars'));
+});
+
+const TOY_HEAD = [
+  '<!DOCTYPE html>',
+  '<html lang="en">',
+  '<head>',
+  '    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>',
+  '    <title>The Cursor Petting Zoo</title>',
+  '    <meta name="description" content="Every CSS cursor in its own enclosure.">',
+  '</head>',
+  '<body></body>',
+  '</html>',
+].join('\n');
+
+const OG_SITE = {
+  slug: 'cursors',
+  name: 'The Cursor "Petting" Zoo',
+  description: 'Every CSS cursor in its own enclosure — pet them & adopt.',
+  section: 'educational', visible: true, random: true, icon: null, created: '2025-01-05',
+};
+
+test('injectOgBlock inserts a managed block with the right tags', () => {
+  const out = injectOgBlock(TOY_HEAD, OG_SITE);
+  assert.match(out, /<!-- rsotw:og:start -->/);
+  assert.match(out, /<!-- rsotw:og:end -->/);
+  assert.match(out, /<meta property="og:type" content="website">/);
+  assert.match(out, /<meta property="og:url" content="https:\/\/randomsitesontheweb\.com\/cursors\/">/);
+  assert.match(out, /<meta property="og:image" content="https:\/\/randomsitesontheweb\.com\/og\/cursors\.png">/);
+  assert.match(out, /<meta name="twitter:card" content="summary_large_image">/);
+  assert.match(out, /<meta name="twitter:image" content="https:\/\/randomsitesontheweb\.com\/og\/cursors\.png">/);
+});
+
+test('injectOgBlock escapes name and description in attributes', () => {
+  const out = injectOgBlock(TOY_HEAD, OG_SITE);
+  assert.match(out, /<meta property="og:title" content="The Cursor &quot;Petting&quot; Zoo">/);
+  assert.match(out, /content="Every CSS cursor in its own enclosure — pet them &amp; adopt\.">/);
+  assert.ok(!out.includes('"Petting"'), 'raw double-quotes must not leak into an attribute');
+});
+
+test('injectOgBlock inserts right after the description meta', () => {
+  const out = injectOgBlock(TOY_HEAD, OG_SITE);
+  assert.ok(
+    out.indexOf('name="description"') < out.indexOf('rsotw:og:start'),
+    'block should follow the description meta',
+  );
+  assert.ok(out.indexOf('rsotw:og:end') < out.indexOf('</head>'), 'block stays inside <head>');
+});
+
+test('injectOgBlock is idempotent and replaces a stale block', () => {
+  const once = injectOgBlock(TOY_HEAD, OG_SITE);
+  const twice = injectOgBlock(once, OG_SITE);
+  assert.equal(once, twice, 'running twice must be a no-op');
+  // A changed catalog entry replaces the block rather than appending a second one.
+  const renamed = injectOgBlock(once, { ...OG_SITE, name: 'Renamed Zoo' });
+  assert.match(renamed, /content="Renamed Zoo">/);
+  assert.equal((renamed.match(/rsotw:og:start/g) || []).length, 1, 'exactly one managed block');
+  assert.ok(!renamed.includes('The Cursor &quot;Petting&quot; Zoo'), 'old title removed');
+});
+
+test('injectOgBlock falls back to after </title> when no description meta', () => {
+  const noDesc = TOY_HEAD.replace(/^.*name="description".*\n/m, '');
+  const out = injectOgBlock(noDesc, OG_SITE);
+  assert.match(out, /rsotw:og:start/);
+  assert.ok(out.indexOf('</title>') < out.indexOf('rsotw:og:start'), 'block should follow the title');
+  assert.ok(out.indexOf('rsotw:og:end') < out.indexOf('</head>'), 'block stays inside <head>');
 });
 
 test('generated homepage includes the play-counts fetch', () => {
