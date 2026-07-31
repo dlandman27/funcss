@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simon</title>
+<meta name="description" content="Watch the pattern, then repeat it. Each round adds one more light. How long can you keep the sequence in your head? The color-and-sound memory classic.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/simon/">
+    <meta property="og:title" content="Simon">
+    <meta property="og:description" content="Watch the pattern, then repeat it back. Each round adds one more light and a little more speed. How long can you hold the sequence in your head?">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/simon.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Simon">
+    <meta name="twitter:description" content="Watch the pattern, then repeat it back. Each round adds one more light and a little more speed. How long can you hold the sequence in your head?">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/simon.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root{ --ink:#201a17; --paper:#f2ede2; --cream:#fff8ef;
+         --red:#f0563e; --green:#7cb342; --blue:#5aa0db; --gold:#f7c948; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;
+    background:radial-gradient(130% 100% at 50% 0%, #fbf7ee 0%, #efe8db 70%, #e6ddce 100%);
+    font-family:'Arial Black','Arial',sans-serif;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+    display:flex;align-items:center;justify-content:center;}
+
+  .stage{position:relative; width:min(88vmin,540px); aspect-ratio:1/1;}
+  .board{position:absolute; inset:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:14px;}
+  .pad{
+    border:4px solid var(--ink); border-radius:16px; cursor:pointer;
+    box-shadow:5px 5px 0 var(--ink); filter:brightness(.82) saturate(.9);
+    transition:filter .09s ease, transform .09s ease, box-shadow .09s ease;
+  }
+  .pad.tl{border-top-left-radius:80%}
+  .pad.tr{border-top-right-radius:80%}
+  .pad.bl{border-bottom-left-radius:80%}
+  .pad.br{border-bottom-right-radius:80%}
+  .pad[data-i="0"]{background:var(--red)}
+  .pad[data-i="1"]{background:var(--green)}
+  .pad[data-i="2"]{background:var(--blue)}
+  .pad[data-i="3"]{background:var(--gold)}
+  .pad.lit{filter:brightness(1.35) saturate(1.2); transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--ink);}
+  .board.live .pad:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
+
+  /* center hub */
+  .hub{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:34%; height:34%; border-radius:50%;
+    background:var(--cream); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  }
+  .hub .lvl{font-size:clamp(30px,10vw,56px); font-weight:900; color:var(--ink); line-height:1;}
+  .hub .cap{font-family:Georgia,serif; font-style:italic; font-size:clamp(10px,2.6vw,13px); color:#6f665c; margin-top:4px;}
+
+  /* start / game-over overlay */
+  .overlay{
+    position:fixed; inset:0; z-index:5; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    background:rgba(28,23,20,.5); backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    padding:16px;
+  }
+  .overlay.hidden{display:none}
+  .card{
+    background:var(--cream); border:4px solid var(--ink); border-radius:20px;
+    box-shadow:8px 8px 0 var(--ink); padding:22px 26px; transform:rotate(-1.5deg);
+    max-width:min(92vw,440px);
+  }
+  .word{font-size:clamp(30px,11vw,72px); font-weight:900; line-height:.95; letter-spacing:-.01em;
+    -webkit-text-stroke:3px var(--ink); paint-order:stroke fill; margin:0;}
+  .word b:nth-child(1){color:var(--red)} .word b:nth-child(2){color:var(--green)}
+  .word b:nth-child(3){color:var(--blue)} .word b:nth-child(4){color:var(--gold)}
+  .word b:nth-child(5){color:var(--red)}
+  .sub{font-family:Georgia,serif; font-style:italic; color:#6f665c; margin:12px 0 4px; font-size:clamp(13px,3.6vw,16px);}
+  .best{font-family:Georgia,serif; font-style:italic; color:#8a8078; font-size:13px; margin-bottom:14px;}
+  .go{
+    font-family:'Arial Black',sans-serif; font-weight:900; text-transform:uppercase; letter-spacing:.04em;
+    font-size:clamp(16px,4.6vw,20px); color:var(--ink); background:var(--gold);
+    border:3px solid var(--ink); border-radius:999px; box-shadow:4px 4px 0 var(--ink);
+    padding:12px 30px; cursor:pointer; transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .go:hover{transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink)}
+  .go:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink)}
+  @keyframes shake{0%,100%{transform:translate(0,0)}25%{transform:translate(-7px,3px)}50%{transform:translate(6px,-4px)}75%{transform:translate(-4px,4px)}}
+  .stage.shake{animation:shake .3s ease}
+  @media (prefers-reduced-motion:reduce){ .stage.shake{animation:none} }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="board" id="board">
+    <div class="pad tl" data-i="1"></div>
+    <div class="pad tr" data-i="0"></div>
+    <div class="pad bl" data-i="2"></div>
+    <div class="pad br" data-i="3"></div>
+  </div>
+  <div class="hub"><div class="lvl" id="lvl">0</div><div class="cap" id="cap">ready</div></div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h1 class="word" id="word"><b>S</b><b>I</b><b>M</b><b>O</b><b>N</b></h1>
+      <div class="sub" id="sub">watch the lights. repeat them back.</div>
+      <div class="best" id="best">&nbsp;</div>
+      <button class="go" id="go">Start</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var board=document.getElementById('board'),
+      pads=Array.prototype.slice.call(document.querySelectorAll('.pad')),
+      lvlEl=document.getElementById('lvl'), capEl=document.getElementById('cap'),
+      overlay=document.getElementById('overlay'), goBtn=document.getElementById('go'),
+      wordEl=document.getElementById('word'), subEl=document.getElementById('sub'),
+      bestEl=document.getElementById('best'), stage=document.getElementById('stage');
+
+  // pads by index (data-i), not DOM order
+  var padByI={}; pads.forEach(function(p){ padByI[+p.getAttribute('data-i')]=p; });
+
+  var FREQ=[329.63, 261.63, 392.00, 440.00]; // red, green, blue, gold
+  var seq=[], input=0, state='start', timers=[];
+  var best=0; try{ best=parseInt(localStorage.getItem('simon_best')||'0',10)||0; }catch(_){}
+
+  // ---- audio -------------------------------------------------------------
+  var actx=null;
+  function initAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(_){} }
+    if(actx && actx.state==='suspended') actx.resume(); }
+  function tone(freq,dur,type){
+    if(!actx) return;
+    var t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+    o.type=type||'triangle'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.22, t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur+0.02);
+  }
+  function buzzer(){
+    if(!actx) return;
+    var t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(70,t+0.6);
+    g.gain.setValueAtTime(0.22,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.65);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+0.7);
+  }
+
+  function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+  function T(fn,ms){ var id=setTimeout(fn,ms); timers.push(id); return id; }
+
+  // ---- flashing ----------------------------------------------------------
+  function flash(i,dur){
+    var p=padByI[i]; p.classList.add('lit'); tone(FREQ[i],dur/1000);
+    T(function(){ p.classList.remove('lit'); }, dur);
+  }
+
+  function speed(){ return Math.max(230, 620 - seq.length*26); } // gets quicker
+
+  function playback(){
+    state='showing'; board.classList.remove('live');
+    capEl.textContent='watch'; lvlEl.textContent=seq.length;
+    var d=speed(), i=0;
+    (function next(){
+      if(i>=seq.length){ T(function(){ state='input'; input=0; board.classList.add('live'); capEl.textContent='your turn'; }, 260); return; }
+      flash(seq[i], d*0.62);
+      T(function(){ i++; next(); }, d);
+    })();
+  }
+
+  function nextRound(){
+    seq.push((Math.random()*4)|0);
+    T(playback, 620);
+  }
+
+  function press(i){
+    if(state!=='input') return;
+    flash(i, 240);
+    if(i===seq[input]){
+      input++;
+      if(input===seq.length){ state='showing'; capEl.textContent='nice'; nextRound(); }
+    } else {
+      gameOver();
+    }
+  }
+
+  function gameOver(){
+    state='over'; clearTimers(); board.classList.remove('live');
+    buzzer();
+    stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake');
+    pads.forEach(function(p){ p.classList.add('lit'); });
+    setTimeout(function(){ pads.forEach(function(p){ p.classList.remove('lit'); }); }, 500);
+    var reached=Math.max(0, seq.length-1);
+    if(reached>best){ best=reached; try{localStorage.setItem('simon_best',String(best));}catch(_){} }
+    capEl.textContent='over'; lvlEl.textContent=reached;
+    wordEl.innerHTML='<b>G</b><b>A</b><b>M</b><b>E</b> <b>O</b><b>V</b><b>E</b><b>R</b>';
+    subEl.textContent = reached>=best ? 'a new record: level '+reached+'.' : 'you reached level '+reached+'.';
+    bestEl.textContent='best: level '+best;
+    goBtn.textContent='Try again';
+    setTimeout(function(){ overlay.classList.remove('hidden'); }, 700);
+  }
+
+  function startGame(){
+    initAudio();
+    overlay.classList.add('hidden');
+    clearTimers(); seq=[]; input=0; state='showing';
+    lvlEl.textContent='0'; capEl.textContent='watch';
+    nextRound();
+  }
+
+  // ---- input -------------------------------------------------------------
+  pads.forEach(function(p){
+    p.addEventListener('pointerdown', function(e){ e.preventDefault(); press(+p.getAttribute('data-i')); });
+  });
+  goBtn.addEventListener('click', startGame);
+
+  // reflect best on the first start screen
+  if(best>0) bestEl.textContent='best: level '+best;
+})();
+</script>
+</body>
+</html>
