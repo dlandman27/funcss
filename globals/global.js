@@ -96,6 +96,13 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             + '.chip:active,.item:active .chip{transform:translate(2px,2px);box-shadow:1px 1px 0 #201a17}'
             + '.fab:focus-visible,.item:focus-visible .chip{outline:3px solid #5aa0db;outline-offset:2px}'
             + '.chip svg{width:22px;height:22px;display:block}'
+            // FAB shows the RSOTW logo when closed, crossfading to an X when open.
+            + '.fab{position:relative;overflow:hidden}'
+            + '.fab .logo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;'
+            + (reduce ? '' : 'transition:opacity .18s ease;') + '}'
+            + '.fab .x{position:absolute;opacity:0;' + (reduce ? '' : 'transition:opacity .18s ease;') + '}'
+            + '.menu.open .fab .logo{opacity:0}'
+            + '.menu.open .fab .x{opacity:1}'
             // Menu options: a row of [label pill][icon chip], hidden until open.
             + '.items{display:flex;flex-direction:column;align-items:flex-end;gap:10px}'
             + '.item{display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;'
@@ -106,8 +113,6 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             // Closed state: options tucked away, faded and non-interactive.
             + '.item{opacity:0;pointer-events:none;transform:translateY(12px) scale(.9)}'
             + '.menu.open .item{opacity:1;pointer-events:auto;transform:none}'
-            + '.fab svg{' + (reduce ? '' : 'transition:transform .18s ease;') + '}'
-            + '.menu.open .fab svg{transform:rotate(45deg)}'
             + '.toast{position:absolute;right:0;bottom:56px;white-space:nowrap;'
             + 'background:#201a17;color:#f5ecd6;font-size:14px;font-weight:700;'
             + 'padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;'
@@ -120,8 +125,8 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             shuffle: '<svg ' + SVG + '><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>',
             share: '<svg ' + SVG + '><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>',
             home: '<svg ' + SVG + '><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
-            // Plus that rotates 45° into an X when the menu is open.
-            plus: '<svg ' + SVG + '><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+            // Close (X), shown on the FAB while the menu is open.
+            close: '<svg ' + SVG + '><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
         };
 
         // Order top→bottom; Shuffle sits nearest the button (primary action).
@@ -143,7 +148,9 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             }
         }
         html += '</div>'
-            + '<button class="chip fab" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">' + ICONS.plus + '</button>'
+            + '<button class="chip fab" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">'
+            + '<img class="logo" src="/apple-touch-icon.png" alt="" aria-hidden="true">'
+            + '<span class="x">' + ICONS.close + '</span></button>'
             + '</div><div class="toast" role="status" aria-live="polite"></div>';
         root.innerHTML = html;
         document.body.appendChild(host);
