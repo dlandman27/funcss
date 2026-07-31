@@ -19,133 +19,260 @@
     <meta name="twitter:description" content="HOW MANY DAYS UNTIL CHRISTMAS AHHH">
     <meta name="twitter:image" content="https://randomsitesontheweb.com/og/christmaseve.png">
     <!-- rsotw:og:end -->
-    <style>
-        body {
-            background: url('./christmas.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: white;
-            font-family: 'Arial', sans-serif;
-            min-height: 100vh;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            overflow: hidden;
-            position: relative;
-        }
+<style>
+  :root{ --ink:#201a17; --cream:#fff8ef; --paper:#f2ede2;
+         --red:#f0563e; --green:#7cb342; --gold:#f7c948; --blue:#5aa0db; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    min-height:100vh; overflow:hidden;
+    background:radial-gradient(130% 100% at 50% -10%, #223255 0%, #16233f 45%, #0c1424 100%);
+    font-family:'Arial Black','Arial',sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-user-select:none; user-select:none;
+  }
+  #snow{position:fixed; inset:0; width:100%; height:100%; display:block; z-index:0; pointer-events:none;}
 
-        .snowflake {
-            position: fixed;
-            color: #fff;
-            font-size: 1em;
-            animation: fall linear infinite;
-        }
+  /* string-lights garland */
+  .lights{
+    position:fixed; top:0; left:0; width:100%; height:54px; z-index:2;
+    display:flex; justify-content:space-around; align-items:flex-start;
+    padding:0 8px; pointer-events:none;
+    border-top:4px solid #0a0f1c;
+  }
+  .bulb{
+    width:15px; height:19px; border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+    border:2.5px solid var(--ink); margin-top:6px; position:relative;
+  }
+  .bulb::before{content:""; position:absolute; top:-7px; left:50%; transform:translateX(-50%);
+    width:4px; height:7px; background:#0a0f1c; border-radius:2px;}
+  .bulb:nth-child(odd){margin-top:16px}
+  .bulb.r{background:var(--red);  box-shadow:0 0 14px 2px rgba(240,86,62,.75)}
+  .bulb.g{background:var(--green);box-shadow:0 0 14px 2px rgba(124,179,66,.7)}
+  .bulb.y{background:var(--gold); box-shadow:0 0 14px 2px rgba(247,201,72,.8)}
+  .bulb.b{background:var(--blue); box-shadow:0 0 14px 2px rgba(90,160,219,.7)}
+  @keyframes twinkle{0%,100%{filter:brightness(1)}50%{filter:brightness(.55)}}
+  .bulb{animation:twinkle 2.4s ease-in-out infinite}
+  .bulb:nth-child(3n){animation-delay:.6s}
+  .bulb:nth-child(3n+1){animation-delay:1.2s}
 
-        @keyframes fall {
-            to {
-                transform: translateY(100vh);
-            }
-        }
+  /* the sticker card */
+  .card{
+    position:relative; z-index:3;
+    background:var(--cream); border:4px solid var(--ink); border-radius:20px;
+    box-shadow:9px 9px 0 var(--ink);
+    padding:26px 26px 22px; margin:20px; max-width:min(560px, calc(100vw - 32px));
+    transform:rotate(-1deg); text-align:center;
+    max-height:calc(100vh - 40px); overflow-y:auto; -webkit-overflow-scrolling:touch;
+  }
+  h1{
+    margin:0 0 18px; line-height:.92; letter-spacing:.02em;
+    font-size:clamp(30px, 9vw, 52px); font-weight:900;
+    -webkit-text-stroke:3px var(--ink); paint-order:stroke fill;
+    text-shadow:4px 4px 0 var(--ink);
+    transform:rotate(-2deg);
+  }
+  h1 .c1{color:var(--red)} h1 .c2{color:var(--green)}
 
-        .container {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 2rem;
-            border-radius: 15px;
-            backdrop-filter: blur(8px);
-            max-width: 800px;
-            margin: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-            max-height: 90vh;  /* Limit height to 90% of viewport height */
-            overflow-y: auto;  /* Enable vertical scrolling */
-            -webkit-overflow-scrolling: touch;  /* Smooth scrolling on iOS */
-        }
+  .units{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:6px 0 16px;}
+  .pill{
+    border:3px solid var(--ink); border-radius:14px; box-shadow:4px 4px 0 var(--ink);
+    padding:10px 8px; min-width:66px; display:flex; flex-direction:column; align-items:center;
+  }
+  .pill:nth-child(1){background:var(--red);  transform:rotate(-3deg)}
+  .pill:nth-child(2){background:var(--green); transform:rotate(2deg)}
+  .pill:nth-child(3){background:var(--gold); transform:rotate(-2deg)}
+  .pill:nth-child(4){background:var(--blue); transform:rotate(3deg)}
+  .pill b{font-size:clamp(26px,7vw,42px); line-height:1; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .pill span{font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink); margin-top:5px;}
 
-        h1 {
-            font-size: 3em;
-            font-family: 'Mountains of Christmas', 'Brush Script MT', cursive;
-            margin-bottom: 30px;
-            color: #fff;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8),
-                         0 0 20px rgba(65, 105, 225, 0.8);
-            letter-spacing: 3px;
-            border: 4px double white;
-            padding: 15px;
-            border-radius: 10px;
-            background-color: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
-        }
+  .lead{font-family:Georgia,'Times New Roman',serif; font-style:italic;
+        font-size:15px; color:#6f665c; margin:2px 0 8px;}
+  .gag{
+    font-family:Georgia,'Times New Roman',serif; font-style:italic;
+    font-size:15px; line-height:1.6; color:var(--ink);
+    background:var(--paper); border:2px solid var(--ink); border-radius:10px;
+    padding:10px 12px; max-height:132px; overflow-y:auto; word-break:break-word;
+    text-align:left;
+  }
+  .gag b{font-style:normal}
+  .plaque{font-family:Georgia,'Times New Roman',serif; font-style:italic;
+          font-size:12px; color:#8a8078; margin-top:12px;}
 
-        .countdown {
-            font-size: 1.8em;
-            margin: 20px 0;
-        }
+  .big{ font-size:clamp(24px,7vw,40px); color:var(--red); font-weight:900;
+        -webkit-text-stroke:2px var(--ink); paint-order:stroke fill; }
 
-        .countdown-number {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5px 15px;
-            border-radius: 8px;
-            display: inline-block;
-            margin: 0 5px;
-        }
-
-        .eves {
-            font-size: 1.2em;
-            line-height: 1.6;
-        }
-    </style>
+  @media (prefers-reduced-motion:reduce){ .bulb{animation:none} }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Christmas Countdown</h1>
-        <div class="countdown" id="countdown"></div>
-        <div class="eves" id="eves"></div>
+  <canvas id="snow"></canvas>
+  <div class="lights" id="lights" aria-hidden="true"></div>
+
+  <div class="card">
+    <h1><span class="c1">CHRISTMAS</span><br><span class="c2">COUNTDOWN</span></h1>
+    <div class="units">
+      <div class="pill"><b id="d">0</b><span>days</span></div>
+      <div class="pill"><b id="h">0</b><span>hours</span></div>
+      <div class="pill"><b id="m">0</b><span>mins</span></div>
+      <div class="pill"><b id="s">0</b><span>secs</span></div>
     </div>
+    <p class="lead" id="lead">so today is, technically:</p>
+    <div class="gag" id="eves"></div>
+    <div class="plaque" id="plaque">official eve tally: 0</div>
+  </div>
 
-    <script>
-        // Create snowflakes
-        function createSnowflakes() {
-            for (let i = 0; i < 50; i++) {
-                const snowflake = document.createElement('div');
-                snowflake.className = 'snowflake';
-                snowflake.innerHTML = '❄';
-                snowflake.style.left = Math.random() * 100 + 'vw';
-                snowflake.style.animationDuration = Math.random() * 3 + 2 + 's';
-                snowflake.style.opacity = Math.random();
-                document.body.appendChild(snowflake);
-            }
-        }
+<script>
+(function(){
+  'use strict';
+  var INK='#201a17';
+  var DAY=864e5, HOUR=36e5, MIN=6e4;
 
-        function updateCountdown() {
-            const now = new Date();
-            const currentYear = now.getMonth() === 11 && now.getDate() > 25 ? 
-                              now.getFullYear() + 1 : now.getFullYear();
-            const christmas = new Date(currentYear, 11, 25);
-            const diffDays = Math.ceil((christmas - now) / (1000 * 60 * 60 * 24));
-            
-            const countdownElement = document.getElementById('countdown');
-            const evesElement = document.getElementById('eves');
-            
-            countdownElement.innerHTML = `Christmas is in <span class="countdown-number">${diffDays}</span> days, that makes it:`;
-            
-            // Create the "eve" string
-            const eves = 'Christmas ' + 'eve '.repeat(diffDays);
-            evesElement.textContent = eves;
-        }
+  // ---- string lights -----------------------------------------------------
+  (function(){
+    var wrap=document.getElementById('lights'), cls=['r','g','y','b'];
+    var n=Math.max(8, Math.min(20, Math.round(window.innerWidth/60)));
+    var html='';
+    for(var i=0;i<n;i++) html+='<span class="bulb '+cls[i%4]+'"></span>';
+    wrap.innerHTML=html;
+  })();
 
-        // Initial setup
-        createSnowflakes();
-        updateCountdown();
+  // ---- countdown ---------------------------------------------------------
+  var elD=document.getElementById('d'), elH=document.getElementById('h'),
+      elM=document.getElementById('m'), elS=document.getElementById('s'),
+      elEves=document.getElementById('eves'), elLead=document.getElementById('lead'),
+      elPlaque=document.getElementById('plaque');
 
-        // Update countdown every day
-        setInterval(updateCountdown, 86400000);
-    </script>
+  var PLAQUES=['official eve tally','certified eves remaining','eves counted by hand',
+               'warranty on this cheer: void','eves, give or take'];
+  var lastGag=-1, celebrate=false;
+
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+
+  function update(){
+    var now=new Date();
+    var year=now.getFullYear();
+    var xmas=new Date(year,11,25,0,0,0,0);
+    var dayEnd=new Date(year,11,25,23,59,59,999);
+    var isXmas = now>=xmas && now<=dayEnd;
+    if(now>dayEnd) xmas=new Date(year+1,11,25,0,0,0,0);
+
+    if(isXmas){
+      celebrate=true;
+      elD.textContent='0'; elH.textContent='00'; elM.textContent='00'; elS.textContent='00';
+      elLead.textContent='and today, at last, is simply:';
+      if(!elEves.classList.contains('done')){
+        elEves.classList.add('done');
+        elEves.innerHTML='<span class="big">MERRY CHRISTMAS.</span><br>you may stop counting eves now.';
+      }
+      elPlaque.textContent='eves remaining: 0. go outside.';
+      document.title='Merry Christmas!';
+      return;
+    }
+    celebrate=false; elEves.classList.remove('done');
+
+    var ms=xmas-now;
+    var d=Math.floor(ms/DAY), h=Math.floor((ms%DAY)/HOUR),
+        m=Math.floor((ms%HOUR)/MIN), s=Math.floor((ms%MIN)/1000);
+    var gagDays=Math.ceil(ms/DAY);            // whole "eves" to Christmas
+
+    elD.textContent=d; elH.textContent=pad(h); elM.textContent=pad(m); elS.textContent=pad(s);
+    document.title=d+' day'+(d===1?'':'s')+' til Christmas';
+
+    // the gag — rebuild only when the day changes (a big string)
+    if(gagDays!==lastGag){
+      lastGag=gagDays;
+      if(gagDays===1){
+        elLead.textContent='so today is, officially:';
+        elEves.innerHTML='<b>Christmas Eve.</b> the real one. this is not a drill.';
+      } else {
+        elLead.textContent='so today is, technically:';
+        elEves.innerHTML='<b>Christmas</b> ' + Array(gagDays).join('eve ') + 'eve.';
+      }
+      elPlaque.textContent=PLAQUES[gagDays%PLAQUES.length]+': '+gagDays.toLocaleString('en-US');
+    }
+  }
+  update();
+  setInterval(update,1000);
+
+  // ---- canvas: snow + christmas-day confetti -----------------------------
+  var canvas=document.getElementById('snow'), ctx=canvas.getContext('2d');
+  var W=0,H=0,dpr=1, flakes=[], confetti=[];
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var CONF_COLORS=['#f0563e','#7cb342','#f7c948','#5aa0db','#fff8ef'];
+
+  function resize(){
+    W=window.innerWidth; H=window.innerHeight;
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    var target=Math.min(140, Math.round(W*H/11000));
+    while(flakes.length<target) flakes.push(newFlake(true));
+    flakes.length=Math.min(flakes.length,target);
+  }
+  var rzT; window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(resize,120);});
+
+  function newFlake(spread){
+    var r=1.4+Math.random()*3.2;
+    return { x:Math.random()*W, y:spread?Math.random()*H:-8,
+             r:r, vy:12+r*10, vx:(Math.random()-0.5)*10,
+             sway:Math.random()*Math.PI*2, swaySpeed:0.6+Math.random()*0.9 };
+  }
+  function newConfetti(){
+    return { x:Math.random()*W, y:-14, w:6+Math.random()*8, h:8+Math.random()*10,
+             vx:(Math.random()-0.5)*60, vy:70+Math.random()*90,
+             rot:Math.random()*Math.PI*2, vr:(Math.random()-0.5)*7,
+             col:CONF_COLORS[(Math.random()*CONF_COLORS.length)|0], star:Math.random()<0.3 };
+  }
+
+  function drawFlake(f){
+    ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fill();
+    ctx.lineWidth=1; ctx.strokeStyle='rgba(28,40,70,0.55)'; ctx.stroke(); // sticker outline
+  }
+  function starPath(x,y,ro,ri){
+    ctx.beginPath();
+    for(var i=0;i<10;i++){ var r=i%2?ri:ro, a=Math.PI/5*i-Math.PI/2;
+      var vx=x+Math.cos(a)*r, vy=y+Math.sin(a)*r; i?ctx.lineTo(vx,vy):ctx.moveTo(vx,vy); }
+    ctx.closePath();
+  }
+
+  var last=0;
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    ctx.clearRect(0,0,W,H);
+
+    for(var i=0;i<flakes.length;i++){
+      var f=flakes[i];
+      if(!reduce){
+        f.sway+=f.swaySpeed*dt;
+        f.y+=f.vy*dt; f.x+=(f.vx+Math.sin(f.sway)*14)*dt;
+        if(f.y>H+8){ flakes[i]=newFlake(false); }
+        if(f.x<-10) f.x=W+10; else if(f.x>W+10) f.x=-10;
+      }
+      drawFlake(f);
+    }
+
+    if(celebrate && !reduce){
+      if(confetti.length<160 && Math.random()<0.8){ confetti.push(newConfetti()); confetti.push(newConfetti()); }
+      for(var c=confetti.length-1;c>=0;c--){
+        var p=confetti[c];
+        p.vy+=140*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.vr*dt;
+        if(p.y>H+20){ confetti.splice(c,1); continue; }
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+        ctx.fillStyle=p.col; ctx.lineWidth=1.6; ctx.strokeStyle=INK; ctx.lineJoin='round';
+        if(p.star){ starPath(0,0,p.w,p.w*0.45); ctx.fill(); ctx.stroke(); }
+        else { ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.strokeRect(-p.w/2,-p.h/2,p.w,p.h); }
+        ctx.restore();
+      }
+    } else if(confetti.length){ confetti.length=0; }
+
+    requestAnimationFrame(loop);
+  }
+  resize();
+  requestAnimationFrame(loop);
+  document.addEventListener('visibilitychange',function(){ last=performance.now(); });
+})();
+</script>
 </body>
 </html>

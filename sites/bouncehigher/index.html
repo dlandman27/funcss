@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Winter Bells</title>
+<meta name="description" content="Steer a little snow bunny up an endless winter sky. Every bell you touch bounces you higher. Chain them for combos and climb as high as you can before you fall.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/bouncehigher/">
+    <meta property="og:title" content="Winter Bells">
+    <meta property="og:description" content="Steer a snow bunny up an endless winter sky. Every bell you touch bounces you higher — chain them for combos and climb as high as you can before you fall.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/bouncehigher.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Winter Bells">
+    <meta name="twitter:description" content="Steer a snow bunny up an endless winter sky. Every bell you touch bounces you higher — chain them for combos and climb as high as you can before you fall.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/bouncehigher.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root{ --ink:#201a17; }
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;
+    background:#1a2740;font-family:'Arial Black','Arial',sans-serif;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:none;}
+  #hint{
+    position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    font-size:clamp(12px,3.4vw,15px);color:#c9d4e6;
+    background:rgba(16,25,44,.66);border:1px solid rgba(255,255,255,.18);
+    padding:5px 14px;border-radius:999px;pointer-events:none;
+    transition:opacity 1.2s ease;white-space:nowrap;z-index:5;
+  }
+  #hint.gone{opacity:0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">move to steer. touch a bell and it sends you up.</div>
+<script>
+(function(){
+  'use strict';
+  var INK='#201a17', GOLD='#f7c948', GOLD_D='#e0a92a', SNOW='#fdfdfb',
+      RED='#f0563e', GREEN='#7cb342', PINK='#ff7fa5';
+
+  var canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+  var W=0,H=0,dpr=1;
+
+  function resize(){
+    W=window.innerWidth; H=window.innerHeight;
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    buildSnow();
+  }
+  var rzT; window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(resize,120);});
+
+  // ---- state -------------------------------------------------------------
+  var STATE='ready';
+  var GRAV=1500, BOUNCE=790, BIGBOUNCE=1560, R=18, BELLR=24;
+  var char={x:0,y:0,vy:0,tx:0,ear:0};
+  var camY=0, startY=0, height=0, bells=[], topY=0, combo=0, comboT=0, bellsHit=0;
+  var sparks=[], pops=[], shake=0;
+  var best=0; try{ best=parseInt(localStorage.getItem('bells_best')||'0',10)||0; }catch(_){}
+
+  function gap(){ return 108 + Math.random()*72; }
+
+  function reset(){
+    STATE='ready';
+    char.x=W*0.5; char.tx=W*0.5; char.y=0; char.vy=0; char.ear=0;
+    camY = char.y - H*0.72; startY=0; height=0; combo=0; comboT=0; bellsHit=0;
+    bells.length=0; sparks.length=0; pops.length=0; topY=char.y;
+    // a first bell right above the start
+    bells.push(makeBell(W*0.5, char.y-150));
+    fillBells();
+  }
+  function makeBell(x,y){ return {x:x,y:y,hit:0,wob:0,big:Math.random()<0.05}; }
+  function fillBells(){
+    while(topY > camY - H*0.6){
+      topY -= gap();
+      var x = 40 + Math.random()*(W-80);
+      bells.push(makeBell(x, topY));
+    }
+    for(var i=bells.length-1;i>=0;i--){ if(bells[i].y > camY + H + 120) bells.splice(i,1); }
+  }
+
+  function start(){ STATE='playing'; char.vy=-BOUNCE; }
+  function die(){
+    if(STATE==='dead') return;
+    STATE='dead'; shake=1;
+    var m=meters();
+    if(m>best){ best=m; try{localStorage.setItem('bells_best',String(best));}catch(_){ } }
+  }
+  function meters(){ return Math.floor(height/40); }
+
+  // ---- input -------------------------------------------------------------
+  function setTarget(x){ char.tx=Math.max(R, Math.min(W-R, x)); }
+  canvas.addEventListener('pointermove',function(e){
+    setTarget(e.clientX);
+    if(STATE!=='playing'){}
+  });
+  canvas.addEventListener('pointerdown',function(e){
+    setTarget(e.clientX); hideHint();
+    if(STATE==='ready') start();
+    else if(STATE==='dead'){ reset(); start(); }
+    try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+    e.preventDefault();
+  });
+
+  // ---- update ------------------------------------------------------------
+  function update(dt){
+    // steer horizontally (eased) — works in every state
+    char.x += (char.tx-char.x)*Math.min(1,dt*13);
+
+    if(STATE==='ready'){ char.y = -H*0 + Math.sin(performance.now()*0.003)*8; return; }
+
+    char.vy += GRAV*dt;
+    char.y += char.vy*dt;
+    char.ear += (( -char.vy/900) - char.ear)*Math.min(1,dt*8);
+
+    // camera only climbs
+    camY = Math.min(camY, char.y - H*0.42);
+    if(startY - char.y > height) height = startY - char.y;
+
+    // combo timer
+    if(comboT>0){ comboT-=dt; if(comboT<=0) combo=0; }
+
+    if(STATE==='playing'){
+      // bell collisions
+      for(var i=0;i<bells.length;i++){
+        var b=bells[i];
+        if(b.hit) continue;
+        var dx=char.x-b.x, dy=char.y-b.y;
+        if(dx*dx+dy*dy < (R+BELLR)*(R+BELLR)){
+          b.hit=1; b.wob=1;
+          char.vy = -(b.big?BIGBOUNCE:BOUNCE);
+          combo++; comboT=1.6; bellsHit++;
+          ring(b);
+        }
+      }
+      fillBells();
+      // fell off the bottom of the (climb-locked) camera
+      if(char.y - camY > H + 40) die();
+    }
+
+    // fx
+    for(i=sparks.length-1;i>=0;i--){ var s=sparks[i]; s.t+=dt; s.x+=s.vx*dt; s.y+=s.vy*dt; s.vy+=600*dt; if(s.t>=s.life)sparks.splice(i,1); }
+    for(i=pops.length-1;i>=0;i--){ pops[i].t+=dt; pops[i].y-=26*dt; if(pops[i].t>=pops[i].life)pops.splice(i,1); }
+    for(i=0;i<bells.length;i++){ if(bells[i].wob>0) bells[i].wob=Math.max(0,bells[i].wob-dt*2.2); }
+    if(shake>0) shake=Math.max(0,shake-dt*3);
+    // snow
+    for(i=0;i<flakes.length;i++){ var f=flakes[i]; f.ph+=f.sp*dt; f.y+=f.vy*dt; f.x+=Math.sin(f.ph)*10*dt;
+      if(f.y>H+6){ f.y=-6; f.x=Math.random()*W; } }
+  }
+
+  function ring(b){
+    var col=b.big?PINK:GOLD;
+    for(var i=0;i<(b.big?12:7);i++){
+      var a=Math.random()*Math.PI*2, sp=90+Math.random()*160;
+      sparks.push({x:b.x,y:b.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,t:0,life:0.5+Math.random()*0.3,col:col});
+    }
+    pops.push({x:b.x,y:b.y-30,t:0,life:0.8,txt:b.big?'BIG BELL!':(combo>1?'x'+combo:'+1'),col:b.big?PINK:(combo>1?GOLD:'#fff')});
+    if(b.big) shake=0.6;
+  }
+
+  // ---- snow --------------------------------------------------------------
+  var flakes=[];
+  function buildSnow(){
+    var n=Math.min(120, Math.round(W*H/13000)); flakes.length=0;
+    for(var i=0;i<n;i++) flakes.push({x:Math.random()*W,y:Math.random()*H,r:1.2+Math.random()*2.6,
+      vy:14+Math.random()*26,ph:Math.random()*6.28,sp:0.6+Math.random()*0.8});
+  }
+
+  // ---- draw --------------------------------------------------------------
+  function bg(){
+    var g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#223255'); g.addColorStop(0.6,'#1a2740'); g.addColorStop(1,'#0f1830');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    for(var i=0;i<flakes.length;i++){ var f=flakes[i];
+      ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.fill();
+    }
+  }
+
+  function drawBell(b){
+    var y=b.y-camY;
+    if(y< -60 || y>H+60) return;
+    var w=1+Math.sin(b.wob*20)*0.12*b.wob;
+    ctx.save(); ctx.translate(b.x,y); ctx.scale(w,2-w);
+    if(b.hit){ ctx.globalAlpha=Math.max(0,1-(1-b.wob)*1.1); }
+    // ring lines when freshly struck
+    if(b.wob>0.3){ ctx.globalAlpha=(ctx.globalAlpha||1)*b.wob;
+      ctx.strokeStyle=b.big?PINK:GOLD; ctx.lineWidth=3;
+      for(var k=0;k<3;k++){ ctx.beginPath(); ctx.arc(0,0,BELLR+8+k*7*(1.4-b.wob),0,Math.PI*2); ctx.stroke(); }
+    }
+    ctx.globalAlpha=b.hit?Math.max(0,b.wob):1;
+    // loop on top
+    ctx.lineWidth=3; ctx.strokeStyle=INK;
+    ctx.beginPath(); ctx.arc(0,-BELLR+4,5,Math.PI,0); ctx.stroke();
+    // bell body (dome + flare)
+    ctx.beginPath();
+    ctx.moveTo(-4,-BELLR+2);
+    ctx.quadraticCurveTo(-BELLR-2,-BELLR+6,-BELLR+2,BELLR-6);
+    ctx.lineTo(-BELLR-2,BELLR-2); ctx.lineTo(BELLR+2,BELLR-2); ctx.lineTo(BELLR-2,BELLR-6);
+    ctx.quadraticCurveTo(BELLR+2,-BELLR+6,4,-BELLR+2);
+    ctx.closePath();
+    ctx.fillStyle=b.big?GOLD:GOLD; ctx.fill();
+    ctx.lineWidth=3; ctx.strokeStyle=INK; ctx.stroke();
+    // shade + clapper
+    ctx.fillStyle=GOLD_D; ctx.beginPath(); ctx.ellipse(6,2,4,BELLR*0.5,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,BELLR-2,4,0,Math.PI*2); ctx.fillStyle=INK; ctx.fill();
+    if(b.big){ ctx.fillStyle=PINK; ctx.beginPath(); ctx.arc(-7,-2,3,0,Math.PI*2); ctx.fill(); }
+    ctx.restore();
+    ctx.globalAlpha=1;
+  }
+
+  function drawBunny(){
+    var y=char.y-camY;
+    ctx.save(); ctx.translate(char.x,y);
+    // shadow
+    ctx.save(); ctx.translate(3,3); ctx.fillStyle=INK;
+    ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fill(); ctx.restore();
+    // ears (flop with vertical motion)
+    var e=char.ear; ctx.lineWidth=3; ctx.strokeStyle=INK;
+    for(var s=-1;s<=1;s+=2){
+      ctx.save(); ctx.translate(s*7,-R+3); ctx.rotate(s*(0.25+e*0.5));
+      ctx.fillStyle=SNOW;
+      ctx.beginPath(); ctx.ellipse(0,-15,6,17,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=PINK; ctx.beginPath(); ctx.ellipse(0,-15,2.6,11,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    // body
+    ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fillStyle=SNOW; ctx.fill();
+    ctx.lineWidth=3; ctx.strokeStyle=INK; ctx.stroke();
+    // face
+    ctx.fillStyle=INK;
+    ctx.beginPath(); ctx.arc(-6,-2,2.6,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(6,-2,2.6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=PINK; ctx.beginPath(); ctx.arc(0,4,2.4,0,Math.PI*2); ctx.fill();
+    // cheeks
+    ctx.globalAlpha=0.5; ctx.fillStyle=PINK;
+    ctx.beginPath(); ctx.arc(-11,3,3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(11,3,3,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=1;
+    ctx.restore();
+  }
+
+  function drawSparks(){
+    for(var i=0;i<sparks.length;i++){ var s=sparks[i], a=1-s.t/s.life;
+      ctx.save(); ctx.globalAlpha=a; ctx.translate(s.x,s.y-camY); ctx.rotate(s.t*6);
+      star(0,0,5,2.2,s.col); ctx.restore();
+    }
+  }
+  function star(x,y,ro,ri,col){
+    ctx.beginPath();
+    for(var i=0;i<10;i++){ var r=i%2?ri:ro, a=Math.PI/5*i-Math.PI/2;
+      var vx=x+Math.cos(a)*r, vy=y+Math.sin(a)*r; i?ctx.lineTo(vx,vy):ctx.moveTo(vx,vy); }
+    ctx.closePath(); ctx.fillStyle=col; ctx.fill(); ctx.lineWidth=1.6; ctx.strokeStyle=INK; ctx.stroke();
+  }
+  function drawPops(){
+    for(var i=0;i<pops.length;i++){ var p=pops[i], k=p.t/p.life;
+      var sc=k<0.25?(0.3+1.1*(k/0.25)):1;
+      ctx.save(); ctx.globalAlpha=k>0.6?(1-(k-0.6)/0.4):1;
+      ctx.translate(p.x,p.y-camY); ctx.scale(sc,sc);
+      ctx.font='900 22px "Arial Black",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.lineJoin='round'; ctx.lineWidth=5; ctx.strokeStyle=INK; ctx.strokeText(p.txt,0,0);
+      ctx.fillStyle=p.col; ctx.fillText(p.txt,0,0); ctx.restore();
+    }
+  }
+
+  function loud(text,x,y,size,col,rot){
+    ctx.save(); ctx.translate(x,y); if(rot)ctx.rotate(rot);
+    ctx.font='900 '+size+'px "Arial Black",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.lineJoin='round'; ctx.lineWidth=size*0.16; ctx.strokeStyle=INK; ctx.strokeText(text,0,0);
+    ctx.fillStyle=col; ctx.fillText(text,0,0); ctx.restore();
+  }
+  function quiet(text,x,y,size,col){ ctx.save(); ctx.font='italic '+size+'px Georgia, serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=col||'#c9d4e6'; ctx.fillText(text,x,y); ctx.restore(); }
+
+  function drawHUD(){
+    if(STATE==='playing'){
+      loud(meters()+'m', W*0.5, 42, 30, GOLD, 0);
+      if(combo>1){ ctx.save(); ctx.globalAlpha=Math.min(1,comboT); loud('COMBO x'+combo, W*0.5, 74, 18, PINK, -0.03); ctx.restore(); }
+    } else if(STATE==='ready'){
+      loud('WINTER', W*0.5, H*0.30, Math.min(66,W*0.16), SNOW, -0.04);
+      loud('BELLS', W*0.5, H*0.30+Math.min(60,W*0.15), Math.min(66,W*0.16), GOLD, 0.03);
+      quiet('move to steer · touch a bell to bounce', W*0.5, H*0.30+118, 16);
+      if(best>0) quiet('best climb: '+best+'m', W*0.5, H*0.30+142, 15, '#8ea0c0');
+    } else if(STATE==='dead'){
+      loud(meters()+'m', W*0.5, H*0.40, Math.min(64,W*0.15), GOLD, -0.03);
+      quiet(meters()>=best?'your highest climb yet.':'best climb: '+best+'m', W*0.5, H*0.40+46, 16, meters()>=best?GREEN:'#8ea0c0');
+      quiet(bellsHit+' bells rung · tap to try again', W*0.5, H*0.40+72, 16);
+    }
+  }
+
+  // ---- loop --------------------------------------------------------------
+  var last=0;
+  function frame(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now||0;
+    update(dt);
+    var sx=shake>0?(Math.random()-0.5)*shake*12:0, sy=shake>0?(Math.random()-0.5)*shake*12:0;
+    ctx.setTransform(dpr,0,0,dpr,sx*dpr,sy*dpr);
+    bg();
+    for(var i=0;i<bells.length;i++) drawBell(bells[i]);
+    drawSparks();
+    drawBunny();
+    drawPops();
+    drawHUD();
+    requestAnimationFrame(frame);
+  }
+
+  var hint=document.getElementById('hint'), hintGone=false;
+  function hideHint(){ if(hintGone)return; hintGone=true; hint.classList.add('gone'); setTimeout(function(){if(hint.parentNode)hint.remove();},1300); }
+  setTimeout(function(){ if(!hintGone) hideHint(); },9000);
+
+  resize(); reset();
+  last=performance.now();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
