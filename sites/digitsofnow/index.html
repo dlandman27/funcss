@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digits of Now</title>
+<meta name="description" content="The number of seconds since January 1st, 1970, ticking live — with a running note on whatever happens to be true about it.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/digitsofnow/">
+    <meta property="og:title" content="Digits of Now">
+    <meta property="og:description" content="The number of seconds since January 1st, 1970, ticking live — with a running note on whatever happens to be true about it.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/digitsofnow.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Digits of Now">
+    <meta name="twitter:description" content="The number of seconds since January 1st, 1970, ticking live — with a running note on whatever happens to be true about it.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/digitsofnow.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root{
+    --ink:#201a17;
+    --paper:#f2ede2;
+    --gold:#f7c948;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:var(--paper);
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+  #stage{
+    position:fixed; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px;
+    padding:6vw;
+    text-align:center;
+  }
+  #epoch{
+    font-family:'Arial Black', Arial, sans-serif;
+    font-weight:900;
+    font-size:clamp(34px, 9vw, 108px);
+    color:var(--ink);
+    letter-spacing:0.01em;
+    font-variant-numeric:tabular-nums;
+  }
+  #trivia{
+    font-family:Georgia, 'Times New Roman', serif;
+    font-style:italic;
+    font-size:clamp(15px, 2.4vw, 22px);
+    color:var(--ink);
+    min-height:1.4em;
+    transition:opacity .25s ease;
+  }
+  #human{
+    font-family:'Courier New', Courier, monospace;
+    font-size:13px;
+    color:var(--ink);
+    opacity:.45;
+  }
+  .caption{
+    position:fixed;
+    left:50%; bottom:18px;
+    transform:translateX(-50%);
+    font-family:Georgia, 'Times New Roman', serif;
+    font-style:italic;
+    font-size:13px;
+    color:var(--ink);
+    opacity:.4;
+    text-align:center;
+    white-space:nowrap;
+  }
+  #trivia.gold{ color:var(--gold); }
+  @media (max-width:520px){
+    #human{ font-size:11px; }
+    .caption{ font-size:11px; white-space:normal; max-width:90vw; }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="epoch">0</div>
+  <div id="trivia">just a number.</div>
+  <div id="human">—</div>
+</div>
+<div class="caption">epoch time. no leap seconds. no mercy.</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const epochEl = document.getElementById('epoch');
+  const triviaEl = document.getElementById('trivia');
+  const humanEl = document.getElementById('human');
+
+  function isPrime(n){
+    if(n < 2) return false;
+    if(n % 2 === 0) return n === 2;
+    for(let i=3; i*i<=n; i+=2){
+      if(n % i === 0) return false;
+    }
+    return true;
+  }
+  function isPalindrome(str){
+    return str === [...str].reverse().join('');
+  }
+  function isPerfectSquare(n){
+    const r = Math.round(Math.sqrt(n));
+    return r*r === n;
+  }
+  function isPerfectCube(n){
+    const r = Math.round(Math.cbrt(n));
+    return r*r*r === n;
+  }
+  function hasDigitRun(str, len){
+    let run = 1;
+    for(let i=1; i<str.length; i++){
+      run = str[i] === str[i-1] ? run+1 : 1;
+      if(run >= len) return true;
+    }
+    return false;
+  }
+  function isMonotonicWindow(str, len){
+    const w = str.slice(-len);
+    let up = true, down = true;
+    for(let i=1; i<w.length; i++){
+      if(w[i] <= w[i-1]) up = false;
+      if(w[i] >= w[i-1]) down = false;
+    }
+    return up || down;
+  }
+  function digitSum(str){
+    return [...str].reduce((a,c)=>a+(+c),0);
+  }
+
+  // At ~10 digits, whole-number checks like "palindrome" or "strictly ascending"
+  // are astronomically rare — they'd never actually show up, leaving only
+  // "divisible by 7" and "just a number." So the frequent facts below look at
+  // a trailing window of digits instead; the whole-number checks stay as
+  // legendary, near-never secrets.
+  const NOTABLE = [42, 69, 100, 365, 1000, 12345];
+
+  const CHECKS = [
+    { test:(n)=>isPerfectSquare(n), text:(n)=>Math.round(Math.sqrt(n)) + ' squared. all of it.', gold:true },
+    { test:(n)=>isPerfectCube(n), text:(n)=>Math.round(Math.cbrt(n)) + ' cubed. all of it.', gold:true },
+    { test:(n,s)=>hasDigitRun(s,4), text:()=>'four of the same digit in a row.', gold:true },
+    { test:(n,s)=>isPalindrome(s.slice(-5)), text:()=>'the last 5 digits are a palindrome.' },
+    { test:(n,s)=>isMonotonicWindow(s,4), text:()=>'the last 4 digits climb or fall in order.' },
+    { test:(n)=>NOTABLE.some(k=>n%k===0 && n>=k*2), text:(n)=>{
+        const k = NOTABLE.find(k=>n%k===0 && n>=k*2);
+        return 'divisible by ' + k + '.';
+      }},
+    { test:(n)=>isPrime(n), text:()=>'prime.' },
+    { test:(n,s)=>digitSum(s) === 42, text:()=>'digits add up to 42.' },
+  ];
+
+  let lastEpoch = -1;
+  function tick(){
+    const epoch = Math.floor(Date.now()/1000);
+    if(epoch === lastEpoch) return;
+    lastEpoch = epoch;
+
+    epochEl.textContent = String(epoch);
+
+    const str = String(epoch);
+    let fact = null, gold = false;
+    for(const c of CHECKS){
+      if(c.test(epoch, str)){
+        fact = c.text(epoch);
+        gold = !!c.gold;
+        break;
+      }
+    }
+    triviaEl.style.opacity = 0;
+    setTimeout(()=>{
+      triviaEl.textContent = fact || 'just a number.';
+      triviaEl.className = gold ? 'gold' : '';
+      triviaEl.style.opacity = 1;
+    }, 120);
+
+    const d = new Date();
+    humanEl.textContent = d.toDateString() + ' — ' + d.toLocaleTimeString();
+  }
+
+  tick();
+  setInterval(tick, 200);
+})();
+</script>
+
+</body>
+</html>

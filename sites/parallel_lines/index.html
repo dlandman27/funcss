@@ -1,86 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parallel Lines</title>
-    <meta name="description" content="Two parallel lines that move infinitely but never meet">
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parallel Lines</title>
+<meta name="description" content="Two rails run straight toward a vanishing point, forever. They look like they're about to meet. They never do.">
     <!-- rsotw:og:start -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://randomsitesontheweb.com/parallel_lines/">
     <meta property="og:title" content="Parallel Lines">
-    <meta property="og:description" content="Two parallel lines that move infinitely but never meet">
+    <meta property="og:description" content="Two rails run straight toward a vanishing point, forever. They look like they're about to meet. They never do.">
     <meta property="og:image" content="https://randomsitesontheweb.com/og/parallel_lines.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Parallel Lines">
-    <meta name="twitter:description" content="Two parallel lines that move infinitely but never meet">
+    <meta name="twitter:description" content="Two rails run straight toward a vanishing point, forever. They look like they're about to meet. They never do.">
     <meta name="twitter:image" content="https://randomsitesontheweb.com/og/parallel_lines.png">
     <!-- rsotw:og:end -->
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #000;
-        }
-
-        .line {
-            position: absolute;
-            height: 2px;
-            background: #fff;
-            animation: moveLine 8s linear infinite;
-        }
-
-        #line1 {
-            width: 200px;
-            top: 40%;
-        }
-
-        #line2 {
-            width: 200px;
-            top: 60%;
-        }
-
-        @keyframes moveLine {
-            from {
-                transform: translateX(-200px);
-            }
-            to {
-                transform: translateX(100vw);
-            }
-        }
-
-        .description {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #fff;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            opacity: 0.7;
-        }
-    </style>
+<style>
+  :root{
+    --wall:#0e0d0c;
+    --paper:#f2ede2;
+    --gold:#f7c948;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:var(--wall);
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+  #stage{ position:fixed; inset:0; }
+  .caption{
+    position:fixed;
+    left:50%; bottom:24px;
+    transform:translateX(-50%);
+    font-family:Georgia, 'Times New Roman', serif;
+    font-style:italic;
+    font-size:14px;
+    color:var(--paper);
+    opacity:.32;
+    text-align:center;
+    transition:opacity .5s ease;
+    pointer-events:auto;
+    white-space:nowrap;
+    z-index:2;
+  }
+  .caption:hover{ opacity:.9; }
+  @media (max-width:520px){
+    .caption{ font-size:11.5px; white-space:normal; max-width:88vw; }
+  }
+</style>
 </head>
 <body>
-    <div id="line1" class="line"></div>
-    <div id="line2" class="line"></div>
-    <div class="description">
-        <p>These lines are parallel - they will continue infinitely but never meet.</p>
-    </div>
 
-    <script>
-        // Restart animation when lines reach the end
-        const lines = document.querySelectorAll('.line');
-        lines.forEach(line => {
-            line.addEventListener('animationend', () => {
-                line.style.animation = 'none';
-                line.offsetHeight; // Trigger reflow
-                line.style.animation = 'moveLine 8s linear infinite';
-            });
-        });
-    </script>
+<canvas id="stage"></canvas>
+<div class="caption">still parallel. i checked.</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let vw = 0, vh = 0;
+  function sizeCanvas(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    vw = window.innerWidth; vh = window.innerHeight;
+    canvas.width = Math.round(vw*dpr);
+    canvas.height = Math.round(vh*dpr);
+    canvas.style.width = vw+'px';
+    canvas.style.height = vh+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  let resizeT = null;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(resizeT);
+    resizeT = setTimeout(sizeCanvas, 150);
+  });
+
+  // ---------- the tunnel ----------
+  const RAIL_HALF_WIDTH_NEAR = 0.42; // fraction of viewport width, at the viewer
+  const K = 0.9;                     // perspective falloff — how fast things shrink with depth
+  const TOTAL_TIES = 16;
+  const SPAN = 22;                   // total depth units the tie field cycles across
+
+  const ties = [];
+  for(let i=0; i<TOTAL_TIES; i++){
+    ties.push({ d: (i/TOTAL_TIES) * SPAN });
+  }
+
+  let scrollSpeed = reduceMotion ? 0 : 2.1; // depth units per second, toward the viewer
+  let t0 = null;
+
+  function project(d, vpX, vpY, bottomY){
+    // d: 0 = at the vanishing point, larger = closer to the viewer
+    const k = 1 / (1 + d*K/SPAN*4);
+    const halfWidth = RAIL_HALF_WIDTH_NEAR * vw * (1-k);
+    const y = vpY + (bottomY - vpY) * (1-k);
+    return { halfWidth, y };
+  }
+
+  function draw(now){
+    if(t0 === null) t0 = now;
+    const dt = Math.min(0.05, (now - t0)/1000);
+    t0 = now;
+
+    ctx.clearRect(0,0,vw,vh);
+    ctx.fillStyle = '#0e0d0c';
+    ctx.fillRect(0,0,vw,vh);
+
+    const sway = reduceMotion ? 0 : Math.sin(now/9000) * vw*0.015;
+    const vpX = vw/2 + sway;
+    const vpY = vh*0.36;
+    const bottomY = vh*1.05;
+
+    // rails: straight lines from the near edge to the vanishing point
+    const near = project(SPAN, vpX, vpY, bottomY);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(247,201,72,.9)';
+    ctx.shadowColor = 'rgba(247,201,72,.55)';
+    ctx.shadowBlur = 8;
+    [-1,1].forEach(side=>{
+      ctx.beginPath();
+      ctx.moveTo(vpX + side*near.halfWidth, near.y);
+      ctx.lineTo(vpX, vpY);
+      ctx.stroke();
+    });
+    ctx.shadowBlur = 0;
+
+    // ties, scrolling toward the viewer forever
+    for(const tie of ties){
+      tie.d += scrollSpeed * dt;
+      if(tie.d > SPAN) tie.d -= SPAN;
+
+      const p = project(tie.d, vpX, vpY, bottomY);
+      const fade = Math.min(1, tie.d/(SPAN*0.5));
+      ctx.beginPath();
+      ctx.moveTo(vpX - p.halfWidth, p.y);
+      ctx.lineTo(vpX + p.halfWidth, p.y);
+      ctx.lineWidth = Math.max(1, 2.4 * (p.halfWidth/(vw*RAIL_HALF_WIDTH_NEAR)));
+      ctx.strokeStyle = 'rgba(242,237,226,' + (0.5*fade) + ')';
+      ctx.stroke();
+    }
+
+    // vanishing point glow
+    const glow = ctx.createRadialGradient(vpX,vpY,0, vpX,vpY, vw*0.06);
+    glow.addColorStop(0, 'rgba(247,201,72,.5)');
+    glow.addColorStop(1, 'rgba(247,201,72,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(vpX, vpY, vw*0.06, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  let rafId = null;
+  function tick(now){
+    draw(now);
+    rafId = requestAnimationFrame(tick);
+  }
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden){
+      if(rafId!=null){ cancelAnimationFrame(rafId); rafId=null; }
+      t0 = null;
+    } else if(rafId==null){
+      rafId = requestAnimationFrame(tick);
+    }
+  });
+
+  sizeCanvas();
+  rafId = requestAnimationFrame(tick);
+
+})();
+</script>
+
 </body>
 </html>
