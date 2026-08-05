@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Worry Jar</title>
+    <meta name="description" content="Write down what's weighing on you and drop it in the jar. Watch it sink, settle, and take up permanent residence.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/worryjar/">
+    <meta property="og:title" content="Worry Jar">
+    <meta property="og:description" content="Write down what's weighing on you and drop it in the jar. Watch it sink, settle, and take up permanent residence.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/worryjar.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Worry Jar">
+    <meta name="twitter:description" content="Write down what's weighing on you and drop it in the jar. Watch it sink, settle, and take up permanent residence.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/worryjar.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root{ --ink:#201a17; --paper:#f2ede2; --cream:#fff8ef; }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; min-height:100%;
+    background:radial-gradient(120% 100% at 50% 10%, #fbf7ee 0%, #efe8db 65%, #e6ddce 100%);
+    color:var(--ink); font-family:Georgia,'Times New Roman',serif;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+  }
+  body{
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:clamp(12px,2.4vh,22px); padding:20px 16px;
+  }
+
+  .counter{
+    position:fixed; top:16px; right:20px; font-style:italic; font-size:0.78rem; opacity:.35;
+    pointer-events:none; text-align:right;
+  }
+
+  .jarwrap{ display:flex; flex-direction:column; align-items:center; }
+  .lid{
+    width:46%; height:min(4.5vh,26px); border:1px solid rgba(32,26,23,0.28);
+    border-radius:8px 8px 4px 4px; background:rgba(242,237,226,0.9);
+    box-shadow:none;
+  }
+  .body{
+    position:relative;
+    width:min(54vw,240px); height:min(46vh,320px);
+    border:1px solid rgba(32,26,23,0.24);
+    border-radius:18px 18px 26px 26px;
+    background:radial-gradient(120% 100% at 30% 0%, rgba(255,248,239,0.75), rgba(230,221,206,0.35));
+    overflow:hidden;
+    margin-top:-1px;
+  }
+  .body canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .glass-sheen{
+    position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,255,255,0.22) 8%, rgba(255,255,255,0) 26%);
+  }
+
+  .fullnotice{
+    display:none; flex-direction:column; align-items:center; gap:8px; text-align:center;
+  }
+  .fullnotice.show{ display:flex; }
+  .fullnotice .cap{ font-style:italic; opacity:.6; font-size:0.85rem; }
+
+  form{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    width:min(90vw,340px); transition:opacity .4s ease;
+  }
+  form.hide{ display:none; }
+
+  textarea{
+    width:100%; resize:none; font-family:Georgia,'Times New Roman',serif; font-style:italic;
+    font-size:clamp(0.9rem,2.6vw,1rem); color:var(--ink); background:rgba(255,248,239,0.6);
+    border:1px solid rgba(32,26,23,0.22); border-radius:10px; padding:12px 14px;
+    outline:none;
+  }
+  textarea::placeholder{ color:rgba(32,26,23,0.4); font-style:italic; }
+
+  .pillbtn{
+    font-family:Georgia,'Times New Roman',serif; font-style:italic; letter-spacing:0.06em;
+    font-size:clamp(0.85rem,2.4vw,0.95rem); color:var(--ink);
+    background:rgba(255,248,239,0.7); border:1px solid rgba(32,26,23,0.3);
+    border-radius:999px; padding:9px 26px; cursor:pointer;
+    transition:background .3s ease, opacity .3s ease;
+  }
+  .pillbtn:hover{ background:rgba(255,248,239,0.95); }
+  .pillbtn:disabled{ opacity:.35; cursor:default; }
+
+  .hint{
+    font-style:italic; font-size:clamp(0.78rem,2.2vw,0.88rem); opacity:.5;
+    transition:opacity 2s ease; text-align:center; max-width:320px;
+  }
+  .hint.gone{ opacity:0; }
+
+  @media (prefers-reduced-motion: reduce){ * { transition-duration: 0.01ms !important; } }
+</style>
+</head>
+<body>
+  <div class="counter">worries let go, all time<br><span id="totalCount">0</span></div>
+
+  <div class="jarwrap">
+    <div class="lid"></div>
+    <div class="body" id="jarBody">
+      <canvas id="baseCanvas"></canvas>
+      <canvas id="activeCanvas"></canvas>
+      <div class="glass-sheen"></div>
+    </div>
+  </div>
+
+  <div class="fullnotice" id="fullNotice">
+    <div class="cap">the jar is full — capacity, thirty worries</div>
+    <button class="pillbtn" id="emptyBtn">empty it</button>
+  </div>
+
+  <form id="worryForm">
+    <textarea id="worryInput" maxlength="140" rows="2" placeholder="what's weighing on you"></textarea>
+    <button type="submit" class="pillbtn" id="dropBtn" disabled>let it go</button>
+  </form>
+
+  <div class="hint" id="hint">write it down, then let it go — the jar keeps the shape of it, not the words</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var jarBody = document.getElementById('jarBody');
+  var baseCanvas = document.getElementById('baseCanvas');
+  var activeCanvas = document.getElementById('activeCanvas');
+  var baseCtx = baseCanvas.getContext('2d');
+  var activeCtx = activeCanvas.getContext('2d');
+  var form = document.getElementById('worryForm');
+  var input = document.getElementById('worryInput');
+  var dropBtn = document.getElementById('dropBtn');
+  var hint = document.getElementById('hint');
+  var totalCountEl = document.getElementById('totalCount');
+  var fullNotice = document.getElementById('fullNotice');
+  var emptyBtn = document.getElementById('emptyBtn');
+
+  var CAPACITY = 30;
+  var BIN_COUNT = 10;
+  var GRAVITY = 1500;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  var totalCount = 0;
+  try { totalCount = parseInt(localStorage.getItem('worryjar_total'), 10) || 0; } catch (e) {}
+  totalCountEl.textContent = totalCount;
+
+  var restingSlips = []; // {xFrac, yFracTop, wFrac, hFrac, rot, hue}
+  var activeSlips = [];  // falling
+  var glows = [];        // secret rising light
+  var pileHeights = new Array(BIN_COUNT).fill(0); // fraction of body height, per bin
+  var isFull = false;
+  var rafId = null;
+  var lastT = 0;
+
+  function dims(){
+    return { w: jarBody.clientWidth, h: jarBody.clientHeight };
+  }
+
+  function fitCanvas(cv){
+    var d = dims();
+    cv.width = Math.max(1, Math.round(d.w * dpr));
+    cv.height = Math.max(1, Math.round(d.h * dpr));
+    cv.style.width = d.w + 'px';
+    cv.style.height = d.h + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function drawSlip(ctx, xPx, yPx, wPx, hPx, rotDeg){
+    ctx.save();
+    ctx.translate(xPx + wPx / 2, yPx + hPx / 2);
+    ctx.rotate(rotDeg * Math.PI / 180);
+    ctx.fillStyle = 'rgba(255,248,239,0.92)';
+    ctx.strokeStyle = 'rgba(32,26,23,0.32)';
+    ctx.lineWidth = 1;
+    var r = Math.min(3, hPx / 3);
+    var x = -wPx / 2, y = -hPx / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + wPx, y, x + wPx, y + hPx, r);
+    ctx.arcTo(x + wPx, y + hPx, x, y + hPx, r);
+    ctx.arcTo(x, y + hPx, x, y, r);
+    ctx.arcTo(x, y, x + wPx, y, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function redrawBase(){
+    var d = dims();
+    baseCtx.clearRect(0, 0, d.w, d.h);
+    for (var i = 0; i < restingSlips.length; i++) {
+      var s = restingSlips[i];
+      drawSlip(baseCtx, s.xFrac * d.w, s.yFracTop * d.h, s.wFrac * d.w, s.hFrac * d.h, s.rot);
+    }
+  }
+
+  var resizeTimer = null;
+  function onResize(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){
+      fitCanvas(baseCanvas);
+      fitCanvas(activeCanvas);
+      redrawBase();
+    }, 120);
+  }
+  window.addEventListener('resize', onResize);
+  fitCanvas(baseCanvas);
+  fitCanvas(activeCanvas);
+
+  function settle(slip){
+    var wFrac = 0.22, hFrac = 0.09;
+    restingSlips.push({
+      xFrac: slip.xFrac,
+      yFracTop: slip.yPx / dims().h,
+      wFrac: wFrac, hFrac: hFrac, rot: slip.rot
+    });
+
+    var binCenter = Math.max(0, Math.min(BIN_COUNT - 1, Math.floor(slip.xFrac * BIN_COUNT)));
+    var lo = Math.max(0, binCenter - 1), hi = Math.min(BIN_COUNT - 1, binCenter + 1);
+    var topFrac = 1 - (slip.yPx / dims().h);
+    for (var b = lo; b <= hi; b++) {
+      if (topFrac > pileHeights[b]) pileHeights[b] = topFrac;
+    }
+
+    redrawBase();
+
+    if (Math.random() < 0.03) {
+      glows.push({ xFrac: slip.xFrac, y: slip.yPx, alpha: 0.5, life: 0 });
+      wake();
+    }
+
+    if (restingSlips.length >= CAPACITY && !isFull) {
+      isFull = true;
+      form.classList.add('hide');
+      fullNotice.classList.add('show');
+    }
+  }
+
+  function landingYPx(xFrac){
+    var d = dims();
+    var binCenter = Math.max(0, Math.min(BIN_COUNT - 1, Math.floor(xFrac * BIN_COUNT)));
+    var lo = Math.max(0, binCenter - 1), hi = Math.min(BIN_COUNT - 1, binCenter + 1);
+    var maxPile = 0;
+    for (var b = lo; b <= hi; b++) if (pileHeights[b] > maxPile) maxPile = pileHeights[b];
+    var hPx = 0.09 * d.h;
+    return d.h - (maxPile * d.h) - hPx - 3;
+  }
+
+  function dropWorry(){
+    var d = dims();
+    var xFrac = 0.5 + (Math.random() - 0.5) * 0.5;
+    xFrac = Math.max(0.08, Math.min(0.7, xFrac));
+
+    if (reduced) {
+      var landY = landingYPx(xFrac);
+      settle({ xFrac: xFrac, yPx: landY, rot: (Math.random() - 0.5) * 30 });
+      return;
+    }
+
+    activeSlips.push({
+      xFrac: xFrac,
+      yPx: -30,
+      vy: 0,
+      driftPhase: Math.random() * Math.PI * 2,
+      driftAmp: 5 + Math.random() * 7,
+      rot: (Math.random() - 0.5) * 30,
+      spawnT: performance.now()
+    });
+    wake();
+  }
+
+  function wake(){
+    if (!rafId) {
+      lastT = performance.now();
+      rafId = requestAnimationFrame(loop);
+    }
+  }
+
+  function loop(now){
+    var dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    var d = dims();
+    activeCtx.clearRect(0, 0, d.w, d.h);
+
+    for (var i = activeSlips.length - 1; i >= 0; i--) {
+      var s = activeSlips[i];
+      s.vy += GRAVITY * dt;
+      s.yPx += s.vy * dt;
+      var t = (now - s.spawnT) / 1000;
+      var drift = Math.sin(t * 3 + s.driftPhase) * s.driftAmp;
+      var drawXFrac = Math.max(0.02, Math.min(0.98, s.xFrac + drift / d.w));
+      var landY = landingYPx(drawXFrac);
+
+      if (s.yPx >= landY) {
+        s.xFrac = drawXFrac;
+        s.yPx = landY;
+        activeSlips.splice(i, 1);
+        settle(s);
+        continue;
+      }
+      drawSlip(activeCtx, drawXFrac * d.w, s.yPx, 0.22 * d.w, 0.09 * d.h, s.rot);
+    }
+
+    for (var j = glows.length - 1; j >= 0; j--) {
+      var g = glows[j];
+      g.life += dt;
+      g.y -= 30 * dt;
+      g.alpha = Math.max(0, 0.5 - g.life * 0.25);
+      if (g.alpha <= 0 || g.y < -20) { glows.splice(j, 1); continue; }
+      var gx = g.xFrac * d.w;
+      var grad = activeCtx.createRadialGradient(gx, g.y, 0, gx, g.y, 26);
+      grad.addColorStop(0, 'rgba(255,244,214,' + g.alpha + ')');
+      grad.addColorStop(1, 'rgba(255,244,214,0)');
+      activeCtx.fillStyle = grad;
+      activeCtx.beginPath();
+      activeCtx.arc(gx, g.y, 26, 0, Math.PI * 2);
+      activeCtx.fill();
+    }
+
+    if (activeSlips.length > 0 || glows.length > 0) {
+      rafId = requestAnimationFrame(loop);
+    } else {
+      rafId = null;
+    }
+  }
+
+  function emptyJar(){
+    if (reduced) {
+      restingSlips = [];
+      pileHeights = new Array(BIN_COUNT).fill(0);
+      isFull = false;
+      redrawBase();
+      fullNotice.classList.remove('show');
+      form.classList.remove('hide');
+      return;
+    }
+    var pouring = restingSlips.slice();
+    restingSlips = [];
+    pileHeights = new Array(BIN_COUNT).fill(0);
+    baseCtx.clearRect(0, 0, dims().w, dims().h);
+    var start = performance.now();
+    var DURATION = 900;
+    (function pourFrame(now){
+      var d = dims();
+      var t = Math.min(1, (now - start) / DURATION);
+      activeCtx.clearRect(0, 0, d.w, d.h);
+      for (var i = 0; i < pouring.length; i++) {
+        var s = pouring[i];
+        var fallX = s.xFrac * d.w + t * 60 * (s.xFrac > 0.5 ? 1 : -1);
+        var fallY = s.yFracTop * d.h + t * t * d.h * 1.4;
+        var alpha = 1 - t;
+        activeCtx.save();
+        activeCtx.globalAlpha = Math.max(0, alpha);
+        drawSlip(activeCtx, fallX, fallY, s.wFrac * d.w, s.hFrac * d.h, s.rot + t * 200);
+        activeCtx.restore();
+      }
+      if (t < 1) {
+        requestAnimationFrame(pourFrame);
+      } else {
+        activeCtx.clearRect(0, 0, d.w, d.h);
+        isFull = false;
+        fullNotice.classList.remove('show');
+        form.classList.remove('hide');
+      }
+    })(start);
+  }
+
+  input.addEventListener('input', function(){
+    dropBtn.disabled = input.value.trim().length === 0;
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    dropBtn.disabled = true;
+    hint.classList.add('gone');
+    totalCount++;
+    try { localStorage.setItem('worryjar_total', String(totalCount)); } catch (err) {}
+    totalCountEl.textContent = totalCount;
+    dropWorry();
+    input.blur();
+  });
+
+  emptyBtn.addEventListener('click', emptyJar);
+
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden && rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    } else if (!document.hidden && (activeSlips.length > 0 || glows.length > 0) && !rafId) {
+      wake();
+    }
+  });
+})();
+</script>
+</body>
+</html>

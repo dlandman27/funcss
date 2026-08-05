@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Your Ghost</title>
+    <meta name="description" content="Type the line before your own ghost does. It never gets nervous and it never forgets your best time.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/typingrace/">
+    <meta property="og:title" content="Race Your Ghost">
+    <meta property="og:description" content="Type the line before your own ghost does. It never gets nervous and it never forgets your best time.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/typingrace.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Race Your Ghost">
+    <meta name="twitter:description" content="Type the line before your own ghost does. It never gets nervous and it never forgets your best time.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/typingrace.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root{ --ink:#201a17; --paper:#f2ede2; --cream:#fff8ef;
+         --coral:#f0563e; --sky:#5aa0db; --lime:#b7ce3c; --purple:#a98fd0;
+         --orange:#f47b28; --pink:#ff7fa5; --teal:#2fb0a3; --gold:#f7c948; }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;
+    background:radial-gradient(130% 100% at 50% 0%, #fbf7ee 0%, #efe8db 70%, #e6ddce 100%);
+    font-family:'Arial Black','Arial',sans-serif;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+    color:var(--ink);
+  }
+  body{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; gap:clamp(10px,2.4vh,20px); }
+
+  .hud{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .chip{
+    background:var(--cream); border:3px solid var(--ink); border-radius:999px;
+    box-shadow:3px 3px 0 var(--ink); padding:8px 16px; font-size:clamp(12px,2.6vw,15px);
+    transform:rotate(-2deg);
+  }
+  .chip:nth-child(2){ transform:rotate(1.5deg); }
+  .chip:nth-child(3){ transform:rotate(-1deg); background:var(--gold); }
+  .chip span{ font-size:1.15em; }
+
+  .track{ width:min(94vw,640px); display:flex; flex-direction:column; gap:8px; }
+  .lane{ display:flex; align-items:center; gap:8px; }
+  .lane .label{ width:64px; font-size:clamp(10px,2.2vw,12px); flex:none; text-align:right; opacity:.7; }
+  .bar-bg{
+    flex:1; height:16px; background:var(--paper); border:2px solid var(--ink); border-radius:999px;
+    overflow:hidden; position:relative;
+  }
+  .bar-fill{ height:100%; width:0%; border-radius:999px; transition:width .06s linear; }
+  .you .bar-fill{ background:var(--coral); }
+  .ghost .bar-fill{ background:var(--purple); }
+
+  .textcard{
+    position:relative; width:min(94vw,640px); background:var(--cream);
+    border:3px solid var(--ink); border-radius:16px; box-shadow:5px 5px 0 var(--ink);
+    padding:clamp(16px,4vw,28px); cursor:text;
+  }
+  .sentence{
+    font-family:Georgia,'Times New Roman',serif; font-weight:normal; font-style:normal;
+    font-size:clamp(16px,3.6vw,24px); line-height:1.6; white-space:pre-wrap; word-break:break-word;
+  }
+  .char{ opacity:.55; }
+  .char.correct{ opacity:1; color:var(--teal); }
+  .char.wrong{ opacity:1; color:var(--coral); background:rgba(240,86,62,.15); border-radius:3px; }
+  .char.current{ outline:2px solid var(--ink); border-radius:2px; background:rgba(247,201,72,.4); }
+
+  #typer{
+    position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; outline:none;
+    font-size:16px; padding:0; margin:0; cursor:text;
+  }
+
+  .hint{
+    font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:clamp(12px,2.6vw,14px);
+    opacity:.55; transition:opacity 2s ease; text-align:center;
+  }
+  .hint.gone{ opacity:0; }
+
+  .overlay{
+    position:fixed; inset:0; z-index:5; display:flex; align-items:center; justify-content:center;
+    background:rgba(28,23,20,.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); padding:16px;
+  }
+  .overlay.hidden{ display:none; }
+  .card{
+    background:var(--cream); border:4px solid var(--ink); border-radius:20px; box-shadow:8px 8px 0 var(--ink);
+    padding:26px 30px; transform:rotate(-1deg); max-width:min(92vw,440px); text-align:center;
+  }
+  .word{
+    font-size:clamp(26px,7vw,42px); line-height:1; margin:0 0 14px;
+    -webkit-text-stroke:2px var(--ink); paint-order:stroke fill; color:var(--coral);
+  }
+  .stat-row{ display:flex; gap:18px; justify-content:center; margin-bottom:10px; }
+  .stat{ background:var(--paper); border:2px solid var(--ink); border-radius:12px; box-shadow:3px 3px 0 var(--ink); padding:10px 16px; }
+  .statnum{ font-size:clamp(24px,6vw,34px); }
+  .statlbl{ font-family:Georgia,serif; font-style:italic; font-size:11px; opacity:.6; margin-top:2px; }
+  .sub{ font-family:Georgia,serif; font-style:italic; font-size:clamp(13px,3.4vw,15px); opacity:.75; margin-bottom:14px; }
+  .badge{
+    display:inline-block; margin:0 0 12px; background:var(--gold); border:3px solid var(--ink); border-radius:999px;
+    box-shadow:3px 3px 0 var(--ink); padding:6px 18px; font-size:clamp(13px,3.4vw,16px); transform:rotate(-3deg);
+  }
+  .badge.gold{ background:var(--pink); }
+  .badge.hidden{ display:none; }
+  .go{
+    font-family:'Arial Black',sans-serif; font-weight:900; text-transform:uppercase; letter-spacing:.04em;
+    font-size:clamp(15px,4vw,18px); color:var(--ink); background:var(--sky);
+    border:3px solid var(--ink); border-radius:999px; box-shadow:4px 4px 0 var(--ink);
+    padding:12px 28px; cursor:pointer; transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .go:hover{ transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink); }
+  .go:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+
+  @keyframes popin{ 0%{ transform:scale(.2) rotate(-8deg); opacity:0; } 65%{ transform:scale(1.15) rotate(-1deg); opacity:1; } 100%{ transform:scale(1) rotate(-1deg); } }
+  .card{ animation:popin .4s ease; }
+  @media (prefers-reduced-motion:reduce){ .card{ animation:none; } .bar-fill{ transition:none; } }
+</style>
+</head>
+<body>
+  <div class="hud">
+    <div class="chip">WPM <span id="wpmVal">0</span></div>
+    <div class="chip">ACCURACY <span id="accVal">100</span>%</div>
+    <div class="chip">BEST <span id="bestVal">&mdash;</span></div>
+  </div>
+
+  <div class="track">
+    <div class="lane you">
+      <div class="label">YOU</div>
+      <div class="bar-bg"><div class="bar-fill" id="youFill"></div></div>
+    </div>
+    <div class="lane ghost">
+      <div class="label">GHOST</div>
+      <div class="bar-bg"><div class="bar-fill" id="ghostFill"></div></div>
+    </div>
+  </div>
+
+  <div class="textcard" id="textcard">
+    <div class="sentence" id="sentence"></div>
+    <input id="typer" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" maxlength="300">
+  </div>
+
+  <div class="hint" id="hint">tap the text and start typing — the ghost never remembers to blink</div>
+
+  <div class="overlay hidden" id="overlay">
+    <div class="card">
+      <h1 class="word" id="resultWord">RACE OVER</h1>
+      <div class="stat-row">
+        <div class="stat"><div class="statnum" id="finalWpm">0</div><div class="statlbl">wpm</div></div>
+        <div class="stat"><div class="statnum" id="finalAcc">0</div><div class="statlbl">accuracy</div></div>
+      </div>
+      <div class="sub" id="resultSub">&nbsp;</div>
+      <div class="badge hidden" id="newBestBadge">NEW BEST</div>
+      <div class="badge gold hidden" id="goldenBadge">RARE PACE</div>
+      <button class="go" id="againBtn">Race Again</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+
+  var SENTENCES = [
+    "The museum charges admission but the ghosts get in free.",
+    "A locksmith always keeps one door he can never open.",
+    "The recipe called for patience, which nobody had left.",
+    "Somewhere a lighthouse is still warning ships that turned back years ago.",
+    "The committee approved the idea and immediately forgot whose it was.",
+    "Every umbrella in this city belongs to someone who is currently dry.",
+    "The map was accurate except for the part where you live.",
+    "A quiet library is just a loud one that has not started yet.",
+    "The vending machine remembers every coin it has ever eaten.",
+    "Nobody reads the terms and conditions, especially the people who wrote them.",
+    "The old clock keeps perfect time for a version of today that already ended.",
+    "A good ladder knows exactly how far it is willing to go.",
+    "The waiting room chairs have outlasted three receptionists and one company name.",
+    "Somewhere a spare key is doing nothing under a rock that fooled no one.",
+    "The last bus of the night runs mostly out of habit.",
+    "A candle does its best work right before it runs out of opinions.",
+    "The elevator music has never once matched anyone's mood.",
+    "Every recipe box has one card nobody has the courage to try.",
+    "The parking garage remembers where you left it better than you do.",
+    "A dictionary contains every insult ever invented, filed alphabetically."
+  ];
+
+  var wrap = document.getElementById('textcard');
+  var sentenceEl = document.getElementById('sentence');
+  var typer = document.getElementById('typer');
+  var hint = document.getElementById('hint');
+  var youFill = document.getElementById('youFill');
+  var ghostFill = document.getElementById('ghostFill');
+  var wpmVal = document.getElementById('wpmVal');
+  var accVal = document.getElementById('accVal');
+  var bestVal = document.getElementById('bestVal');
+  var overlay = document.getElementById('overlay');
+  var resultWord = document.getElementById('resultWord');
+  var finalWpm = document.getElementById('finalWpm');
+  var finalAcc = document.getElementById('finalAcc');
+  var resultSub = document.getElementById('resultSub');
+  var newBestBadge = document.getElementById('newBestBadge');
+  var goldenBadge = document.getElementById('goldenBadge');
+  var againBtn = document.getElementById('againBtn');
+
+  var bestWpm = 0;
+  try { bestWpm = parseFloat(localStorage.getItem('typingrace_best_wpm')) || 0; } catch (e) {}
+  bestVal.textContent = bestWpm > 0 ? Math.round(bestWpm) : '—';
+
+  var sentence = '';
+  var spans = [];
+  var startTime = 0;
+  var started = false;
+  var finished = false;
+  var prevLen = 0;
+  var totalTyped = 0;
+  var correctTyped = 0;
+  var rafId = null;
+  var isGolden = false;
+  var lastSentence = null;
+
+  function pickSentence(){
+    var s;
+    do { s = SENTENCES[(Math.random() * SENTENCES.length) | 0]; } while (s === lastSentence && SENTENCES.length > 1);
+    lastSentence = s;
+    return s;
+  }
+
+  function renderSentence(){
+    sentenceEl.innerHTML = '';
+    spans = [];
+    for (var i = 0; i < sentence.length; i++) {
+      var span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = sentence[i];
+      sentenceEl.appendChild(span);
+      spans.push(span);
+    }
+    if (spans.length) spans[0].classList.add('current');
+  }
+
+  function ghostCharsPerSec(){
+    var wpm = bestWpm > 0 ? bestWpm : 45;
+    return (wpm * 5) / 60;
+  }
+
+  function ghostFinishSeconds(){
+    return sentence.length / ghostCharsPerSec();
+  }
+
+  function resetRace(){
+    finished = false;
+    started = false;
+    startTime = 0;
+    prevLen = 0;
+    totalTyped = 0;
+    correctTyped = 0;
+    sentence = pickSentence();
+    isGolden = Math.random() < 0.04;
+    renderSentence();
+    typer.disabled = false;
+    typer.value = '';
+    youFill.style.width = '0%';
+    ghostFill.style.width = '0%';
+    wpmVal.textContent = '0';
+    accVal.textContent = '100';
+    hint.classList.remove('gone');
+    overlay.classList.add('hidden');
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  function frame(){
+    if (!started || finished) { rafId = null; return; }
+    var elapsed = (performance.now() - startTime) / 1000;
+    var gf = Math.min(1, elapsed / ghostFinishSeconds());
+    ghostFill.style.width = (gf * 100).toFixed(2) + '%';
+    var minutes = elapsed / 60;
+    var wpm = minutes > 0 ? (typer.value.length / 5) / minutes : 0;
+    wpmVal.textContent = Math.round(wpm);
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function finishRace(){
+    finished = true;
+    typer.disabled = true;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    var elapsed = Math.max(0.05, (performance.now() - startTime) / 1000);
+    var minutes = elapsed / 60;
+    var wpm = (sentence.length / 5) / minutes;
+    var accuracy = totalTyped > 0 ? Math.round((correctTyped / totalTyped) * 100) : 100;
+    accuracy = Math.max(0, Math.min(100, accuracy));
+
+    var beatGhost = elapsed < ghostFinishSeconds();
+    var isNewBest = wpm > bestWpm;
+    if (isNewBest) {
+      bestWpm = wpm;
+      try { localStorage.setItem('typingrace_best_wpm', String(bestWpm)); } catch (e) {}
+      bestVal.textContent = Math.round(bestWpm);
+    }
+
+    resultWord.textContent = beatGhost ? 'YOU WIN' : 'GHOST WINS';
+    resultWord.style.color = beatGhost ? '#2fb0a3' : '#f0563e';
+    finalWpm.textContent = Math.round(wpm);
+    finalAcc.textContent = accuracy;
+    resultSub.textContent = beatGhost
+      ? 'you crossed the line before your ghost did.'
+      : 'the ghost finished first this time.';
+    newBestBadge.classList.toggle('hidden', !isNewBest);
+    goldenBadge.classList.toggle('hidden', !isGolden);
+
+    setTimeout(function(){ overlay.classList.remove('hidden'); }, 350);
+  }
+
+  typer.addEventListener('input', function(){
+    var value = typer.value;
+    if (value.length > sentence.length) {
+      value = value.slice(0, sentence.length);
+      typer.value = value;
+    }
+
+    if (!started && value.length > 0) {
+      started = true;
+      startTime = performance.now();
+      hint.classList.add('gone');
+      rafId = requestAnimationFrame(frame);
+    }
+
+    if (value.length > prevLen) {
+      for (var i = prevLen; i < value.length; i++) {
+        totalTyped++;
+        if (value[i] === sentence[i]) correctTyped++;
+      }
+    }
+    prevLen = value.length;
+
+    for (var j = 0; j < spans.length; j++) {
+      spans[j].classList.remove('correct', 'wrong', 'current');
+      if (j < value.length) {
+        spans[j].classList.add(value[j] === sentence[j] ? 'correct' : 'wrong');
+      }
+    }
+    if (value.length < spans.length) spans[value.length].classList.add('current');
+
+    youFill.style.width = ((value.length / sentence.length) * 100).toFixed(2) + '%';
+
+    if (totalTyped > 0) {
+      accVal.textContent = Math.max(0, Math.min(100, Math.round((correctTyped / totalTyped) * 100)));
+    }
+
+    if (value.length === sentence.length && !finished) {
+      finishRace();
+    }
+  });
+
+  wrap.addEventListener('click', function(){ typer.focus(); });
+  againBtn.addEventListener('click', function(){ resetRace(); typer.focus(); });
+
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden && started && !finished) {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    } else if (!document.hidden && started && !finished && !rafId) {
+      rafId = requestAnimationFrame(frame);
+    }
+  });
+
+  resetRace();
+})();
+</script>
+</body>
+</html>
