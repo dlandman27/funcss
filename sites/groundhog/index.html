@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Groundhog</title>
+    <meta name="description" content="Every round wipes the canvas, rebuilds everything you've drawn so far in its original colors, then hands you a fresh color to add on top.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/groundhog/">
+    <meta property="og:title" content="Groundhog">
+    <meta property="og:description" content="Every round wipes the canvas, rebuilds everything you've drawn so far in its original colors, then hands you a fresh color to add on top.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/groundhog.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Groundhog">
+    <meta name="twitter:description" content="Every round wipes the canvas, rebuilds everything you've drawn so far in its original colors, then hands you a fresh color to add on top.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/groundhog.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root{ --ink:#201a17; --paper:#f2ede2; --cream:#fff8ef;
+           --coral:#f0563e; --sky:#5aa0db; --lime:#b7ce3c; --purple:#a98fd0;
+           --orange:#f47b28; --pink:#ff7fa5; --teal:#2fb0a3; --gold:#f7c948; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(130% 100% at 50% 0%, #fbf7ee 0%, #efe8db 70%, #e6ddce 100%);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      color: var(--ink);
+    }
+
+    #stage { position: relative; width: 100%; height: 100%; }
+    #canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+    .badge {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 3;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 7px 16px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(11px, 2.4vw, 13px);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      transform: rotate(-3deg);
+      opacity: 1;
+      transition: opacity 0.25s ease;
+    }
+    .badge.hide { opacity: 0; pointer-events: none; }
+
+    .timerwrap {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 3;
+      width: 46px;
+      height: 46px;
+      opacity: 1;
+      transition: opacity 0.25s ease;
+    }
+    .timerwrap.hide { opacity: 0; pointer-events: none; }
+    .timerwrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .timerwrap circle {
+      fill: var(--cream);
+      stroke: var(--ink);
+      stroke-width: 3;
+    }
+    .timerwrap .arc {
+      fill: none;
+      stroke: var(--coral);
+      stroke-width: 5;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.08s linear;
+    }
+
+    #announce {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    #announce.show { opacity: 1; }
+    #announce .word {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: clamp(32px, 9vw, 80px);
+      letter-spacing: 0.02em;
+      -webkit-text-stroke: 3px var(--ink);
+      paint-order: stroke fill;
+      opacity: 0;
+      transform: rotate(-4deg) scale(0.2);
+      text-align: center;
+      white-space: nowrap;
+    }
+    #announce .word.pop {
+      animation: popIn 420ms cubic-bezier(.2, 1.6, .4, 1) forwards;
+    }
+    @keyframes popIn {
+      0%   { transform: rotate(-4deg) scale(0.2); opacity: 0; }
+      60%  { transform: rotate(-4deg) scale(1.15); opacity: 1; }
+      100% { transform: rotate(-4deg) scale(1); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #announce .word.pop { animation: popInReduced 180ms ease forwards; }
+      @keyframes popInReduced {
+        from { transform: rotate(-4deg) scale(1); opacity: 0; }
+        to   { transform: rotate(-4deg) scale(1); opacity: 1; }
+      }
+    }
+
+    #hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 8vh;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(13px, 2vw, 16px);
+      opacity: 0.55;
+      pointer-events: none;
+      transition: opacity 2.5s ease;
+      padding: 0 16px;
+    }
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <div class="badge hide" id="badge">iteration 1</div>
+    <div class="timerwrap hide" id="timerwrap">
+      <svg viewBox="0 0 46 46">
+        <circle cx="23" cy="23" r="19"></circle>
+        <circle class="arc" id="arc" cx="23" cy="23" r="19"
+          stroke-dasharray="119.4" stroke-dashoffset="0"></circle>
+      </svg>
+    </div>
+    <div id="announce"><span class="word" id="announceWord"></span></div>
+    <div id="hint">watch it rebuild everything so far, then add your own color on top</div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3'];
+
+    var stage = document.getElementById('stage');
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    var badge = document.getElementById('badge');
+    var timerwrap = document.getElementById('timerwrap');
+    var arc = document.getElementById('arc');
+    var announceEl = document.getElementById('announce');
+    var announceWord = document.getElementById('announceWord');
+    var hint = document.getElementById('hint');
+
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var W = 0, H = 0;
+    var CIRC = 2 * Math.PI * 19;
+
+    // ---- timing constants ----
+    var ANNOUNCE_MS = 900;
+    var COUNTDOWN_STEP_MS = 750;
+    var ACTIVE_MS = 10000;
+    var REPLAY_BUDGET_FRACTION = 0.65; // all of history replays concurrently within roughly this fraction of ACTIVE_MS
+    var MIN_REPLAY_MS = 500;         // never retrace history faster than this, even if it's tiny
+    var MIN_MS_PER_EVENT = 5;        // floor so a very dense single stroke can't flash-replay
+
+    // ---- game state ----
+    var history = [];               // completed iterations: { color, events:[{x,y,down}] } (normalized coords)
+    var currentIteration = null;    // the iteration being recorded this round
+    var iterationNum = 0;           // 1-indexed round number
+    var iterationColor = COLORS[0];
+
+    var mode = 'announce';          // 'announce' | 'countdown' | 'active'
+    var phaseStart = 0;
+    var countdownIndex = 0;
+    var countdownStepStart = 0;
+    var activeStart = 0;
+
+    var replaySchedule = [];        // [{time, x, y, down, color, pen}] in the round's virtual active-phase timeline
+    var replayCursor = 0;
+
+    // events actually applied to the canvas since the last wipe, for resize redraw.
+    // { x, y, down, color, pen } — pen tags which logical stroke-pen an event belongs to
+    // ('live' for the current-round pointer, 'r0'/'r1'/... for each replayed historical
+    // iteration this round) so concurrent pens never get stitched into one another.
+    var drawnSoFar = [];
+    var penPositions = {};          // per-pen last point, in PIXELS, reset every wipe
+
+    var drawingLive = false;
+    var everInteracted = false;
+
+    var rafId = null;
+    var hiddenAt = null;
+
+    function resize() {
+      var oldW = W, oldH = H;
+      W = stage.clientWidth;
+      H = stage.clientHeight;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      // Rescale any in-flight pen positions too, so a stroke held across a resize
+      // (e.g. rotating a device mid-draw) continues from the right spot instead of
+      // jumping in from its old pixel coordinates.
+      if (oldW && oldH) {
+        var sx = W / oldW, sy = H / oldH;
+        for (var key in penPositions) {
+          if (Object.prototype.hasOwnProperty.call(penPositions, key)) {
+            penPositions[key].x *= sx;
+            penPositions[key].y *= sy;
+          }
+        }
+      }
+      redrawFromEvents(drawnSoFar);
+    }
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 120);
+    });
+
+    // ---- drawing ----
+
+    // Applies one normalized event through a named pen. Each pen tracks its own last
+    // point so two pens (e.g. the live pointer and a replaying historical iteration)
+    // can draw concurrently on the same canvas without corrupting each other's lines.
+    function applyPenEvent(nx, ny, down, color, penKey, record) {
+      var px = nx * W, py = ny * H;
+      if (down === 'start') {
+        penPositions[penKey] = { x: px, y: py };
+      } else if (down === 'move') {
+        var last = penPositions[penKey] || { x: px, y: py };
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(px, py);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        penPositions[penKey] = { x: px, y: py };
+      }
+      if (record) drawnSoFar.push({ x: nx, y: ny, down: down, color: color, pen: penKey });
+    }
+
+    function redrawFromEvents(events) {
+      ctx.clearRect(0, 0, W, H);
+      var positions = {};
+      for (var i = 0; i < events.length; i++) {
+        var ev = events[i];
+        var px = ev.x * W, py = ev.y * H;
+        if (ev.down === 'start') {
+          positions[ev.pen] = { x: px, y: py };
+        } else if (ev.down === 'move') {
+          var last = positions[ev.pen] || { x: px, y: py };
+          ctx.beginPath();
+          ctx.moveTo(last.x, last.y);
+          ctx.lineTo(px, py);
+          ctx.lineWidth = 5;
+          ctx.strokeStyle = ev.color;
+          ctx.stroke();
+          positions[ev.pen] = { x: px, y: py };
+        }
+      }
+    }
+
+    // ---- replay scheduling ----
+    // Every historical iteration replays CONCURRENTLY within the same shared window
+    // (all their pens moving at once, like the whole painting's history unfolding
+    // together) rather than one iteration finishing before the next starts. Each
+    // iteration's own events are spread linearly across that shared duration. A
+    // floor stretches the window if any single iteration is dense enough that it
+    // would otherwise flash by.
+    function computeReplaySchedule(hist) {
+      var nonEmpty = [];
+      for (var i = 0; i < hist.length; i++) {
+        if (hist[i].events.length) nonEmpty.push(hist[i]);
+      }
+      if (!nonEmpty.length) return [];
+
+      var sharedDuration = Math.max(MIN_REPLAY_MS, ACTIVE_MS * REPLAY_BUDGET_FRACTION);
+
+      // If any single iteration is dense enough that it would flash by inside the
+      // shared window, stretch the whole shared window to accommodate it.
+      for (i = 0; i < nonEmpty.length; i++) {
+        var floorForThis = nonEmpty[i].events.length * MIN_MS_PER_EVENT;
+        if (floorForThis > sharedDuration) sharedDuration = floorForThis;
+      }
+
+      var schedule = [];
+      for (i = 0; i < nonEmpty.length; i++) {
+        var iter = nonEmpty[i];
+        var K = iter.events.length;
+        for (var j = 0; j < K; j++) {
+          var t = K > 1 ? (j / (K - 1)) * sharedDuration : sharedDuration * 0.5;
+          var srcEv = iter.events[j];
+          schedule.push({ time: t, x: srcEv.x, y: srcEv.y, down: srcEv.down, color: iter.color, pen: 'r' + i });
+        }
+      }
+      schedule.sort(function (a, b) { return a.time - b.time; });
+      return schedule;
+    }
+
+    // ---- announce / countdown overlay ----
+
+    function showAnnounce(text, color) {
+      announceWord.textContent = text;
+      announceWord.style.color = color;
+      announceWord.classList.remove('pop');
+      void announceWord.offsetWidth; // force reflow so the animation restarts
+      announceWord.classList.add('pop');
+    }
+
+    function setChromeVisible(visible) {
+      badge.classList.toggle('hide', !visible);
+      timerwrap.classList.toggle('hide', !visible);
+    }
+
+    // ---- round phase machine ----
+
+    function startRound() {
+      // phase 1: wipe — instant, total, no leftover strokes from the previous round.
+      ctx.clearRect(0, 0, W, H);
+      drawnSoFar = [];
+      penPositions = {};
+
+      iterationNum = history.length + 1;
+      iterationColor = COLORS[(iterationNum - 1) % COLORS.length];
+      currentIteration = { color: iterationColor, events: [] };
+
+      replaySchedule = computeReplaySchedule(history);
+      replayCursor = 0;
+
+      badge.textContent = 'iteration ' + iterationNum;
+      setChromeVisible(false);
+
+      // phase 2: announce
+      mode = 'announce';
+      phaseStart = performance.now();
+      announceEl.classList.add('show');
+      showAnnounce('ITERATION ' + iterationNum, iterationColor);
+    }
+
+    function startCountdown() {
+      // phase 3: countdown
+      mode = 'countdown';
+      countdownIndex = 0;
+      countdownStepStart = performance.now();
+      showAnnounce('3', iterationColor);
+    }
+
+    function startActive() {
+      // phase 4: active
+      mode = 'active';
+      activeStart = performance.now();
+      replayCursor = 0;
+      announceEl.classList.remove('show');
+      setChromeVisible(true);
+      arc.setAttribute('stroke-dashoffset', '0');
+    }
+
+    function endRound() {
+      // phase 5: round end — always occupies its numbered slot, even if empty.
+      history.push(currentIteration);
+      startRound();
+    }
+
+    // ---- input (only accepted during phase 4) ----
+
+    function pointFromEvent(e) {
+      var rect = canvas.getBoundingClientRect();
+      return {
+        x: rect.width ? (e.clientX - rect.left) / rect.width : 0,
+        y: rect.height ? (e.clientY - rect.top) / rect.height : 0
+      };
+    }
+
+    canvas.addEventListener('pointerdown', function (e) {
+      if (mode !== 'active') return;
+      drawingLive = true;
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+      var p = pointFromEvent(e);
+      currentIteration.events.push({ x: p.x, y: p.y, down: 'start' });
+      applyPenEvent(p.x, p.y, 'start', iterationColor, 'live', true);
+      if (!everInteracted) {
+        everInteracted = true;
+        hint.classList.add('hidden');
+      }
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!drawingLive || mode !== 'active') return;
+      var events = (e.getCoalescedEvents && e.getCoalescedEvents()) || [e];
+      for (var i = 0; i < events.length; i++) {
+        var p = pointFromEvent(events[i]);
+        currentIteration.events.push({ x: p.x, y: p.y, down: 'move' });
+        applyPenEvent(p.x, p.y, 'move', iterationColor, 'live', true);
+      }
+    });
+    function endStroke() { drawingLive = false; }
+    canvas.addEventListener('pointerup', endStroke);
+    canvas.addEventListener('pointercancel', endStroke);
+
+    // ---- main loop ----
+
+    function tick() {
+      var now = performance.now();
+
+      if (mode === 'announce') {
+        if (now - phaseStart >= ANNOUNCE_MS) startCountdown();
+      } else if (mode === 'countdown') {
+        if (now - countdownStepStart >= COUNTDOWN_STEP_MS) {
+          countdownIndex++;
+          if (countdownIndex >= 3) {
+            startActive();
+          } else {
+            countdownStepStart = now;
+            showAnnounce(String(3 - countdownIndex), iterationColor);
+          }
+        }
+      } else if (mode === 'active') {
+        var activeElapsed = now - activeStart;
+        while (replayCursor < replaySchedule.length && replaySchedule[replayCursor].time <= activeElapsed) {
+          var se = replaySchedule[replayCursor];
+          applyPenEvent(se.x, se.y, se.down, se.color, se.pen, true);
+          replayCursor++;
+        }
+        var frac = Math.min(1, activeElapsed / ACTIVE_MS);
+        arc.setAttribute('stroke-dashoffset', String(CIRC * frac));
+        if (activeElapsed >= ACTIVE_MS) endRound();
+      }
+
+      rafId = requestAnimationFrame(tick);
+    }
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+        hiddenAt = performance.now();
+      } else {
+        if (hiddenAt != null) {
+          var delta = performance.now() - hiddenAt;
+          phaseStart += delta;
+          countdownStepStart += delta;
+          activeStart += delta;
+          hiddenAt = null;
+        }
+        if (!rafId) rafId = requestAnimationFrame(tick);
+      }
+    });
+
+    resize();
+    startRound();
+    rafId = requestAnimationFrame(tick);
+  })();
+  </script>
+</body>
+</html>

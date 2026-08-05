@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heat Trail</title>
+    <meta name="description" content="Move around and the room remembers, in heat. Hold still and it gets hotter.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/heattrail/">
+    <meta property="og:title" content="Heat Trail">
+    <meta property="og:description" content="Move around and the room remembers, in heat. Hold still and it gets hotter.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/heattrail.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Heat Trail">
+    <meta name="twitter:description" content="Move around and the room remembers, in heat. Hold still and it gets hotter.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/heattrail.png">
+    <!-- rsotw:og:end -->
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050608;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #stage {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: none;
+    }
+
+    #readout {
+      position: fixed;
+      top: 16px;
+      left: 18px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(11px, 1.8vw, 13px);
+      color: rgba(255, 200, 140, 0.5);
+      letter-spacing: 0.03em;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 7vh;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(13px, 2vw, 17px);
+      color: rgba(255, 210, 170, 0.42);
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      transition: opacity 3s ease;
+      padding: 0 16px;
+    }
+
+    #hint.hidden { opacity: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div id="readout">peak: <span id="peakVal">0</span>&deg;</div>
+  <div id="hint">move around &mdash; hold still and it gets hotter</div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+    var peakVal = document.getElementById('peakVal');
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var W = 0, H = 0;
+
+    // low-res heat buffer: cheap per-pixel color remap, blurry/organic when scaled up
+    var BUF_W = 176;
+    var BUF_H = 100;
+    var heatCanvas = document.createElement('canvas');
+    var heatCtx = heatCanvas.getContext('2d');
+    var colorCanvas = document.createElement('canvas');
+    var colorCtx = colorCanvas.getContext('2d');
+    heatCanvas.width = colorCanvas.width = BUF_W;
+    heatCanvas.height = colorCanvas.height = BUF_H;
+
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+
+      BUF_H = Math.max(60, Math.round(BUF_W * (H / W)));
+      heatCanvas.height = colorCanvas.height = BUF_H;
+
+      heatCtx.fillStyle = '#000';
+      heatCtx.fillRect(0, 0, BUF_W, BUF_H);
+    }
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 120);
+    });
+
+    // ironbow-style thermal LUT, precomputed 256-entry table
+    var LUT_R = new Uint8ClampedArray(256);
+    var LUT_G = new Uint8ClampedArray(256);
+    var LUT_B = new Uint8ClampedArray(256);
+    (function buildLUT() {
+      var stops = [
+        [0.00, 4, 4, 10],
+        [0.16, 40, 4, 70],
+        [0.34, 110, 10, 120],
+        [0.52, 190, 30, 40],
+        [0.70, 240, 120, 10],
+        [0.86, 255, 210, 40],
+        [1.00, 255, 255, 235]
+      ];
+      for (var i = 0; i < 256; i++) {
+        var t = i / 255;
+        var a = stops[0], b = stops[stops.length - 1];
+        for (var s = 0; s < stops.length - 1; s++) {
+          if (t >= stops[s][0] && t <= stops[s + 1][0]) { a = stops[s]; b = stops[s + 1]; break; }
+        }
+        var span = (b[0] - a[0]) || 1;
+        var f = (t - a[0]) / span;
+        LUT_R[i] = a[1] + (b[1] - a[1]) * f;
+        LUT_G[i] = a[2] + (b[2] - a[2]) * f;
+        LUT_B[i] = a[3] + (b[3] - a[3]) * f;
+      }
+    })();
+
+    var lastX = null, lastY = null, lastT = 0;
+    var peak = 0, peakDecayT = 0;
+
+    function depositAt(clientX, clientY, speed) {
+      var rect = canvas.getBoundingClientRect();
+      var bx = ((clientX - rect.left) / rect.width) * BUF_W;
+      var by = ((clientY - rect.top) / rect.height) * BUF_H;
+
+      var intensity = Math.max(0.35, Math.min(1, speed / 900));
+      var radius = 4 + intensity * 7;
+
+      var grad = heatCtx.createRadialGradient(bx, by, 0, bx, by, radius);
+      grad.addColorStop(0, 'rgba(255,255,255,' + (0.55 * intensity) + ')');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      heatCtx.globalCompositeOperation = 'lighter';
+      heatCtx.fillStyle = grad;
+      heatCtx.beginPath();
+      heatCtx.arc(bx, by, radius, 0, Math.PI * 2);
+      heatCtx.fill();
+      heatCtx.globalCompositeOperation = 'source-over';
+
+      hint.classList.add('hidden');
+      wake();
+    }
+
+    function depositDwell(clientX, clientY, stillTime) {
+      var rect = canvas.getBoundingClientRect();
+      var bx = ((clientX - rect.left) / rect.width) * BUF_W;
+      var by = ((clientY - rect.top) / rect.height) * BUF_H;
+
+      var grow = Math.min(1, stillTime / 2200);
+      var intensity = 0.5 + grow * 0.5;
+      var radius = 5 + grow * 9;
+
+      var grad = heatCtx.createRadialGradient(bx, by, 0, bx, by, radius);
+      grad.addColorStop(0, 'rgba(255,255,255,' + (0.5 * intensity) + ')');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      heatCtx.globalCompositeOperation = 'lighter';
+      heatCtx.fillStyle = grad;
+      heatCtx.beginPath();
+      heatCtx.arc(bx, by, radius, 0, Math.PI * 2);
+      heatCtx.fill();
+      heatCtx.globalCompositeOperation = 'source-over';
+    }
+
+    var dwellStart = 0;
+    var hoverActive = false;
+
+    function pointerMove(clientX, clientY) {
+      var now = performance.now();
+      var speed = 0;
+      if (lastX !== null) {
+        var dt = Math.max(1, now - lastT);
+        var dist = Math.hypot(clientX - lastX, clientY - lastY);
+        speed = (dist / dt) * 1000;
+      }
+      lastX = clientX; lastY = clientY; lastT = now;
+      dwellStart = now;
+      hoverActive = true;
+      depositAt(clientX, clientY, speed);
+    }
+
+    canvas.addEventListener('pointermove', function (e) {
+      var events = (e.getCoalescedEvents && e.getCoalescedEvents()) || [e];
+      for (var i = 0; i < events.length; i++) pointerMove(events[i].clientX, events[i].clientY);
+    });
+    canvas.addEventListener('pointerenter', function (e) {
+      lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
+      dwellStart = performance.now();
+      hoverActive = true;
+      wake();
+    });
+    canvas.addEventListener('pointerdown', function (e) {
+      lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
+      dwellStart = performance.now();
+      hoverActive = true;
+      depositAt(e.clientX, e.clientY, 900);
+    });
+    canvas.addEventListener('pointerup', function (e) {
+      if (e.pointerType === 'touch') { hoverActive = false; lastX = null; }
+    });
+    canvas.addEventListener('pointercancel', function (e) {
+      if (e.pointerType === 'touch') { hoverActive = false; lastX = null; }
+    });
+    canvas.addEventListener('pointerleave', function () { hoverActive = false; lastX = null; });
+
+    var rafId = null;
+    var idleFrames = 0;
+
+    function wake() {
+      if (!rafId) rafId = requestAnimationFrame(loop);
+    }
+
+    function loop() {
+      if (hoverActive && lastX !== null) {
+        var stillTime = performance.now() - dwellStart;
+        if (stillTime > 140) depositDwell(lastX, lastY, stillTime);
+      }
+
+      // cool the heat buffer slightly each frame
+      heatCtx.fillStyle = reduced ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.012)';
+      heatCtx.fillRect(0, 0, BUF_W, BUF_H);
+
+      var img = heatCtx.getImageData(0, 0, BUF_W, BUF_H);
+      var data = img.data;
+      var maxV = 0;
+      for (var i = 0; i < data.length; i += 4) {
+        var v = data[i]; // grayscale, use red channel
+        if (v > maxV) maxV = v;
+        data[i] = LUT_R[v];
+        data[i + 1] = LUT_G[v];
+        data[i + 2] = LUT_B[v];
+        data[i + 3] = 255;
+      }
+      colorCtx.putImageData(img, 0, 0);
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(colorCanvas, 0, 0, BUF_W, BUF_H, 0, 0, W, H);
+
+      var nowPeak = Math.round((maxV / 255) * 1200);
+      if (nowPeak > peak) { peak = nowPeak; peakDecayT = performance.now(); }
+      else if (performance.now() - peakDecayT > 1200) { peak = Math.max(nowPeak, Math.round(peak * 0.985)); }
+      peakVal.textContent = peak;
+
+      if (maxV < 3) {
+        idleFrames++;
+      } else {
+        idleFrames = 0;
+      }
+
+      if (idleFrames > 30 || reduced && maxV < 3) {
+        rafId = null;
+        return;
+      }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden && rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    });
+
+    resize();
+    wake();
+  })();
+  </script>
+</body>
+</html>

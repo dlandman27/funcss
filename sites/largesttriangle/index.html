@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Largest Triangle</title>
+    <meta name="description" content="A triangle. It has a point. Keep scrolling.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/largesttriangle/">
+    <meta property="og:title" content="The Largest Triangle">
+    <meta property="og:description" content="A triangle. It has a point. Keep scrolling.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/largesttriangle.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Largest Triangle">
+    <meta name="twitter:description" content="A triangle. It has a point. Keep scrolling.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/largesttriangle.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root{ --ink:#201a17; --paper:#f2ede2; --cream:#fff8ef;
+           --coral:#f0563e; --sky:#5aa0db; --lime:#b7ce3c; --purple:#a98fd0;
+           --orange:#f47b28; --pink:#ff7fa5; --teal:#2fb0a3; --gold:#f7c948; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      background: var(--paper);
+    }
+    body {
+      color: var(--ink);
+      font-family: 'Arial Black', Arial, sans-serif;
+    }
+
+    #top {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 20px;
+    }
+    #top h1 {
+      font-size: clamp(28px, 6vw, 56px);
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+      -webkit-text-stroke: 2px var(--ink);
+      paint-order: stroke fill;
+      color: var(--coral);
+      transform: rotate(-2deg);
+    }
+    #top p {
+      margin-top: 18px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-weight: normal;
+      font-size: clamp(13px, 2vw, 16px);
+      opacity: 0.6;
+      max-width: 420px;
+    }
+    #scrolldown {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(12px, 2vw, 14px);
+      opacity: 0.5;
+      animation: bob 1.8s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translate(-50%, 0); }
+      50% { transform: translate(-50%, 8px); }
+    }
+
+    #triangleWrap {
+      position: relative;
+      width: 100%;
+      height: 8000000px;
+    }
+    #triangleWrap svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #triangleWrap polygon {
+      fill: var(--coral);
+      stroke: var(--ink);
+      stroke-width: 3;
+      vector-effect: non-scaling-stroke;
+    }
+
+    #readout {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 5;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 8px 16px;
+      font-size: clamp(11px, 2.4vw, 13px);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      transform: rotate(-2deg);
+      transition: opacity 0.3s ease;
+    }
+    #readout.hide { opacity: 0; pointer-events: none; }
+
+    #pointArea {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 20px;
+    }
+    #payoff {
+      background: var(--gold);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 18px 28px;
+      transform: rotate(-3deg) scale(0.2);
+      opacity: 0;
+      max-width: 380px;
+    }
+    #payoff.show {
+      animation: popIn 420ms cubic-bezier(.2, 1.6, .4, 1) forwards;
+    }
+    @keyframes popIn {
+      0%   { transform: rotate(-3deg) scale(0.2); opacity: 0; }
+      60%  { transform: rotate(-3deg) scale(1.12); opacity: 1; }
+      100% { transform: rotate(-3deg) scale(1); opacity: 1; }
+    }
+    #payoff .big {
+      font-size: clamp(16px, 3vw, 22px);
+      text-transform: uppercase;
+    }
+    #payoff .small {
+      margin-top: 8px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-weight: normal;
+      font-size: clamp(12px, 2vw, 14px);
+      opacity: 0.75;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #scrolldown { animation: none; }
+      #payoff.show { animation: none; opacity: 1; transform: rotate(-3deg) scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div id="top">
+    <h1>The Largest Triangle</h1>
+    <p>It has a point. You will find it eventually.</p>
+    <div id="scrolldown">scroll</div>
+  </div>
+
+  <div id="readout">to the point: <span id="pctVal">100</span>%</div>
+
+  <div id="triangleWrap">
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
+      <polygon points="0,0 1000,0 500,1000"></polygon>
+    </svg>
+  </div>
+
+  <div id="pointArea">
+    <div id="payoff">
+      <div class="big">You found it.</div>
+      <div class="small">This is the point. It was here the whole time.</div>
+      <div class="small" id="visitCount"></div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var readout = document.getElementById('readout');
+    var pctVal = document.getElementById('pctVal');
+    var payoff = document.getElementById('payoff');
+    var visitCount = document.getElementById('visitCount');
+    var scrolldown = document.getElementById('scrolldown');
+
+    var payoffShown = false;
+    var hintHidden = false;
+    var ticking = false;
+
+    function update() {
+      ticking = false;
+      var doc = document.documentElement;
+      var scrollTop = window.pageYOffset || doc.scrollTop;
+      var maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
+      var frac = Math.min(1, Math.max(0, scrollTop / maxScroll));
+      var pct = Math.round((1 - frac) * 100);
+      pctVal.textContent = pct;
+
+      if (!hintHidden && scrollTop > 40) {
+        hintHidden = true;
+        scrolldown.style.opacity = '0';
+      }
+
+      readout.classList.toggle('hide', frac > 0.985 && !payoffShown);
+
+      if (!payoffShown && frac >= 0.999) {
+        payoffShown = true;
+        payoff.classList.add('show');
+        var count = 0;
+        try {
+          count = parseInt(localStorage.getItem('largesttriangle_visits'), 10) || 0;
+          count++;
+          localStorage.setItem('largesttriangle_visits', String(count));
+        } catch (e) { count = 1; }
+        visitCount.textContent = count === 1
+          ? "first time you've made it here."
+          : "you've made it here " + count + ' times.';
+      } else if (payoffShown && frac < 0.999) {
+        payoffShown = false;
+        payoff.classList.remove('show');
+      }
+    }
+
+    window.addEventListener('scroll', function () {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+
+    update();
+  })();
+  </script>
+</body>
+</html>
