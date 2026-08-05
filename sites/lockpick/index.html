@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lockpick</title>
+    <meta name="description" content="Drag each pin to its click point — the track glows warmer the closer you get. Set them all, turn the pick, and the next lock gets meaner.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/lockpick/">
+    <meta property="og:title" content="Lockpick">
+    <meta property="og:description" content="Drag each pin to its click point — the track glows warmer the closer you get. Set them all, turn the pick, and the next lock gets meaner.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/lockpick.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lockpick">
+    <meta name="twitter:description" content="Drag each pin to its click point — the track glows warmer the closer you get. Set them all, turn the pick, and the next lock gets meaner.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/lockpick.png">
+    <!-- rsotw:og:end -->
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        #badge {
+            position: fixed;
+            top: max(16px, env(safe-area-inset-top));
+            left: 18px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(1rem, 3.2vmin, 1.5rem);
+            letter-spacing: 0.03em;
+            color: var(--coral);
+            -webkit-text-stroke: 2px var(--ink);
+            paint-order: stroke fill;
+            transform: rotate(-4deg);
+            pointer-events: none;
+        }
+
+        #ledger {
+            position: fixed;
+            top: max(16px, env(safe-area-inset-top));
+            right: 18px;
+            background: var(--gold);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 0.35rem 0.9rem;
+            font-style: italic;
+            font-size: clamp(0.75rem, 2.4vmin, 0.9rem);
+            transform: rotate(3deg);
+        }
+
+        #stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(1rem, 3vh, 1.8rem);
+            padding: 1rem;
+            width: 100%;
+        }
+
+        #lockCard {
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 16px;
+            box-shadow: 6px 6px 0 var(--ink);
+            padding: clamp(1rem, 3vw, 1.8rem);
+            transform: rotate(-1deg);
+            transition: transform 0.4s ease;
+        }
+
+        #lockCard.open {
+            transform: rotate(-1deg) scale(1.03);
+        }
+
+        #pins {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(4px, 1.6vw, 14px);
+            align-items: flex-end;
+            justify-content: center;
+            max-width: 90vw;
+        }
+
+        .track {
+            position: relative;
+            width: clamp(22px, 6.5vw, 50px);
+            height: clamp(140px, 32vh, 240px);
+            background: var(--paper);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            transition: box-shadow 0.12s ease;
+        }
+
+        .pin {
+            position: absolute;
+            left: 3px;
+            right: 3px;
+            bottom: 0;
+            height: 28px;
+            border-radius: 8px;
+            border: 2px solid var(--ink);
+            box-shadow: 2px 2px 0 var(--ink);
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .pin.dragging { cursor: grabbing; }
+
+        .pin.set {
+            animation: popIn 0.4s ease;
+            cursor: default;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.6); }
+            60% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .temp {
+            position: absolute;
+            bottom: -1.6rem;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-style: italic;
+            font-size: clamp(0.62rem, 1.8vmin, 0.75rem);
+            opacity: 0.55;
+            white-space: nowrap;
+        }
+
+        #turnRow {
+            display: flex;
+            justify-content: center;
+            min-height: clamp(2.6rem, 6vh, 3.6rem);
+        }
+
+        #turnBtn {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(0.9rem, 3vmin, 1.15rem);
+            letter-spacing: 0.05em;
+            color: var(--ink);
+            background: var(--lime);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 0.6rem 1.8rem;
+            cursor: pointer;
+            transform: rotate(-3deg) scale(0.2);
+            animation: turnPop 0.4s ease forwards;
+        }
+
+        #turnBtn:hover { transform: translate(-2px, -2px) rotate(-3deg); box-shadow: 6px 6px 0 var(--ink); }
+        #turnBtn:active { transform: translate(2px, 2px) rotate(-3deg); box-shadow: 2px 2px 0 var(--ink); }
+
+        @keyframes turnPop {
+            0% { transform: rotate(-3deg) scale(0.2); }
+            60% { transform: rotate(-3deg) scale(1.15); }
+            100% { transform: rotate(-3deg) scale(1); }
+        }
+
+        #hint {
+            font-style: italic;
+            font-size: clamp(0.8rem, 2.6vmin, 1rem);
+            opacity: 0.55;
+            text-align: center;
+            transition: opacity 2s ease;
+            padding: 0 1rem;
+        }
+
+        #hint.gone { opacity: 0; }
+
+        #stamp {
+            position: fixed;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-8deg) scale(0.3);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(2rem, 9vmin, 4rem);
+            color: var(--gold);
+            -webkit-text-stroke: 3px var(--ink);
+            paint-order: stroke fill;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1.4s ease, transform 0.4s ease;
+        }
+
+        #stamp.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) rotate(-8deg) scale(1);
+            transition: opacity 0.25s ease, transform 0.4s cubic-bezier(.2,1.4,.4,1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .pin, #turnBtn, #lockCard, #stamp {
+                animation: none !important;
+                transition: opacity 0.3s ease !important;
+                transform: none !important;
+            }
+            #stamp.show { transform: translate(-50%, -50%) !important; opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="badge">LOCKPICK</div>
+    <div id="ledger">picked: <span id="streakVal">0</span> &middot; best: <span id="bestVal">0</span></div>
+
+    <div id="stage">
+        <div id="lockCard">
+            <div id="pins"></div>
+        </div>
+        <div id="turnRow"></div>
+        <div id="hint">drag each pin &mdash; the track glows warmer near the click point</div>
+    </div>
+
+    <div id="stamp">UNLOCKED!</div>
+
+    <script>
+        (() => {
+            const PALETTE = ['--coral', '--sky', '--lime', '--purple', '--orange', '--pink', '--teal'];
+            const pinsWrap = document.getElementById('pins');
+            const turnRow = document.getElementById('turnRow');
+            const hint = document.getElementById('hint');
+            const lockCard = document.getElementById('lockCard');
+            const stamp = document.getElementById('stamp');
+            const streakVal = document.getElementById('streakVal');
+            const bestVal = document.getElementById('bestVal');
+
+            let streak = 0;
+            let best = 0;
+            try {
+                streak = parseInt(localStorage.getItem('lockpick-streak'), 10) || 0;
+                best = parseInt(localStorage.getItem('lockpick-best'), 10) || 0;
+            } catch (e) {}
+            streakVal.textContent = streak;
+            bestVal.textContent = best;
+
+            let level = 1;
+            let pins = [];
+            let hintHidden = false;
+            let resizeTimer = null;
+
+            function hideHint() {
+                if (hintHidden) return;
+                hintHidden = true;
+                hint.classList.add('gone');
+            }
+
+            function pinCountForLevel(lv) {
+                return Math.min(8, 5 + Math.floor((lv - 1) / 2));
+            }
+
+            function toleranceForLevel(lv) {
+                return Math.max(0.045, 0.1 - (lv - 1) * 0.006);
+            }
+
+            function positionPin(pin) {
+                const rect = pin.trackEl.getBoundingClientRect();
+                const usable = Math.max(1, rect.height - pin.pinEl.offsetHeight);
+                pin.pinEl.style.bottom = (pin.y * usable) + 'px';
+            }
+
+            function updateGlow(pin) {
+                const dist = Math.abs(pin.y - pin.target);
+                const sensing = 0.42;
+                const intensity = Math.max(0, 1 - dist / sensing);
+                if (intensity > 0.03) {
+                    const blur = (6 + 34 * intensity).toFixed(1);
+                    const alpha = (0.22 + 0.55 * intensity).toFixed(2);
+                    pin.trackEl.style.boxShadow = `inset 0 0 ${blur}px rgba(247, 201, 72, ${alpha})`;
+                } else {
+                    pin.trackEl.style.boxShadow = 'none';
+                }
+                let label = 'cold';
+                if (intensity > 0.85) label = 'click!';
+                else if (intensity > 0.55) label = 'hot';
+                else if (intensity > 0.25) label = 'warm';
+                pin.tempEl.textContent = label;
+            }
+
+            function setPin(pin) {
+                pin.set = true;
+                pin.y = pin.target;
+                positionPin(pin);
+                pin.trackEl.style.boxShadow = 'none';
+                pin.pinEl.classList.remove('dragging');
+                pin.pinEl.classList.add('set');
+                pin.tempEl.textContent = 'set';
+                checkAllSet();
+            }
+
+            function springBack(pin) {
+                pin.y = 0;
+                positionPin(pin);
+                pin.pinEl.classList.remove('dragging');
+                pin.trackEl.style.boxShadow = 'none';
+                pin.tempEl.textContent = 'cold';
+            }
+
+            function checkAllSet() {
+                if (pins.every(p => p.set)) showTurnButton();
+            }
+
+            function showTurnButton() {
+                turnRow.innerHTML = '';
+                const btn = document.createElement('button');
+                btn.id = 'turnBtn';
+                btn.type = 'button';
+                btn.textContent = 'TURN';
+                btn.addEventListener('click', onTurn, { once: true });
+                turnRow.appendChild(btn);
+            }
+
+            function onTurn() {
+                turnRow.innerHTML = '';
+                lockCard.classList.add('open');
+                setTimeout(() => lockCard.classList.remove('open'), 400);
+
+                streak++;
+                if (streak > best) best = streak;
+                streakVal.textContent = streak;
+                bestVal.textContent = best;
+                try {
+                    localStorage.setItem('lockpick-streak', String(streak));
+                    localStorage.setItem('lockpick-best', String(best));
+                } catch (e) {}
+
+                stamp.classList.add('show');
+                setTimeout(() => stamp.classList.remove('show'), 900);
+
+                level++;
+                setTimeout(() => generateLock(level), 1000);
+            }
+
+            function makePinDom(index, target, tolerance) {
+                const track = document.createElement('div');
+                track.className = 'track';
+
+                const pinEl = document.createElement('div');
+                pinEl.className = 'pin';
+                pinEl.style.background = `var(${PALETTE[index % PALETTE.length]})`;
+
+                const tempEl = document.createElement('div');
+                tempEl.className = 'temp';
+                tempEl.textContent = 'cold';
+
+                track.appendChild(pinEl);
+                track.appendChild(tempEl);
+                pinsWrap.appendChild(track);
+
+                const pin = { target, tolerance, y: 0, set: false, trackEl: track, pinEl, tempEl };
+                positionPin(pin);
+
+                pinEl.addEventListener('pointerdown', (e) => {
+                    if (pin.set) return;
+                    hideHint();
+                    pinEl.classList.add('dragging');
+                    pinEl.setPointerCapture(e.pointerId);
+                });
+
+                pinEl.addEventListener('pointermove', (e) => {
+                    if (pin.set || !pinEl.classList.contains('dragging')) return;
+                    const rect = track.getBoundingClientRect();
+                    const usable = Math.max(1, rect.height - pinEl.offsetHeight);
+                    let frac = 1 - (e.clientY - rect.top - pinEl.offsetHeight / 2) / usable;
+                    frac = Math.max(0, Math.min(1, frac));
+                    pin.y = frac;
+                    positionPin(pin);
+                    updateGlow(pin);
+                });
+
+                function release() {
+                    if (pin.set || !pinEl.classList.contains('dragging')) return;
+                    const dist = Math.abs(pin.y - pin.target);
+                    if (dist <= pin.tolerance) {
+                        setPin(pin);
+                    } else {
+                        springBack(pin);
+                    }
+                }
+                pinEl.addEventListener('pointerup', release);
+                pinEl.addEventListener('pointercancel', release);
+
+                return pin;
+            }
+
+            function generateLock(lv) {
+                pinsWrap.innerHTML = '';
+                turnRow.innerHTML = '';
+                const count = pinCountForLevel(lv);
+                const tolerance = toleranceForLevel(lv);
+                pins = [];
+                for (let i = 0; i < count; i++) {
+                    const target = 0.16 + Math.random() * 0.72;
+                    pins.push(makePinDom(i, target, tolerance));
+                }
+            }
+
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => pins.forEach(positionPin), 150);
+            });
+
+            generateLock(level);
+            setTimeout(hideHint, 10000);
+        })();
+    </script>
+</body>
+</html>

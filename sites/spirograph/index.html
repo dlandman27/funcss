@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spirograph</title>
+    <meta name="description" content="A gear rolls inside a ring and traces the flower it was always going to make. Drag to scrub the mechanism, switch gears to layer another.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/spirograph/">
+    <meta property="og:title" content="Spirograph">
+    <meta property="og:description" content="A gear rolls inside a ring and traces the flower it was always going to make. Drag to scrub the mechanism, switch gears to layer another.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/spirograph.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Spirograph">
+    <meta name="twitter:description" content="A gear rolls inside a ring and traces the flower it was always going to make. Drag to scrub the mechanism, switch gears to layer another.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/spirograph.png">
+    <!-- rsotw:og:end -->
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0c0c13;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #stage {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+
+        #stage.scrubbing { cursor: grabbing; }
+
+        #ledger {
+            position: fixed;
+            top: max(16px, env(safe-area-inset-top));
+            left: 20px;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.78rem;
+            color: rgba(220, 210, 235, 0.4);
+            pointer-events: none;
+        }
+
+        #hint {
+            position: fixed;
+            top: 8vh;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(14px, 2vw, 18px);
+            color: rgba(220, 210, 235, 0.5);
+            letter-spacing: 0.06em;
+            pointer-events: none;
+            transition: opacity 2s ease;
+        }
+
+        #hint.hidden { opacity: 0; }
+
+        #controls {
+            position: fixed;
+            bottom: max(22px, env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(20, 20, 32, 0.72);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            transition: opacity 0.6s ease;
+        }
+
+        #controls.faded { opacity: 0.14; }
+        #controls:hover { opacity: 1; }
+
+        #controls button {
+            appearance: none;
+            border: none;
+            background: transparent;
+            color: rgba(235, 235, 245, 0.85);
+            font-size: 17px;
+            line-height: 1;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        #controls button:hover { background: rgba(255, 255, 255, 0.1); }
+
+        #presetLabel {
+            min-width: 92px;
+            text-align: center;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 14px;
+            color: rgba(235, 235, 245, 0.9);
+        }
+
+        .divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.12);
+            margin: 0 4px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stage"></canvas>
+    <div id="hint">drag to scrub the gear &middot; arrows try another one</div>
+    <div id="ledger">gears turned: <span id="gearCount">0</span></div>
+
+    <div id="controls">
+        <button id="prevBtn" title="previous gear">&#8249;</button>
+        <div id="presetLabel">trefoil</div>
+        <button id="nextBtn" title="next gear">&#8250;</button>
+        <div class="divider"></div>
+        <button id="clearBtn" title="clear">&#215;</button>
+        <button id="saveBtn" title="save image">&#8595;</button>
+    </div>
+
+    <script>
+        (() => {
+            const canvas = document.getElementById('stage');
+            const ctx = canvas.getContext('2d');
+            const hint = document.getElementById('hint');
+            const controls = document.getElementById('controls');
+            const presetLabel = document.getElementById('presetLabel');
+            const gearCountEl = document.getElementById('gearCount');
+
+            const PRESETS = [
+                { R: 96, r: 36, d: 0.70, label: 'trefoil' },
+                { R: 100, r: 30, d: 0.80, label: 'clover' },
+                { R: 105, r: 45, d: 0.55, label: 'rosette' },
+                { R: 96, r: 28, d: 0.65, label: 'starburst' },
+                { R: 90, r: 63, d: 0.50, label: 'bloom' },
+                { R: 80, r: 24, d: 0.90, label: 'pinwheel' },
+                { R: 112, r: 48, d: 0.40, label: 'lattice' }
+            ];
+            const HUES = [10, 205, 70, 265, 28, 345, 175, 45];
+            const MAX_R = Math.max(...PRESETS.map(p => p.R));
+            const POINTS_PER_PATTERN = 1600;
+            const DURATION_SECONDS = 6.5;
+            const MAX_GALLERY = 8;
+            const MAX_LAPS = 12;
+
+            let W = 0, H = 0, dpr = 1, cx = 0, cy = 0, toothSize = 1;
+
+            function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+            function makePattern(preset, hue) {
+                const g = gcd(preset.R, preset.r);
+                const laps = Math.min(MAX_LAPS, preset.r / g);
+                return {
+                    R: preset.R,
+                    r: preset.r,
+                    D: preset.d * preset.r,
+                    label: preset.label,
+                    hue,
+                    t: 0,
+                    maxT: laps * Math.PI * 2,
+                    points: []
+                };
+            }
+
+            function computeXY(pattern, t) {
+                const k = (pattern.R - pattern.r) / pattern.r;
+                const x = (pattern.R - pattern.r) * Math.cos(t) + pattern.D * Math.cos(k * t);
+                const y = (pattern.R - pattern.r) * Math.sin(t) - pattern.D * Math.sin(k * t);
+                return { x, y };
+            }
+
+            function setT(pattern, newT) {
+                newT = Math.max(0, Math.min(pattern.maxT, newT));
+                pattern.t = newT;
+                const desiredLen = Math.round((newT / pattern.maxT) * POINTS_PER_PATTERN) + 1;
+                if (desiredLen > pattern.points.length) {
+                    for (let i = pattern.points.length; i < desiredLen; i++) {
+                        const ti = (i / POINTS_PER_PATTERN) * pattern.maxT;
+                        pattern.points.push(computeXY(pattern, ti));
+                    }
+                } else if (desiredLen < pattern.points.length) {
+                    pattern.points.length = Math.max(1, desiredLen);
+                }
+            }
+
+            let gallery = [];
+            let presetIndex = 0;
+            let activePattern = null;
+            let playing = false;
+            let scrubbing = false;
+            let rafId = null;
+            let lastTime = null;
+            let gearsTurned = 0;
+
+            try {
+                gearsTurned = parseInt(localStorage.getItem('spirograph-gears'), 10) || 0;
+            } catch (e) {}
+            gearCountEl.textContent = gearsTurned;
+
+            function saveCount() {
+                try { localStorage.setItem('spirograph-gears', String(gearsTurned)); } catch (e) {}
+            }
+
+            function toPx(u) {
+                return { x: cx + u.x * toothSize, y: cy + u.y * toothSize };
+            }
+
+            function paintBackground() {
+                const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.75);
+                g.addColorStop(0, '#14141f');
+                g.addColorStop(1, '#08080e');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, W, H);
+            }
+
+            function drawPatternPath(pattern, glow) {
+                if (pattern.points.length < 2) return;
+                ctx.beginPath();
+                const p0 = toPx(pattern.points[0]);
+                ctx.moveTo(p0.x, p0.y);
+                for (let i = 1; i < pattern.points.length; i++) {
+                    const p = toPx(pattern.points[i]);
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.lineWidth = 1.6;
+                ctx.strokeStyle = `hsl(${pattern.hue}, 82%, 64%)`;
+                if (glow) {
+                    ctx.shadowColor = `hsla(${pattern.hue}, 90%, 60%, 0.55)`;
+                    ctx.shadowBlur = 7;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            function drawApparatus(pattern) {
+                const ringR = pattern.R * toothSize;
+                ctx.beginPath();
+                ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                const rotorCenterU = { x: (pattern.R - pattern.r) * Math.cos(pattern.t), y: (pattern.R - pattern.r) * Math.sin(pattern.t) };
+                const rotorCenter = toPx(rotorCenterU);
+                const rotorR = pattern.r * toothSize;
+                ctx.beginPath();
+                ctx.arc(rotorCenter.x, rotorCenter.y, rotorR, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                const pen = toPx(computeXY(pattern, pattern.t));
+                ctx.beginPath();
+                ctx.moveTo(rotorCenter.x, rotorCenter.y);
+                ctx.lineTo(pen.x, pen.y);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(pen.x, pen.y, 3.4, 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${pattern.hue}, 90%, 72%)`;
+                ctx.shadowColor = `hsl(${pattern.hue}, 90%, 60%)`;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            function renderAll() {
+                paintBackground();
+                for (let i = 0; i < gallery.length; i++) drawPatternPath(gallery[i], false);
+                if (activePattern) {
+                    drawPatternPath(activePattern, true);
+                    drawApparatus(activePattern);
+                }
+            }
+
+            function tick(now) {
+                if (!playing || !activePattern) { rafId = null; return; }
+                if (lastTime === null) lastTime = now;
+                const dt = Math.min(0.05, (now - lastTime) / 1000);
+                lastTime = now;
+                const speed = activePattern.maxT / DURATION_SECONDS;
+                setT(activePattern, activePattern.t + dt * speed);
+                renderAll();
+                if (activePattern.t >= activePattern.maxT) {
+                    playing = false;
+                    rafId = null;
+                    return;
+                }
+                rafId = requestAnimationFrame(tick);
+            }
+
+            function play() {
+                if (rafId !== null) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+                playing = true;
+                lastTime = null;
+                rafId = requestAnimationFrame(tick);
+            }
+
+            function selectPreset(index) {
+                if (activePattern && activePattern.points.length > 1) {
+                    gallery.push(activePattern);
+                    if (gallery.length > MAX_GALLERY) gallery.shift();
+                }
+                presetIndex = ((index % PRESETS.length) + PRESETS.length) % PRESETS.length;
+                const preset = PRESETS[presetIndex];
+                const hue = HUES[gearsTurned % HUES.length];
+                activePattern = makePattern(preset, hue);
+                presetLabel.textContent = preset.label;
+                gearsTurned++;
+                gearCountEl.textContent = gearsTurned;
+                saveCount();
+                renderAll();
+                play();
+            }
+
+            function resizeCanvas() {
+                dpr = Math.min(2, window.devicePixelRatio || 1);
+                W = window.innerWidth;
+                H = window.innerHeight;
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = W + 'px';
+                canvas.style.height = H + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                cx = W / 2;
+                cy = H / 2;
+                toothSize = (Math.min(W, H) * 0.34) / MAX_R;
+                renderAll();
+            }
+
+            let hintHidden = false;
+            function hideHint() {
+                if (hintHidden) return;
+                hintHidden = true;
+                hint.classList.add('hidden');
+            }
+
+            let dragStartX = 0, dragStartT = 0;
+
+            canvas.addEventListener('pointerdown', (e) => {
+                if (!activePattern) return;
+                scrubbing = true;
+                playing = false;
+                canvas.classList.add('scrubbing');
+                canvas.setPointerCapture(e.pointerId);
+                dragStartX = e.clientX;
+                dragStartT = activePattern.t;
+                hideHint();
+                controls.classList.add('faded');
+            });
+
+            canvas.addEventListener('pointermove', (e) => {
+                if (!scrubbing || !activePattern) return;
+                const dx = e.clientX - dragStartX;
+                const sensitivity = activePattern.maxT / (W * 0.9);
+                setT(activePattern, dragStartT + dx * sensitivity);
+                renderAll();
+            });
+
+            function stopScrub() {
+                if (!scrubbing) return;
+                scrubbing = false;
+                canvas.classList.remove('scrubbing');
+                controls.classList.remove('faded');
+                if (activePattern && activePattern.t < activePattern.maxT) play();
+            }
+            canvas.addEventListener('pointerup', stopScrub);
+            canvas.addEventListener('pointercancel', stopScrub);
+
+            document.getElementById('prevBtn').addEventListener('click', () => selectPreset(presetIndex - 1));
+            document.getElementById('nextBtn').addEventListener('click', () => selectPreset(presetIndex + 1));
+
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                gallery = [];
+                playing = false;
+                if (activePattern) {
+                    activePattern.points = [];
+                    activePattern.t = 0;
+                    play();
+                }
+                renderAll();
+            });
+
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                const a = document.createElement('a');
+                a.download = 'spirograph.png';
+                a.href = canvas.toDataURL('image/png');
+                a.click();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') selectPreset(presetIndex - 1);
+                if (e.key === 'ArrowRight') selectPreset(presetIndex + 1);
+                if (e.key === 'c' || e.key === 'C') document.getElementById('clearBtn').click();
+                if (e.key === 's' || e.key === 'S') document.getElementById('saveBtn').click();
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) { playing = false; scrubbing = false; }
+            });
+
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(resizeCanvas, 150);
+            });
+
+            resizeCanvas();
+            presetLabel.textContent = PRESETS[presetIndex].label;
+            selectPreset(0);
+            setTimeout(hideHint, 10000);
+        })();
+    </script>
+</body>
+</html>

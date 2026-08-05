@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sand Garden</title>
+    <meta name="description" content="Drag to rake grooves into a patch of raked sand, tap to set a stone. It waits exactly as you left it, the next time you visit.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sandgarden/">
+    <meta property="og:title" content="Sand Garden">
+    <meta property="og:description" content="Drag to rake grooves into a patch of sand, tap to set a stone. It waits exactly as you left it, the next time you visit.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/sandgarden.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sand Garden">
+    <meta name="twitter:description" content="Drag to rake grooves into a patch of sand, tap to set a stone. It waits exactly as you left it, the next time you visit.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/sandgarden.png">
+    <!-- rsotw:og:end -->
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+
+        #sand {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+            transition: opacity 0.9s ease;
+        }
+
+        #sand.fading { opacity: 0; }
+
+        #hint {
+            position: fixed;
+            bottom: 16%;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-style: italic;
+            font-size: clamp(0.85rem, 2.6vmin, 1rem);
+            opacity: 0.5;
+            transition: opacity 2s ease;
+            padding: 0 1rem;
+            pointer-events: none;
+        }
+
+        #hint.gone { opacity: 0; }
+
+        #ledger {
+            position: fixed;
+            top: max(16px, env(safe-area-inset-top));
+            right: 20px;
+            font-style: italic;
+            font-size: 0.78rem;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        #controls {
+            position: fixed;
+            left: 50%;
+            bottom: max(22px, env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            transition: opacity 1.5s ease;
+        }
+
+        #controls.faded { opacity: 0.14; }
+        #controls:hover { opacity: 1; }
+
+        #smooth {
+            background: none;
+            border: none;
+            padding: 0.3rem 0.2rem;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.88rem;
+            letter-spacing: 0.1em;
+            color: var(--ink);
+            opacity: 0.42;
+            cursor: pointer;
+            border-bottom: 1px solid transparent;
+            transition: opacity 0.3s, border-color 0.3s;
+        }
+
+        #smooth:hover {
+            opacity: 0.8;
+            border-bottom-color: rgba(32, 26, 23, 0.45);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #sand { transition: opacity 0.25s ease; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="sand"></canvas>
+
+    <div id="hint">drag to rake &middot; tap to place a stone</div>
+    <div id="ledger">stones placed: <span id="stoneCount">0</span></div>
+
+    <div id="controls">
+        <button id="smooth" type="button">smooth the sand</button>
+    </div>
+
+    <script>
+        (() => {
+            const canvas = document.getElementById('sand');
+            const ctx = canvas.getContext('2d');
+            const hint = document.getElementById('hint');
+            const controls = document.getElementById('controls');
+            const stoneCountEl = document.getElementById('stoneCount');
+            const smoothBtn = document.getElementById('smooth');
+
+            const STONE_TONES = [
+                ['#a89a86', '#746b63'],
+                ['#9a8f7e', '#655c53'],
+                ['#8f867c', '#5d564e']
+            ];
+
+            const MAX_POINTS = 4000;
+            const MAX_STONES = 60;
+            const DRAG_THRESHOLD = 6;
+            const TINES = [-2, -1, 0, 1, 2];
+            const TINE_SPACING = 3;
+
+            let W = 0, H = 0, dpr = 1;
+            let strokes = [];
+            let stones = [];
+
+            try {
+                const raw = localStorage.getItem('sandgarden-state');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed.strokes)) strokes = parsed.strokes;
+                    if (Array.isArray(parsed.stones)) stones = parsed.stones;
+                }
+            } catch (e) {}
+
+            function save() {
+                try {
+                    localStorage.setItem('sandgarden-state', JSON.stringify({ strokes, stones }));
+                } catch (e) {}
+            }
+
+            function toPx(pt) { return { x: pt.x * W, y: pt.y * H }; }
+            function toNorm(x, y) { return { x: x / W, y: y / H }; }
+
+            function paintBackground() {
+                const g = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.75);
+                g.addColorStop(0, '#f5f0e6');
+                g.addColorStop(1, '#e9e2d3');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, W, H);
+            }
+
+            function drawSegmentPx(p0, p1) {
+                const dx = p1.x - p0.x, dy = p1.y - p0.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const nx = -dy / len, ny = dx / len;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                for (let i = 0; i < TINES.length; i++) {
+                    const ox = nx * TINES[i] * TINE_SPACING;
+                    const oy = ny * TINES[i] * TINE_SPACING;
+                    const ax = p0.x + ox, ay = p0.y + oy;
+                    const bx = p1.x + ox, by = p1.y + oy;
+
+                    ctx.strokeStyle = 'rgba(32, 26, 23, 0.15)';
+                    ctx.lineWidth = 1.6;
+                    ctx.beginPath();
+                    ctx.moveTo(ax + 0.8, ay + 0.8);
+                    ctx.lineTo(bx + 0.8, by + 0.8);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = 'rgba(255, 248, 239, 0.55)';
+                    ctx.lineWidth = 1.1;
+                    ctx.beginPath();
+                    ctx.moveTo(ax - 0.8, ay - 0.8);
+                    ctx.lineTo(bx - 0.8, by - 0.8);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = 'rgba(150, 132, 108, 0.32)';
+                    ctx.lineWidth = 1.4;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, ay);
+                    ctx.lineTo(bx, by);
+                    ctx.stroke();
+                }
+            }
+
+            function drawPointsPath(points) {
+                for (let i = 1; i < points.length; i++) {
+                    drawSegmentPx(toPx(points[i - 1]), toPx(points[i]));
+                }
+            }
+
+            function circlePoints(cx, cy, r, segments) {
+                const pts = [];
+                for (let i = 0; i <= segments; i++) {
+                    const a = (i / segments) * Math.PI * 2;
+                    pts.push(toNorm(cx + Math.cos(a) * r, cy + Math.sin(a) * r));
+                }
+                return pts;
+            }
+
+            function drawStone(stone) {
+                const c = toPx(stone);
+                const baseR = Math.max(9, Math.min(W, H) * 0.026);
+
+                drawPointsPath(circlePoints(c.x, c.y, baseR * 1.7, 48));
+                drawPointsPath(circlePoints(c.x, c.y, baseR * 2.7, 56));
+
+                const tones = STONE_TONES[stone.tone % STONE_TONES.length];
+                const grad = ctx.createRadialGradient(
+                    c.x - baseR * 0.3, c.y - baseR * 0.35, baseR * 0.1,
+                    c.x, c.y, baseR
+                );
+                grad.addColorStop(0, tones[0]);
+                grad.addColorStop(1, tones[1]);
+
+                ctx.beginPath();
+                ctx.ellipse(c.x, c.y, baseR, baseR * 0.86, 0, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.shadowColor = 'rgba(32, 26, 23, 0.25)';
+                ctx.shadowBlur = baseR * 0.6;
+                ctx.shadowOffsetY = baseR * 0.18;
+                ctx.fill();
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(32, 26, 23, 0.22)';
+                ctx.stroke();
+            }
+
+            function renderAll() {
+                paintBackground();
+                for (let i = 0; i < strokes.length; i++) drawPointsPath(strokes[i]);
+                for (let i = 0; i < stones.length; i++) drawStone(stones[i]);
+                stoneCountEl.textContent = stones.length;
+            }
+
+            function resizeCanvas() {
+                dpr = Math.min(2, window.devicePixelRatio || 1);
+                W = window.innerWidth;
+                H = window.innerHeight;
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = W + 'px';
+                canvas.style.height = H + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                renderAll();
+            }
+
+            function trimStrokes() {
+                let total = 0;
+                for (let i = 0; i < strokes.length; i++) total += strokes[i].length;
+                while (total > MAX_POINTS && strokes.length > 1) {
+                    total -= strokes.shift().length;
+                }
+            }
+
+            let hintHidden = false;
+            function hideHint() {
+                if (hintHidden) return;
+                hintHidden = true;
+                hint.classList.add('gone');
+            }
+
+            let fadeTimer = null;
+            function wakeControls() {
+                controls.classList.remove('faded');
+                clearTimeout(fadeTimer);
+                fadeTimer = setTimeout(() => controls.classList.add('faded'), 6000);
+            }
+
+            let dragging = false;
+            let isRaking = false;
+            let moveDist = 0;
+            let startPt = null;
+            let candidate = null;
+            let lastClient = null;
+
+            canvas.addEventListener('pointerdown', (e) => {
+                dragging = true;
+                isRaking = false;
+                moveDist = 0;
+                canvas.setPointerCapture(e.pointerId);
+                startPt = toNorm(e.clientX, e.clientY);
+                candidate = [startPt];
+                lastClient = { x: e.clientX, y: e.clientY };
+                wakeControls();
+            });
+
+            canvas.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+                for (let i = 0; i < events.length; i++) {
+                    const ev = events[i];
+                    const dx = ev.clientX - lastClient.x, dy = ev.clientY - lastClient.y;
+                    const d = Math.hypot(dx, dy);
+                    if (!isRaking && moveDist + d > DRAG_THRESHOLD) {
+                        isRaking = true;
+                        hideHint();
+                    }
+                    moveDist += d;
+                    if (isRaking) {
+                        drawSegmentPx(lastClient, { x: ev.clientX, y: ev.clientY });
+                        candidate.push(toNorm(ev.clientX, ev.clientY));
+                    }
+                    lastClient = { x: ev.clientX, y: ev.clientY };
+                }
+            });
+
+            function finishPointer() {
+                if (!dragging) return;
+                dragging = false;
+                if (isRaking && candidate.length > 1) {
+                    strokes.push(candidate);
+                    trimStrokes();
+                } else {
+                    hideHint();
+                    const stone = {
+                        x: startPt.x,
+                        y: startPt.y,
+                        tone: Math.floor(Math.random() * STONE_TONES.length)
+                    };
+                    stones.push(stone);
+                    if (stones.length > MAX_STONES) stones.shift();
+                    drawStone(stone);
+                    stoneCountEl.textContent = stones.length;
+                }
+                save();
+            }
+
+            canvas.addEventListener('pointerup', finishPointer);
+            canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+            smoothBtn.addEventListener('click', () => {
+                canvas.classList.add('fading');
+                setTimeout(() => {
+                    strokes = [];
+                    stones = [];
+                    renderAll();
+                    save();
+                    canvas.classList.remove('fading');
+                }, 900);
+            });
+
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(resizeCanvas, 150);
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) dragging = false;
+            });
+
+            resizeCanvas();
+            setTimeout(hideHint, 10000);
+            wakeControls();
+        })();
+    </script>
+</body>
+</html>
