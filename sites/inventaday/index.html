@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invent-A-Day</title>
+    <meta name="description" content="Pick two days of the week. Push them into each other. Keep whatever survives the collision.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/inventaday/">
+    <meta property="og:title" content="Invent-A-Day">
+    <meta property="og:description" content="Pick two days of the week. Push them into each other. Keep whatever survives the collision.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/inventaday.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Invent-A-Day">
+    <meta name="twitter:description" content="Pick two days of the week. Push them into each other. Keep whatever survives the collision.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/inventaday.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root{ --ink:#201a17; --paper:#f2ede2; --cream:#fff8ef;
+           --coral:#f0563e; --sky:#5aa0db; --lime:#b7ce3c; --purple:#a98fd0;
+           --orange:#f47b28; --pink:#ff7fa5; --teal:#2fb0a3; --gold:#f7c948; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background: radial-gradient(130% 100% at 50% 0%, #fbf7ee 0%, #efe8db 70%, #e6ddce 100%);
+      color: var(--ink);
+      font-family: 'Arial Black', Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px 80px;
+      gap: 30px;
+    }
+
+    h1 {
+      font-size: clamp(24px, 5.5vw, 38px);
+      text-transform: uppercase;
+      -webkit-text-stroke: 2px var(--ink);
+      paint-order: stroke fill;
+      color: var(--coral);
+      transform: rotate(-2deg);
+      text-align: center;
+    }
+    .sub {
+      margin-top: -16px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-weight: normal;
+      font-size: clamp(13px, 2.2vw, 16px);
+      opacity: 0.6;
+      text-align: center;
+      max-width: 460px;
+    }
+
+    .reels {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      overflow: visible;
+    }
+    .reel {
+      --full-w: min(58vw, 400px);
+      --half-w: min(34vw, 220px);
+      width: var(--full-w);
+      height: min(50vw, 280px);
+      background: var(--cream);
+      border: 5px solid var(--ink);
+      position: relative;
+      overflow: hidden;
+      transition: width 460ms cubic-bezier(.32,.74,.4,1), background-color 0.4s ease;
+    }
+    .reel.left {
+      border-radius: 20px 0 0 20px;
+      border-right-width: 3px;
+      box-shadow: -5px 5px 0 var(--ink);
+    }
+    .reel.right {
+      border-radius: 0 20px 20px 0;
+      border-left-width: 3px;
+      box-shadow: 5px 5px 0 var(--ink);
+    }
+    .reel.half { width: var(--half-w); }
+
+    .reel .val {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+      padding: 0 8px;
+      color: var(--ink);
+      font-size: clamp(30px, 9.5vw, 62px);
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+    .reel .val.full { opacity: 1; }
+    .reel.morphed .val.full { opacity: 0; }
+    .reel.morphed .val.half { opacity: 1; }
+
+    @keyframes dropIn {
+      0%   { transform: translateY(-260%); opacity: 0; }
+      55%  { transform: translateY(10%); opacity: 1; }
+      75%  { transform: translateY(-4%); }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    .reel.dropping { animation: dropIn 520ms cubic-bezier(.22,1.5,.4,1) both; }
+
+    #caption {
+      min-height: 20px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-weight: normal;
+      font-size: clamp(12px, 2.2vw, 15px);
+      opacity: 0;
+      text-align: center;
+      max-width: 460px;
+      transition: opacity 400ms ease;
+    }
+    #caption.show { opacity: 0.75; }
+
+    #pushBtn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-size: clamp(14px, 2.8vw, 17px);
+      color: var(--ink);
+      background: var(--gold);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 15px 32px;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    #pushBtn:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+    #pushBtn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+    #pushBtn:disabled { opacity: 0.55; cursor: default; }
+
+    .counter {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-weight: normal;
+      font-size: clamp(11px, 2vw, 13px);
+      opacity: 0.5;
+      text-align: center;
+    }
+
+    @keyframes pushImpact {
+      0%   { transform: scale(1, 1); }
+      45%  { transform: scale(0.93, 1.06); }
+      100% { transform: scale(1, 1); }
+    }
+    .reels.pushing { animation: pushImpact 280ms ease; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reel.dropping { animation: none; opacity: 1; transform: none; }
+      .reels.pushing { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Invent-A-Day</h1>
+  <p class="sub">Pick any two days of the week and push them into each other. Whatever survives the collision is new.</p>
+
+  <div class="reels" id="reels">
+    <div class="reel left" id="reelLeft">
+      <div class="val full" id="leftFull"></div>
+      <div class="val half" id="leftHalf"></div>
+    </div>
+    <div class="reel right" id="reelRight">
+      <div class="val full" id="rightFull"></div>
+      <div class="val half" id="rightHalf"></div>
+    </div>
+  </div>
+
+  <div id="caption"></div>
+
+  <button id="pushBtn">Push Them Together</button>
+
+  <div class="counter" id="counter"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    var DAY_COLORS = {
+      Monday: '#f0563e', Tuesday: '#ff7fa5', Wednesday: '#5aa0db',
+      Thursday: '#b7ce3c', Friday: '#f7c948', Saturday: '#a98fd0', Sunday: '#2fb0a3'
+    };
+    // the real prefix — everything up to "day" — not an arbitrary midpoint split
+    var PREFIX = {
+      Monday: 'Mon', Tuesday: 'Tues', Wednesday: 'Wednes', Thursday: 'Thurs',
+      Friday: 'Fri', Saturday: 'Satur', Sunday: 'Sun'
+    };
+
+    var reels = document.getElementById('reels');
+    var reelLeft = document.getElementById('reelLeft');
+    var reelRight = document.getElementById('reelRight');
+    var leftFull = document.getElementById('leftFull');
+    var leftHalf = document.getElementById('leftHalf');
+    var rightFull = document.getElementById('rightFull');
+    var rightHalf = document.getElementById('rightHalf');
+    var caption = document.getElementById('caption');
+    var pushBtn = document.getElementById('pushBtn');
+    var counter = document.getElementById('counter');
+
+    var total = 0;
+    try { total = parseInt(localStorage.getItem('inventaday_total'), 10) || 0; } catch (e) {}
+
+    function renderCounter() {
+      counter.textContent = total + ' day' + (total === 1 ? '' : 's') + ' invented so far';
+    }
+    renderCounter();
+
+    var busy = false;
+
+    function push() {
+      if (busy) return;
+      busy = true;
+      pushBtn.disabled = true;
+      caption.classList.remove('show');
+      reels.classList.remove('pushing');
+
+      reelLeft.classList.remove('morphed', 'dropping');
+      reelRight.classList.remove('morphed', 'dropping');
+      reelLeft.classList.remove('half');
+      reelRight.classList.remove('half');
+      void reelLeft.offsetWidth; // restart animation
+
+      var leftDay = DAYS[Math.floor(Math.random() * DAYS.length)];
+      var rightDay;
+      do {
+        rightDay = DAYS[Math.floor(Math.random() * DAYS.length)];
+      } while (rightDay === leftDay); // never let both land on the same day
+      var leftPrefix = PREFIX[leftDay];
+
+      leftFull.textContent = leftDay;
+      rightFull.textContent = rightDay;
+      leftHalf.textContent = leftPrefix;
+      rightHalf.textContent = 'Day'; // the right side always collapses to this, no matter which day lands
+      reelLeft.style.backgroundColor = DAY_COLORS[leftDay];
+      reelRight.style.backgroundColor = DAY_COLORS[rightDay];
+
+      // left drops in first, right follows a beat later
+      reelLeft.classList.add('dropping');
+      setTimeout(function () { reelRight.classList.add('dropping'); }, 260);
+
+      // once both have landed, push them together and morph to the merged word
+      setTimeout(function () {
+        reels.classList.add('pushing');
+        reelLeft.classList.add('half', 'morphed');
+        reelRight.classList.add('half', 'morphed');
+
+        setTimeout(function () {
+          var merged = leftPrefix + 'Day';
+          caption.textContent = merged.toUpperCase() + ' — invented just now, from ' + leftDay + ' and ' + rightDay + '.';
+          caption.classList.add('show');
+
+          total++;
+          try { localStorage.setItem('inventaday_total', String(total)); } catch (e) {}
+          renderCounter();
+
+          busy = false;
+          pushBtn.disabled = false;
+        }, 480);
+      }, 900);
+    }
+
+    pushBtn.addEventListener('click', push);
+  })();
+  </script>
+</body>
+</html>

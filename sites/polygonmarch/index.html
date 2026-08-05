@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Polygon March</title>
+    <meta name="description" content="Triangle, square, pentagon, hexagon... it just keeps going. Eventually it becomes a circle. It was never a circle.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/polygonmarch/">
+    <meta property="og:title" content="The Polygon March">
+    <meta property="og:description" content="Triangle, square, pentagon, hexagon... it just keeps going. Eventually it becomes a circle. It was never a circle.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/polygonmarch.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Polygon March">
+    <meta name="twitter:description" content="Triangle, square, pentagon, hexagon... it just keeps going. Eventually it becomes a circle. It was never a circle.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/polygonmarch.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root{ --ink:#201a17; --paper:#f2ede2; --cream:#fff8ef;
+           --coral:#f0563e; --sky:#5aa0db; --lime:#b7ce3c; --purple:#a98fd0;
+           --orange:#f47b28; --pink:#ff7fa5; --teal:#2fb0a3; --gold:#f7c948; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(130% 100% at 50% 0%, #fbf7ee 0%, #efe8db 70%, #e6ddce 100%);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      color: var(--ink);
+    }
+
+    #stage { position: relative; width: 100%; height: 100%; }
+    #canvas { display: block; width: 100%; height: 100%; }
+
+    .badge {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 3;
+      max-width: min(88vw, 560px);
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 8px 18px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(13px, 3vw, 18px);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      transform: rotate(-2deg);
+      transform-origin: left top;
+      overflow-wrap: anywhere;
+    }
+    .badge .n {
+      display: inline-block;
+      transform-origin: center;
+    }
+    .badge .n.pop { animation: popIn 260ms cubic-bezier(.2, 1.6, .4, 1); }
+    @keyframes popIn {
+      0%   { transform: scale(0.5); }
+      60%  { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .record {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 3;
+      max-width: min(60vw, 320px);
+      background: var(--gold);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 6px 14px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(10px, 2.2vw, 12px);
+      overflow-wrap: anywhere;
+      transform: rotate(2deg);
+    }
+
+    #toast {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 16vh;
+      text-align: center;
+      z-index: 4;
+      pointer-events: none;
+      padding: 0 16px;
+    }
+    #toast span {
+      display: inline-block;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 10px 18px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(11px, 2.6vw, 14px);
+      text-transform: uppercase;
+      transform: rotate(-2deg) scale(0.2);
+      opacity: 0;
+    }
+    #toast span.show {
+      animation: toastIn 420ms cubic-bezier(.2, 1.6, .4, 1) forwards, toastOut 600ms ease 3.4s forwards;
+    }
+    @keyframes toastIn {
+      0%   { transform: rotate(-2deg) scale(0.2); opacity: 0; }
+      60%  { transform: rotate(-2deg) scale(1.1); opacity: 1; }
+      100% { transform: rotate(-2deg) scale(1); opacity: 1; }
+    }
+    @keyframes toastOut {
+      to { opacity: 0; transform: rotate(-2deg) scale(0.9) translateY(8px); }
+    }
+
+    #hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 6vh;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: clamp(12px, 2vw, 14px);
+      opacity: 0.5;
+      pointer-events: none;
+      transition: opacity 2.5s ease;
+      padding: 0 16px;
+    }
+    #hint.hidden { opacity: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .badge .n.pop { animation: none; }
+      #toast span.show { animation: none; opacity: 1; transform: rotate(-2deg) scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <div class="badge"><span class="n" id="nLabel">3 &mdash; TRIANGLE</span></div>
+    <div class="record" id="record"></div>
+    <div id="toast"><span id="toastText"></span></div>
+    <div id="hint">it will not stop on its own &mdash; tap to pause</div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var INK = '#201a17';
+    var COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3'];
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var NAMES = {
+      3: 'TRIANGLE', 4: 'SQUARE', 5: 'PENTAGON', 6: 'HEXAGON', 7: 'HEPTAGON',
+      8: 'OCTAGON', 9: 'NONAGON', 10: 'DECAGON', 11: 'HENDECAGON', 12: 'DODECAGON',
+      13: 'TRIDECAGON', 14: 'TETRADECAGON', 15: 'PENTADECAGON', 16: 'HEXADECAGON',
+      17: 'HEPTADECAGON', 18: 'OCTADECAGON', 19: 'ENNEADECAGON', 20: 'ICOSAGON'
+    };
+    var VISUAL_CAP = 300; // beyond this a canvas n-gon is pixel-identical to a circle
+
+    var stage = document.getElementById('stage');
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    var nLabel = document.getElementById('nLabel');
+    var recordEl = document.getElementById('record');
+    var toastText = document.getElementById('toastText');
+    var hint = document.getElementById('hint');
+
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var W = 0, H = 0, cx = 0, cy = 0, R = 0;
+
+    function resize() {
+      W = stage.clientWidth;
+      H = stage.clientHeight;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx = W / 2;
+      cy = H / 2;
+      R = Math.max(60, Math.min(W, H) * 0.32);
+      draw();
+    }
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 120);
+    });
+
+    var n = 3;
+    var colorIdx = Math.floor(Math.random() * COLORS.length); // fixed for the whole march — see advance()
+    var rotation = 0;
+    var paused = false;
+    var everToggled = false;
+    var crossedCircle = false;
+    var record = 3;
+
+    try { record = parseInt(localStorage.getItem('polygonmarch_record'), 10) || 3; } catch (e) {}
+    function updateRecord() {
+      if (n > record) {
+        record = n;
+        try { localStorage.setItem('polygonmarch_record', String(record)); } catch (e) {}
+      }
+      recordEl.textContent = 'record: ' + labelFor(record);
+    }
+
+    // Systematic Greek polygon-name algorithm (per the standard "kai"-combining
+    // convention: ones/teens, tens (icosi-/triaconta-/.../enneaconta-), hundreds
+    // (hecta-), thousands (chilia-), and a recursive myriad (10,000) system for
+    // anything larger — the same "myriad of myriads" compounding classical Greek
+    // used for huge numbers. kai only ever joins the last two nonzero components.
+    var ONES = ['', 'hena', 'di', 'tri', 'tetra', 'penta', 'hexa', 'hepta', 'octa', 'ennea'];
+    var TEENS = ['deca', 'hendeca', 'dodeca', 'triskaideca', 'tetrakaideca', 'pentakaideca',
+                 'hexakaideca', 'heptakaideca', 'octakaideca', 'enneakaideca'];
+    var TENS = { 3: 'triaconta', 4: 'tetraconta', 5: 'pentaconta', 6: 'hexaconta',
+                 7: 'heptaconta', 8: 'octaconta', 9: 'enneaconta' };
+
+    function countName(k) {
+      if (k < 10) return ONES[k];
+      if (k < 20) return TEENS[k - 10];
+      if (k < 100) {
+        var tens = Math.floor(k / 10), ones = k % 10;
+        var tensPrefix = tens === 2 ? (ones === 0 ? 'icosa' : 'icosi') : TENS[tens];
+        return ones === 0 ? tensPrefix : tensPrefix + 'kai' + ONES[ones];
+      }
+      if (k < 1000) {
+        var hundreds = Math.floor(k / 100), rem100 = k % 100;
+        var hectaPrefix = hundreds === 1 ? 'hecta' : ONES[hundreds] + 'hecta';
+        return rem100 === 0 ? hectaPrefix : hectaPrefix + 'kai' + countName(rem100);
+      }
+      if (k < 10000) {
+        var thousands = Math.floor(k / 1000), rem1000 = k % 1000;
+        var chiliaPrefix = thousands === 1 ? 'chilia' : thousands === 2 ? 'dischilia'
+          : thousands === 3 ? 'trischilia' : ONES[thousands] + 'kischilia';
+        return rem1000 === 0 ? chiliaPrefix : chiliaPrefix + 'kai' + countName(rem1000);
+      }
+      var myriads = Math.floor(k / 10000), rem10000 = k % 10000;
+      var myriaPrefix = myriads === 1 ? 'myria' : myriads === 2 ? 'dismyria'
+        : myriads === 3 ? 'trismyria' : countName(myriads) + 'kismyria';
+      return rem10000 === 0 ? myriaPrefix : myriaPrefix + 'kai' + countName(rem10000);
+    }
+
+    function labelFor(k) {
+      if (NAMES[k]) return k + ' — ' + NAMES[k];
+      return k.toLocaleString() + ' — ' + countName(k) + 'GON';
+    }
+
+    function showToast(text) {
+      toastText.textContent = text;
+      toastText.classList.remove('show');
+      void toastText.offsetWidth;
+      toastText.classList.add('show');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      var color = COLORS[colorIdx % COLORS.length];
+      var sides = Math.min(n, VISUAL_CAP);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+
+      // hard sticker shadow
+      ctx.save();
+      ctx.translate(4, 5);
+      pathShape(sides);
+      ctx.fillStyle = INK;
+      ctx.fill();
+      ctx.restore();
+
+      pathShape(sides);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function pathShape(sides) {
+      if (n > VISUAL_CAP) {
+        ctx.beginPath();
+        ctx.arc(0, 0, R, 0, Math.PI * 2);
+        return;
+      }
+      ctx.beginPath();
+      for (var i = 0; i < sides; i++) {
+        var a = (i / sides) * Math.PI * 2 - Math.PI / 2;
+        var x = Math.cos(a) * R, y = Math.sin(a) * R;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    }
+
+    function renderLabel() {
+      nLabel.textContent = labelFor(n);
+      nLabel.classList.remove('pop');
+      void nLabel.offsetWidth;
+      nLabel.classList.add('pop');
+    }
+
+    var tickMs = 550;
+    var timer = null;
+
+    function advance() {
+      // always exactly +1 — never skip a polygon. Speed comes from tickMs shrinking
+      // below, not from jumping the count. Color is intentionally NOT touched here:
+      // flashing/cycling fill color at an accelerating tick rate is a real
+      // photosensitivity hazard, so this shape holds one steady color throughout.
+      n += 1;
+
+      if (!crossedCircle && n > VISUAL_CAP) {
+        crossedCircle = true;
+        colorIdx++; // one single, deliberate change on this one-off milestone only
+        showToast('this is now visually a circle. mathematicians call the limit an apeirogon — infinite sides. this one has fewer.');
+      }
+
+      renderLabel();
+      updateRecord();
+      draw();
+
+      if (n > 20) tickMs = Math.max(20, tickMs * 0.985);
+    }
+
+    function scheduleNext() {
+      clearTimeout(timer);
+      if (paused) return;
+      timer = setTimeout(function () {
+        advance();
+        scheduleNext();
+      }, tickMs);
+    }
+
+    function togglePause() {
+      paused = !paused;
+      if (!everToggled) {
+        everToggled = true;
+        hint.classList.add('hidden');
+      }
+      if (paused) {
+        clearTimeout(timer);
+      } else {
+        scheduleNext();
+      }
+    }
+    stage.addEventListener('pointerdown', togglePause);
+
+    var rafId = null;
+    function spin() {
+      if (!reduced && !paused) {
+        rotation += 0.0035;
+        draw();
+      }
+      rafId = requestAnimationFrame(spin);
+    }
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+        clearTimeout(timer);
+      } else {
+        if (!rafId) rafId = requestAnimationFrame(spin);
+        if (!paused) scheduleNext();
+      }
+    });
+
+    resize();
+    renderLabel();
+    updateRecord();
+    scheduleNext();
+    rafId = requestAnimationFrame(spin);
+  })();
+  </script>
+</body>
+</html>
