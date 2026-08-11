@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fontsmith</title>
+  <meta name="description" content="Draw every letter, number, and punctuation mark by hand, then download a real, installable font you made yourself. Or upload one and see how it types.">
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --orange: #f47b28;
+      --pink: #ff7fa5;
+      --teal: #2fb0a3;
+      --gold: #f7c948;
+    }
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    body { padding-bottom: 60px; }
+
+    .loud {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--cream);
+      border-bottom: 3px solid var(--ink);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .brand {
+      font-size: clamp(18px, 3vw, 26px);
+      letter-spacing: 1px;
+      color: var(--coral);
+      -webkit-text-stroke: 1.5px var(--ink);
+      paint-order: stroke fill;
+      transform: rotate(-2deg);
+      white-space: nowrap;
+    }
+    .tabs, .mode-toggle { display: flex; gap: 8px; }
+    .pill-btn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      text-transform: uppercase;
+      background: var(--paper);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 8px 16px;
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .pill-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+    .pill-btn:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
+    .pill-btn.active { background: var(--sky); }
+    .pill-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: 2px 2px 0 var(--ink);
+      transform: none;
+    }
+
+    .fontname-group { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    #fontNameInput {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 14px;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      padding: 8px 12px;
+      width: 180px;
+      max-width: 40vw;
+    }
+    #downloadBtn { background: var(--gold); }
+
+    main { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .hint {
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(32,26,23,0.65);
+      margin-bottom: 14px;
+    }
+
+    .char-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 6px 4px 14px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .char-chip {
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      font-family: Georgia, serif;
+      font-size: 15px;
+      background: var(--paper);
+      border: 2px dashed rgba(32,26,23,0.5);
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .char-chip.drawn { background: var(--lime); border-style: solid; }
+    .char-chip.skipped { background: transparent; border-style: dotted; opacity: 0.5; }
+    .char-chip.active {
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--coral);
+      transform: translate(-1px, -1px);
+    }
+
+    .draw-area { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    #drawCanvas {
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 5px 5px 0 var(--ink);
+      touch-action: none;
+      user-select: none;
+      max-width: 100%;
+      cursor: crosshair;
+    }
+    .draw-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    #undoStrokeBtn { background: var(--orange); }
+    #clearBtn { background: var(--pink); }
+    #skipBtn { background: var(--paper); }
+    .progress { font-style: italic; font-size: 13px; color: rgba(32,26,23,0.6); }
+
+    .mode-toggle { margin-bottom: 16px; }
+
+    #typeInput {
+      width: 100%;
+      min-height: 70px;
+      font-family: Georgia, serif;
+      font-size: 15px;
+      padding: 10px 14px;
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      background: var(--cream);
+      resize: vertical;
+      margin-bottom: 14px;
+    }
+    #previewCanvas {
+      width: 100%;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 5px 5px 0 var(--ink);
+    }
+
+    #uploadMode .upload-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    #uploadTestArea {
+      min-height: 140px;
+      font-size: 34px;
+      padding: 16px 20px;
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      background: var(--cream);
+      outline: none;
+    }
+    .upload-error {
+      font-style: italic;
+      font-size: 13px;
+      color: var(--coral);
+      min-height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand loud">Fontsmith</div>
+      <div class="tabs">
+        <button class="pill-btn tab-btn active" data-tab="draw">Draw</button>
+        <button class="pill-btn tab-btn" data-tab="test">Test</button>
+      </div>
+      <div class="fontname-group">
+        <input id="fontNameInput" type="text" maxlength="40" placeholder="Untitled Font" aria-label="Font name">
+        <button id="downloadBtn" class="pill-btn" disabled>Download .ttf</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="drawScreen" class="screen active">
+        <p class="hint">draw a character stroke by stroke — lift and draw again to add another stroke (handy for letters like F or i), Undo removes just the last one, Clear wipes the whole letter</p>
+        <div class="char-strip" id="charStrip"></div>
+        <div class="draw-area">
+          <canvas id="drawCanvas"></canvas>
+          <div class="draw-controls">
+            <button id="prevBtn" class="pill-btn">&larr; Prev</button>
+            <button id="undoStrokeBtn" class="pill-btn">Undo Stroke</button>
+            <button id="clearBtn" class="pill-btn">Clear</button>
+            <button id="skipBtn" class="pill-btn">Skip</button>
+            <button id="nextBtn" class="pill-btn">Next &rarr;</button>
+          </div>
+          <div class="progress" id="progressText"></div>
+        </div>
+      </section>
+
+      <section id="testScreen" class="screen">
+        <div class="mode-toggle">
+          <button class="pill-btn mode-btn active" data-mode="mine">My Font</button>
+          <button class="pill-btn mode-btn" data-mode="upload">Upload a Font</button>
+        </div>
+        <div id="mineMode">
+          <textarea id="typeInput" placeholder="Type something..."></textarea>
+          <canvas id="previewCanvas"></canvas>
+        </div>
+        <div id="uploadMode" hidden>
+          <div class="upload-row">
+            <input type="file" id="fontFileInput" accept=".ttf,.otf,font/ttf,font/otf">
+          </div>
+          <div class="upload-error" id="uploadError"></div>
+          <div id="uploadTestArea" contenteditable="true" spellcheck="false">Type here to test the uploaded font...</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ---------- character set & glyph geometry ----------
+    var UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    var LOWER = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    var DIGITS = '0123456789'.split('');
+    // grouped into contiguous ASCII sub-ranges so buildCmap can turn each group into one segment
+    var PUNCT_BANG_QUOTE = ['!', '"'];
+    var PUNCT_APOS_PARENS = ["'", '(', ')'];
+    var PUNCT_COMMA_DASH_DOT = [',', '-', '.'];
+    var PUNCT_COLON_SEMI = [':', ';'];
+    var PUNCT_QMARK = ['?'];
+    var ALL_CHARS = UPPER.concat(LOWER, DIGITS, PUNCT_BANG_QUOTE, PUNCT_APOS_PARENS, PUNCT_COMMA_DASH_DOT, PUNCT_COLON_SEMI, PUNCT_QMARK);
+
+    var UNITS_PER_EM = 1000;
+    var CAP_HEIGHT = 700;
+    var SIDE_BEARING = 40;
+    var SPACE_ADVANCE = 380;
+    var STROKE_WIDTH_PX = 18;
+    var MIN_POINT_DIST = 3;
+
+    var DRAW_W = 280, DRAW_H = 320;
+    var CAP_Y = 30, BASE_Y = 240, DESC_Y = 300;
+    var PX_SCALE = CAP_HEIGHT / (BASE_Y - CAP_Y);
+
+    var STORAGE_KEY = 'fontsmith_v1';
+
+    var state = { strokes: {}, currentIndex: 0, fontName: '' };
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          state.strokes = parsed.strokes || {};
+          state.fontName = parsed.fontName || '';
+        }
+      } catch (e) {}
+      // migrate letters saved under the old single-stroke format ({points:[...]})
+      // to the current multi-stroke format ({strokes:[[...]]}) so nothing drawn
+      // before this format existed goes missing
+      Object.keys(state.strokes).forEach(function (ch) {
+        var s = state.strokes[ch];
+        if (s && s.points && !s.strokes) state.strokes[ch] = { strokes: [s.points] };
+      });
+    }
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ strokes: state.strokes, fontName: state.fontName }));
+      } catch (e) {}
+    }
+
+    // ---------- stroke -> ribbon outline (shared by canvas preview + font glyf) ----------
+    function circlePts(center, r, n) {
+      var pts = [];
+      for (var i = 0; i < n; i++) {
+        var a = (i / n) * Math.PI * 2;
+        pts.push([center[0] + Math.cos(a) * r, center[1] + Math.sin(a) * r]);
+      }
+      return pts;
+    }
+
+    function strokeOutlinePx(points, halfWidth) {
+      var n = points.length;
+      if (n === 0) return [];
+      if (n === 1) return circlePts(points[0], halfWidth * 1.3, 12);
+      var normals = [];
+      for (var i = 0; i < n - 1; i++) {
+        var dx = points[i + 1][0] - points[i][0], dy = points[i + 1][1] - points[i][1];
+        var len = Math.hypot(dx, dy) || 1;
+        normals.push([-dy / len, dx / len]);
+      }
+      var ptN = [];
+      for (i = 0; i < n; i++) {
+        var nx, ny;
+        if (i === 0) { nx = normals[0][0]; ny = normals[0][1]; }
+        else if (i === n - 1) { nx = normals[n - 2][0]; ny = normals[n - 2][1]; }
+        else {
+          nx = normals[i - 1][0] + normals[i][0];
+          ny = normals[i - 1][1] + normals[i][1];
+          var l = Math.hypot(nx, ny) || 1;
+          nx /= l; ny /= l;
+          // clamp the miter so sharp corners don't spike outward
+          var cosHalf = normals[i - 1][0] * nx + normals[i - 1][1] * ny;
+          var miter = Math.min(2.2, 1 / Math.max(cosHalf, 0.35));
+          nx *= miter; ny *= miter;
+        }
+        ptN.push([nx, ny]);
+      }
+      var left = points.map(function (p, idx) { return [p[0] + ptN[idx][0] * halfWidth, p[1] + ptN[idx][1] * halfWidth]; });
+      var right = points.map(function (p, idx) { return [p[0] - ptN[idx][0] * halfWidth, p[1] - ptN[idx][1] * halfWidth]; });
+      return left.concat(right.reverse());
+    }
+
+    function fillPolygon(ctx, pts, color) {
+      if (!pts.length) return;
+      ctx.beginPath();
+      pts.forEach(function (p, i) { i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]); });
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    // one raw stroke -> one closed polygon in font units (unshifted); returns null if degenerate
+    function contourFromRawStroke(pts) {
+      var outlinePx = pts.length === 1 ? circlePts(pts[0], (STROKE_WIDTH_PX / 2) * 1.3, 12) : strokeOutlinePx(pts, STROKE_WIDTH_PX / 2);
+      var fontPts = outlinePx.map(function (p) {
+        return { x: Math.round(p[0] * PX_SCALE), y: Math.round((BASE_Y - p[1]) * PX_SCALE) };
+      });
+      var deduped = [];
+      fontPts.forEach(function (p) {
+        var last = deduped[deduped.length - 1];
+        if (!last || last.x !== p.x || last.y !== p.y) deduped.push(p);
+      });
+      if (deduped.length > 1) {
+        var first = deduped[0], lastPt = deduped[deduped.length - 1];
+        if (first.x === lastPt.x && first.y === lastPt.y) deduped.pop();
+      }
+      return deduped.length >= 3 ? deduped : null;
+    }
+
+    // canonical: a character's raw strokes -> font-unit glyph (possibly several contours,
+    // one per stroke — TrueType glyphs support this natively, same as how "i" is a dot + a
+    // stem). Used by both the TTF writer and the "my font" preview so they never drift apart.
+    function glyphFromCharData(charData) {
+      if (!charData || charData.skipped || !charData.strokes || !charData.strokes.length) {
+        return { contours: [], advance: SPACE_ADVANCE, bbox: null };
+      }
+      var contours = [];
+      charData.strokes.forEach(function (pts) {
+        var c = contourFromRawStroke(pts);
+        if (c) contours.push(c);
+      });
+      if (!contours.length) return { contours: [], advance: SPACE_ADVANCE, bbox: null };
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      contours.forEach(function (c) {
+        c.forEach(function (p) {
+          if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+        });
+      });
+      var shiftX = SIDE_BEARING - minX;
+      var shiftedContours = contours.map(function (c) {
+        return c.map(function (p) { return { x: p.x + shiftX, y: p.y }; });
+      });
+      var advance = Math.round((maxX - minX) + SIDE_BEARING * 2);
+      var bbox = { minX: SIDE_BEARING, minY: minY, maxX: (maxX - minX) + SIDE_BEARING, maxY: maxY };
+      return { contours: shiftedContours, advance: advance, bbox: bbox };
+    }
+
+    // ---------- drawing screen ----------
+    function setupCanvas(canvas, cssW, cssH) {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = cssW * dpr;
+      canvas.height = cssH * dpr;
+      canvas.style.width = cssW + 'px';
+      canvas.style.height = cssH + 'px';
+      var ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return ctx;
+    }
+
+    var drawCanvas = document.getElementById('drawCanvas');
+    var drawCtx = setupCanvas(drawCanvas, DRAW_W, DRAW_H);
+    var drawing = false;
+    var currentPoints = null;
+    var activeChar = null;    // the character the in-progress stroke belongs to, fixed at pointerdown
+    var activePointerId = null;
+
+    function canvasPointFromEvent(e) {
+      var rect = drawCanvas.getBoundingClientRect();
+      var scaleX = DRAW_W / rect.width, scaleY = DRAW_H / rect.height;
+      return [(e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY];
+    }
+
+    // rendering is decoupled from input-event frequency: a busy drag (lots of pointermove
+    // events, especially from high-report-rate mice/trackpads) queues at most one repaint
+    // per animation frame instead of redoing the full outline+fill on every single event,
+    // which is what was causing the freeze/stutter during longer strokes.
+    var renderPending = false;
+    function requestDrawRender() {
+      if (renderPending) return;
+      renderPending = true;
+      requestAnimationFrame(function () { renderPending = false; renderDrawCanvas(); });
+    }
+
+    drawCanvas.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      // ignore a second pointer (extra finger, stray duplicate event) arriving mid-stroke —
+      // starting a fresh stroke here would silently throw away whatever was drawn so far
+      if (drawing) return;
+      try { drawCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+      drawing = true;
+      activePointerId = e.pointerId;
+      activeChar = ALL_CHARS[state.currentIndex];
+      currentPoints = [canvasPointFromEvent(e)];
+      requestDrawRender();
+    });
+    drawCanvas.addEventListener('pointermove', function (e) {
+      if (!drawing || e.pointerId !== activePointerId) return;
+      var evts = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      for (var i = 0; i < evts.length; i++) {
+        var p = canvasPointFromEvent(evts[i]);
+        var last = currentPoints[currentPoints.length - 1];
+        if (Math.hypot(p[0] - last[0], p[1] - last[1]) >= MIN_POINT_DIST) currentPoints.push(p);
+      }
+      requestDrawRender();
+    });
+    function endStroke(e) {
+      if (!drawing) return;
+      if (e && e.pointerId !== activePointerId) return;
+      drawing = false;
+      // commit to the character that was active when the stroke started, not whatever
+      // happens to be on screen now — navigating mid-stroke must never bleed one
+      // letter's points into another letter's saved data. Strokes ADD to the letter
+      // (never replace it) so lifting the pen to draw a second stroke — e.g. the
+      // crossbar of an F — keeps whatever was already drawn.
+      if (currentPoints && currentPoints.length >= 1 && activeChar) {
+        if (!state.strokes[activeChar] || !state.strokes[activeChar].strokes) {
+          state.strokes[activeChar] = { strokes: [] };
+        }
+        state.strokes[activeChar].strokes.push(currentPoints);
+        saveState();
+        refreshCharStrip();
+        updateProgress();
+      }
+      currentPoints = null;
+      activeChar = null;
+      activePointerId = null;
+      renderDrawCanvas();
+    }
+    drawCanvas.addEventListener('pointerup', endStroke);
+    drawCanvas.addEventListener('pointercancel', endStroke);
+    // safety net: if capture is ever lost mid-drag (window blur, OS gesture, etc.) without
+    // a matching pointerup, this still fires — otherwise `drawing` gets stuck true and the
+    // next real stroke you start would silently commit into whatever letter is on screen then
+    drawCanvas.addEventListener('lostpointercapture', endStroke);
+
+    function renderDrawCanvas() {
+      var ctx = drawCtx;
+      ctx.clearRect(0, 0, DRAW_W, DRAW_H);
+      ctx.fillStyle = '#fff8ef';
+      ctx.fillRect(0, 0, DRAW_W, DRAW_H);
+
+      var ch = ALL_CHARS[state.currentIndex];
+      ctx.save();
+      ctx.globalAlpha = 0.10;
+      ctx.fillStyle = '#201a17';
+      ctx.font = (BASE_Y - CAP_Y) + 'px Georgia';
+      ctx.textBaseline = 'alphabetic';
+      ctx.textAlign = 'center';
+      ctx.fillText(ch, DRAW_W / 2, BASE_Y);
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(32,26,23,0.25)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(0, CAP_Y); ctx.lineTo(DRAW_W, CAP_Y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, DESC_Y); ctx.lineTo(DRAW_W, DESC_Y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(32,26,23,0.5)';
+      ctx.beginPath(); ctx.moveTo(0, BASE_Y); ctx.lineTo(DRAW_W, BASE_Y); ctx.stroke();
+
+      var stored = state.strokes[ch];
+      var committedStrokes = (stored && stored.strokes) || [];
+      committedStrokes.forEach(function (pts) {
+        fillPolygon(ctx, strokeOutlinePx(pts, STROKE_WIDTH_PX / 2), '#201a17');
+      });
+      if (drawing && currentPoints && currentPoints.length) {
+        fillPolygon(ctx, strokeOutlinePx(currentPoints, STROKE_WIDTH_PX / 2), '#201a17');
+      }
+    }
+
+    function refreshCharStrip() {
+      var strip = document.getElementById('charStrip');
+      strip.innerHTML = '';
+      ALL_CHARS.forEach(function (ch, i) {
+        var btn = document.createElement('button');
+        btn.className = 'char-chip';
+        btn.textContent = ch;
+        var s = state.strokes[ch];
+        if (s && s.skipped) btn.classList.add('skipped');
+        else if (s && s.strokes && s.strokes.length) btn.classList.add('drawn');
+        if (i === state.currentIndex) btn.classList.add('active');
+        btn.addEventListener('click', function () {
+          state.currentIndex = i;
+          renderDrawCanvas();
+          refreshCharStrip();
+          updateProgress();
+        });
+        strip.appendChild(btn);
+      });
+    }
+
+    function updateProgress() {
+      var done = ALL_CHARS.filter(function (ch) { return !!state.strokes[ch]; }).length;
+      document.getElementById('progressText').textContent = done + ' / ' + ALL_CHARS.length + ' drawn';
+      var drawnCount = ALL_CHARS.filter(function (ch) { return state.strokes[ch] && state.strokes[ch].strokes && state.strokes[ch].strokes.length; }).length;
+      document.getElementById('downloadBtn').disabled = drawnCount === 0;
+    }
+
+    function goNext() { state.currentIndex = (state.currentIndex + 1) % ALL_CHARS.length; renderDrawCanvas(); refreshCharStrip(); updateProgress(); }
+    function goPrev() { state.currentIndex = (state.currentIndex - 1 + ALL_CHARS.length) % ALL_CHARS.length; renderDrawCanvas(); refreshCharStrip(); updateProgress(); }
+
+    document.getElementById('undoStrokeBtn').addEventListener('click', function () {
+      var ch = ALL_CHARS[state.currentIndex];
+      var s = state.strokes[ch];
+      if (!s || !s.strokes || !s.strokes.length) return;
+      s.strokes.pop();
+      if (!s.strokes.length) delete state.strokes[ch];
+      saveState(); renderDrawCanvas(); refreshCharStrip(); updateProgress();
+    });
+    document.getElementById('clearBtn').addEventListener('click', function () {
+      var ch = ALL_CHARS[state.currentIndex];
+      delete state.strokes[ch];
+      saveState(); renderDrawCanvas(); refreshCharStrip(); updateProgress();
+    });
+    document.getElementById('skipBtn').addEventListener('click', function () {
+      var ch = ALL_CHARS[state.currentIndex];
+      state.strokes[ch] = { skipped: true };
+      saveState();
+      goNext();
+    });
+    document.getElementById('nextBtn').addEventListener('click', goNext);
+    document.getElementById('prevBtn').addEventListener('click', goPrev);
+
+    // ---------- tabs ----------
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var tab = btn.dataset.tab;
+        document.getElementById('drawScreen').classList.toggle('active', tab === 'draw');
+        document.getElementById('testScreen').classList.toggle('active', tab === 'test');
+        if (tab === 'test') { setupPreviewCanvas(); }
+      });
+    });
+
+    // ---------- test screen: "my font" mode ----------
+    var typeInput = document.getElementById('typeInput');
+    var previewCanvas = document.getElementById('previewCanvas');
+    var previewCtx = null;
+    var previewCssW = 0;
+
+    function setupPreviewCanvas() {
+      var w = Math.min(previewCanvas.parentElement.clientWidth || 600, 900);
+      previewCssW = w;
+      previewCtx = setupCanvas(previewCanvas, w, 260);
+      renderPreview();
+    }
+
+    function charGlyph(ch) {
+      if (ch === ' ') return { contours: [], advance: SPACE_ADVANCE };
+      if (ALL_CHARS.indexOf(ch) === -1) return null;
+      return glyphFromCharData(state.strokes[ch]);
+    }
+
+    function renderPreview() {
+      if (!previewCtx) return;
+      var ctx = previewCtx;
+      var w = previewCssW;
+      ctx.clearRect(0, 0, w, 260);
+      ctx.fillStyle = '#fff8ef';
+      ctx.fillRect(0, 0, w, 260);
+
+      var fontSize = 56;
+      var scale = fontSize / UNITS_PER_EM;
+      var text = typeInput.value || '';
+      var lines = text.split('\n');
+      var y = 70;
+      var maxX = w - 20;
+
+      lines.forEach(function (line) {
+        var x = 20;
+        var words = line.split(' ');
+        words.forEach(function (word, wi) {
+          var wWidth = 0;
+          for (var i = 0; i < word.length; i++) {
+            var g = charGlyph(word[i]);
+            wWidth += (g ? g.advance : SPACE_ADVANCE) * scale;
+          }
+          if (wi > 0) wWidth += SPACE_ADVANCE * scale;
+          if (x + wWidth > maxX && x > 20) { x = 20; y += fontSize * 1.3; }
+          if (wi > 0) x += SPACE_ADVANCE * scale;
+          for (i = 0; i < word.length; i++) {
+            var ch = word[i];
+            var glyph = charGlyph(ch);
+            if (glyph && glyph.contours.length) {
+              ctx.beginPath();
+              glyph.contours.forEach(function (contour) {
+                contour.forEach(function (p, pi) {
+                  var px = x + p.x * scale, py = y - p.y * scale;
+                  pi === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                });
+                ctx.closePath();
+              });
+              ctx.fillStyle = '#201a17';
+              ctx.fill();
+            }
+            x += (glyph ? glyph.advance : SPACE_ADVANCE) * scale;
+          }
+        });
+        y += fontSize * 1.3;
+      });
+    }
+    typeInput.addEventListener('input', renderPreview);
+
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        if (document.getElementById('testScreen').classList.contains('active')) setupPreviewCanvas();
+      }, 200);
+    });
+
+    // ---------- test screen: "upload a font" mode ----------
+    document.querySelectorAll('.mode-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.mode-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var mode = btn.dataset.mode;
+        document.getElementById('mineMode').hidden = mode !== 'mine';
+        document.getElementById('uploadMode').hidden = mode !== 'upload';
+        if (mode === 'mine') { setupPreviewCanvas(); }
+      });
+    });
+
+    var fontFileInput = document.getElementById('fontFileInput');
+    var uploadTestArea = document.getElementById('uploadTestArea');
+    var uploadError = document.getElementById('uploadError');
+    var uploadedFontCounter = 0;
+    fontFileInput.addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      uploadError.textContent = '';
+      file.arrayBuffer().then(function (buf) {
+        uploadedFontCounter++;
+        var familyName = 'FontsmithUpload' + uploadedFontCounter;
+        var face = new FontFace(familyName, buf);
+        return face.load().then(function (loaded) {
+          document.fonts.add(loaded);
+          uploadTestArea.style.fontFamily = '"' + familyName + '", sans-serif';
+          if (uploadTestArea.textContent === 'Type here to test the uploaded font...') uploadTestArea.textContent = '';
+        });
+      }).catch(function () {
+        uploadError.textContent = "Couldn't load that file — is it a valid .ttf or .otf?";
+      });
+    });
+
+    // ---------- TTF binary writer ----------
+    function BW() { this.b = []; }
+    BW.prototype.u8 = function (v) { this.b.push(v & 0xff); return this; };
+    BW.prototype.u16 = function (v) { v = v & 0xFFFF; this.b.push((v >> 8) & 0xff, v & 0xff); return this; };
+    BW.prototype.i16 = function (v) { return this.u16(v); };
+    BW.prototype.u32 = function (v) { v = v >>> 0; this.b.push((v >>> 24) & 0xff, (v >>> 16) & 0xff, (v >>> 8) & 0xff, v & 0xff); return this; };
+    BW.prototype.i32 = function (v) { return this.u32(v); };
+    BW.prototype.u64 = function (v) { var hi = Math.floor(v / 0x100000000); var lo = v - hi * 0x100000000; this.u32(hi); this.u32(lo); return this; };
+    BW.prototype.tag = function (s) { for (var i = 0; i < 4; i++) this.b.push(s.charCodeAt(i) || 0x20); return this; };
+    Object.defineProperty(BW.prototype, 'length', { get: function () { return this.b.length; } });
+    BW.prototype.toArray = function () { return this.b; };
+
+    function tableChecksum(bytes) {
+      var sum = 0, n = bytes.length;
+      for (var i = 0; i < n; i += 4) {
+        var b0 = bytes[i] | 0, b1 = bytes[i + 1] | 0, b2 = bytes[i + 2] | 0, b3 = bytes[i + 3] | 0;
+        var word = ((b0 << 24) | (b1 << 16) | (b2 << 8) | b3) >>> 0;
+        sum = (sum + word) >>> 0;
+      }
+      return sum >>> 0;
+    }
+
+    // contours: array of point-arrays (one per stroke) — a simple glyph can have any number
+    // of contours (e.g. "i" is a stem + a dot); point deltas run cumulatively across all of
+    // them, only endPtsOfContours marks where each one ends
+    function writeSimpleGlyph(buf, contours, bbox) {
+      function push16(v) { v = v & 0xFFFF; buf.push((v >> 8) & 0xff, v & 0xff); }
+      push16(contours.length);
+      push16(bbox.minX); push16(bbox.minY); push16(bbox.maxX); push16(bbox.maxY);
+      var running = -1;
+      contours.forEach(function (c) { running += c.length; push16(running); });
+      push16(0);
+      var totalPoints = 0;
+      contours.forEach(function (c) { totalPoints += c.length; });
+      for (var i = 0; i < totalPoints; i++) buf.push(0x01);
+      var px = 0;
+      contours.forEach(function (c) { c.forEach(function (p) { push16(p.x - px); px = p.x; }); });
+      var py = 0;
+      contours.forEach(function (c) { c.forEach(function (p) { push16(p.y - py); py = p.y; }); });
+    }
+
+    function buildGlyfLoca(glyphs) {
+      var glyf = [];
+      var loca = [0];
+      glyphs.forEach(function (g) {
+        if (g.contours.length) writeSimpleGlyph(glyf, g.contours, g.bbox);
+        if (glyf.length % 2 !== 0) glyf.push(0);
+        loca.push(glyf.length);
+      });
+      var locaBW = new BW();
+      loca.forEach(function (off) { locaBW.u32(off); });
+      return { glyf: glyf, loca: locaBW.toArray() };
+    }
+
+    function buildCmap() {
+      function idx(ch) { return ALL_CHARS.indexOf(ch) + 2; }
+      var segments = [
+        { start: 0x0020, end: 0x0020, gStart: 1 },
+        { start: 0x0021, end: 0x0022, gStart: idx('!') },
+        { start: 0x0027, end: 0x0029, gStart: idx("'") },
+        { start: 0x002C, end: 0x002E, gStart: idx(',') },
+        { start: 0x0030, end: 0x0039, gStart: idx('0') },
+        { start: 0x003A, end: 0x003B, gStart: idx(':') },
+        { start: 0x003F, end: 0x003F, gStart: idx('?') },
+        { start: 0x0041, end: 0x005A, gStart: idx('A') },
+        { start: 0x0061, end: 0x007A, gStart: idx('a') }
+      ];
+      segments.sort(function (a, b) { return a.start - b.start; });
+      segments.push({ start: 0xFFFF, end: 0xFFFF, gStart: 0 });
+      var segCount = segments.length;
+      var p = 1; while (p * 2 <= segCount) p *= 2;
+      var searchRange = p * 2, entrySelector = Math.log2(p), rangeShift = segCount * 2 - searchRange;
+      var subLength = 16 + 8 * segCount;
+
+      var sub = new BW();
+      sub.u16(4).u16(subLength).u16(0);
+      sub.u16(segCount * 2).u16(searchRange).u16(entrySelector).u16(rangeShift);
+      segments.forEach(function (s) { sub.u16(s.end); });
+      sub.u16(0);
+      segments.forEach(function (s) { sub.u16(s.start); });
+      segments.forEach(function (s) { sub.i16(s.gStart - s.start); });
+      segments.forEach(function () { sub.u16(0); });
+
+      var header = new BW();
+      header.u16(0).u16(2);
+      var subOffset = 4 + 2 * 8;
+      header.u16(3).u16(1).u32(subOffset);
+      header.u16(0).u16(3).u32(subOffset);
+      return header.toArray().concat(sub.toArray());
+    }
+
+    function buildHmtx(glyphs) {
+      var bw = new BW();
+      glyphs.forEach(function (g) {
+        bw.u16(g.advance);
+        bw.i16(g.bbox ? g.bbox.minX : 0);
+      });
+      return bw.toArray();
+    }
+
+    function utf16be(s) {
+      var out = [];
+      for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); out.push((c >> 8) & 0xff, c & 0xff); }
+      return out;
+    }
+    function sanitizePS(name) {
+      var s = (name || '').replace(/[^A-Za-z0-9]/g, '');
+      if (!s) s = 'MyFont';
+      return s.slice(0, 50);
+    }
+
+    function buildName(fontName) {
+      var fam = (fontName || 'My Handwritten Font').slice(0, 60);
+      var ps = sanitizePS(fam);
+      var records = [
+        { id: 1, str: fam },
+        { id: 2, str: 'Regular' },
+        { id: 3, str: ps + ';1.0;RSOTW-Fontsmith' },
+        { id: 4, str: fam },
+        { id: 5, str: 'Version 1.0' },
+        { id: 6, str: ps + '-Regular' }
+      ];
+      var bw = new BW();
+      bw.u16(0).u16(records.length);
+      bw.u16(6 + records.length * 12);
+      var running = 0, storageBytes = [];
+      records.forEach(function (r) {
+        var strBytes = utf16be(r.str);
+        bw.u16(3).u16(1).u16(0x0409).u16(r.id).u16(strBytes.length).u16(running);
+        storageBytes = storageBytes.concat(strBytes);
+        running += strBytes.length;
+      });
+      return bw.toArray().concat(storageBytes);
+    }
+
+    function buildPost() {
+      var bw = new BW();
+      bw.u32(0x00030000);
+      bw.u32(0);
+      bw.i16(-100).i16(50);
+      bw.u32(0).u32(0).u32(0).u32(0).u32(0);
+      return bw.toArray();
+    }
+
+    function buildOS2(m) {
+      var bw = new BW();
+      bw.u16(4);
+      var avgWidth = Math.round(m.glyphs.reduce(function (s, g) { return s + g.advance; }, 0) / m.glyphs.length) || 500;
+      bw.i16(avgWidth);
+      bw.u16(400).u16(5).u16(0);
+      bw.i16(650).i16(700).i16(0).i16(140);
+      bw.i16(650).i16(700).i16(0).i16(480);
+      bw.i16(50).i16(300);
+      bw.i16(0);
+      for (var i = 0; i < 10; i++) bw.u8(0);
+      bw.u32(1).u32(0).u32(0).u32(0);
+      bw.tag('RSOW');
+      bw.u16(0x0040);
+      bw.u16(0x0020).u16(0x007A);
+      bw.i16(m.ascender).i16(m.descender).i16(90);
+      bw.u16(Math.round(m.ascender)).u16(Math.round(Math.abs(m.descender)));
+      bw.u32(1).u32(0);
+      bw.i16(490).i16(700);
+      bw.u16(0).u16(0x0020);
+      bw.u16(1);
+      return bw.toArray();
+    }
+
+    function buildHead(m) {
+      var bw = new BW();
+      bw.u16(1).u16(0);
+      bw.u32(0x00010000);
+      bw.u32(0);
+      bw.u32(0x5F0F3CF5);
+      bw.u16(0x0003);
+      bw.u16(UNITS_PER_EM);
+      var macTime = Math.floor(Date.now() / 1000) + 2082844800;
+      bw.u64(macTime);
+      bw.u64(macTime);
+      bw.i16(m.fMinX).i16(m.fMinY).i16(m.fMaxX).i16(m.fMaxY);
+      bw.u16(0);
+      bw.u16(8);
+      bw.i16(2);
+      bw.i16(1);
+      bw.i16(0);
+      return bw.toArray();
+    }
+
+    function buildHhea(m) {
+      var bw = new BW();
+      bw.u16(1).u16(0);
+      bw.i16(m.ascender).i16(m.descender).i16(m.lineGap);
+      bw.u16(Math.round(m.advMax));
+      bw.i16(Math.round(m.minLSB)).i16(Math.round(m.minRSB)).i16(Math.round(m.maxExtent));
+      bw.i16(1).i16(0).i16(0);
+      bw.i16(0).i16(0).i16(0).i16(0);
+      bw.i16(0);
+      bw.u16(m.numGlyphs);
+      return bw.toArray();
+    }
+
+    function buildMaxp(m) {
+      var bw = new BW();
+      bw.u32(0x00010000);
+      bw.u16(m.numGlyphs);
+      bw.u16(m.maxPoints);
+      bw.u16(m.maxContours);
+      bw.u16(0).u16(0);
+      bw.u16(1);
+      bw.u16(0).u16(0).u16(0).u16(0).u16(0).u16(0).u16(0).u16(0);
+      return bw.toArray();
+    }
+
+    function assembleFont(tables) {
+      var numTables = tables.length;
+      var p = 1; while (p * 2 <= numTables) p *= 2;
+      var searchRange = p * 16, entrySelector = Math.log2(p), rangeShift = numTables * 16 - searchRange;
+
+      var offset = 12 + numTables * 16;
+      var dirEntries = tables.map(function (t) {
+        var tag = t[0], bytes = t[1];
+        var length = bytes.length;
+        var checksum = tableChecksum(bytes);
+        var entry = { tag: tag, checksum: checksum, offset: offset, length: length };
+        offset += length + ((4 - (length % 4)) % 4);
+        return entry;
+      });
+      var totalLength = offset;
+      var buf = new Uint8Array(totalLength);
+
+      var headerBW = new BW();
+      headerBW.u32(0x00010000).u16(numTables).u16(searchRange).u16(entrySelector).u16(rangeShift);
+      dirEntries.forEach(function (e) { headerBW.tag(e.tag).u32(e.checksum).u32(e.offset).u32(e.length); });
+      buf.set(headerBW.toArray(), 0);
+
+      tables.forEach(function (t, i) { buf.set(t[1], dirEntries[i].offset); });
+
+      var fileChecksum = tableChecksum(buf);
+      var adjustment = (0xB1B0AFBA - fileChecksum) >>> 0;
+      var headEntry = null;
+      for (var i2 = 0; i2 < dirEntries.length; i2++) if (dirEntries[i2].tag === 'head') headEntry = dirEntries[i2];
+      var adjOffset = headEntry.offset + 8;
+      buf[adjOffset] = (adjustment >>> 24) & 0xff;
+      buf[adjOffset + 1] = (adjustment >>> 16) & 0xff;
+      buf[adjOffset + 2] = (adjustment >>> 8) & 0xff;
+      buf[adjOffset + 3] = adjustment & 0xff;
+      return buf;
+    }
+
+    function buildTTF(fontNameRaw) {
+      var fontName = (fontNameRaw || '').trim() || 'My Handwritten Font';
+      var glyphs = [
+        { contours: [], advance: SPACE_ADVANCE, bbox: null },
+        { contours: [], advance: SPACE_ADVANCE, bbox: null }
+      ];
+      ALL_CHARS.forEach(function (ch) { glyphs.push(glyphFromCharData(state.strokes[ch])); });
+
+      var fMinX = 0, fMinY = 0, fMaxX = 0, fMaxY = 0;
+      var maxPoints = 0, maxContours = 0, advMax = 0, minLSB = Infinity, minRSB = Infinity, maxExtent = -Infinity, any = false;
+      glyphs.forEach(function (g) {
+        advMax = Math.max(advMax, g.advance);
+        if (g.contours.length) {
+          any = true;
+          var totalPoints = g.contours.reduce(function (s, c) { return s + c.length; }, 0);
+          maxPoints = Math.max(maxPoints, totalPoints);
+          maxContours = Math.max(maxContours, g.contours.length);
+          var b = g.bbox;
+          fMinX = Math.min(fMinX, b.minX); fMaxX = Math.max(fMaxX, b.maxX);
+          fMinY = Math.min(fMinY, b.minY); fMaxY = Math.max(fMaxY, b.maxY);
+          minLSB = Math.min(minLSB, b.minX);
+          minRSB = Math.min(minRSB, g.advance - b.maxX);
+          maxExtent = Math.max(maxExtent, b.maxX);
+        }
+      });
+      if (!any) { minLSB = 0; minRSB = 0; maxExtent = 0; }
+      var ascender = Math.max(800, fMaxY + 80);
+      var descender = Math.min(-200, fMinY - 80);
+      var lineGap = 90;
+
+      var gl = buildGlyfLoca(glyphs);
+      var cmap = buildCmap();
+      var hmtx = buildHmtx(glyphs);
+      var name = buildName(fontName);
+      var post = buildPost();
+      var os2 = buildOS2({ advMax: advMax, ascender: ascender, descender: descender, glyphs: glyphs });
+      var head = buildHead({ fMinX: fMinX, fMinY: fMinY, fMaxX: fMaxX, fMaxY: fMaxY });
+      var hhea = buildHhea({ ascender: ascender, descender: descender, lineGap: lineGap, advMax: advMax, minLSB: minLSB, minRSB: minRSB, maxExtent: maxExtent, numGlyphs: glyphs.length });
+      var maxp = buildMaxp({ numGlyphs: glyphs.length, maxPoints: maxPoints, maxContours: maxContours });
+
+      var tables = [
+        ['OS/2', os2], ['cmap', cmap], ['glyf', gl.glyf], ['head', head],
+        ['hhea', hhea], ['hmtx', hmtx], ['loca', gl.loca], ['maxp', maxp],
+        ['name', name], ['post', post]
+      ];
+      return assembleFont(tables);
+    }
+
+    document.getElementById('downloadBtn').addEventListener('click', function () {
+      var name = fontNameInput.value.trim() || 'My Handwritten Font';
+      var bytes = buildTTF(name);
+      var blob = new Blob([bytes], { type: 'font/ttf' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      var safeName = name.replace(/[^A-Za-z0-9-_ ]/g, '').trim().replace(/\s+/g, '-') || 'my-font';
+      a.download = safeName + '.ttf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    });
+
+    // ---------- init ----------
+    var fontNameInput = document.getElementById('fontNameInput');
+    function init() {
+      loadState();
+      fontNameInput.value = state.fontName || '';
+      fontNameInput.addEventListener('input', function () { state.fontName = fontNameInput.value; saveState(); });
+      refreshCharStrip();
+      renderDrawCanvas();
+      updateProgress();
+    }
+    init();
+  })();
+  </script>
+</body>
+</html>

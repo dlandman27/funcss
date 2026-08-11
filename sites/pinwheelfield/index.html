@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Pinwheel Field</title>
+    <meta name="description" content="A grid of tiny windmills. Each one's spin speed depends on how close and how fast your cursor swept past it recently — wave your mouse and you get a trailing gust of spinning pinwheels.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/pinwheelfield/">
+    <meta property="og:title" content="Pinwheel Field">
+    <meta property="og:description" content="A grid of tiny windmills. Each one's spin speed depends on how close and how fast your cursor swept past it recently — wave your mouse and you get a trailing gust of spinning pinwheels.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/pinwheelfield.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pinwheel Field">
+    <meta name="twitter:description" content="A grid of tiny windmills. Each one's spin speed depends on how close and how fast your cursor swept past it recently — wave your mouse and you get a trailing gust of spinning pinwheels.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/pinwheelfield.png">
+    <!-- rsotw:og:end -->
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            background: var(--paper);
+        }
+
+        body {
+            position: fixed;
+            inset: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #field {
+            position: fixed;
+            inset: 0;
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .hint {
+            position: fixed;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            pointer-events: none;
+            width: max-content;
+            max-width: 90vw;
+            text-align: center;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+            color: var(--ink);
+            opacity: 0.6;
+            transition: opacity 1.4s ease;
+        }
+
+        .hint.gone { opacity: 0; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hint { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="field"></canvas>
+    <div class="hint" id="hint">field response: immediate — sweep your cursor through</div>
+
+    <script>
+        (function () {
+            const canvas = document.getElementById('field');
+            const ctx = canvas.getContext('2d');
+            const hint = document.getElementById('hint');
+
+            const INK = '#201a17';
+            // Curated 3-accent set instead of a full 7-color random draw — a field
+            // where every pinwheel can be any of 7 hues reads as rainbow noise, not lively.
+            const ACCENTS = ['#f0563e', '#2fb0a3', '#5aa0db'];
+            const CREAM = '#fff8ef';
+            const GOLD = '#f7c948';
+            const GROUND = 'rgba(32, 26, 23, 0.16)';
+
+            let W, H, dpr;
+            let pinwheels = [];
+
+            const ANGVEL_EPS = 0.01;       // rad/s below which we treat gust energy as spent
+            const DAMP_PER_SEC = 0.12;     // multiplicative decay factor applied over 1 full second
+            const MAX_ANGVEL = 42;         // rad/s clamp so a burst of coalesced points can't runaway
+            const GUST_RADIUS = 78;        // px, influence radius around the swept segment
+            const MAX_SPEED = 3.2;         // px/ms, speed at which impulse saturates
+            const IMPULSE_STRENGTH = 26;   // rad/s added at the strongest possible hit
+            const IDLE_SPIN_MIN = 0.12;    // rad/s, permanent gentle baseline drift per pinwheel
+            const IDLE_SPIN_MAX = 0.34;
+
+            function mulberry32(seed) {
+                return function () {
+                    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+                    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                };
+            }
+
+            function buildField() {
+                const rand = mulberry32((W * 7919 + H * 104729) | 0);
+                // Larger cells than the original pass — fewer, bigger pinwheels with
+                // actual breathing room instead of a wall-to-wall dense tile.
+                const cell = Math.max(60, Math.min(96, Math.round(Math.min(W, H) / 8)));
+                const cols = Math.ceil(W / cell) + 1;
+                const rows = Math.ceil(H / cell) + 1;
+                const maxCount = 400;
+
+                const next = [];
+                outer:
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const jitterX = (rand() - 0.5) * cell * 0.7;
+                        const jitterY = (rand() - 0.5) * cell * 0.7;
+                        const gx = c * cell + cell * 0.5 + jitterX;
+                        const gy = r * cell + cell * 0.5 + jitterY;
+                        if (gx < -20 || gx > W + 20 || gy < -20 || gy > H + 20) continue;
+
+                        const headR = cell * (0.16 + rand() * 0.05);
+                        const stickH = cell * (0.22 + rand() * 0.1);
+                        const colorA = ACCENTS[(rand() * ACCENTS.length) | 0];
+                        const idleSpin = (rand() < 0.5 ? -1 : 1) * (IDLE_SPIN_MIN + rand() * (IDLE_SPIN_MAX - IDLE_SPIN_MIN));
+
+                        next.push({
+                            gx, gy,
+                            headR, stickH,
+                            colorA, colorB: CREAM,
+                            angle: rand() * Math.PI * 2,
+                            angVel: 0,
+                            idleSpin
+                        });
+                        if (next.length >= maxCount) break outer;
+                    }
+                }
+                pinwheels = next;
+            }
+
+            function setup() {
+                dpr = Math.min(2, window.devicePixelRatio || 1);
+                W = window.innerWidth;
+                H = window.innerHeight;
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = W + 'px';
+                canvas.style.height = H + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                buildField();
+                renderFrame();
+            }
+
+            // ---- Physics ----
+
+            function headCenter(p) {
+                return { x: p.gx, y: p.gy - p.stickH - p.headR };
+            }
+
+            // squared distance from point (px,py) to segment (ax,ay)-(bx,by)
+            function distToSegment(px, py, ax, ay, bx, by) {
+                const dx = bx - ax, dy = by - ay;
+                const len2 = dx * dx + dy * dy;
+                let t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+                t = Math.max(0, Math.min(1, t));
+                const cx = ax + t * dx, cy = ay + t * dy;
+                return { dist: Math.hypot(px - cx, py - cy), cx, cy };
+            }
+
+            function applyGust(ax, ay, bx, by, dtMs) {
+                if (dtMs <= 0 || dtMs > 120) return; // ignore first sample / huge jumps (tab switch etc.)
+                const segLen = Math.hypot(bx - ax, by - ay);
+                const speed = Math.min(MAX_SPEED, segLen / dtMs); // px/ms
+                if (speed <= 0) return;
+                const speedFactor = speed / MAX_SPEED;
+
+                for (const p of pinwheels) {
+                    const hc = headCenter(p);
+                    const { dist } = distToSegment(hc.x, hc.y, ax, ay, bx, by);
+                    if (dist >= GUST_RADIUS) continue;
+                    const falloff = 1 - dist / GUST_RADIUS;
+                    const cross = (bx - ax) * (hc.y - ay) - (by - ay) * (hc.x - ax);
+                    const sign = cross >= 0 ? 1 : -1;
+                    p.angVel += sign * falloff * speedFactor * IMPULSE_STRENGTH;
+                    if (p.angVel > MAX_ANGVEL) p.angVel = MAX_ANGVEL;
+                    if (p.angVel < -MAX_ANGVEL) p.angVel = -MAX_ANGVEL;
+                }
+            }
+
+            function step(dtMs) {
+                const dtSec = Math.min(0.05, dtMs / 1000);
+                const decay = Math.pow(DAMP_PER_SEC, dtSec);
+                for (const p of pinwheels) {
+                    p.angVel *= decay;
+                    if (Math.abs(p.angVel) < ANGVEL_EPS) p.angVel = 0;
+                    // idleSpin never decays — a permanent gentle per-pinwheel breeze so
+                    // the field is visibly alive before anyone touches it.
+                    p.angle += (p.angVel + p.idleSpin) * dtSec;
+                }
+            }
+
+            // ---- Render ----
+
+            function drawPinwheel(p) {
+                const hc = headCenter(p);
+
+                // ground shadow
+                ctx.fillStyle = GROUND;
+                ctx.beginPath();
+                ctx.ellipse(p.gx, p.gy, p.headR * 0.42, p.headR * 0.16, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // stick
+                const stickW = Math.max(2.5, p.headR * 0.14);
+                ctx.fillStyle = '#c9a876';
+                ctx.strokeStyle = INK;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const topY = hc.y + p.headR * 0.35;
+                ctx.roundRect(p.gx - stickW / 2, topY, stickW, p.gy - topY, stickW / 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // head sticker-shadow silhouette
+                ctx.save();
+                ctx.translate(hc.x + 1.5, hc.y + 1.5);
+                ctx.rotate(p.angle);
+                drawBlades(p.headR, INK, INK);
+                ctx.restore();
+
+                // head
+                ctx.save();
+                ctx.translate(hc.x, hc.y);
+                ctx.rotate(p.angle);
+                drawBlades(p.headR, p.colorA, p.colorB);
+                ctx.restore();
+
+                // hub
+                ctx.beginPath();
+                ctx.arc(hc.x, hc.y, p.headR * 0.26, 0, Math.PI * 2);
+                ctx.fillStyle = GOLD;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = INK;
+                ctx.stroke();
+            }
+
+            function drawBlades(r, colorA, colorB) {
+                const len = r;
+                const width = r * 0.62;
+                for (let i = 0; i < 4; i++) {
+                    ctx.save();
+                    ctx.rotate((Math.PI / 2) * i);
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(len, -width / 2);
+                    ctx.lineTo(len, width / 2);
+                    ctx.closePath();
+                    ctx.fillStyle = i % 2 === 0 ? colorA : colorB;
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = INK;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            function renderFrame() {
+                ctx.fillStyle = '#f2ede2';
+                ctx.fillRect(0, 0, W, H);
+                for (const p of pinwheels) drawPinwheel(p);
+            }
+
+            // ---- Loop: every pinwheel has a permanent idleSpin, so the field is
+            // always visibly moving — this runs forever rather than sleeping on idle.
+
+            let lastFrameTime = 0;
+
+            function frame(t) {
+                const dtMs = lastFrameTime ? t - lastFrameTime : 16.7;
+                lastFrameTime = t;
+                step(dtMs);
+                renderFrame();
+                requestAnimationFrame(frame);
+            }
+
+            // ---- Input ----
+
+            let prevX = null, prevY = null, prevT = null;
+            let hintFaded = false;
+
+            function fadeHint() {
+                if (hintFaded) return;
+                hintFaded = true;
+                hint.classList.add('gone');
+            }
+
+            function handlePoint(x, y, t) {
+                if (prevX !== null) {
+                    applyGust(prevX, prevY, x, y, t - prevT);
+                }
+                prevX = x; prevY = y; prevT = t;
+            }
+
+            function onPointerMove(e) {
+                fadeHint();
+                const events = (typeof e.getCoalescedEvents === 'function' && e.getCoalescedEvents().length)
+                    ? e.getCoalescedEvents() : [e];
+                for (const ev of events) {
+                    handlePoint(ev.clientX, ev.clientY, ev.timeStamp);
+                }
+            }
+
+            function onPointerDown(e) {
+                fadeHint();
+                prevX = e.clientX; prevY = e.clientY; prevT = e.timeStamp;
+            }
+
+            function onPointerLeave() {
+                prevX = null; prevY = null; prevT = null;
+            }
+
+            canvas.addEventListener('pointerdown', onPointerDown);
+            canvas.addEventListener('pointermove', onPointerMove);
+            canvas.addEventListener('pointerup', onPointerLeave);
+            canvas.addEventListener('pointercancel', onPointerLeave);
+            canvas.addEventListener('pointerleave', onPointerLeave);
+
+            setTimeout(fadeHint, 10000);
+
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(setup, 200);
+            });
+
+            setup();
+            requestAnimationFrame(frame);
+        })();
+    </script>
+</body>
+</html>

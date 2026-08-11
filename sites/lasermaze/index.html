@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laser Maze</title>
+  <meta name="description" content="Aim a laser pinned to the center of a shape and watch it bounce off the walls forever.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/lasermaze/">
+    <meta property="og:title" content="Laser Maze">
+    <meta property="og:description" content="Aim a laser pinned to the center of a shape and watch it bounce off the walls forever.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/lasermaze.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Laser Maze">
+    <meta name="twitter:description" content="Aim a laser pinned to the center of a shape and watch it bounce off the walls forever.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/lasermaze.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --bg: #0b0908;
+      --glow: #3fe9d4;
+      --glow-dim: #1f7f74;
+      --core: #fef9ee;
+      --shape-line: rgba(245, 236, 214, 0.16);
+    }
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage { position: fixed; inset: 0; display: block; }
+
+    .hint {
+      position: fixed;
+      top: 7%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      color: rgba(245, 236, 214, 0.55);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.2s ease;
+      text-align: center;
+    }
+    .hint.hidden { opacity: 0; }
+
+    .pill {
+      position: fixed;
+      left: 50%;
+      bottom: 5%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      background: rgba(20, 16, 14, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(245, 236, 214, 0.14);
+      border-radius: 999px;
+      opacity: 1;
+      transition: opacity 0.35s ease;
+    }
+    body.steering .pill { opacity: 0.15; }
+    .pill:hover { opacity: 1; }
+
+    .pill button {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      color: rgba(245, 236, 214, 0.55);
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+    .pill button:hover { color: var(--core); background: rgba(245, 236, 214, 0.08); }
+    .pill button.active { color: var(--glow); background: rgba(63, 233, 212, 0.12); }
+
+    .pill button span {
+      display: block;
+      width: 15px;
+      height: 15px;
+      border: 1.5px solid currentColor;
+      background: transparent;
+    }
+    .icon-square span { border-radius: 2px; }
+    .icon-circle span { border-radius: 50%; }
+    .icon-triangle span {
+      width: 16px; height: 16px; border: none;
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      background: transparent;
+      box-shadow: inset 0 0 0 1.5px currentColor;
+    }
+    .icon-hexagon span {
+      border: none;
+      clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);
+      box-shadow: inset 0 0 0 1.5px currentColor;
+    }
+    .icon-star span {
+      border: none;
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%,
+                          21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      box-shadow: inset 0 0 0 1.5px currentColor;
+    }
+
+    @media (max-width: 480px) {
+      .pill button { width: 30px; height: 30px; }
+      .hint { font-size: 12px; top: 6%; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="hint" id="hint">aim with your cursor &mdash; it bounces forever</div>
+  <div class="pill" id="shapePicker">
+    <button class="icon-square active" data-shape="square" aria-label="Square"><span></span></button>
+    <button class="icon-circle" data-shape="circle" aria-label="Circle"><span></span></button>
+    <button class="icon-hexagon" data-shape="hexagon" aria-label="Hexagon"><span></span></button>
+    <button class="icon-triangle" data-shape="triangle" aria-label="Triangle"><span></span></button>
+    <button class="icon-star" data-shape="star" aria-label="Star"><span></span></button>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+    var pill = document.getElementById('shapePicker');
+
+    var BG = '#0b0908';
+    var GLOW = '#3fe9d4';
+    var CORE = '#fef9ee';
+    var SHAPE_LINE = 'rgba(245, 236, 214, 0.16)';
+    var MAX_BOUNCES = 16;
+    var COMET_SPEED = 0.45; // px per ms
+
+    var width = 0, height = 0, dpr = 1;
+    var center = { x: 0, y: 0 };
+    var radius = 0;
+    var shapeType = 'square';
+    var vertices = [];
+
+    var angle = -Math.PI / 3;
+    var userSteered = false;
+    var cometDist = 0;
+    var lastTime = null;
+    var steerTimeout = null;
+    var hintTimeout = null;
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function regularPolygon(n, startAngle) {
+      var pts = [];
+      for (var i = 0; i < n; i++) {
+        var a = startAngle + i * (2 * Math.PI / n);
+        pts.push({ x: center.x + radius * Math.cos(a), y: center.y + radius * Math.sin(a) });
+      }
+      return pts;
+    }
+
+    function starPolygon(points, outer, inner, startAngle) {
+      var pts = [];
+      var n = points * 2;
+      for (var i = 0; i < n; i++) {
+        var a = startAngle + i * (Math.PI / points);
+        var r = (i % 2 === 0) ? outer : inner;
+        pts.push({ x: center.x + r * Math.cos(a), y: center.y + r * Math.sin(a) });
+      }
+      return pts;
+    }
+
+    function computeVertices() {
+      switch (shapeType) {
+        case 'circle': return regularPolygon(72, 0);
+        case 'triangle': return regularPolygon(3, -Math.PI / 2);
+        case 'hexagon': return regularPolygon(6, 0);
+        case 'star': return starPolygon(5, radius, radius * 0.42, -Math.PI / 2);
+        case 'square':
+        default: return regularPolygon(4, Math.PI / 4);
+      }
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      center.x = width / 2;
+      center.y = height / 2;
+      radius = Math.min(width, height) * 0.38;
+      vertices = computeVertices();
+      ctx.fillStyle = BG;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function cross(ax, ay, bx, by) { return ax * by - ay * bx; }
+
+    function castRay(origin, dir) {
+      var closestT = Infinity;
+      var closest = null;
+      for (var i = 0; i < vertices.length; i++) {
+        var a = vertices[i];
+        var b = vertices[(i + 1) % vertices.length];
+        var ex = b.x - a.x, ey = b.y - a.y;
+        var oax = origin.x - a.x, oay = origin.y - a.y;
+        var denom = ey * dir.x - ex * dir.y;
+        if (Math.abs(denom) < 1e-9) continue;
+        var t = (ex * oay - ey * oax) / denom;
+        var s = (dir.x * oay - dir.y * oax) / denom;
+        if (t > 1e-4 && s >= 0 && s <= 1 && t < closestT) {
+          closestT = t;
+          var nx = -ey, ny = ex;
+          var len = Math.hypot(nx, ny) || 1;
+          closest = {
+            x: origin.x + dir.x * t,
+            y: origin.y + dir.y * t,
+            nx: nx / len,
+            ny: ny / len
+          };
+        }
+      }
+      return closest;
+    }
+
+    function traceBeam() {
+      var pos = { x: center.x, y: center.y };
+      var dir = { x: Math.cos(angle), y: Math.sin(angle) };
+      var path = [{ x: pos.x, y: pos.y }];
+      for (var b = 0; b < MAX_BOUNCES; b++) {
+        var hit = castRay(pos, dir);
+        if (!hit) break;
+        path.push({ x: hit.x, y: hit.y });
+        var dn = dir.x * hit.nx + dir.y * hit.ny;
+        dir = { x: dir.x - 2 * dn * hit.nx, y: dir.y - 2 * dn * hit.ny };
+        pos = { x: hit.x + dir.x * 0.5, y: hit.y + dir.y * 0.5 };
+      }
+      return path;
+    }
+
+    function pathLength(path) {
+      var total = 0;
+      for (var i = 0; i < path.length - 1; i++) {
+        total += Math.hypot(path[i + 1].x - path[i].x, path[i + 1].y - path[i].y);
+      }
+      return total;
+    }
+
+    function pointAtDistance(path, dist) {
+      var remaining = dist;
+      for (var i = 0; i < path.length - 1; i++) {
+        var segLen = Math.hypot(path[i + 1].x - path[i].x, path[i + 1].y - path[i].y);
+        if (remaining <= segLen) {
+          var t = segLen === 0 ? 0 : remaining / segLen;
+          return {
+            x: path[i].x + (path[i + 1].x - path[i].x) * t,
+            y: path[i].y + (path[i + 1].y - path[i].y) * t
+          };
+        }
+        remaining -= segLen;
+      }
+      return path[path.length - 1] || center;
+    }
+
+    function drawShapeOutline() {
+      ctx.beginPath();
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      for (var i = 1; i < vertices.length; i++) ctx.lineTo(vertices[i].x, vertices[i].y);
+      ctx.closePath();
+      ctx.strokeStyle = SHAPE_LINE;
+      ctx.lineWidth = 1;
+      ctx.shadowBlur = 0;
+      ctx.stroke();
+    }
+
+    function drawBeam(path) {
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (var i = 0; i < path.length - 1; i++) {
+        var fade = 1 - i / (path.length + 2);
+        ctx.beginPath();
+        ctx.moveTo(path[i].x, path[i].y);
+        ctx.lineTo(path[i + 1].x, path[i + 1].y);
+        ctx.strokeStyle = GLOW;
+        ctx.globalAlpha = fade * 0.55;
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = GLOW;
+        ctx.shadowBlur = 16;
+        ctx.stroke();
+
+        ctx.strokeStyle = CORE;
+        ctx.globalAlpha = fade * 0.8;
+        ctx.lineWidth = 1;
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    }
+
+    function drawEmitter() {
+      var pulse = 3 + Math.sin(performance.now() * 0.004) * 1.2;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 5 + pulse, 0, Math.PI * 2);
+      ctx.fillStyle = GLOW;
+      ctx.globalAlpha = 0.35;
+      ctx.shadowColor = GLOW;
+      ctx.shadowBlur = 20;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = CORE;
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawComet(pos) {
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = GLOW;
+      ctx.globalAlpha = 0.5;
+      ctx.shadowColor = GLOW;
+      ctx.shadowBlur = 22;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = CORE;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function frame(now) {
+      if (lastTime === null) lastTime = now;
+      var dt = Math.min(now - lastTime, 48);
+      lastTime = now;
+
+      if (!userSteered) angle += dt * 0.00035;
+
+      ctx.fillStyle = 'rgba(11, 9, 8, 0.16)';
+      ctx.fillRect(0, 0, width, height);
+
+      drawShapeOutline();
+
+      var path = traceBeam();
+      drawBeam(path);
+      drawEmitter();
+
+      var total = pathLength(path);
+      if (total > 0) {
+        cometDist += COMET_SPEED * dt;
+        if (cometDist > total) cometDist = cometDist % total;
+        drawComet(pointAtDistance(path, cometDist));
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    function setAngleFromPoint(x, y) {
+      angle = Math.atan2(y - center.y, x - center.x);
+    }
+
+    function markSteering() {
+      document.body.classList.add('steering');
+      clearTimeout(steerTimeout);
+      steerTimeout = setTimeout(function () {
+        document.body.classList.remove('steering');
+      }, 1200);
+    }
+
+    function hideHint() {
+      hint.classList.add('hidden');
+    }
+
+    canvas.addEventListener('pointerdown', function (e) {
+      userSteered = true;
+      setAngleFromPoint(e.clientX, e.clientY);
+      markSteering();
+      hideHint();
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (e.pressure === 0 && e.pointerType === 'touch') return;
+      userSteered = true;
+      setAngleFromPoint(e.clientX, e.clientY);
+      markSteering();
+      hideHint();
+    });
+
+    pill.addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      var shape = btn.getAttribute('data-shape');
+      if (!shape || shape === shapeType) return;
+      shapeType = shape;
+      vertices = computeVertices();
+      cometDist = 0;
+      var buttons = pill.querySelectorAll('button');
+      for (var i = 0; i < buttons.length; i++) buttons[i].classList.remove('active');
+      btn.classList.add('active');
+    });
+
+    hintTimeout = setTimeout(hideHint, 6000);
+
+    window.addEventListener('resize', debounce(resize, 150));
+    resize();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>

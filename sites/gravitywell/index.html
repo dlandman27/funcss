@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gravity Well</title>
+  <meta name="description" content="A drifting field of particles. Your cursor is a gravity well — pull them into orbit, or slingshot them across the screen.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/gravitywell/">
+    <meta property="og:title" content="Gravity Well">
+    <meta property="og:description" content="A drifting field of particles. Your cursor is a gravity well — pull them into orbit, or slingshot them across the screen.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/gravitywell.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gravity Well">
+    <meta name="twitter:description" content="A drifting field of particles. Your cursor is a gravity well — pull them into orbit, or slingshot them across the screen.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/gravitywell.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root { --bg: #06060a; --ice: #bfe0ff; --gold: #f7c948; }
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage { position: fixed; inset: 0; display: block; }
+
+    .hint {
+      position: fixed;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(191, 224, 255, 0.45);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+    }
+    .hint.hidden { opacity: 0; }
+
+    @media (max-width: 480px) {
+      .hint { font-size: 12px; bottom: 5%; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="hint" id="hint">your cursor bends their paths</div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+
+    var BG_TRAIL = 'rgba(6, 6, 10, 0.14)';
+    var ICE = '#bfe0ff';
+    var GOLD = '#f7c948';
+
+    var G = 1800000;
+    var MIN_R = 20;
+    var CORE_R = 55;          // radius around the cursor that actively pushes back
+    var G_REPEL_CORE = 6000;  // core repulsion strength, dominates G near r=0
+    var PARTICLE_REPEL_R = 16; // particles keep this much personal space from each other
+    var PARTICLE_REPEL_G = 900;
+    var MAX_SPEED = 0.8; // px/ms
+    var DRAG = 0.9998;
+    var GOLD_CHANCE = 0.04;
+
+    var width = 0, height = 0, dpr = 1;
+    var particles = [];
+    var pointer = { x: -9999, y: -9999, active: false };
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function makeParticle() {
+      var angle = Math.random() * Math.PI * 2;
+      var speed = 0.015 + Math.random() * 0.035;
+      return {
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        gold: Math.random() < GOLD_CHANCE,
+        r: 1.4 + Math.random() * 1.2
+      };
+    }
+
+    function buildParticles() {
+      var count = Math.max(70, Math.min(200, Math.round((width * height) / 9000)));
+      particles = [];
+      for (var i = 0; i < count; i++) particles.push(makeParticle());
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      buildParticles();
+      ctx.fillStyle = BG_TRAIL;
+      ctx.globalAlpha = 1;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function applyCursorForce(dtSec) {
+      if (!pointer.active) return;
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        var dx = pointer.x - p.x, dy = pointer.y - p.y;
+        var r = Math.sqrt(dx * dx + dy * dy);
+        var rSafe = Math.max(r, 4);
+        var ux = dx / rSafe, uy = dy / rSafe;
+
+        var rClamped = Math.max(r, MIN_R);
+        var mag = G / (rClamped * rClamped);
+
+        if (r < CORE_R) {
+          var t = 1 - r / CORE_R;
+          mag -= G_REPEL_CORE * t;
+        }
+
+        p.vx += ux * mag * dtSec;
+        p.vy += uy * mag * dtSec;
+      }
+    }
+
+    // Particles keep their distance from each other too, so a crowd
+    // converging on the cursor spreads into a cluster instead of a single dot.
+    function applyParticleRepulsion(dtSec) {
+      var rr = PARTICLE_REPEL_R * PARTICLE_REPEL_R;
+      for (var i = 0; i < particles.length; i++) {
+        var p1 = particles[i];
+        for (var j = i + 1; j < particles.length; j++) {
+          var p2 = particles[j];
+          var dx = p2.x - p1.x, dy = p2.y - p1.y;
+          var distSq = dx * dx + dy * dy;
+          if (distSq >= rr || distSq < 0.0001) continue;
+          var dist = Math.sqrt(distSq);
+          var ux = dx / dist, uy = dy / dist;
+          var mag = PARTICLE_REPEL_G * (1 - dist / PARTICLE_REPEL_R);
+          var push = mag * dtSec;
+          p1.vx -= ux * push;
+          p1.vy -= uy * push;
+          p2.vx += ux * push;
+          p2.vy += uy * push;
+        }
+      }
+    }
+
+    function integrate(dtSec) {
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+
+        p.vx *= DRAG;
+        p.vy *= DRAG;
+
+        var speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+        if (speed > MAX_SPEED) {
+          var scale = MAX_SPEED / speed;
+          p.vx *= scale;
+          p.vy *= scale;
+        }
+
+        p.x += p.vx * dtSec * 1000;
+        p.y += p.vy * dtSec * 1000;
+
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+        if (p.y < -10) p.y = height + 10;
+        if (p.y > height + 10) p.y = -10;
+      }
+    }
+
+    function step(dtSec) {
+      applyCursorForce(dtSec);
+      applyParticleRepulsion(dtSec);
+      integrate(dtSec);
+    }
+
+    function draw() {
+      ctx.fillStyle = BG_TRAIL;
+      ctx.globalAlpha = 1;
+      ctx.fillRect(0, 0, width, height);
+
+      if (pointer.active) {
+        var pulse = 3 + Math.sin(performance.now() * 0.003) * 1.5;
+        var grad = ctx.createRadialGradient(
+          pointer.x, pointer.y, 0,
+          pointer.x, pointer.y, 26 + pulse
+        );
+        grad.addColorStop(0, 'rgba(160, 130, 255, 0.35)');
+        grad.addColorStop(1, 'rgba(160, 130, 255, 0)');
+        ctx.beginPath();
+        ctx.arc(pointer.x, pointer.y, 26 + pulse, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(pointer.x, pointer.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#e9defe';
+        ctx.shadowColor = '#a082ff';
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        var color = p.gold ? GOLD : ICE;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = p.gold ? 10 : 5;
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    var lastTime = null;
+    function frame(now) {
+      if (lastTime === null) lastTime = now;
+      var dt = Math.min(now - lastTime, 48);
+      lastTime = now;
+
+      step(dt / 1000);
+      draw();
+
+      requestAnimationFrame(frame);
+    }
+
+    canvas.addEventListener('pointermove', function (e) {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.active = true;
+      hint.classList.add('hidden');
+    });
+    canvas.addEventListener('pointerdown', function (e) {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.active = true;
+      hint.classList.add('hidden');
+    });
+    canvas.addEventListener('pointerleave', function () {
+      pointer.active = false;
+    });
+    canvas.addEventListener('pointerup', function () {
+      pointer.active = false;
+    });
+
+    setTimeout(function () { hint.classList.add('hidden'); }, 6000);
+
+    window.addEventListener('resize', debounce(resize, 150));
+    resize();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>

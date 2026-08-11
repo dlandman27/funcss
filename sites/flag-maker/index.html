@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flag Maker</title>
+    <meta name="description" content="Remix a real flag or build one from scratch — stripes, a canton, a field of stars, any colors you want. Download it or send someone the link.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/flag-maker/">
+    <meta property="og:title" content="Flag Maker">
+    <meta property="og:description" content="Remix a real flag or build one from scratch — stripes, a canton, a field of stars, any colors you want. Download it or send someone the link.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/flag-maker.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Flag Maker">
+    <meta name="twitter:description" content="Remix a real flag or build one from scratch — stripes, a canton, a field of stars, any colors you want. Download it or send someone the link.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/flag-maker.png">
+    <!-- rsotw:og:end -->
+    <meta name="keywords" content="flag maker, flag creator, flag generator, vexillology, design a flag">
+    <meta name="author" content="@randomsitesontheweb">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='6' y='4' width='4' height='26' fill='%23201a17'/><rect x='10' y='5' width='18' height='13' fill='%23f0563e' stroke='%23201a17' stroke-width='2'/><rect x='10' y='5' width='8' height='7' fill='%235aa0db' stroke='%23201a17' stroke-width='2'/></svg>">
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body {
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            padding: 12px 18px 10px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .logo {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 1.05rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: var(--sky);
+            color: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 6px 14px;
+            transform: rotate(-1.5deg);
+            text-shadow: 1.5px 1.5px 0 var(--ink);
+            white-space: nowrap;
+        }
+        .preset-display {
+            font: italic 1rem Georgia, 'Times New Roman', serif;
+            opacity: 0.75;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            padding: 8px 18px 14px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+        .ctrl { display: flex; flex-direction: column; gap: 4px; }
+        .ctrl label {
+            font-size: 0.62rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.65;
+        }
+        input[type=range] {
+            width: 100px;
+            max-width: 100%;
+            accent-color: var(--coral);
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        select {
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 5px 8px;
+            font-size: 0.82rem;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+        }
+        .val-badge {
+            display: inline-block;
+            min-width: 20px;
+            text-align: center;
+            font-weight: 900;
+            font-size: 0.85rem;
+        }
+        .btn {
+            padding: 8px 20px;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            font-size: 0.88rem;
+            font-weight: 800;
+            font-family: Arial, sans-serif;
+            color: var(--ink);
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 3px 3px 0 var(--ink);
+            transition: transform 0.06s, box-shadow 0.06s;
+        }
+        .btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+        .btn-primary {
+            background: var(--gold);
+            font-family: 'Arial Black', Arial, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transform: rotate(-1.5deg);
+        }
+        .btn-primary:hover { transform: rotate(-1.5deg) translate(-2px, -2px); }
+        .btn-primary:active { transform: rotate(-1.5deg) translate(2px, 2px); }
+        .btn-secondary { background: var(--cream); }
+        label.chk {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--coral); cursor: pointer; }
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            padding: 0 18px 18px;
+            gap: 16px;
+        }
+        .canvas-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        canvas {
+            border: 3px solid var(--ink);
+            border-radius: 6px;
+            box-shadow: 6px 6px 0 var(--ink);
+            background: var(--cream);
+            display: block;
+        }
+        .sidebar {
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        .card {
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 12px 14px;
+        }
+        .card h4 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 10px;
+        }
+        .card .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .card .row:last-child { margin-bottom: 0; }
+        .card .row label {
+            font-size: 0.72rem;
+            font-weight: bold;
+            opacity: 0.75;
+        }
+        input[type=color] {
+            width: 30px;
+            height: 26px;
+            border: 2px solid var(--ink);
+            border-radius: 6px;
+            box-shadow: 1.5px 1.5px 0 var(--ink);
+            padding: 0;
+            background: none;
+            cursor: pointer;
+        }
+        #stripe-colors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .hint {
+            font: italic 0.76rem/1.55 Georgia, 'Times New Roman', serif;
+        }
+        @media (max-width: 760px) {
+            body { overflow: auto; height: auto; }
+            .main { flex-direction: column; }
+            .canvas-wrap { height: 46vh; flex: none; }
+            .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; }
+            .sidebar .card { flex: 1 1 45%; }
+        }
+        @media (max-width: 480px) {
+            header { padding: 10px 14px 8px; gap: 10px; }
+            .controls { padding: 6px 14px 12px; gap: 10px; }
+            .controls > .ctrl, .controls > .btn { flex: 1 1 100%; }
+            .controls select, .controls input[type=range] { width: 100%; }
+            .sidebar { flex-direction: column; }
+            .sidebar .card { flex: 1 1 auto; }
+            .card .row { flex-direction: column; align-items: stretch; gap: 4px; }
+            .card .row input[type=range] { width: 100%; }
+            .canvas-wrap { height: 38vh; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">Flag Maker</div>
+    <div class="preset-display" id="preset-display"></div>
+</header>
+
+<div class="controls">
+    <div class="ctrl">
+        <label>Proportions</label>
+        <select id="aspect">
+            <option value="1:1">Square (1:1)</option>
+            <option value="3:2">3:2</option>
+            <option value="8:5">8:5</option>
+            <option value="5:3">5:3</option>
+            <option value="2:1">2:1</option>
+            <option value="19:10">19:10</option>
+        </select>
+    </div>
+    <div class="ctrl">
+        <label>Stripes</label>
+        <select id="orientation">
+            <option value="horizontal">Horizontal</option>
+            <option value="vertical">Vertical</option>
+            <option value="none">Solid</option>
+        </select>
+    </div>
+    <div class="ctrl" id="stripe-count-ctrl">
+        <label>Bands <span class="val-badge" id="sc-val">3</span></label>
+        <input type="range" id="stripe-count" min="1" max="20" value="3">
+    </div>
+    <div class="ctrl">
+        <label class="chk"><input type="checkbox" id="canton-enabled" checked> Canton box</label>
+    </div>
+    <button class="btn btn-secondary" id="shuffle-btn">Shuffle flag</button>
+    <button class="btn btn-secondary" id="reset-btn">Reset flag</button>
+    <button class="btn btn-secondary" id="share-btn">Copy link</button>
+    <button class="btn btn-primary" id="download-btn">Download PNG</button>
+</div>
+
+<div class="main">
+    <div class="canvas-wrap">
+        <canvas id="c"></canvas>
+    </div>
+    <div class="sidebar">
+        <div class="card">
+            <h4>Band colors</h4>
+            <div id="stripe-colors"></div>
+        </div>
+        <div class="card" id="canton-card">
+            <h4>Canton</h4>
+            <div class="row"><label>Width</label><input type="range" id="canton-w" min="10" max="100" value="40"></div>
+            <div class="row"><label>Height</label><input type="range" id="canton-h" min="10" max="100" value="54"></div>
+            <div class="row"><label>Box color</label><input type="color" id="canton-color" value="#3c3b6e"></div>
+            <div class="row"><label>Stars <span class="val-badge" id="star-count-val">50</span></label><input type="range" id="star-count" min="0" max="100" value="50"></div>
+            <div class="row"><label>Star color</label><input type="color" id="star-color" value="#ffffff"></div>
+        </div>
+        <div class="card hint">
+            Start from a real flag and remix it, or dial everything in yourself. Nothing here is
+            flown officially anywhere &mdash; just a stylized take on stripes, boxes, and stars.
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Canvas setup ──────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const INK = '#201a17';
+
+const ASPECTS = {
+    '1:1':  [1, 1],
+    '3:2':  [3, 2],
+    '8:5':  [8, 5],
+    '5:3':  [5, 3],
+    '2:1':  [2, 1],
+    '19:10': [19, 10],
+};
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const altColors = (n, c1, c2) => Array.from({ length: n }, (_, i) => (i % 2 === 0 ? c1 : c2));
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+const sanitizeColor = (v, fallback) => (typeof v === 'string' && HEX_RE.test(v) ? v : fallback);
+
+function randomColor() {
+    const h = Math.random() * 360, s = 55 + Math.random() * 35, l = 40 + Math.random() * 30;
+    const k = n => (n + h / 30) % 12;
+    const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
+    const f = n => l / 100 - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const toHex = x => Math.round(255 * x).toString(16).padStart(2, '0');
+    return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
+
+// ── Curated real-flag presets (stylized: stripes + canton + star grid only) ────
+const PRESETS = [
+    { label: 'United States', aspect: '19:10', orientation: 'horizontal', stripeColors: altColors(13, '#B22234', '#FFFFFF'),
+      canton: { enabled: true, widthPct: 42, heightPct: 54, color: '#3C3B6E', starColor: '#FFFFFF', starCount: 50 } },
+    { label: 'Liberia', aspect: '19:10', orientation: 'horizontal', stripeColors: altColors(11, '#BF0A30', '#FFFFFF'),
+      canton: { enabled: true, widthPct: 33, heightPct: 55, color: '#002868', starColor: '#FFFFFF', starCount: 1 } },
+    { label: 'Chile', aspect: '3:2', orientation: 'horizontal', stripeColors: ['#FFFFFF', '#D52B1E'],
+      canton: { enabled: true, widthPct: 33, heightPct: 50, color: '#0039A6', starColor: '#FFFFFF', starCount: 1 } },
+    { label: 'Texas', aspect: '3:2', orientation: 'horizontal', stripeColors: ['#FFFFFF', '#BF0A30'],
+      canton: { enabled: true, widthPct: 33, heightPct: 100, color: '#002868', starColor: '#FFFFFF', starCount: 1 } },
+    { label: 'Vietnam', aspect: '3:2', orientation: 'none', stripeColors: ['#DA251D'],
+      canton: { enabled: true, widthPct: 100, heightPct: 100, color: '#DA251D', starColor: '#FFCD00', starCount: 1 } },
+    { label: 'France', aspect: '3:2', orientation: 'vertical', stripeColors: ['#0055A4', '#FFFFFF', '#EF4135'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#0055A4', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Italy', aspect: '3:2', orientation: 'vertical', stripeColors: ['#009246', '#FFFFFF', '#CE2B37'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#009246', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Germany', aspect: '5:3', orientation: 'horizontal', stripeColors: ['#000000', '#DD0000', '#FFCE00'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#000000', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Netherlands', aspect: '3:2', orientation: 'horizontal', stripeColors: ['#AE1C28', '#FFFFFF', '#21468B'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#AE1C28', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Belgium', aspect: '3:2', orientation: 'vertical', stripeColors: ['#000000', '#FAE042', '#ED2939'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#000000', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Nigeria', aspect: '2:1', orientation: 'vertical', stripeColors: ['#008751', '#FFFFFF', '#008751'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#008751', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Ireland', aspect: '2:1', orientation: 'vertical', stripeColors: ['#169B62', '#FFFFFF', '#FF883E'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#169B62', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Ivory Coast', aspect: '3:2', orientation: 'vertical', stripeColors: ['#F77F00', '#FFFFFF', '#009E60'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#F77F00', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Mali', aspect: '3:2', orientation: 'vertical', stripeColors: ['#14B53A', '#FCD116', '#CE1126'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#14B53A', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Romania', aspect: '3:2', orientation: 'vertical', stripeColors: ['#002B7F', '#FCD116', '#CE1126'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#002B7F', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Austria', aspect: '3:2', orientation: 'horizontal', stripeColors: ['#ED2939', '#FFFFFF', '#ED2939'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#ED2939', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Poland', aspect: '8:5', orientation: 'horizontal', stripeColors: ['#FFFFFF', '#DC143C'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#DC143C', starColor: '#FFFFFF', starCount: 0 } },
+    { label: 'Indonesia', aspect: '3:2', orientation: 'horizontal', stripeColors: ['#CE1126', '#FFFFFF'],
+      canton: { enabled: false, widthPct: 40, heightPct: 40, color: '#CE1126', starColor: '#FFFFFF', starCount: 0 } },
+];
+
+function presetToState(p) {
+    return {
+        aspect: p.aspect,
+        orientation: p.orientation,
+        stripeColors: p.stripeColors.slice(),
+        canton: { ...p.canton },
+    };
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let state = null;
+let presetLabel = '';
+// the flag last loaded via shuffle/share/boot — what "Reset flag" reverts to
+let baseState = null;
+let basePresetLabel = '';
+const cloneState = s => JSON.parse(JSON.stringify(s));
+
+function markCustom() { presetLabel = ''; updatePresetDisplay(); }
+function updatePresetDisplay() {
+    document.getElementById('preset-display').textContent = presetLabel ? `remixing: ${presetLabel}` : 'custom flag';
+}
+
+// ── Encode / decode for share links ─────────────────────────────────────────
+function encodeState(s) {
+    const c = {
+        a: s.aspect, o: s.orientation[0], sc: s.stripeColors,
+        ce: s.canton.enabled ? 1 : 0, cw: s.canton.widthPct, ch: s.canton.heightPct,
+        cc: s.canton.color, scr: s.canton.starColor, scn: s.canton.starCount,
+    };
+    return encodeURIComponent(JSON.stringify(c));
+}
+function decodeState(str) {
+    try {
+        const c = JSON.parse(decodeURIComponent(str));
+        const orient = { h: 'horizontal', v: 'vertical', n: 'none' }[c.o] || 'horizontal';
+        const stripeColors = Array.isArray(c.sc) && c.sc.length
+            ? c.sc.slice(0, 20).map(x => sanitizeColor(x, '#5aa0db'))
+            : ['#5aa0db', '#fff8ef'];
+        return {
+            aspect: ASPECTS[c.a] ? c.a : '3:2',
+            orientation: orient,
+            stripeColors,
+            canton: {
+                enabled: !!c.ce,
+                widthPct: clamp(parseFloat(c.cw) || 40, 10, 100),
+                heightPct: clamp(parseFloat(c.ch) || 40, 10, 100),
+                color: sanitizeColor(c.cc, '#3c3b6e'),
+                starColor: sanitizeColor(c.scr, '#ffffff'),
+                starCount: clamp(parseInt(c.scn, 10) || 0, 0, 100),
+            },
+        };
+    } catch (err) {
+        return null;
+    }
+}
+
+// ── Star geometry ────────────────────────────────────────────────────────────
+function drawStar(cx, cy, r, color) {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+        const rad = i % 2 === 0 ? r : r * 0.4;
+        const a = -Math.PI / 2 + i * Math.PI / 5;
+        ctx[i === 0 ? 'moveTo' : 'lineTo'](cx + Math.cos(a) * rad, cy + Math.sin(a) * rad);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+function starGrid(n, cw, ch) {
+    if (n <= 0) return { pts: [], cols: 0, rows: 0 };
+    if (n === 1) return { pts: [{ x: cw / 2, y: ch / 2 }], cols: 1, rows: 1 };
+    let cols = Math.max(1, Math.round(Math.sqrt(n * cw / ch)));
+    let rows = Math.ceil(n / cols);
+    while (rows > 1 && (rows - 1) * cols >= n) rows--;
+    const pts = [];
+    let idx = 0;
+    for (let r = 0; r < rows; r++) {
+        const countInRow = r === rows - 1 ? n - idx : cols;
+        const rowY = ch * (r + 0.5) / rows;
+        for (let c = 0; c < countInRow; c++) {
+            pts.push({ x: cw * (c + 0.5) / countInRow, y: rowY });
+            idx++;
+        }
+    }
+    return { pts, cols, rows };
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+function resizeAndRender() {
+    const [aw, ah] = ASPECTS[state.aspect];
+    const wrap = canvas.parentElement;
+    const maxW = Math.max(60, wrap.clientWidth - 8);
+    const maxH = Math.max(60, wrap.clientHeight - 8);
+    let w = maxW, h = w * ah / aw;
+    if (h > maxH) { h = maxH; w = h * aw / ah; }
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawFlag(w, h);
+}
+
+function drawFlag(w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const colors = state.stripeColors;
+    if (state.orientation === 'none') {
+        ctx.fillStyle = colors[0] || '#5aa0db';
+        ctx.fillRect(0, 0, w, h);
+    } else if (state.orientation === 'horizontal') {
+        const n = colors.length;
+        const bandH = h / n;
+        colors.forEach((color, i) => {
+            ctx.fillStyle = color;
+            ctx.fillRect(0, i * bandH, w, bandH + 0.5);
+        });
+    } else {
+        const n = colors.length;
+        const bandW = w / n;
+        colors.forEach((color, i) => {
+            ctx.fillStyle = color;
+            ctx.fillRect(i * bandW, 0, bandW + 0.5, h);
+        });
+    }
+
+    const canton = state.canton;
+    if (canton.enabled) {
+        const cw = w * canton.widthPct / 100;
+        const ch = h * canton.heightPct / 100;
+        ctx.fillStyle = canton.color;
+        ctx.fillRect(0, 0, cw, ch);
+        const { pts, cols, rows } = starGrid(canton.starCount, cw, ch);
+        if (pts.length) {
+            const r = Math.min(cw / Math.max(cols, 1), ch / Math.max(rows, 1)) * 0.34;
+            for (const p of pts) drawStar(p.x, p.y, r, canton.starColor);
+        }
+    }
+}
+
+// ── Controls wiring ──────────────────────────────────────────────────────────
+const aspectEl = document.getElementById('aspect');
+const orientationEl = document.getElementById('orientation');
+const stripeCountCtrl = document.getElementById('stripe-count-ctrl');
+const stripeCountEl = document.getElementById('stripe-count');
+const scValEl = document.getElementById('sc-val');
+const stripeColorsEl = document.getElementById('stripe-colors');
+const cantonEnabledEl = document.getElementById('canton-enabled');
+const cantonCard = document.getElementById('canton-card');
+const cantonWEl = document.getElementById('canton-w');
+const cantonHEl = document.getElementById('canton-h');
+const cantonColorEl = document.getElementById('canton-color');
+const starCountEl = document.getElementById('star-count');
+const starCountValEl = document.getElementById('star-count-val');
+const starColorEl = document.getElementById('star-color');
+
+function renderStripeColorInputs() {
+    stripeColorsEl.innerHTML = '';
+    state.stripeColors.forEach((color, i) => {
+        const inp = document.createElement('input');
+        inp.type = 'color';
+        inp.value = color;
+        inp.addEventListener('input', () => {
+            state.stripeColors[i] = inp.value;
+            markCustom();
+            resizeAndRender();
+        });
+        stripeColorsEl.appendChild(inp);
+    });
+}
+
+function syncControlsFromState() {
+    aspectEl.value = state.aspect;
+    orientationEl.value = state.orientation;
+    stripeCountEl.value = Math.max(1, state.stripeColors.length);
+    scValEl.textContent = stripeCountEl.value;
+    stripeCountCtrl.style.display = state.orientation === 'none' ? 'none' : '';
+    cantonEnabledEl.checked = state.canton.enabled;
+    cantonCard.style.display = state.canton.enabled ? '' : 'none';
+    cantonWEl.value = state.canton.widthPct;
+    cantonHEl.value = state.canton.heightPct;
+    cantonColorEl.value = state.canton.color;
+    starCountEl.value = state.canton.starCount;
+    starCountValEl.textContent = state.canton.starCount;
+    starColorEl.value = state.canton.starColor;
+    renderStripeColorInputs();
+}
+
+aspectEl.addEventListener('change', () => {
+    state.aspect = aspectEl.value;
+    markCustom();
+    resizeAndRender();
+});
+
+orientationEl.addEventListener('change', () => {
+    state.orientation = orientationEl.value;
+    stripeCountCtrl.style.display = state.orientation === 'none' ? 'none' : '';
+    if (state.orientation !== 'none' && state.stripeColors.length < 2) {
+        state.stripeColors = [state.stripeColors[0] || randomColor(), randomColor()];
+        stripeCountEl.value = 2;
+        scValEl.textContent = 2;
+        renderStripeColorInputs();
+    }
+    markCustom();
+    resizeAndRender();
+});
+
+stripeCountEl.addEventListener('input', () => {
+    const n = parseInt(stripeCountEl.value, 10);
+    scValEl.textContent = n;
+    const cur = state.stripeColors;
+    // keep every existing band's color; a newly added band gets a fresh random color
+    state.stripeColors = Array.from({ length: n }, (_, i) => cur[i] || randomColor());
+    renderStripeColorInputs();
+    markCustom();
+    resizeAndRender();
+});
+
+cantonEnabledEl.addEventListener('change', () => {
+    state.canton.enabled = cantonEnabledEl.checked;
+    cantonCard.style.display = state.canton.enabled ? '' : 'none';
+    markCustom();
+    resizeAndRender();
+});
+
+cantonWEl.addEventListener('input', () => { state.canton.widthPct = +cantonWEl.value; markCustom(); resizeAndRender(); });
+cantonHEl.addEventListener('input', () => { state.canton.heightPct = +cantonHEl.value; markCustom(); resizeAndRender(); });
+cantonColorEl.addEventListener('input', () => { state.canton.color = cantonColorEl.value; markCustom(); resizeAndRender(); });
+starColorEl.addEventListener('input', () => { state.canton.starColor = starColorEl.value; markCustom(); resizeAndRender(); });
+starCountEl.addEventListener('input', () => {
+    state.canton.starCount = parseInt(starCountEl.value, 10);
+    starCountValEl.textContent = state.canton.starCount;
+    markCustom();
+    resizeAndRender();
+});
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function applyState(newState, label) {
+    state = newState;
+    presetLabel = label;
+    history.replaceState(null, '', location.pathname);
+    syncControlsFromState();
+    updatePresetDisplay();
+    resizeAndRender();
+}
+
+function loadPreset(p) {
+    baseState = cloneState(presetToState(p));
+    basePresetLabel = p.label;
+    applyState(cloneState(baseState), basePresetLabel);
+}
+
+document.getElementById('shuffle-btn').addEventListener('click', () => loadPreset(pick(PRESETS)));
+document.getElementById('reset-btn').addEventListener('click', () => applyState(cloneState(baseState), basePresetLabel));
+
+function flashBtn(btn, text) {
+    const original = btn.textContent;
+    btn.textContent = text;
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1300);
+}
+
+document.getElementById('share-btn').addEventListener('click', async () => {
+    const url = `${location.origin}${location.pathname}?f=${encodeState(state)}`;
+    history.replaceState(null, '', url);
+    const btn = document.getElementById('share-btn');
+    try {
+        await navigator.clipboard.writeText(url);
+        flashBtn(btn, 'Copied!');
+    } catch (err) {
+        flashBtn(btn, 'Link updated');
+    }
+});
+
+document.getElementById('download-btn').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.download = 'my-flag.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+const params = new URLSearchParams(location.search);
+const shared = params.has('f') ? decodeState(params.get('f')) : null;
+if (shared) {
+    state = shared;
+    presetLabel = '';
+} else {
+    const p = pick(PRESETS);
+    state = presetToState(p);
+    presetLabel = p.label;
+}
+baseState = cloneState(state);
+basePresetLabel = presetLabel;
+syncControlsFromState();
+updatePresetDisplay();
+resizeAndRender();
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resizeAndRender, 120);
+});
+</script>
+</body>
+</html>
