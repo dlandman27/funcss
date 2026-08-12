@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASCII Earth</title>
+  <meta name="description" content="The whole planet, rendered live in twelve characters. Drag to spin it, let go and it keeps turning — night side and all.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/asciiearth/">
+    <meta property="og:title" content="ASCII Earth">
+    <meta property="og:description" content="The whole planet, rendered live in twelve characters. Drag to spin it, let go and it keeps turning — night side and all.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/asciiearth.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ASCII Earth">
+    <meta name="twitter:description" content="The whole planet, rendered live in twelve characters. Drag to spin it, let go and it keeps turning — night side and all.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/asciiearth.png">
+    <!-- rsotw:og:end -->
+  <style>
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      background: #05080a;
+    }
+    #stage { position: fixed; inset: 0; display: block; cursor: grab; }
+    #stage.dragging { cursor: grabbing; }
+
+    #scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.12) 3px
+      );
+      mix-blend-mode: multiply;
+    }
+
+    .caption {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: rgba(94, 255, 158, 0.55);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.6s ease;
+      text-align: center;
+    }
+    .caption.hidden { opacity: 0; }
+
+    @media (max-width: 480px) {
+      .caption { font-size: 10px; bottom: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div id="scanlines"></div>
+  <div class="caption" id="caption">earth, rendered live in twelve characters — drag to spin it</div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var caption = document.getElementById('caption');
+
+    var RAMP = ' .:-=+*#%@';
+    var GLOW = 'rgba(94, 255, 158, 0.9)';
+    var TILT = 23.4 * Math.PI / 180; // Earth's real axial tilt
+    var LIGHT = normalize(vec(0.45, 0.35, 0.82));
+    var AUTO_SPIN = 0.18; // radians / second
+
+    // Land/ocean mask sampled from a real world map silhouette, 2 degrees per cell
+    // (180 cols x 90 rows), packed one bit per cell, row-major from north to south.
+    var MASK_COLS = 180, MASK_ROWS = 90;
+    var MASK_B64 = 'AAAAAAAP4AfhAAAAAAAAAAAAAAAAAAAAAAAAA//Bv/gAAAAAAAAAAAAAAAAAAAAAAAD74v/73gAAAACwACAAAAAAAAAAAAAAMHx///+AAAAAuQAAwAAAAAAAAAAAAIO+B///8AAUwAAAAB4AAAAAAAAAAAACPuH///4AASIAAAAAHAAAAAAAAAAACABwH///4AAEAAAAAATAAAAAAAAAAAgCYIP///4AAAAAACAAD4AABAAAAAAAG1EAAP//4AAAAAA4AB/8ADAAAAAAABwAAAAH//IAAAAABAAH/sAAAAAAAAAB0RZUAD//AAAAAACAg//f+AAAAAAAABPwD/AB/+wAAAAACBrf//+B8AAAB4AAB4Z/gD//AAAAcAABvf/////4AAH/8PzA6w4D//AAAD/gQMj///////ngP/+/4Y+wcB/wAAAH/5P/v////////4B//////wLB/gAAAP/Z//f/////////P/////8A4B+AHAAfPH///////////mB/////+wcB8AMAAffv///////////AH/////4AIA4AAAB8/////////////gP7////wDgAYAAAD89//////////14AH8f///gDwAAAAAj8D//////////CAAAwA///wH2AAAAECcf/////////AEAAAoA///4D/AAAAHAef////////8AeAAAAAP//+D/AAAADAA/////////4AcAAAAAP///j/wAAAFgD/////////4AYAAgAAH///n/4AAANj///////////gYAAAAAH///3/4AAABn///////////gAAAAAAF////8AAAAAP//////////+gAAAAAAB////2cAAAB///////////+AAAAAAAB//898OAAAA///////////8AAAAAAAB//+n9AAAAAfv8vnv/////4EAAAAAAB//+9wAAAAA+n4Hn//////4wAAAAAAB///3gAAAAH4R4D3//////BAAAAAAAB////AAAAAHgN7/z/////+BAAAAAAAB///+AAAAAHgEn/z/////CBAAAAAAAA///+AAAAAHAIn/z/////iDAAAAAAAA///8AAAAAAfABf//////gOAAAAAAAAf//8AAAAAH/AAf//////gwAAAAAAAAP//4CAAAAH/gAf//////wgAAAAAAAAD//wAAAAAP/9////////wAAAAAAAAAF/0QAAAAAP////n/////wAAAAAAAAAA/AMAAAAAf///fz/////gAAAAAAAAAC/AIAAAAA////Py/////gAAAAAAAAABfAAAAAAB////v/B////QAAAAAAAAAAPAYAAAAB////n/g/9/4QAAAAAAAAAAPCDAAAAB////n/Afw/AAAAAAAAAAAAHmA0AAAB////z+Afg/AAAAAAAAAAAAA+AAAAAB////58APAvgQAAAAAAAAAAAHgAAAAB////5wAOAPgQAAAAAAAAAAABgAAAAB////8AAOAPgQAAAAAAAAAAAAgwAAAB////+IAGABgAAAAAAAAAAAAAV/AAAA/////wAAAAAAAAAAAAAAAAAAD/gAAAf////wABAAAMABAAAAAAAAAAD/wAAAf////gAAAEBAIAAAAAAAAAAAD/+AAAAA///gAQAWDAAAAAAAAAAAAAD/+AAAAA///AAAAKHAAAAAAAAAAAAAH/+AAAAA//+AAAAEfQAAAAAAAAAAAAH//QAAAA//8AAAAGPYQAAEAAAAAAAAH//+AAAA//4AAAADGBPBAAAAAAAAAAP///AAAAf/4AAAABAADiAAAAAAAAAAH///gAAAf/wAAAAA4AD4IAAAAAAAAAH///gAAAP/4AAAAAASBoEAAAAAAAAAD///AAAAP/4AAAAAAAAAAAAAAAAAAAD//+AAAAP/6AAAAAAAYgAAAAAAAAAAB//+AAAAf/4QAAAAAA4gAABAAAAAAAA//+AAAAf/4wAAAAAH4wAAAAAAAAAAAf/+AAAAf/hwAAAAAP/wAAAAAAAAAAAf/+AAAAf/hgAAAAAf/wAAAAACAAAAAf/8AAAAP/BhAAAAA//4BAAAAAAAAAAf/wAAAAP/hgAAAAD//8AAAAAAAAAAAf/gAAAAP/BgAAAAD//+AAAAAAAAAAAf/AAAAAH+AAAAAAD///AAAAAAAAAAAf/AAAAAH+AAAAAAD///AAAAAAAAAAAf+AAAAAD+AAAAAAB//+AAAAAAAAAAAf+AAAAAD8AAAAAAB//+AAAAAAAAAAAf8AAAAAD4AAAAAAB4L+AAAAAAAAAAAfwAAAAAAAAAAAAABAD8AAAAAAAAAAA/wAAAAAAAAAAAAAAAB8AAAAAAAAAAA/gAAAAAAAAAAAAAAAA4ADAAAAAAAAA+AAAAAAAAAAAAAAAAAAACAAAAAAAAA8AAAAAAAAAAAAAAAAAYAEAAAAAAAAA8AAAAAAAAAAAAAAAAAAAIAAAAAAAAA4AAAAAAAAAAAAAAAAAAAYAAAAAAAAA4AAAAAAAAAAAAAAAAAAAYAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAABAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAA';
+
+    function decodeBase64(b64) {
+      var binary = atob(b64);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+    var LAND_MASK = decodeBase64(MASK_B64);
+
+    var width = 0, height = 0, dpr = 1;
+    var cols = 0, rows = 0, cellW = 10, cellH = 16, fontSize = 14;
+    var yaw = 0, pitch = 0;
+    var dragging = false, lastX = 0, lastY = 0;
+    var lastTime = 0;
+    var buffer = [], depthBuf = [];
+    var nTheta = 100, nPhi = 200;
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function vec(x, y, z) { return { x: x, y: y, z: z }; }
+    function dot(a, b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+    function normalize(a) {
+      var len = Math.sqrt(dot(a, a)) || 1;
+      return vec(a.x / len, a.y / len, a.z / len);
+    }
+    function rotateY(p, a) {
+      var c = Math.cos(a), s = Math.sin(a);
+      return vec(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
+    }
+    function rotateX(p, a) {
+      var c = Math.cos(a), s = Math.sin(a);
+      return vec(p.x, p.y * c - p.z * s, p.y * s + p.z * c);
+    }
+
+    function isLand(lonDeg, latDeg) {
+      var col = Math.floor(((lonDeg + 180) / 360) * MASK_COLS);
+      var row = Math.floor(((90 - latDeg) / 180) * MASK_ROWS);
+      if (col < 0) col = 0; else if (col >= MASK_COLS) col = MASK_COLS - 1;
+      if (row < 0) row = 0; else if (row >= MASK_ROWS) row = MASK_ROWS - 1;
+      var bitIndex = row * MASK_COLS + col;
+      var byteIdx = bitIndex >> 3;
+      var bitPos = 7 - (bitIndex & 7);
+      return ((LAND_MASK[byteIdx] >> bitPos) & 1) === 1;
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      fontSize = Math.max(9, Math.min(15, Math.min(width, height) / 62));
+      cellW = fontSize * 0.62;
+      cellH = fontSize * 1.05;
+      cols = Math.ceil(width / cellW);
+      rows = Math.ceil(height / cellH);
+
+      var radiusPx = Math.min(width, height) * 0.34;
+      nTheta = Math.max(60, Math.min(140, Math.round((radiusPx / cellH) * 3.4)));
+      nPhi = Math.max(100, Math.min(260, Math.round(((2 * Math.PI * radiusPx) / cellW) * 1.3)));
+    }
+
+    function render(now) {
+      var radiusPx = Math.min(width, height) * 0.34;
+      buffer.length = cols * rows;
+      depthBuf.length = cols * rows;
+      for (var k = 0; k < buffer.length; k++) { buffer[k] = ' '; depthBuf[k] = -Infinity; }
+
+      for (var i = 0; i < nTheta; i++) {
+        var theta = ((i + 0.5) / nTheta) * Math.PI;
+        var sinT = Math.sin(theta), cosT = Math.cos(theta);
+        var latDeg = 90 - theta * 180 / Math.PI;
+
+        for (var j = 0; j < nPhi; j++) {
+          var phi = (j / nPhi) * Math.PI * 2;
+          var lonDeg = phi * 180 / Math.PI - 180;
+
+          var p = vec(sinT * Math.cos(phi), cosT, sinT * Math.sin(phi));
+          var r = rotateY(p, yaw);
+          r = rotateX(r, TILT + pitch);
+
+          var sx = width / 2 + r.x * radiusPx;
+          var sy = height / 2 - r.y * radiusPx;
+          var col = (sx / cellW) | 0;
+          var row = (sy / cellH) | 0;
+          if (col < 0 || col >= cols || row < 0 || row >= rows) continue;
+
+          var idx = row * cols + col;
+          if (r.z <= depthBuf[idx]) continue;
+          depthBuf[idx] = r.z;
+
+          var intensity = Math.max(0.08, dot(p, LIGHT));
+          var land = isLand(lonDeg, latDeg);
+          var rampIdx = land
+            ? Math.min(9, 3 + Math.floor(intensity * 6))
+            : Math.min(4, Math.floor(intensity * 4));
+          buffer[idx] = RAMP[rampIdx];
+        }
+      }
+
+      ctx.fillStyle = '#05080a';
+      ctx.fillRect(0, 0, width, height);
+      ctx.font = fontSize + 'px "Courier New", Courier, monospace';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = GLOW;
+      ctx.shadowColor = 'rgba(94, 255, 158, 0.5)';
+      ctx.shadowBlur = 3;
+
+      for (var rIdx = 0; rIdx < rows; rIdx++) {
+        var line = '';
+        var rowHasContent = false;
+        for (var cIdx = 0; cIdx < cols; cIdx++) {
+          var ch = buffer[rIdx * cols + cIdx];
+          if (ch !== ' ') rowHasContent = true;
+          line += ch;
+        }
+        if (rowHasContent) ctx.fillText(line, 0, rIdx * cellH);
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    function frame(now) {
+      if (!lastTime) lastTime = now;
+      var dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      if (!dragging) yaw += AUTO_SPIN * dt;
+      render(now);
+      requestAnimationFrame(frame);
+    }
+
+    function clampPitch(p) {
+      return Math.max(-1.1, Math.min(1.1, p));
+    }
+
+    canvas.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.classList.add('dragging');
+      canvas.setPointerCapture(e.pointerId);
+      caption.classList.add('hidden');
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      var dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      yaw += dx * 0.007;
+      pitch = clampPitch(pitch - dy * 0.007);
+    });
+    function endDrag() {
+      dragging = false;
+      canvas.classList.remove('dragging');
+    }
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    setTimeout(function () { caption.classList.add('hidden'); }, 7000);
+
+    window.addEventListener('resize', debounce(resize, 150));
+    resize();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCII Cam</title>
+<meta name="description" content="Your camera, rendered live as colored ASCII. Nothing leaves the page.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/asciicam/">
+    <meta property="og:title" content="ASCII Cam">
+    <meta property="og:description" content="Your camera, rendered live as colored ASCII. Nothing leaves the page.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/asciicam.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ASCII Cam">
+    <meta name="twitter:description" content="Your camera, rendered live as colored ASCII. Nothing leaves the page.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/asciicam.png">
+    <!-- rsotw:og:end -->
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #201a17;
+    user-select: none;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  video {
+    display: none;
+  }
+  #fallback {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: clamp(1rem, 2.4vw, 1.4rem);
+    color: #f2ede2;
+  }
+</style>
+</head>
+<body>
+<video id="v" playsinline muted></video>
+<canvas id="c"></canvas>
+<div id="fallback">it can't see you.</div>
+<script>
+(function () {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const video = document.getElementById('v');
+  const fallback = document.getElementById('fallback');
+
+  const CELL = 9.5; // css px per character cell
+  const RAMP = ' .:-=+*#%@';
+
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let cols = 0, rows = 0;
+  let sampleCanvas = document.createElement('canvas');
+  let sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
+
+  let stream = null;
+  let rafId = null;
+  let running = false;
+
+  function sizeCanvases() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    canvas.width = Math.ceil(w * dpr);
+    canvas.height = Math.ceil(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.font = (CELL * 1.3) + 'px monospace';
+    ctx.textBaseline = 'top';
+
+    cols = Math.max(1, Math.ceil(w / CELL));
+    rows = Math.max(1, Math.ceil(h / CELL));
+    sampleCanvas.width = cols;
+    sampleCanvas.height = rows;
+  }
+
+  function draw() {
+    if (!running) return;
+
+    if (video.videoWidth && video.videoHeight) {
+      // sample the mirrored video frame down to one pixel per character cell
+      sampleCtx.save();
+      sampleCtx.scale(-1, 1);
+      sampleCtx.drawImage(video, -cols, 0, cols, rows);
+      sampleCtx.restore();
+
+      const frame = sampleCtx.getImageData(0, 0, cols, rows).data;
+
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const i = (row * cols + col) * 4;
+          const r = frame[i], g = frame[i + 1], b = frame[i + 2];
+          const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          const char = RAMP[Math.min(RAMP.length - 1, Math.floor(brightness * RAMP.length))];
+          if (char !== ' ') {
+            ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+            ctx.fillText(char, col * CELL, row * CELL);
+          }
+        }
+      }
+    }
+
+    rafId = requestAnimationFrame(draw);
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    if (rafId === null) rafId = requestAnimationFrame(draw);
+  }
+
+  function stop() {
+    running = false;
+    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    const track = stream && stream.getVideoTracks()[0];
+    if (document.hidden) {
+      stop();
+      if (track) track.enabled = false;
+    } else if (stream) {
+      if (track) track.enabled = true;
+      start();
+    }
+  });
+
+  let resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(sizeCanvases, 150);
+  });
+
+  sizeCanvases();
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    .then(function (s) {
+      stream = s;
+      video.srcObject = s;
+      video.play();
+      video.addEventListener('loadedmetadata', function () {
+        sizeCanvases();
+        start();
+      }, { once: true });
+    })
+    .catch(function () {
+      fallback.style.display = 'flex';
+    });
+})();
+</script>
+</body>
+</html>

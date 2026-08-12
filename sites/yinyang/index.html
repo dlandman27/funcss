@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yin Yang</title>
+<meta name="description" content="Click it. It spins, and says which one it is now.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/yinyang/">
+    <meta property="og:title" content="Yin Yang">
+    <meta property="og:description" content="Click it. It spins, and says which one it is now.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/yinyang.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Yin Yang">
+    <meta name="twitter:description" content="Click it. It spins, and says which one it is now.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/yinyang.png">
+    <!-- rsotw:og:end -->
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #ffffff;
+    transition: background-color 620ms ease;
+    user-select: none;
+    touch-action: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    cursor: pointer;
+  }
+  #word {
+    position: fixed;
+    left: 50%;
+    bottom: 8vh;
+    transform: translateX(-50%);
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: clamp(1.1rem, 3vw, 1.6rem);
+    color: #000000;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transition: opacity 900ms ease, color 620ms ease;
+    pointer-events: none;
+  }
+  #word.visible {
+    transition: opacity 200ms ease;
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html, body { transition: background-color 1ms linear; }
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="word"></div>
+<script>
+(function () {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const wordEl = document.getElementById('word');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const INK = '#000000';
+  const PAPER = '#ffffff';
+  const YIN_BG = '#000000';
+  const YANG_BG = '#ffffff';
+  const CELL = 90; // css px per grid cell
+  const PADDING = 8;
+  const SPIN_DURATION = reduceMotion ? 0 : 620;
+  const HOLD_DURATION = 1100;
+
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let cols = 0, rows = 0;
+
+  function circleAt(x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+  }
+
+  function drawSymbol(cx, cy, r, angleDeg) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angleDeg * Math.PI / 180);
+
+    circleAt(0, 0, r);
+    ctx.fillStyle = INK;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
+    ctx.closePath();
+    ctx.fillStyle = PAPER;
+    ctx.fill();
+
+    circleAt(0, -r / 2, r / 2);
+    ctx.fillStyle = PAPER;
+    ctx.fill();
+
+    circleAt(0, r / 2, r / 2);
+    ctx.fillStyle = INK;
+    ctx.fill();
+
+    circleAt(0, -r / 2, r / 8);
+    ctx.fillStyle = INK;
+    ctx.fill();
+
+    circleAt(0, r / 2, r / 8);
+    ctx.fillStyle = PAPER;
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function easeOutBack(t) {
+    const s = 1.70158;
+    const p = t - 1;
+    return p * p * ((s + 1) * p + s) + 1;
+  }
+
+  let rotationFrom = 0;
+  let rotationTarget = 0;
+  let spinStart = -1;
+  let rafId = null;
+
+  function currentAngle(now) {
+    if (SPIN_DURATION === 0 || spinStart < 0 || now >= spinStart + SPIN_DURATION) {
+      return rotationTarget;
+    }
+    const t = (now - spinStart) / SPIN_DURATION;
+    return rotationFrom + (rotationTarget - rotationFrom) * easeOutBack(t);
+  }
+
+  function render(now) {
+    now = now || performance.now();
+    const angle = currentAngle(now);
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
+    ctx.clearRect(0, 0, w, h);
+
+    const r = CELL / 2 - PADDING;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        drawSymbol(col * CELL + CELL / 2, row * CELL + CELL / 2, r, angle);
+      }
+    }
+
+    if (spinStart >= 0 && now < spinStart + SPIN_DURATION) {
+      rafId = requestAnimationFrame(render);
+    } else {
+      rafId = null;
+      spinStart = -1;
+    }
+  }
+
+  function wake() {
+    if (rafId === null) rafId = requestAnimationFrame(render);
+  }
+
+  function sizeCanvas() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.ceil(w * dpr);
+    canvas.height = Math.ceil(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    cols = Math.max(1, Math.ceil(w / CELL));
+    rows = Math.max(1, Math.ceil(h / CELL));
+    render();
+  }
+
+  let clickCount = 0;
+  let wordTimer = null;
+  let hideTimer = null;
+
+  function onClick() {
+    clickCount++;
+    rotationFrom = currentAngle(performance.now());
+    rotationTarget += 180;
+    spinStart = performance.now();
+    wake();
+
+    clearTimeout(wordTimer);
+    clearTimeout(hideTimer);
+    wordEl.classList.remove('visible');
+
+    const label = clickCount % 2 === 1 ? 'Yin' : 'Yang';
+    document.body.style.backgroundColor = label === 'Yin' ? YIN_BG : YANG_BG;
+    wordEl.style.color = label === 'Yin' ? PAPER : INK;
+
+    wordTimer = setTimeout(function () {
+      wordEl.textContent = label;
+      void wordEl.offsetWidth;
+      wordEl.classList.add('visible');
+      hideTimer = setTimeout(function () {
+        wordEl.classList.remove('visible');
+      }, HOLD_DURATION);
+    }, SPIN_DURATION);
+  }
+
+  canvas.addEventListener('click', onClick);
+
+  let resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(sizeCanvas, 150);
+  });
+
+  sizeCanvas();
+})();
+</script>
+</body>
+</html>
