@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Collage</title>
+<meta name="description" content="A giant grid of color. Click anywhere.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/colorcollage/">
+    <meta property="og:title" content="Color Collage">
+    <meta property="og:description" content="A giant grid of color, edge to edge. Click anywhere and the whole grid ripples into that color's neighborhood.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/colorcollage.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Color Collage">
+    <meta name="twitter:description" content="A giant grid of color, edge to edge. Click anywhere and the whole grid ripples into that color's neighborhood.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/colorcollage.png">
+    <!-- rsotw:og:end -->
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #201a17;
+    user-select: none;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(function () {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const CELL = 28; // css px per cell
+  const MORPH_DURATION = 480; // ms
+  const RIPPLE_SPREAD = 160; // ms, added delay across the grid's diagonal
+  const SHIMMER_AMPLITUDE = reduceMotion ? 0 : 3.5; // % lightness
+  const SHIMMER_SPEED = 0.0011; // per ms
+
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let cols = 0, rows = 0;
+  let cells = []; // flat array, index = row * cols + col
+
+  function hueLerp(from, to, t) {
+    let delta = ((to - from + 540) % 360) - 180;
+    return from + delta * t;
+  }
+
+  function makeCell(col, row) {
+    const hue = (col / cols) * 360;
+    const light = 35 + (row / rows) * 40;
+    const sat = 62;
+    return {
+      col, row,
+      fromH: hue, fromS: sat, fromL: light,
+      toH: hue, toS: sat, toL: light,
+      animStart: -1,
+      shimmerPhase: Math.sin(col * 12.9898 + row * 78.233) * Math.PI * 2,
+      shimmerSpeed: 0.7 + Math.random() * 0.6
+    };
+  }
+
+  function buildGrid() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.ceil(w * dpr);
+    canvas.height = Math.ceil(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    cols = Math.max(1, Math.ceil(w / CELL));
+    rows = Math.max(1, Math.ceil(h / CELL));
+
+    cells = new Array(cols * rows);
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        cells[row * cols + col] = makeCell(col, row);
+      }
+    }
+    wake();
+  }
+
+  function currentColor(cell, now) {
+    let h, s, l;
+    if (cell.animStart < 0 || now >= cell.animStart + MORPH_DURATION) {
+      h = cell.toH; s = cell.toS; l = cell.toL;
+    } else if (now < cell.animStart) {
+      h = cell.fromH; s = cell.fromS; l = cell.fromL;
+    } else {
+      let t = (now - cell.animStart) / MORPH_DURATION;
+      t = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      h = hueLerp(cell.fromH, cell.toH, t);
+      s = cell.fromS + (cell.toS - cell.fromS) * t;
+      l = cell.fromL + (cell.toL - cell.fromL) * t;
+    }
+    if (SHIMMER_AMPLITUDE > 0) {
+      l += Math.sin(now * SHIMMER_SPEED * cell.shimmerSpeed + cell.shimmerPhase) * SHIMMER_AMPLITUDE;
+    }
+    return 'hsl(' + h + ',' + s + '%,' + Math.max(4, Math.min(96, l)) + '%)';
+  }
+
+  let animating = false;
+  let idleShimmer = SHIMMER_AMPLITUDE > 0;
+  let rafId = null;
+
+  function draw(now) {
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      ctx.fillStyle = currentColor(cell, now);
+      ctx.fillRect(cell.col * CELL, cell.row * CELL, CELL, CELL);
+    }
+
+    if (animating) {
+      let stillGoing = false;
+      for (let i = 0; i < cells.length; i++) {
+        const c = cells[i];
+        if (c.animStart >= 0 && now < c.animStart + MORPH_DURATION) { stillGoing = true; break; }
+      }
+      animating = stillGoing;
+    }
+
+    if (animating || idleShimmer) {
+      rafId = requestAnimationFrame(draw);
+    } else {
+      rafId = null;
+    }
+  }
+
+  function wake() {
+    if (rafId === null) rafId = requestAnimationFrame(draw);
+  }
+
+  function morphTo(clickCol, clickRow) {
+    const clicked = cells[clickRow * cols + clickCol];
+    const now = performance.now();
+    const baseHue = clicked.animStart < 0 || now >= clicked.animStart + MORPH_DURATION
+      ? clicked.toH
+      : hueLerp(clicked.fromH, clicked.toH, Math.min(1, (now - clicked.animStart) / MORPH_DURATION));
+
+    const maxDist = Math.hypot(cols, rows);
+
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      // snapshot current displayed color as the animation's starting point
+      const fromNow = cell.animStart < 0 || now >= cell.animStart + MORPH_DURATION
+        ? { h: cell.toH, s: cell.toS, l: cell.toL }
+        : {
+            h: hueLerp(cell.fromH, cell.toH, Math.min(1, (now - cell.animStart) / MORPH_DURATION)),
+            s: cell.fromS + (cell.toS - cell.fromS) * Math.min(1, (now - cell.animStart) / MORPH_DURATION),
+            l: cell.fromL + (cell.toL - cell.fromL) * Math.min(1, (now - cell.animStart) / MORPH_DURATION)
+          };
+
+      const dist = Math.hypot(cell.col - clickCol, cell.row - clickRow);
+      const distNorm = dist / maxDist;
+
+      const hueJitter = (Math.random() - 0.5) * (16 + distNorm * 70);
+      const satJitter = (Math.random() - 0.5) * (10 + distNorm * 20);
+      const lightJitter = (Math.random() - 0.5) * (14 + distNorm * 26);
+
+      cell.fromH = fromNow.h; cell.fromS = fromNow.s; cell.fromL = fromNow.l;
+      cell.toH = (baseHue + hueJitter + 360) % 360;
+      cell.toS = Math.max(35, Math.min(90, 62 + satJitter));
+      cell.toL = Math.max(20, Math.min(80, 50 + lightJitter));
+      cell.animStart = now + (reduceMotion ? 0 : distNorm * RIPPLE_SPREAD);
+    }
+
+    animating = true;
+    wake();
+  }
+
+  function handlePoint(clientX, clientY) {
+    const col = Math.min(cols - 1, Math.max(0, Math.floor(clientX / CELL)));
+    const row = Math.min(rows - 1, Math.max(0, Math.floor(clientY / CELL)));
+    morphTo(col, row);
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    handlePoint(e.clientX, e.clientY);
+  });
+
+  let resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(buildGrid, 150);
+  });
+
+  buildGrid();
+})();
+</script>
+</body>
+</html>

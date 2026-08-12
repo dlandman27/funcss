@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Möbius Strip</title>
+  <meta name="description" content="A little car drives an endless lap around a Möbius strip and comes back upside-down every time. Drag to look at it from anywhere.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/mobiusstrip/">
+    <meta property="og:title" content="The Möbius Strip">
+    <meta property="og:description" content="A little car drives an endless lap around a Möbius strip and comes back upside-down every time. Drag to look at it from anywhere.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/mobiusstrip.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Möbius Strip">
+    <meta name="twitter:description" content="A little car drives an endless lap around a Möbius strip and comes back upside-down every time. Drag to look at it from anywhere.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/mobiusstrip.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+    }
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      background: var(--paper);
+    }
+    #stage { position: fixed; inset: 0; display: block; cursor: grab; }
+    #stage.dragging { cursor: grabbing; }
+
+    .plaque {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      max-width: min(260px, 60vw);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 13px;
+      line-height: 1.4;
+      color: rgba(32, 26, 23, 0.55);
+      pointer-events: none;
+    }
+    .plaque .laps {
+      display: block;
+      margin-top: 4px;
+      font-style: normal;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(32, 26, 23, 0.45);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+    }
+    .hint.hidden { opacity: 0; }
+
+    @media (max-width: 480px) {
+      .plaque { font-size: 11px; top: 12px; left: 12px; }
+      .hint { font-size: 12px; bottom: 5%; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="plaque">
+    one surface, one edge — there is no other side to flip to
+    <span class="laps" id="laps">laps completed: 0 · right-side up</span>
+  </div>
+  <div class="hint" id="hint">drag to look around</div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+    var lapsEl = document.getElementById('laps');
+
+    var INK = '#201a17';
+    var STRIP_COLORS = ['#2fb0a3', '#f7c948'];
+    var CAR_BODY = '#f0563e';
+    var CAR_ROOF = '#5aa0db';
+
+    var R = 130;        // strip radius
+    var HALF_W = 44;     // strip half-width
+    var U_SEGS = 90;
+    var BAND = 5;         // segments per color band
+    var CAM_DIST = 430;
+    var ANG_SPEED = 0.5;  // radians / second of travel
+
+    var LIGHT = normalize({ x: 0.3, y: -0.4, z: 0.85 });
+
+    var width = 0, height = 0, dpr = 1, focal = 500;
+    var cam = { yaw: 0.6, pitch: 0.32 };
+    var dragging = false, lastX = 0, lastY = 0;
+    var carU = 0;
+    var lastTime = 0;
+    var renderList = [];
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function vec(x, y, z) { return { x: x, y: y, z: z }; }
+    function add(a, b) { return vec(a.x + b.x, a.y + b.y, a.z + b.z); }
+    function scale(a, s) { return vec(a.x * s, a.y * s, a.z * s); }
+    function cross(a, b) {
+      return vec(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+      );
+    }
+    function dot(a, b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+    function normalize(a) {
+      var len = Math.sqrt(dot(a, a)) || 1;
+      return scale(a, 1 / len);
+    }
+
+    function surfacePoint(u, v) {
+      var cu2 = Math.cos(u / 2), su2 = Math.sin(u / 2);
+      var r = R + v * cu2;
+      return vec(r * Math.cos(u), r * Math.sin(u), v * su2);
+    }
+
+    function trackFrame(u) {
+      var cu2 = Math.cos(u / 2), su2 = Math.sin(u / 2);
+      var pos = vec(R * Math.cos(u), R * Math.sin(u), 0);
+      var forward = vec(-Math.sin(u), Math.cos(u), 0);
+      var right = vec(cu2 * Math.cos(u), cu2 * Math.sin(u), su2);
+      var up = vec(Math.cos(u) * su2, Math.sin(u) * su2, -cu2);
+      return { pos: pos, forward: forward, right: right, up: up };
+    }
+
+    function rotateY(p, a) {
+      var c = Math.cos(a), s = Math.sin(a);
+      return vec(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
+    }
+    function rotateX(p, a) {
+      var c = Math.cos(a), s = Math.sin(a);
+      return vec(p.x, p.y * c - p.z * s, p.y * s + p.z * c);
+    }
+
+    function toCamera(p) {
+      var q = rotateY(p, -cam.yaw);
+      q = rotateX(q, -cam.pitch);
+      return q;
+    }
+
+    function project(pCam) {
+      var z = pCam.z + CAM_DIST;
+      var s = focal / z;
+      return {
+        x: width / 2 + pCam.x * s,
+        y: height / 2 - pCam.y * s,
+        depth: z
+      };
+    }
+
+    function shade(hex, factor) {
+      var r = parseInt(hex.slice(1, 3), 16);
+      var g = parseInt(hex.slice(3, 5), 16);
+      var b = parseInt(hex.slice(5, 7), 16);
+      r = Math.max(0, Math.min(255, Math.round(r * factor)));
+      g = Math.max(0, Math.min(255, Math.round(g * factor)));
+      b = Math.max(0, Math.min(255, Math.round(b * factor)));
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+
+    function pushQuad(p0, p1, p2, p3, color, normalHint) {
+      var c0 = toCamera(p0), c1 = toCamera(p1), c2 = toCamera(p2), c3 = toCamera(p3);
+      var s0 = project(c0), s1 = project(c1), s2 = project(c2), s3 = project(c3);
+      var avgDepth = (s0.depth + s1.depth + s2.depth + s3.depth) / 4;
+      var lightF = 0.72 + 0.3 * Math.max(0, dot(normalHint, LIGHT));
+      renderList.push({
+        depth: avgDepth,
+        pts: [s0, s1, s2, s3],
+        color: shade(color, lightF)
+      });
+    }
+
+    function pushBoxFace(center, u, v, hu, hv, color, faceNormal) {
+      var p0 = add(center, add(scale(u, hu), scale(v, hv)));
+      var p1 = add(center, add(scale(u, hu), scale(v, -hv)));
+      var p2 = add(center, add(scale(u, -hu), scale(v, -hv)));
+      var p3 = add(center, add(scale(u, -hu), scale(v, hv)));
+      pushQuad(p0, p1, p2, p3, color, faceNormal);
+    }
+
+    function pushBox(center, forward, right, up, len, wid, hgt, color) {
+      var hf = len / 2, hr = wid / 2, hu = hgt / 2;
+      pushBoxFace(add(center, scale(up, hu)), forward, right, hf, hr, color, up);
+      pushBoxFace(add(center, scale(up, -hu)), forward, right, hf, hr, color, scale(up, -1));
+      pushBoxFace(add(center, scale(forward, hf)), up, right, hu, hr, shade(color, 0.9), forward);
+      pushBoxFace(add(center, scale(forward, -hf)), up, right, hu, hr, shade(color, 0.9), scale(forward, -1));
+      pushBoxFace(add(center, scale(right, hr)), forward, up, hf, hu, shade(color, 0.82), right);
+      pushBoxFace(add(center, scale(right, -hr)), forward, up, hf, hu, shade(color, 0.82), scale(right, -1));
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      focal = Math.min(width, height) * 1.05;
+    }
+
+    function buildStrip() {
+      for (var i = 0; i < U_SEGS; i++) {
+        var u0 = (i / U_SEGS) * Math.PI * 2;
+        var u1 = ((i + 1) / U_SEGS) * Math.PI * 2;
+        var p00 = surfacePoint(u0, -HALF_W);
+        var p01 = surfacePoint(u0, HALF_W);
+        var p11 = surfacePoint(u1, HALF_W);
+        var p10 = surfacePoint(u1, -HALF_W);
+        var mid = trackFrame((u0 + u1) / 2);
+        var color = STRIP_COLORS[Math.floor(i / BAND) % 2];
+        pushQuad(p00, p01, p11, p10, color, mid.up);
+      }
+    }
+
+    function buildCar() {
+      var f = trackFrame(carU);
+      var seat = add(f.pos, scale(f.up, 3));
+      pushBox(add(seat, scale(f.up, 5)), f.forward, f.right, f.up, 22, 15, 9, CAR_BODY);
+      pushBox(add(seat, add(scale(f.up, 12.5), scale(f.forward, -1.5))), f.forward, f.right, f.up, 12, 11, 7, CAR_ROOF);
+
+      var laps = Math.floor(carU / (Math.PI * 2));
+      var upsideDown = laps % 2 === 1;
+      lapsEl.textContent = 'laps completed: ' + laps + ' · ' + (upsideDown ? 'upside-down' : 'right-side up');
+    }
+
+    function draw() {
+      ctx.fillStyle = '#f2ede2';
+      ctx.fillRect(0, 0, width, height);
+
+      renderList.length = 0;
+      buildStrip();
+      buildCar();
+
+      renderList.sort(function (a, b) { return b.depth - a.depth; });
+
+      ctx.lineJoin = 'round';
+      for (var i = 0; i < renderList.length; i++) {
+        var item = renderList[i];
+        var pts = item.pts;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (var k = 1; k < pts.length; k++) ctx.lineTo(pts[k].x, pts[k].y);
+        ctx.closePath();
+        ctx.fillStyle = item.color;
+        ctx.fill();
+        ctx.lineWidth = 1.3;
+        ctx.strokeStyle = INK;
+        ctx.globalAlpha = 0.55;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function frame(now) {
+      if (!lastTime) lastTime = now;
+      var dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      carU += ANG_SPEED * dt;
+      draw();
+      requestAnimationFrame(frame);
+    }
+
+    function clampPitch(p) {
+      return Math.max(-1.35, Math.min(1.35, p));
+    }
+
+    canvas.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.classList.add('dragging');
+      canvas.setPointerCapture(e.pointerId);
+      hint.classList.add('hidden');
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      var dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      cam.yaw += dx * 0.006;
+      cam.pitch = clampPitch(cam.pitch - dy * 0.006);
+    });
+    function endDrag() {
+      dragging = false;
+      canvas.classList.remove('dragging');
+    }
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    setTimeout(function () { hint.classList.add('hidden'); }, 6000);
+
+    window.addEventListener('resize', debounce(resize, 150));
+    resize();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>
