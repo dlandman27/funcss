@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tile</title>
+    <meta name="description" content="A random geometric tile that repeats out to the edges of forever. Drag to wander it, tap for a new one.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/tile/">
+    <meta property="og:title" content="Tile">
+    <meta property="og:description" content="A random geometric tile that repeats out to the edges of forever. Drag to wander it, tap for a new one.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/tile.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Tile">
+    <meta name="twitter:description" content="A random geometric tile that repeats out to the edges of forever. Drag to wander it, tap for a new one.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/tile.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --orange: #f47b28;
+      --pink: #ff7fa5;
+      --teal: #2fb0a3;
+      --gold: #f7c948;
+    }
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--paper);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage {
+      position: fixed;
+      inset: 0;
+      display: block;
+      cursor: grab;
+    }
+    #stage.dragging { cursor: grabbing; }
+    #stage.pulse { animation: flash 380ms ease; }
+    @keyframes flash {
+      0% { filter: brightness(1.4) saturate(1.15); }
+      100% { filter: brightness(1) saturate(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #stage.pulse { animation: none; }
+    }
+
+    .hint {
+      position: fixed;
+      top: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(32, 26, 23, 0.55);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+    .hint.hidden { opacity: 0; }
+
+    .tag {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      color: rgba(255, 248, 239, 0.92);
+      background: rgba(32, 26, 23, 0.62);
+      border: 1px solid rgba(255, 248, 239, 0.25);
+      border-radius: 999px;
+      padding: 6px 12px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .zoom-controls {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .controls {
+      position: fixed;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      transition: opacity .3s ease;
+    }
+    .controls.faded { opacity: 0.12; }
+
+    .pill-btn {
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 12px 20px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .pill-btn.c-coral { background: var(--coral); transform: rotate(-3deg); }
+    .pill-btn.c-coral:hover { transform: translate(-2px, -2px) rotate(-3deg); box-shadow: 5px 5px 0 var(--ink); }
+    .pill-btn.c-coral:active { transform: translate(1px, 1px) rotate(-3deg); box-shadow: 1px 1px 0 var(--ink); }
+    .pill-btn.c-sky { background: var(--sky); transform: rotate(2deg); }
+    .pill-btn.c-sky:hover { transform: translate(-2px, -2px) rotate(2deg); box-shadow: 5px 5px 0 var(--ink); }
+    .pill-btn.c-sky:active { transform: translate(1px, 1px) rotate(2deg); box-shadow: 1px 1px 0 var(--ink); }
+    .pill-btn.c-teal { background: var(--teal); color: var(--cream); transform: rotate(-1deg); }
+    .pill-btn.c-teal:hover { transform: translate(-2px, -2px) rotate(-1deg); box-shadow: 5px 5px 0 var(--ink); }
+    .pill-btn.c-teal:active { transform: translate(1px, 1px) rotate(-1deg); box-shadow: 1px 1px 0 var(--ink); }
+
+    .gallery-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(32, 26, 23, 0.72);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease;
+      touch-action: auto;
+    }
+    .gallery-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .gallery-panel {
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 16px;
+      box-shadow: 6px 6px 0 var(--ink);
+      width: 100%;
+      max-width: 760px;
+      height: 82vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .gallery-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 2px solid var(--ink);
+      flex: none;
+    }
+    .gallery-title {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 16px;
+      color: var(--ink);
+    }
+    .gallery-actions { display: flex; gap: 8px; }
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 2px 2px 0 var(--ink);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .icon-btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+    .icon-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      align-content: start;
+      gap: 10px;
+      padding: 16px;
+      overflow-y: auto;
+      touch-action: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .thumb {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      background-repeat: repeat;
+      cursor: pointer;
+      padding: 0;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .thumb:hover { transform: translate(-2px, -2px) scale(1.02); box-shadow: 4px 4px 0 var(--ink); }
+    .thumb:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+
+    @media (max-width: 480px) {
+      .hint { font-size: 12px; top: 5%; padding: 0 24px; }
+      .tag { font-size: 11px; padding: 5px 10px; top: 12px; right: 12px; }
+      .zoom-controls { top: 12px; left: 12px; }
+      .pill-btn { font-size: 11px; padding: 10px 16px; }
+      .controls { bottom: 5%; }
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 8px; padding: 12px; }
+      .gallery-title { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="hint" id="hint">drag to wander the tile forever &middot; tap to reroll it</div>
+  <div class="tag" id="tag">TILE #0000</div>
+
+  <div class="zoom-controls">
+    <button class="icon-btn" id="zoomOut" type="button" title="Zoom out">&minus;</button>
+    <button class="icon-btn" id="zoomReset" type="button" title="Reset zoom">&#8634;</button>
+    <button class="icon-btn" id="zoomIn" type="button" title="Zoom in">&#43;</button>
+  </div>
+
+  <div class="controls">
+    <button class="pill-btn c-coral" id="reroll" type="button">Reroll</button>
+    <button class="pill-btn c-sky" id="browse" type="button">Browse</button>
+    <button class="pill-btn c-teal" id="download" type="button">Download</button>
+  </div>
+
+  <div class="gallery-overlay" id="galleryOverlay">
+    <div class="gallery-panel">
+      <div class="gallery-head">
+        <div class="gallery-title">Pick a Tile</div>
+        <div class="gallery-actions">
+          <button class="icon-btn" id="galleryShuffle" type="button" title="Shuffle options">&#8635;</button>
+          <button class="icon-btn" id="galleryClose" type="button" title="Close">&times;</button>
+        </div>
+      </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var INK = '#201a17';
+    var PALETTE = ['#f2ede2', '#fff8ef', '#f0563e', '#5aa0db', '#b7ce3c',
+                    '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+    var STORAGE_KEY = 'rsotw_tile_v2';
+    var GALLERY_SIZE = 18; // tiles appended per batch, loaded as you scroll
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+    var tag = document.getElementById('tag');
+    var controls = document.querySelector('.controls');
+    var rerollBtn = document.getElementById('reroll');
+    var browseBtn = document.getElementById('browse');
+    var downloadBtn = document.getElementById('download');
+    var galleryOverlay = document.getElementById('galleryOverlay');
+    var galleryGrid = document.getElementById('galleryGrid');
+    var galleryShuffleBtn = document.getElementById('galleryShuffle');
+    var galleryCloseBtn = document.getElementById('galleryClose');
+    var zoomInBtn = document.getElementById('zoomIn');
+    var zoomOutBtn = document.getElementById('zoomOut');
+    var zoomResetBtn = document.getElementById('zoomReset');
+
+    var prefersReducedMotion = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var dpr = 1;
+    var tile = null;      // { canvas, T, seed }
+    var pattern = null;
+    var panX = 0, panY = 0; // CSS px, wrapped to [0, T)
+    var zoom = 1;
+    var MIN_ZOOM = 0.35, MAX_ZOOM = 3.5;
+
+    var dragging = false;
+    var moved = false;
+    var dragStart = { x: 0, y: 0, t: 0 };
+    var lastMove = { x: 0, y: 0, t: 0 };
+    var velocity = { x: 0, y: 0 };
+    var inertiaRAF = null;
+
+    var pointers = {};        // pointerId -> {x, y}
+    var pinching = false;
+    var pinchStartDist = 0;
+    var pinchStartZoom = 1;
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function mulberry32(seed) {
+      var s = seed >>> 0;
+      return function () {
+        s = (s + 0x6D2B79F5) | 0;
+        var t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function randomSeed() {
+      return (Math.random() * 4294967296) >>> 0;
+    }
+
+    function hexOf(seed) {
+      var h = (seed >>> 0).toString(16).toUpperCase();
+      while (h.length < 8) h = '0' + h;
+      return h.slice(0, 4);
+    }
+
+    function pick3(rng) {
+      var a = Math.floor(rng() * PALETTE.length);
+      var b; do { b = Math.floor(rng() * PALETTE.length); } while (b === a);
+      var c; do { c = Math.floor(rng() * PALETTE.length); } while (c === a || c === b);
+      return [PALETTE[a], PALETTE[b], PALETTE[c]];
+    }
+
+    // --- motifs -----------------------------------------------------------
+    // Every motif is built on a grid whose spacing divides the tile exactly
+    // (any alternating-parity motif rounds its grid to an even count first),
+    // so the drawing tiles seamlessly with no cross-edge bookkeeping — except
+    // the brick motif, which explicitly wraps its one overflowing brick.
+
+    function drawTruchet(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n, r = cell / 2;
+      o.lineCap = 'round';
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell, cy = j * cell;
+          var flip = rng() < 0.5;
+          var color = rng() < 0.5 ? c1 : c2;
+          var arcs = flip
+            ? [[cx + cell, cy, Math.PI * 0.5, Math.PI], [cx, cy + cell, Math.PI * 1.5, Math.PI * 2]]
+            : [[cx, cy, 0, Math.PI * 0.5], [cx + cell, cy + cell, Math.PI, Math.PI * 1.5]];
+          o.lineWidth = lw * 1.7;
+          o.strokeStyle = INK;
+          for (var a = 0; a < arcs.length; a++) {
+            o.beginPath();
+            o.arc(arcs[a][0], arcs[a][1], r, arcs[a][2], arcs[a][3]);
+            o.stroke();
+          }
+          o.lineWidth = Math.max(1, lw * 0.9);
+          o.strokeStyle = color;
+          for (var b = 0; b < arcs.length; b++) {
+            o.beginPath();
+            o.arc(arcs[b][0], arcs[b][1], r, arcs[b][2], arcs[b][3]);
+            o.stroke();
+          }
+        }
+      }
+    }
+
+    function drawDots(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      o.lineWidth = lw;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell + cell / 2, cy = j * cell + cell / 2;
+          var rad = cell * (0.22 + rng() * 0.16);
+          o.beginPath();
+          o.arc(cx, cy, rad, 0, Math.PI * 2);
+          o.fillStyle = rng() < 0.5 ? c1 : c2;
+          o.fill();
+          o.strokeStyle = INK;
+          o.stroke();
+        }
+      }
+    }
+
+    function drawWeave(o, S, n, c1, c2, rng, lw) {
+      n = (n % 2 === 0) ? n : n + 1;
+      var p = S / n;
+      o.lineWidth = lw;
+      var i;
+      for (i = 0; i < n; i++) {
+        if (i % 2 === 0) {
+          o.fillStyle = c1;
+          o.fillRect(0, i * p, S, p);
+          o.strokeStyle = INK;
+          o.strokeRect(0, i * p, S, p);
+        }
+      }
+      o.globalAlpha = 0.82;
+      for (i = 0; i < n; i++) {
+        if (i % 2 === 0) {
+          o.fillStyle = c2;
+          o.fillRect(i * p, 0, p, S);
+          o.strokeStyle = INK;
+          o.strokeRect(i * p, 0, p, S);
+        }
+      }
+      o.globalAlpha = 1;
+    }
+
+    function drawPinwheel(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      o.lineWidth = lw;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell, cy = j * cell;
+          var mx = cx + cell / 2, my = cy + cell / 2;
+          var corners = [[cx, cy], [cx + cell, cy], [cx + cell, cy + cell], [cx, cy + cell]];
+          for (var k = 0; k < 4; k++) {
+            var p1 = corners[k], p2 = corners[(k + 1) % 4];
+            o.beginPath();
+            o.moveTo(mx, my);
+            o.lineTo(p1[0], p1[1]);
+            o.lineTo(p2[0], p2[1]);
+            o.closePath();
+            o.fillStyle = rng() < 0.5 ? c1 : c2;
+            o.fill();
+            o.strokeStyle = INK;
+            o.stroke();
+          }
+        }
+      }
+    }
+
+    function drawPlus(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      o.lineWidth = lw;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell + cell / 2, cy = j * cell + cell / 2;
+          var arm = cell * 0.15, len = cell * 0.36;
+          var rot45 = rng() < 0.35;
+          var pts = [
+            [-arm, -len], [arm, -len], [arm, -arm], [len, -arm], [len, arm], [arm, arm],
+            [arm, len], [-arm, len], [-arm, arm], [-len, arm], [-len, -arm], [-arm, -arm]
+          ];
+          o.save();
+          o.translate(cx, cy);
+          if (rot45) o.rotate(Math.PI / 4);
+          o.beginPath();
+          o.moveTo(pts[0][0], pts[0][1]);
+          for (var k = 1; k < pts.length; k++) o.lineTo(pts[k][0], pts[k][1]);
+          o.closePath();
+          o.fillStyle = rng() < 0.5 ? c1 : c2;
+          o.fill();
+          o.strokeStyle = INK;
+          o.stroke();
+          o.restore();
+        }
+      }
+    }
+
+    function drawWaves(o, S, n, c1, c2, rng, lw) {
+      var m = n, k = 1 + Math.floor(rng() * 3);
+      var amp = (S / m) * 0.24;
+      var step = Math.max(2, S / 48);
+      function waveY(x, t) { return t * (S / m) + amp * Math.sin((Math.PI * 2 * k * x) / S); }
+
+      var t;
+      for (t = 0; t < m; t++) {
+        o.beginPath();
+        o.moveTo(0, waveY(0, t));
+        var x;
+        for (x = 0; x <= S; x += step) o.lineTo(x, waveY(x, t));
+        o.lineTo(S, waveY(S, t + 1));
+        for (x = S; x >= 0; x -= step) o.lineTo(x, waveY(x, t + 1));
+        o.closePath();
+        o.fillStyle = t % 2 === 0 ? c1 : c2;
+        o.fill();
+      }
+      o.lineWidth = lw;
+      o.strokeStyle = INK;
+      for (t = 0; t <= m; t++) {
+        o.beginPath();
+        o.moveTo(0, waveY(0, t));
+        for (var x2 = 0; x2 <= S; x2 += step) o.lineTo(x2, waveY(x2, t));
+        o.stroke();
+      }
+    }
+
+    // Shared running-bond layout for brick/scale motifs: every other row is
+    // shifted by half a unit, so the one shape that overflows the tile edge
+    // gets an explicit wrapped duplicate (same color) on the opposite side —
+    // that single reused draw is what keeps the seam exact.
+    function drawOffsetGrid(o, S, n, c1, c2, rng, lw, shapeFn) {
+      var rows = (n % 2 === 0) ? n : n + 1;
+      var cols = 2 + Math.floor(rng() * 3);
+      var h = S / rows, w = S / cols;
+      var g = Math.min(w, h) * 0.08;
+      for (var r = 0; r < rows; r++) {
+        var offsetRow = (r % 2 !== 0);
+        var y = r * h;
+        var lastColor = null, lastX = null;
+        for (var c = 0; c < cols; c++) {
+          var x = c * w + (offsetRow ? w / 2 : 0);
+          var color = rng() < 0.5 ? c1 : c2;
+          shapeFn(o, x, y, w, h, g, color, lw);
+          lastColor = color; lastX = x;
+        }
+        if (offsetRow) {
+          shapeFn(o, lastX - S, y, w, h, g, lastColor, lw);
+        }
+      }
+    }
+
+    function brickShape(o, x, y, w, h, g, color, lw) {
+      o.fillStyle = color;
+      o.fillRect(x + g, y + g, w - 2 * g, h - 2 * g);
+      o.lineWidth = lw * 0.8;
+      o.strokeStyle = INK;
+      o.strokeRect(x + g, y + g, w - 2 * g, h - 2 * g);
+    }
+
+    function scaleShape(o, x, y, w, h, g, color, lw) {
+      var x0 = x + g, x1 = x + w - g, cx = x + w / 2, yb = y + h * 1.15;
+      o.beginPath();
+      o.moveTo(x0, y);
+      o.lineTo(x1, y);
+      o.quadraticCurveTo(x1, yb, cx, y + h);
+      o.quadraticCurveTo(x0, yb, x0, y);
+      o.closePath();
+      o.fillStyle = color;
+      o.fill();
+      o.lineWidth = lw * 0.8;
+      o.strokeStyle = INK;
+      o.stroke();
+    }
+
+    function drawBrick(o, S, n, c1, c2, rng, lw) {
+      drawOffsetGrid(o, S, n, c1, c2, rng, lw, brickShape);
+    }
+
+    function drawScales(o, S, n, c1, c2, rng, lw) {
+      drawOffsetGrid(o, S, n, c1, c2, rng, lw, scaleShape);
+    }
+
+    function drawCrosshatch(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      o.lineWidth = Math.max(1, lw * 0.7);
+      var i;
+      for (i = 0; i <= n; i++) {
+        o.strokeStyle = c1;
+        o.beginPath(); o.moveTo(i * cell, 0); o.lineTo(i * cell, S); o.stroke();
+      }
+      for (i = 0; i <= n; i++) {
+        o.strokeStyle = c2;
+        o.beginPath(); o.moveTo(0, i * cell); o.lineTo(S, i * cell); o.stroke();
+      }
+      for (i = 0; i <= n; i++) {
+        for (var j = 0; j <= n; j++) {
+          o.beginPath();
+          o.arc(i * cell, j * cell, Math.max(1.5, lw), 0, Math.PI * 2);
+          o.fillStyle = INK;
+          o.fill();
+        }
+      }
+    }
+
+    function drawTargetRings(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell + cell / 2, cy = j * cell + cell / 2;
+          var rings = 2 + Math.floor(rng() * 3);
+          for (var r = rings; r >= 1; r--) {
+            var radius = (cell * 0.46) * (r / rings);
+            o.beginPath();
+            o.arc(cx, cy, radius, 0, Math.PI * 2);
+            o.fillStyle = r % 2 === 0 ? c1 : c2;
+            o.fill();
+          }
+          o.lineWidth = lw;
+          o.strokeStyle = INK;
+          for (var r2 = 1; r2 <= rings; r2++) {
+            o.beginPath();
+            o.arc(cx, cy, (cell * 0.46) * (r2 / rings), 0, Math.PI * 2);
+            o.stroke();
+          }
+        }
+      }
+    }
+
+    function hexToRgb(hex) {
+      var v = parseInt(hex.slice(1), 16);
+      return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+    }
+
+    // Crackle / stained-glass Voronoi cells. Nearest-seed lookup uses the
+    // toroidal (wrap-around) distance to every seed, so the cell boundaries
+    // already agree at x=0/x=S and y=0/y=S before a single pixel is drawn.
+    function drawVoronoi(o, S, n, c1, c2, rng, lw) {
+      var RES = Math.min(140, S);
+      var seedCount = 9 + Math.floor(rng() * 8);
+      var seeds = [];
+      var i;
+      for (i = 0; i < seedCount; i++) {
+        seeds.push({ x: rng() * RES, y: rng() * RES, rgb: hexToRgb(rng() < 0.5 ? c1 : c2) });
+      }
+      var idx = new Int16Array(RES * RES);
+      for (var y = 0; y < RES; y++) {
+        for (var x = 0; x < RES; x++) {
+          var best = 0, bestD = Infinity;
+          for (var s = 0; s < seeds.length; s++) {
+            var sx = seeds[s].x, sy = seeds[s].y;
+            for (var oy = -1; oy <= 1; oy++) {
+              for (var ox = -1; ox <= 1; ox++) {
+                var dx = x - (sx + ox * RES);
+                var dy = y - (sy + oy * RES);
+                var d = dx * dx + dy * dy;
+                if (d < bestD) { bestD = d; best = s; }
+              }
+            }
+          }
+          idx[y * RES + x] = best;
+        }
+      }
+      var small = document.createElement('canvas');
+      small.width = RES; small.height = RES;
+      var sctx = small.getContext('2d');
+      var img = sctx.createImageData(RES, RES);
+      for (var p = 0; p < RES * RES; p++) {
+        var xx = p % RES, yy = (p / RES) | 0;
+        var si = idx[p];
+        var right = idx[yy * RES + ((xx + 1) % RES)];
+        var down = idx[((yy + 1) % RES) * RES + xx];
+        var base = p * 4;
+        if (right !== si || down !== si) {
+          img.data[base] = 32; img.data[base + 1] = 26; img.data[base + 2] = 23; img.data[base + 3] = 255;
+        } else {
+          var rgb = seeds[si].rgb;
+          img.data[base] = rgb[0]; img.data[base + 1] = rgb[1]; img.data[base + 2] = rgb[2]; img.data[base + 3] = 255;
+        }
+      }
+      sctx.putImageData(img, 0, 0);
+      o.save();
+      o.imageSmoothingEnabled = false;
+      o.drawImage(small, 0, 0, RES, RES, 0, 0, S, S);
+      o.restore();
+    }
+
+    function regularPolyPath(o, cx, cy, r, sides, rotation) {
+      o.beginPath();
+      for (var k = 0; k < sides; k++) {
+        var ang = rotation + k * (Math.PI * 2 / sides);
+        var px = cx + r * Math.cos(ang), py = cy + r * Math.sin(ang);
+        if (k === 0) o.moveTo(px, py); else o.lineTo(px, py);
+      }
+      o.closePath();
+    }
+
+    // Truncated square tiling (4.8.8): octagons pinned to the grid corners
+    // — shared with neighboring cells, so they meet seamlessly at the tile
+    // edge — plus a square dropped in the middle of every cell to fill the
+    // gap between four octagons.
+    function drawOctagons(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      var octR = cell * 0.40;
+      o.lineWidth = lw;
+      var i, j;
+      for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
+          regularPolyPath(o, i * cell, j * cell, octR, 8, Math.PI / 8);
+          o.fillStyle = (i + j) % 2 === 0 ? c1 : c2;
+          o.fill();
+          o.strokeStyle = INK;
+          o.stroke();
+        }
+      }
+      for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
+          regularPolyPath(o, i * cell + cell / 2, j * cell + cell / 2, cell * 0.30, 4, Math.PI / 4);
+          o.fillStyle = (i + j) % 2 === 0 ? c2 : c1;
+          o.fill();
+          o.strokeStyle = INK;
+          o.stroke();
+        }
+      }
+    }
+
+    function drawDiamondPath(o, cx, cy, half) {
+      o.beginPath();
+      o.moveTo(cx, cy - half);
+      o.lineTo(cx + half, cy);
+      o.lineTo(cx, cy + half);
+      o.lineTo(cx - half, cy);
+      o.closePath();
+    }
+
+    function drawDiamond(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      var nested = rng() < 0.6;
+      o.lineWidth = lw;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell + cell / 2, cy = j * cell + cell / 2;
+          var base = (i + j) % 2 === 0 ? c1 : c2;
+          drawDiamondPath(o, cx, cy, cell * 0.46);
+          o.fillStyle = base;
+          o.fill();
+          o.strokeStyle = INK;
+          o.stroke();
+          if (nested) {
+            drawDiamondPath(o, cx, cy, cell * 0.22);
+            o.fillStyle = base === c1 ? c2 : c1;
+            o.fill();
+            o.strokeStyle = INK;
+            o.stroke();
+          }
+        }
+      }
+    }
+
+    function drawChevron(o, S, n, c1, c2, rng, lw) {
+      n = (n % 2 === 0) ? n : n + 1;
+      var cell = S / n;
+      o.lineWidth = lw;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell, cy = j * cell;
+          var apexUp = (i + j) % 2 === 0;
+          var color = i % 2 === 0 ? c1 : c2;
+          o.beginPath();
+          if (apexUp) {
+            o.moveTo(cx, cy + cell);
+            o.lineTo(cx + cell / 2, cy);
+            o.lineTo(cx + cell, cy + cell);
+          } else {
+            o.moveTo(cx, cy);
+            o.lineTo(cx + cell / 2, cy + cell);
+            o.lineTo(cx + cell, cy);
+          }
+          o.closePath();
+          o.fillStyle = color;
+          o.fill();
+          o.strokeStyle = INK;
+          o.stroke();
+        }
+      }
+    }
+
+    function drawFrames(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell, cy = j * cell;
+          var rings = 2 + Math.floor(rng() * 2);
+          var pad = cell * 0.08;
+          for (var r = 0; r < rings; r++) {
+            var inset = pad + r * (cell * 0.16);
+            var size = cell - 2 * inset;
+            if (size <= 2) break;
+            o.lineWidth = Math.max(lw, cell * 0.06);
+            o.strokeStyle = r % 2 === 0 ? c1 : c2;
+            o.strokeRect(cx + inset, cy + inset, size, size);
+          }
+          o.lineWidth = lw * 0.8;
+          o.strokeStyle = INK;
+          o.strokeRect(cx + pad * 0.4, cy + pad * 0.4, cell - pad * 0.8, cell - pad * 0.8);
+        }
+      }
+    }
+
+    function drawCheckerboard(o, S, n, c1, c2, rng, lw) {
+      n = (n % 2 === 0) ? n : n + 1;
+      var cell = S / n;
+      o.lineWidth = lw;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          o.fillStyle = (i + j) % 2 === 0 ? c1 : c2;
+          o.fillRect(i * cell, j * cell, cell, cell);
+          o.strokeStyle = INK;
+          o.strokeRect(i * cell, j * cell, cell, cell);
+        }
+      }
+    }
+
+    var MOTIFS = [
+      drawTruchet, drawDots, drawWeave, drawPinwheel, drawPlus, drawWaves,
+      drawBrick, drawDiamond, drawChevron, drawFrames, drawCheckerboard,
+      drawScales, drawCrosshatch, drawTargetRings, drawVoronoi, drawOctagons
+    ];
+
+    // Fine grain speckle, confined to its own slot so it never crosses a
+    // tile edge — adds material texture on top of any motif, for free.
+    function addGrain(o, S, rng) {
+      var density = Math.max(10, Math.round(S / 10));
+      var slot = S / density;
+      for (var i = 0; i < density; i++) {
+        for (var j = 0; j < density; j++) {
+          if (rng() > 0.45) continue;
+          var cx = i * slot + slot * (0.2 + rng() * 0.6);
+          var cy = j * slot + slot * (0.2 + rng() * 0.6);
+          var r = slot * (0.06 + rng() * 0.1);
+          o.beginPath();
+          o.arc(cx, cy, r, 0, Math.PI * 2);
+          o.fillStyle = 'rgba(32,26,23,' + (0.05 + rng() * 0.08).toFixed(3) + ')';
+          o.fill();
+        }
+      }
+    }
+
+    function buildTile(seed) {
+      var rng = mulberry32(seed);
+      var T = Math.round(72 + rng() * 68);          // CSS px, 72-140
+      var n = 2 + Math.floor(rng() * 3);             // 2, 3 or 4
+      var motif = MOTIFS[Math.floor(rng() * MOTIFS.length)];
+      var colors = pick3(rng);
+      var bg = colors[0], c1 = colors[1], c2 = colors[2];
+
+      var TPX = Math.max(1, Math.round(T * dpr));
+      var off = document.createElement('canvas');
+      off.width = TPX;
+      off.height = TPX;
+      var o = off.getContext('2d');
+      o.fillStyle = bg;
+      o.fillRect(0, 0, TPX, TPX);
+      var lw = Math.max(1, Math.round(2 * dpr));
+      motif(o, TPX, n, c1, c2, rng, lw);
+      addGrain(o, TPX, rng);
+
+      return { canvas: off, T: T, seed: seed };
+    }
+
+    function updateTag() {
+      tag.textContent = 'TILE #' + hexOf(tile.seed);
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ seed: tile.seed, panX: panX, panY: panY, zoom: zoom }));
+      } catch (e) { /* ignore */ }
+    }
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    function setZoom(z) {
+      zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
+      redraw();
+      save();
+    }
+
+    function redraw() {
+      if (!pattern || !tile) return;
+      panX = ((panX % tile.T) + tile.T) % tile.T;
+      panY = ((panY % tile.T) + tile.T) % tile.T;
+      var m = new DOMMatrix().translate(panX * dpr, panY * dpr).scale(zoom, zoom);
+      pattern.setTransform(m);
+      ctx.fillStyle = pattern;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function newTile(seed, resetPan) {
+      tile = buildTile(seed);
+      pattern = ctx.createPattern(tile.canvas, 'repeat');
+      if (resetPan) { panX = 0; panY = 0; zoom = 1; }
+      updateTag();
+      redraw();
+      save();
+      if (!prefersReducedMotion) {
+        canvas.classList.remove('pulse');
+        void canvas.offsetWidth;
+        canvas.classList.add('pulse');
+      }
+    }
+
+    function hideHint() { hint.classList.add('hidden'); }
+
+    function resizeCanvas() {
+      var w = window.innerWidth, h = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+    }
+
+    function cancelInertia() {
+      if (inertiaRAF) { cancelAnimationFrame(inertiaRAF); inertiaRAF = null; }
+    }
+
+    function startInertia() {
+      if (Math.hypot(velocity.x, velocity.y) < 0.02) return;
+      function step() {
+        panX += velocity.x * 16;
+        panY += velocity.y * 16;
+        velocity.x *= 0.94;
+        velocity.y *= 0.94;
+        redraw();
+        if (Math.hypot(velocity.x, velocity.y) > 0.02) {
+          inertiaRAF = requestAnimationFrame(step);
+        } else {
+          inertiaRAF = null;
+          save();
+        }
+      }
+      inertiaRAF = requestAnimationFrame(step);
+    }
+
+    function pointerDist() {
+      var ids = Object.keys(pointers);
+      var a = pointers[ids[0]], b = pointers[ids[1]];
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function onPointerDown(e) {
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      canvas.setPointerCapture(e.pointerId);
+      controls.classList.add('faded');
+      hideHint();
+
+      var count = Object.keys(pointers).length;
+      if (count === 2) {
+        dragging = false;
+        cancelInertia();
+        pinching = true;
+        pinchStartDist = Math.max(1, pointerDist());
+        pinchStartZoom = zoom;
+      } else if (count === 1 && !pinching) {
+        dragging = true;
+        moved = false;
+        dragStart.x = e.clientX; dragStart.y = e.clientY; dragStart.t = performance.now();
+        lastMove.x = e.clientX; lastMove.y = e.clientY; lastMove.t = performance.now();
+        velocity.x = 0; velocity.y = 0;
+        cancelInertia();
+        canvas.classList.add('dragging');
+      }
+    }
+
+    function onPointerMove(e) {
+      if (!(e.pointerId in pointers)) return;
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+      if (pinching) {
+        if (Object.keys(pointers).length < 2) return;
+        var dist = Math.max(1, pointerDist());
+        zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, pinchStartZoom * (dist / pinchStartDist)));
+        redraw();
+        return;
+      }
+
+      if (!dragging) return;
+      var dx = e.clientX - lastMove.x, dy = e.clientY - lastMove.y;
+      var dt = Math.max(1, performance.now() - lastMove.t);
+      if (Math.abs(e.clientX - dragStart.x) > 2 || Math.abs(e.clientY - dragStart.y) > 2) moved = true;
+      panX += dx; panY += dy;
+      velocity.x = velocity.x * 0.7 + (dx / dt) * 0.3;
+      velocity.y = velocity.y * 0.7 + (dy / dt) * 0.3;
+      lastMove.x = e.clientX; lastMove.y = e.clientY; lastMove.t = performance.now();
+      redraw();
+    }
+
+    function onPointerUp(e) {
+      delete pointers[e.pointerId];
+      canvas.classList.remove('dragging');
+      var remaining = Object.keys(pointers).length;
+
+      if (pinching) {
+        save();
+        if (remaining < 2) pinching = false;
+        if (remaining === 0) controls.classList.remove('faded');
+        return;
+      }
+
+      if (!dragging) return;
+      dragging = false;
+      controls.classList.remove('faded');
+      var totalMove = Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y);
+      var totalTime = performance.now() - dragStart.t;
+      if (!moved && totalMove < 6 && totalTime < 400) {
+        newTile(randomSeed(), true);
+      } else {
+        save();
+        if (!prefersReducedMotion) startInertia();
+      }
+    }
+
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointercancel', onPointerUp);
+    canvas.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      var factor = Math.exp(-e.deltaY * 0.0015);
+      setZoom(zoom * factor);
+    }, { passive: false });
+
+    rerollBtn.addEventListener('click', function () {
+      hideHint();
+      newTile(randomSeed(), true);
+    });
+
+    // --- gallery / picker ---------------------------------------------
+
+    var galleryLoading = false;
+    var galleryAutoFillCount = 0;
+    var GALLERY_MAX_AUTOFILL = 8; // safety cap on huge/ultra-wide screens
+
+    function appendGalleryBatch() {
+      galleryLoading = true;
+      for (var k = 0; k < GALLERY_SIZE; k++) {
+        var seed = randomSeed();
+        var t = buildTile(seed);
+        var url = t.canvas.toDataURL('image/png');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'thumb';
+        btn.style.backgroundImage = 'url(' + url + ')';
+        btn.style.backgroundSize = Math.max(20, Math.round(t.T * 0.5)) + 'px';
+        btn.title = 'TILE #' + hexOf(seed);
+        btn.addEventListener('click', (function (s) {
+          return function () {
+            newTile(s, true);
+            closeGallery();
+          };
+        })(seed));
+        galleryGrid.appendChild(btn);
+      }
+      galleryLoading = false;
+      // A short/wide gallery can fit a whole batch with room to spare, in
+      // which case there's nothing to scroll and infinite-scroll can never
+      // fire. Keep topping it up until it actually overflows (or we hit the
+      // safety cap), so scrolling always reveals something new.
+      if (galleryGrid.scrollHeight <= galleryGrid.clientHeight + 4 &&
+          galleryAutoFillCount < GALLERY_MAX_AUTOFILL) {
+        galleryAutoFillCount++;
+        appendGalleryBatch();
+      }
+    }
+
+    function resetGallery() {
+      galleryGrid.innerHTML = '';
+      galleryGrid.scrollTop = 0;
+      galleryAutoFillCount = 0;
+      appendGalleryBatch();
+    }
+
+    function onGalleryScroll() {
+      if (galleryLoading) return;
+      var remaining = galleryGrid.scrollHeight - galleryGrid.scrollTop - galleryGrid.clientHeight;
+      if (remaining < 240) appendGalleryBatch();
+    }
+
+    function openGallery() {
+      hideHint();
+      resetGallery();
+      galleryOverlay.classList.add('open');
+    }
+
+    function closeGallery() {
+      galleryOverlay.classList.remove('open');
+    }
+
+    browseBtn.addEventListener('click', openGallery);
+    galleryShuffleBtn.addEventListener('click', resetGallery);
+    galleryGrid.addEventListener('scroll', onGalleryScroll);
+    galleryCloseBtn.addEventListener('click', closeGallery);
+    galleryOverlay.addEventListener('click', function (e) {
+      if (e.target === galleryOverlay) closeGallery();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && galleryOverlay.classList.contains('open')) closeGallery();
+    });
+
+    // --- download --------------------------------------------------------
+
+    downloadBtn.addEventListener('click', function () {
+      var size = 960;
+      var exportCanvas = document.createElement('canvas');
+      exportCanvas.width = size;
+      exportCanvas.height = size;
+      var ectx = exportCanvas.getContext('2d');
+      var p = ectx.createPattern(tile.canvas, 'repeat');
+      ectx.fillStyle = p;
+      ectx.fillRect(0, 0, size, size);
+      var a = document.createElement('a');
+      a.href = exportCanvas.toDataURL('image/png');
+      a.download = 'tile-' + hexOf(tile.seed) + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    zoomInBtn.addEventListener('click', function () { setZoom(zoom * 1.35); });
+    zoomOutBtn.addEventListener('click', function () { setZoom(zoom / 1.35); });
+    zoomResetBtn.addEventListener('click', function () { setZoom(1); });
+
+    window.addEventListener('resize', debounce(function () {
+      resizeCanvas();
+      redraw();
+    }, 150));
+
+    setTimeout(hideHint, 8000);
+
+    // init
+    resizeCanvas();
+    var stored = load();
+    var seed = (stored && typeof stored.seed === 'number') ? stored.seed : randomSeed();
+    tile = buildTile(seed);
+    pattern = ctx.createPattern(tile.canvas, 'repeat');
+    panX = (stored && typeof stored.panX === 'number') ? stored.panX : 0;
+    panY = (stored && typeof stored.panY === 'number') ? stored.panY : 0;
+    zoom = (stored && typeof stored.zoom === 'number') ? Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, stored.zoom)) : 1;
+    updateTag();
+    redraw();
+  })();
+  </script>
+</body>
+</html>
