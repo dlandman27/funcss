@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anaglyph</title>
+  <meta name="description" content="A field of shapes rendered in true color-split 3D. Drag sideways for red/cyan, up and down for green/magenta. Glasses recommended, not provided.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/anaglyph/">
+    <meta property="og:title" content="Anaglyph">
+    <meta property="og:description" content="A field of shapes rendered in true color-split 3D. Drag sideways for red/cyan, up and down for green/magenta. Glasses recommended, not provided.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/anaglyph.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Anaglyph">
+    <meta name="twitter:description" content="A field of shapes rendered in true color-split 3D. Drag sideways for red/cyan, up and down for green/magenta. Glasses recommended, not provided.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/anaglyph.png">
+    <!-- rsotw:og:end -->
+  <style>
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #060607;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage {
+      position: fixed;
+      inset: 0;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .hint {
+      position: fixed;
+      top: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      max-width: 86vw;
+    }
+    .hint.hidden { opacity: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hint { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <p class="hint" id="hint">click to add. drag sideways for red/cyan, up and down for green/magenta.<br>glasses recommended, not provided.</p>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById('stage');
+      var ctx = canvas.getContext('2d');
+      var hint = document.getElementById('hint');
+
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var W = 0, H = 0;
+      var BASE_SEP = 50;
+      var MAX_CONV = 2.6, MIN_CONV = -MAX_CONV;
+      var MAX_SHAPES = 150;
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      var shapes = [];
+      var titleShape = null;
+      var convergenceX = 0;
+      var convergenceY = 0;
+      var targetConvergenceX = 0;
+      var targetConvergenceY = 0;
+
+      var dragging = false;
+      var dragStartX = 0;
+      var dragStartY = 0;
+      var convergenceXAtDragStart = 0;
+      var convergenceYAtDragStart = 0;
+      var dragMoved = false;
+      var dragPointerId = null;
+      var hintHidden = false;
+      var rafId = null;
+
+      var SHAPE_TYPES = ['circle', 'ring', 'triangle', 'star', 'blob', 'bolt', 'diamond'];
+
+      function rand(min, max) { return min + Math.random() * (max - min); }
+      function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+      function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+      function makeShape(x, y) {
+        var depth = Math.random();
+        var isMobile = window.innerWidth < 600;
+        var size = rand(20, 60) * (isMobile ? 0.75 : 1) * (0.5 + depth * 0.9);
+        var type = pick(SHAPE_TYPES);
+        var shape = {
+          type: type,
+          x: x,
+          y: y,
+          depth: depth,
+          size: size,
+          rot: rand(0, Math.PI * 2)
+        };
+        if (type === 'blob') {
+          var n = 8, pts = [];
+          for (var i = 0; i < n; i++) pts.push(rand(0.7, 1.15));
+          shape.blobPts = pts;
+        }
+        return shape;
+      }
+
+      function generateScene() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        var count = clamp(Math.floor((W * H) / 11000), 30, 90);
+        shapes = [];
+        for (var i = 0; i < count; i++) {
+          shapes.push(makeShape(rand(0, W), rand(0, H)));
+        }
+
+        var fontSize = clamp(W * 0.13, 40, 130);
+        titleShape = {
+          text: 'ANAGLYPH',
+          x: W / 2,
+          y: H / 2,
+          depth: 0.7,
+          size: fontSize
+        };
+      }
+
+      function resize() {
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        generateScene();
+        draw();
+      }
+
+      function pathFor(ctx2, s) {
+        var r = s.size / 2;
+        ctx2.beginPath();
+        switch (s.type) {
+          case 'circle':
+            ctx2.arc(0, 0, r, 0, Math.PI * 2);
+            break;
+          case 'ring':
+            ctx2.arc(0, 0, r, 0, Math.PI * 2);
+            ctx2.moveTo(r * 0.5, 0);
+            ctx2.arc(0, 0, r * 0.5, 0, Math.PI * 2, true);
+            break;
+          case 'diamond':
+            ctx2.moveTo(0, -r); ctx2.lineTo(r, 0); ctx2.lineTo(0, r); ctx2.lineTo(-r, 0); ctx2.closePath();
+            break;
+          case 'triangle':
+            for (var i = 0; i < 3; i++) {
+              var a = -Math.PI / 2 + i * (Math.PI * 2 / 3);
+              var px = Math.cos(a) * r, py = Math.sin(a) * r;
+              if (i === 0) ctx2.moveTo(px, py); else ctx2.lineTo(px, py);
+            }
+            ctx2.closePath();
+            break;
+          case 'star':
+            for (var j = 0; j < 10; j++) {
+              var a2 = -Math.PI / 2 + j * (Math.PI / 5);
+              var rr = j % 2 === 0 ? r : r * 0.45;
+              var px2 = Math.cos(a2) * rr, py2 = Math.sin(a2) * rr;
+              if (j === 0) ctx2.moveTo(px2, py2); else ctx2.lineTo(px2, py2);
+            }
+            ctx2.closePath();
+            break;
+          case 'bolt':
+            var pts = [[0.15, -0.5], [-0.05, -0.05], [0.2, -0.05], [-0.15, 0.5], [0.05, 0.05], [-0.2, 0.05]];
+            for (var k = 0; k < pts.length; k++) {
+              var px3 = pts[k][0] * s.size, py3 = pts[k][1] * s.size;
+              if (k === 0) ctx2.moveTo(px3, py3); else ctx2.lineTo(px3, py3);
+            }
+            ctx2.closePath();
+            break;
+          case 'blob':
+            var n = s.blobPts.length;
+            for (var m = 0; m <= n; m++) {
+              var a3 = (m / n) * Math.PI * 2;
+              var rad = r * s.blobPts[m % n];
+              var px4 = Math.cos(a3) * rad, py4 = Math.sin(a3) * rad;
+              if (m === 0) ctx2.moveTo(px4, py4); else ctx2.lineTo(px4, py4);
+            }
+            ctx2.closePath();
+            break;
+        }
+      }
+
+      function drawEye(s, offsetX, offsetY, color) {
+        ctx.save();
+        ctx.translate(s.x + offsetX, s.y + offsetY);
+        ctx.rotate(s.rot);
+        pathFor(ctx, s);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawTitleEye(s, offsetX, offsetY, color) {
+        ctx.save();
+        ctx.translate(s.x + offsetX, s.y + offsetY);
+        ctx.font = "900 " + s.size + "px 'Arial Black', Arial, sans-serif";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = color;
+        ctx.fillText(s.text, 0, 0);
+        ctx.restore();
+      }
+
+      function drawSplit(s, drawFn) {
+        var ox = s.depth * BASE_SEP * convergenceX;
+        var oy = s.depth * BASE_SEP * convergenceY;
+        drawFn(s, -ox / 2, 0, 'rgba(255, 0, 0, 0.5)');
+        drawFn(s, ox / 2, 0, 'rgba(0, 255, 255, 0.5)');
+        drawFn(s, 0, -oy / 2, 'rgba(0, 255, 0, 0.5)');
+        drawFn(s, 0, oy / 2, 'rgba(255, 0, 255, 0.5)');
+      }
+
+      function draw() {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#060607';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.globalCompositeOperation = 'lighter';
+        for (var i = 0; i < shapes.length; i++) {
+          drawSplit(shapes[i], drawEye);
+        }
+        drawSplit(titleShape, drawTitleEye);
+      }
+
+      function dismissHint() {
+        if (hintHidden) return;
+        hintHidden = true;
+        hint.classList.add('hidden');
+      }
+
+      var EASE = 0.14;
+      var RETURN_EASE = 0.045;
+      function loop() {
+        if (reduceMotion) {
+          convergenceX = targetConvergenceX;
+          convergenceY = targetConvergenceY;
+        } else {
+          var ease = dragging ? EASE : RETURN_EASE;
+          convergenceX += (targetConvergenceX - convergenceX) * ease;
+          convergenceY += (targetConvergenceY - convergenceY) * ease;
+        }
+        draw();
+        var settled = Math.abs(targetConvergenceX - convergenceX) < 0.0015 &&
+          Math.abs(targetConvergenceY - convergenceY) < 0.0015;
+        if (dragging || !settled) {
+          rafId = requestAnimationFrame(loop);
+        } else {
+          convergenceX = targetConvergenceX;
+          convergenceY = targetConvergenceY;
+          draw();
+          rafId = null;
+        }
+      }
+      function wake() {
+        if (rafId === null) rafId = requestAnimationFrame(loop);
+      }
+
+      canvas.addEventListener('pointerdown', function (e) {
+        if (dragPointerId !== null) return;
+        dragPointerId = e.pointerId;
+        canvas.setPointerCapture(e.pointerId);
+        dragging = true;
+        dragMoved = false;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        convergenceXAtDragStart = targetConvergenceX;
+        convergenceYAtDragStart = targetConvergenceY;
+      });
+
+      canvas.addEventListener('pointermove', function (e) {
+        if (e.pointerId !== dragPointerId || !dragging) return;
+        var dx = e.clientX - dragStartX;
+        var dy = e.clientY - dragStartY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragMoved = true;
+        targetConvergenceX = clamp(convergenceXAtDragStart + dx * 0.005, MIN_CONV, MAX_CONV);
+        targetConvergenceY = clamp(convergenceYAtDragStart + dy * 0.005, MIN_CONV, MAX_CONV);
+        wake();
+      });
+
+      function release(e) {
+        if (e.pointerId !== dragPointerId) return;
+        dragPointerId = null;
+        dragging = false;
+        targetConvergenceX = 0;
+        targetConvergenceY = 0;
+        wake();
+        if (!dragMoved) {
+          shapes.push(makeShape(e.clientX, e.clientY));
+          if (shapes.length > MAX_SHAPES) shapes.shift();
+        }
+        dismissHint();
+      }
+      canvas.addEventListener('pointerup', release);
+      canvas.addEventListener('pointercancel', function (e) {
+        if (e.pointerId !== dragPointerId) return;
+        dragPointerId = null;
+        dragging = false;
+        targetConvergenceX = 0;
+        targetConvergenceY = 0;
+        wake();
+      });
+
+      var resizeTimer = null;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+
+      resize();
+      setTimeout(dismissHint, 9000);
+    })();
+  </script>
+</body>
+</html>

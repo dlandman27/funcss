@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moiré</title>
+  <meta name="description" content="Two fine grids of lines, slightly out of tune. Drag to turn one, scroll or pinch to change the beat.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/moire/">
+    <meta property="og:title" content="Moiré">
+    <meta property="og:description" content="Two fine grids of lines, slightly out of tune. Drag to turn one, scroll or pinch to change the beat.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/moire.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Moiré">
+    <meta name="twitter:description" content="Two fine grids of lines, slightly out of tune. Drag to turn one, scroll or pinch to change the beat.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/moire.png">
+    <!-- rsotw:og:end -->
+  <style>
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b0b12;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage {
+      position: fixed;
+      inset: 0;
+      display: block;
+      cursor: grab;
+    }
+    #stage.dragging { cursor: grabbing; }
+
+    .hint {
+      position: fixed;
+      bottom: 7%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .hint.hidden { opacity: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hint { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <p class="hint" id="hint">two grids, slightly out of tune</p>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById('stage');
+      var ctx = canvas.getContext('2d');
+      var hint = document.getElementById('hint');
+
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var W = 0, H = 0, diag = 0;
+
+      var layerA = { angle: 0, drift: 0.00028 };
+      var layerB = { angle: 6 * Math.PI / 180, drift: -0.00019 };
+      var spacing = 14;
+      var MIN_SPACING = 5, MAX_SPACING = 42;
+
+      var pointers = new Map();
+      var primaryId = null;
+      var lastAngle = 0;
+      var prevPinchDist = null;
+      var hintHidden = false;
+
+      function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+      function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        diag = Math.sqrt(W * W + H * H);
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function drawGrid(angle, color) {
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.rotate(angle);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        var half = diag / 2 + spacing;
+        for (var x = -half; x <= half; x += spacing) {
+          ctx.moveTo(x, -half);
+          ctx.lineTo(x, half);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function draw() {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#0b0b12';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.globalCompositeOperation = 'lighter';
+        drawGrid(layerA.angle, 'rgba(150, 205, 255, 0.4)');
+        drawGrid(layerB.angle, 'rgba(255, 180, 165, 0.4)');
+      }
+
+      function angleAt(x, y) {
+        return Math.atan2(y - H / 2, x - W / 2);
+      }
+
+      function normalizeDelta(d) {
+        while (d > Math.PI) d -= Math.PI * 2;
+        while (d < -Math.PI) d += Math.PI * 2;
+        return d;
+      }
+
+      function dismissHint() {
+        if (hintHidden) return;
+        hintHidden = true;
+        hint.classList.add('hidden');
+      }
+
+      function pinchDistance() {
+        var pts = Array.from(pointers.values());
+        var dx = pts[0].x - pts[1].x, dy = pts[0].y - pts[1].y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      canvas.addEventListener('pointerdown', function (e) {
+        canvas.setPointerCapture(e.pointerId);
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 1) {
+          primaryId = e.pointerId;
+          lastAngle = angleAt(e.clientX, e.clientY);
+          canvas.classList.add('dragging');
+        } else if (pointers.size === 2) {
+          prevPinchDist = pinchDistance();
+        }
+        dismissHint();
+      });
+
+      canvas.addEventListener('pointermove', function (e) {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pointers.size >= 2) {
+          var dist = pinchDistance();
+          if (prevPinchDist) {
+            spacing = clamp(spacing * (dist / prevPinchDist), MIN_SPACING, MAX_SPACING);
+          }
+          prevPinchDist = dist;
+        } else if (e.pointerId === primaryId) {
+          var a = angleAt(e.clientX, e.clientY);
+          layerB.angle += normalizeDelta(a - lastAngle);
+          lastAngle = a;
+        }
+      });
+
+      function releasePointer(e) {
+        pointers.delete(e.pointerId);
+        if (pointers.size < 2) prevPinchDist = null;
+        if (pointers.size === 1) {
+          primaryId = Array.from(pointers.keys())[0];
+          var p = pointers.get(primaryId);
+          lastAngle = angleAt(p.x, p.y);
+          canvas.classList.add('dragging');
+        } else if (pointers.size === 0) {
+          primaryId = null;
+          canvas.classList.remove('dragging');
+        }
+      }
+      canvas.addEventListener('pointerup', releasePointer);
+      canvas.addEventListener('pointercancel', releasePointer);
+
+      canvas.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        spacing = clamp(spacing * (1 - e.deltaY * 0.0012), MIN_SPACING, MAX_SPACING);
+        dismissHint();
+      }, { passive: false });
+
+      var resizeTimer = null;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+
+      var lastT = null;
+      function loop(t) {
+        if (lastT === null) lastT = t;
+        var dt = t - lastT;
+        lastT = t;
+        if (!reduceMotion) {
+          layerA.angle += layerA.drift * dt;
+          layerB.angle += layerB.drift * dt;
+        }
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      resize();
+      draw();
+      requestAnimationFrame(loop);
+      setTimeout(dismissHint, 9000);
+    })();
+  </script>
+</body>
+</html>

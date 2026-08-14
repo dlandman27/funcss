@@ -140,6 +140,9 @@
     .pill-btn.c-teal { background: var(--teal); color: var(--cream); transform: rotate(-1deg); }
     .pill-btn.c-teal:hover { transform: translate(-2px, -2px) rotate(-1deg); box-shadow: 5px 5px 0 var(--ink); }
     .pill-btn.c-teal:active { transform: translate(1px, 1px) rotate(-1deg); box-shadow: 1px 1px 0 var(--ink); }
+    .pill-btn.c-gold { background: var(--gold); transform: rotate(3deg); }
+    .pill-btn.c-gold:hover { transform: translate(-2px, -2px) rotate(3deg); box-shadow: 5px 5px 0 var(--ink); }
+    .pill-btn.c-gold:active { transform: translate(1px, 1px) rotate(3deg); box-shadow: 1px 1px 0 var(--ink); }
 
     .gallery-overlay {
       position: fixed;
@@ -244,7 +247,7 @@
 </head>
 <body>
   <canvas id="stage"></canvas>
-  <div class="hint" id="hint">drag to wander the tile forever &middot; tap to reroll it</div>
+  <div class="hint" id="hint">drag to wander the tile forever</div>
   <div class="tag" id="tag">TILE #0000</div>
 
   <div class="zoom-controls">
@@ -255,6 +258,7 @@
 
   <div class="controls">
     <button class="pill-btn c-coral" id="reroll" type="button">Reroll</button>
+    <button class="pill-btn c-gold" id="recolor" type="button">Change Color</button>
     <button class="pill-btn c-sky" id="browse" type="button">Browse</button>
     <button class="pill-btn c-teal" id="download" type="button">Download</button>
   </div>
@@ -288,6 +292,7 @@
     var tag = document.getElementById('tag');
     var controls = document.querySelector('.controls');
     var rerollBtn = document.getElementById('reroll');
+    var recolorBtn = document.getElementById('recolor');
     var browseBtn = document.getElementById('browse');
     var downloadBtn = document.getElementById('download');
     var galleryOverlay = document.getElementById('galleryOverlay');
@@ -569,6 +574,71 @@
       drawOffsetGrid(o, S, n, c1, c2, rng, lw, scaleShape);
     }
 
+    // Honeycomb of true regular (equilateral) hexagons, touching edge to
+    // edge with no gap. A regular hex grid's row spacing is 1.5r while its
+    // full height is 2r — rows overlap on purpose, that's what makes them
+    // interlock — and that 1.5r/√3 relationship never divides evenly into a
+    // SQUARE tile (√3 is irrational), so this motif gets its own rectangular
+    // tile sized exactly cols*hexW by rows*1.5r instead of forcing a square.
+    // cols/rows/r are chosen by buildTile so it can size the offscreen
+    // canvas to match before any pixel is drawn.
+    function drawHexagons(o, cols, rows, r, c1, c2, rng, lw) {
+      var hexW = r * Math.sqrt(3);
+      var rowSpacing = 1.5 * r;
+      var TW = cols * hexW;
+      var TH = rows * rowSpacing;
+      o.lineWidth = lw * 0.9;
+
+      var colorGrid = [];
+      var ri, ci;
+      for (ri = 0; ri < rows; ri++) {
+        colorGrid.push([]);
+        for (ci = 0; ci < cols; ci++) colorGrid[ri].push(rng() < 0.5 ? c1 : c2);
+      }
+
+      function paintHex(cx, cy, color) {
+        regularPolyPath(o, cx, cy, r, 6, -Math.PI / 2);
+        o.fillStyle = color;
+        o.fill();
+        o.strokeStyle = INK;
+        o.stroke();
+      }
+
+      function drawRow(ri, yShift) {
+        var offsetRow = (ri % 2 !== 0);
+        var cy = ri * rowSpacing + r + yShift;
+        var firstCx = null, firstColor = null;
+        for (var ci = 0; ci < cols; ci++) {
+          var cx = ci * hexW + (offsetRow ? hexW / 2 : 0);
+          var color = colorGrid[ri][ci];
+          paintHex(cx, cy, color);
+          if (ci === 0) { firstCx = cx; firstColor = color; }
+        }
+        if (!offsetRow) {
+          // An offset row's hexes land exactly flush at both x=0 and x=TW
+          // (offset by hexW/2 makes that work out exactly) — no wrap
+          // needed. A NON-offset row's ci=0 hex is centered AT x=0, so
+          // half of it (its left half) overflows past the edge and gets
+          // clipped, while the row's far end falls hexW/2 short of x=TW,
+          // leaving a matching gap there. One wrap fixes both: redraw
+          // ci=0's hex shifted +TW so its visible left half lands exactly
+          // in that gap. (I had this backwards before — wrapping the
+          // offset row, which needed nothing, and missing this one, which
+          // is what left an unfilled sliver reading as a stray half-hex.)
+          paintHex(firstCx + TW, cy, firstColor);
+        }
+      }
+
+      for (ri = 0; ri < rows; ri++) drawRow(ri, 0);
+      // A regular hex's points reach 2r tall but rows are only 1.5r apart,
+      // so the last row's points overflow past y=TH and get clipped — the
+      // exact same class of bug the octagon motif had. Re-drawing that row
+      // shifted up by one full tile height lands its clipped sliver back
+      // inside [0,TH): by periodicity that's precisely the notch the top
+      // row's points would otherwise leave as bare background at the seam.
+      drawRow(rows - 1, -TH);
+    }
+
     function drawCrosshatch(o, S, n, c1, c2, rng, lw) {
       var cell = S / n;
       o.lineWidth = Math.max(1, lw * 0.7);
@@ -689,21 +759,50 @@
     // gap between four octagons.
     function drawOctagons(o, S, n, c1, c2, rng, lw) {
       var cell = S / n;
-      var octR = cell * 0.40;
+      // A true 4.8.8 truncated-square tiling needs the octagon's apothem
+      // (center to flat edge) to equal exactly half the grid spacing, so
+      // two cardinally-adjacent octagons' facing edges meet flush with no
+      // gap. That fixes the octagon's circumradius; the square (sharing
+      // the octagon's edge length) falls out from the same math. The old
+      // 0.40*cell / 0.30*cell guess undersized the octagons enough to
+      // leave visible background between them.
+      var apothem = cell / 2;
+      var octR = apothem / Math.cos(Math.PI / 8);
+      var octSide = 2 * apothem * Math.tan(Math.PI / 8);
+      var sqR = octSide / Math.SQRT2;
       o.lineWidth = lw;
       var i, j;
+      // Corner octagons are centered ON the cell grid lines, so the ones on
+      // row/col 0 and row/col n-1 straddle the tile edge — each is really
+      // only half (or a quarter, at the tile's own corners) of a shape that
+      // continues into the neighboring tile copy. Fix: draw the FULL corner
+      // lattice (0..n inclusive) and index colors mod n, so the wrapped
+      // copy at i===n / j===n always reuses the exact color of the i===0 /
+      // j===0 corner it's secretly the same shape as. Without this, the
+      // half that falls outside [0,S) never gets drawn anywhere and shows
+      // as a bare-background gap once the tile repeats.
+      var octColor = [];
       for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++) {
+        octColor.push([]);
+        for (j = 0; j < n; j++) octColor[i].push((i + j) % 2 === 0 ? c1 : c2);
+      }
+      for (i = 0; i <= n; i++) {
+        for (j = 0; j <= n; j++) {
           regularPolyPath(o, i * cell, j * cell, octR, 8, Math.PI / 8);
-          o.fillStyle = (i + j) % 2 === 0 ? c1 : c2;
+          o.fillStyle = octColor[i % n][j % n];
           o.fill();
           o.strokeStyle = INK;
           o.stroke();
         }
       }
+      // Rotation 0 (not π/4) puts this square's vertices at N/E/S/W and its
+      // EDGES facing the diagonals — that's what lets each edge sit flush
+      // against one of the 4 surrounding octagons' diagonal-facing edges.
+      // The π/4 version had it backwards: edges facing cardinally, only a
+      // single corner touching each octagon, leaving triangular gaps.
       for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
-          regularPolyPath(o, i * cell + cell / 2, j * cell + cell / 2, cell * 0.30, 4, Math.PI / 4);
+          regularPolyPath(o, i * cell + cell / 2, j * cell + cell / 2, sqR, 4, 0);
           o.fillStyle = (i + j) % 2 === 0 ? c2 : c1;
           o.fill();
           o.strokeStyle = INK;
@@ -741,6 +840,106 @@
             o.strokeStyle = INK;
             o.stroke();
           }
+        }
+      }
+    }
+
+    function drawRibbonSegment(o, x0, y0, x1, y1, w, groove, color) {
+      o.lineCap = 'butt';
+      o.strokeStyle = color;
+      o.lineWidth = w;
+      o.beginPath(); o.moveTo(x0, y0); o.lineTo(x1, y1); o.stroke();
+      o.strokeStyle = INK;
+      o.lineWidth = Math.max(1, groove);
+      o.beginPath(); o.moveTo(x0, y0); o.lineTo(x1, y1); o.stroke();
+    }
+
+    // Interlocking diagonal "Greek key" weave. Every stroked segment is
+    // clipped to its own cell before drawing — a stroke's width bulges
+    // perpendicular past its nominal path, and without the clip that bulge
+    // would poke outside the cell (and at edge cells, outside the tile) the
+    // same way the octagon/hexagon shapes did. Clipping to the cell rect
+    // sidesteps having to hand-derive a wraparound duplicate for every line.
+    // Diagonal-parity cells carry a corner-to-corner ribbon; the diagonals
+    // of neighboring diagonal cells share a grid corner, so they chain into
+    // continuous lines. The other cells get a pair of nested L brackets
+    // that read as the "key" turns between chains.
+    function drawLabyrinth(o, S, n, c1, c2, rng, lw) {
+      n = (n % 2 === 0) ? n : n + 1;
+      var cell = S / n;
+      var ribbonW = cell * 0.18;
+      var groove = ribbonW * 0.34;
+      var arm = cell * 0.68;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell, cy = j * cell;
+          var color = rng() < 0.5 ? c1 : c2;
+          o.save();
+          o.beginPath();
+          o.rect(cx, cy, cell, cell);
+          o.clip();
+          if ((i + j) % 2 === 0) {
+            drawRibbonSegment(o, cx, cy, cx + cell, cy + cell, ribbonW, groove, color);
+          } else {
+            drawRibbonSegment(o, cx + arm, cy, cx, cy, ribbonW, groove, color);
+            drawRibbonSegment(o, cx, cy, cx, cy + arm, ribbonW, groove, color);
+            drawRibbonSegment(o, cx + cell - arm, cy + cell, cx + cell, cy + cell, ribbonW, groove, color);
+            drawRibbonSegment(o, cx + cell, cy + cell, cx + cell, cy + cell - arm, ribbonW, groove, color);
+          }
+          o.restore();
+        }
+      }
+    }
+
+    // Layered ornamental medallion (diamond frame + circle + four petals +
+    // center dot) — several distinct shapes composed together per cell,
+    // rather than one shape stamped repeatedly. Every element is centered
+    // in its cell with margin to spare, so — like the diamond motif it
+    // borrows drawDiamondPath from — it never touches a cell edge and
+    // needs no special seam handling.
+    function drawMedallion(o, S, n, c1, c2, rng, lw) {
+      var cell = S / n;
+      o.lineWidth = lw;
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < n; j++) {
+          var cx = i * cell + cell / 2, cy = j * cell + cell / 2;
+          var R = cell * 0.44;
+
+          drawDiamondPath(o, cx, cy, R);
+          o.fillStyle = c1;
+          o.fill();
+          o.strokeStyle = INK;
+          o.stroke();
+
+          o.beginPath();
+          o.arc(cx, cy, R * 0.62, 0, Math.PI * 2);
+          o.fillStyle = c2;
+          o.fill();
+          o.strokeStyle = INK;
+          o.stroke();
+
+          var petalR = R * 0.34, petalDist = R * 0.62;
+          for (var k = 0; k < 4; k++) {
+            var ang = k * (Math.PI / 2);
+            o.save();
+            o.translate(cx + Math.cos(ang) * petalDist, cy + Math.sin(ang) * petalDist);
+            o.rotate(ang);
+            o.beginPath();
+            o.moveTo(0, -petalR);
+            o.quadraticCurveTo(petalR * 0.9, 0, 0, petalR);
+            o.quadraticCurveTo(-petalR * 0.9, 0, 0, -petalR);
+            o.closePath();
+            o.fillStyle = (k % 2 === 0) ? c1 : c2;
+            o.fill();
+            o.strokeStyle = INK;
+            o.stroke();
+            o.restore();
+          }
+
+          o.beginPath();
+          o.arc(cx, cy, R * 0.14, 0, Math.PI * 2);
+          o.fillStyle = INK;
+          o.fill();
         }
       }
     }
@@ -812,7 +1011,8 @@
     var MOTIFS = [
       drawTruchet, drawDots, drawWeave, drawPinwheel, drawPlus, drawWaves,
       drawBrick, drawDiamond, drawChevron, drawFrames, drawCheckerboard,
-      drawScales, drawCrosshatch, drawTargetRings, drawVoronoi, drawOctagons
+      drawScales, drawCrosshatch, drawTargetRings, drawVoronoi, drawOctagons,
+      drawHexagons, drawLabyrinth, drawMedallion
     ];
 
     // Fine grain speckle, confined to its own slot so it never crosses a
@@ -834,35 +1034,60 @@
       }
     }
 
-    function buildTile(seed) {
-      var rng = mulberry32(seed);
-      var T = Math.round(72 + rng() * 68);          // CSS px, 72-140
-      var n = 2 + Math.floor(rng() * 3);             // 2, 3 or 4
+    // Structure (motif/grid/per-cell shape choices) and color (palette
+    // pick) are drawn from two independent seeded streams, so "change
+    // color" can hold structureSeed fixed and only reroll colorSeed —
+    // reusing the same stream for both would mean any new color pick also
+    // shifts every subsequent per-cell random choice, changing the shapes.
+    function buildTile(structureSeed, colorSeed) {
+      var rng = mulberry32(structureSeed);
+      var crng = mulberry32(colorSeed);
       var motif = MOTIFS[Math.floor(rng() * MOTIFS.length)];
-      var colors = pick3(rng);
+      var colors = pick3(crng);
       var bg = colors[0], c1 = colors[1], c2 = colors[2];
-
-      var TPX = Math.max(1, Math.round(T * dpr));
-      var off = document.createElement('canvas');
-      off.width = TPX;
-      off.height = TPX;
-      var o = off.getContext('2d');
-      o.fillStyle = bg;
-      o.fillRect(0, 0, TPX, TPX);
       var lw = Math.max(1, Math.round(2 * dpr));
-      motif(o, TPX, n, c1, c2, rng, lw);
-      addGrain(o, TPX, rng);
 
-      return { canvas: off, T: T, seed: seed };
+      var off = document.createElement('canvas');
+      var o, TWcss, THcss;
+
+      if (motif === drawHexagons) {
+        var cols = 2 + Math.floor(rng() * 3);          // 2-4 hexes across
+        var rows = 2 * (1 + Math.floor(rng() * 2));    // 2 or 4 — must stay even
+        var rCss = 16 + rng() * 14;                     // hex radius, CSS px
+        TWcss = cols * rCss * Math.sqrt(3);
+        THcss = rows * 1.5 * rCss;
+        off.width = Math.max(1, Math.round(TWcss * dpr));
+        off.height = Math.max(1, Math.round(THcss * dpr));
+        o = off.getContext('2d');
+        o.fillStyle = bg;
+        o.fillRect(0, 0, off.width, off.height);
+        drawHexagons(o, cols, rows, rCss * dpr, c1, c2, rng, lw);
+      } else {
+        var T = Math.round(72 + rng() * 68);            // CSS px, 72-140
+        var n = 2 + Math.floor(rng() * 3);               // 2, 3 or 4
+        TWcss = T; THcss = T;
+        off.width = Math.max(1, Math.round(T * dpr));
+        off.height = off.width;
+        o = off.getContext('2d');
+        o.fillStyle = bg;
+        o.fillRect(0, 0, off.width, off.height);
+        motif(o, off.width, n, c1, c2, rng, lw);
+        addGrain(o, off.width, rng);
+      }
+
+      return { canvas: off, TW: TWcss, TH: THcss, structureSeed: structureSeed, colorSeed: colorSeed };
     }
 
     function updateTag() {
-      tag.textContent = 'TILE #' + hexOf(tile.seed);
+      tag.textContent = 'TILE #' + hexOf(tile.structureSeed);
     }
 
     function save() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ seed: tile.seed, panX: panX, panY: panY, zoom: zoom }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          structureSeed: tile.structureSeed, colorSeed: tile.colorSeed,
+          panX: panX, panY: panY, zoom: zoom
+        }));
       } catch (e) { /* ignore */ }
     }
 
@@ -881,16 +1106,16 @@
 
     function redraw() {
       if (!pattern || !tile) return;
-      panX = ((panX % tile.T) + tile.T) % tile.T;
-      panY = ((panY % tile.T) + tile.T) % tile.T;
+      panX = ((panX % tile.TW) + tile.TW) % tile.TW;
+      panY = ((panY % tile.TH) + tile.TH) % tile.TH;
       var m = new DOMMatrix().translate(panX * dpr, panY * dpr).scale(zoom, zoom);
       pattern.setTransform(m);
       ctx.fillStyle = pattern;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    function newTile(seed, resetPan) {
-      tile = buildTile(seed);
+    function newTile(structureSeed, colorSeed, resetPan) {
+      tile = buildTile(structureSeed, colorSeed);
       pattern = ctx.createPattern(tile.canvas, 'repeat');
       if (resetPan) { panX = 0; panY = 0; zoom = 1; }
       updateTag();
@@ -1004,14 +1229,8 @@
       if (!dragging) return;
       dragging = false;
       controls.classList.remove('faded');
-      var totalMove = Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y);
-      var totalTime = performance.now() - dragStart.t;
-      if (!moved && totalMove < 6 && totalTime < 400) {
-        newTile(randomSeed(), true);
-      } else {
-        save();
-        if (!prefersReducedMotion) startInertia();
-      }
+      save();
+      if (!prefersReducedMotion) startInertia();
     }
 
     canvas.addEventListener('pointerdown', onPointerDown);
@@ -1026,7 +1245,12 @@
 
     rerollBtn.addEventListener('click', function () {
       hideHint();
-      newTile(randomSeed(), true);
+      newTile(randomSeed(), randomSeed(), true);
+    });
+
+    recolorBtn.addEventListener('click', function () {
+      hideHint();
+      newTile(tile.structureSeed, randomSeed(), false);
     });
 
     // --- gallery / picker ---------------------------------------------
@@ -1038,21 +1262,23 @@
     function appendGalleryBatch() {
       galleryLoading = true;
       for (var k = 0; k < GALLERY_SIZE; k++) {
-        var seed = randomSeed();
-        var t = buildTile(seed);
+        var structureSeed = randomSeed();
+        var colorSeed = randomSeed();
+        var t = buildTile(structureSeed, colorSeed);
         var url = t.canvas.toDataURL('image/png');
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'thumb';
         btn.style.backgroundImage = 'url(' + url + ')';
-        btn.style.backgroundSize = Math.max(20, Math.round(t.T * 0.5)) + 'px';
-        btn.title = 'TILE #' + hexOf(seed);
-        btn.addEventListener('click', (function (s) {
+        btn.style.backgroundSize = Math.max(20, Math.round(t.TW * 0.5)) + 'px ' +
+          Math.max(20, Math.round(t.TH * 0.5)) + 'px';
+        btn.title = 'TILE #' + hexOf(structureSeed);
+        btn.addEventListener('click', (function (ss, cs) {
           return function () {
-            newTile(s, true);
+            newTile(ss, cs, true);
             closeGallery();
           };
-        })(seed));
+        })(structureSeed, colorSeed));
         galleryGrid.appendChild(btn);
       }
       galleryLoading = false;
@@ -1114,7 +1340,7 @@
       ectx.fillRect(0, 0, size, size);
       var a = document.createElement('a');
       a.href = exportCanvas.toDataURL('image/png');
-      a.download = 'tile-' + hexOf(tile.seed) + '.png';
+      a.download = 'tile-' + hexOf(tile.structureSeed) + '-' + hexOf(tile.colorSeed) + '.png';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1134,8 +1360,9 @@
     // init
     resizeCanvas();
     var stored = load();
-    var seed = (stored && typeof stored.seed === 'number') ? stored.seed : randomSeed();
-    tile = buildTile(seed);
+    var structureSeed = (stored && typeof stored.structureSeed === 'number') ? stored.structureSeed : randomSeed();
+    var colorSeed = (stored && typeof stored.colorSeed === 'number') ? stored.colorSeed : randomSeed();
+    tile = buildTile(structureSeed, colorSeed);
     pattern = ctx.createPattern(tile.canvas, 'repeat');
     panX = (stored && typeof stored.panX === 'number') ? stored.panX : 0;
     panY = (stored && typeof stored.panY === 'number') ? stored.panY : 0;
