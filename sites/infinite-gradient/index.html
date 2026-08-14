@@ -5,18 +5,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Infinite Gradient</title>
-  <meta name="description" content="An endless field of color. Drag or scroll in any direction — it never repeats, and never loops back to where you started.">
+  <meta name="description" content="An endless grid of generated gradient tiles — linear, radial, conic, striped. Drag to explore, scroll to zoom, tap any tile to copy its CSS.">
     <!-- rsotw:og:start -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://randomsitesontheweb.com/infinite-gradient/">
     <meta property="og:title" content="Infinite Gradient">
-    <meta property="og:description" content="An endless field of color. Drag or scroll in any direction — it never repeats, and never loops back to where you started.">
+    <meta property="og:description" content="An endless grid of generated gradient tiles — linear, radial, conic, striped. Drag to explore, scroll to zoom, tap any tile to copy its CSS.">
     <meta property="og:image" content="https://randomsitesontheweb.com/og/infinite-gradient.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Infinite Gradient">
-    <meta name="twitter:description" content="An endless field of color. Drag or scroll in any direction — it never repeats, and never loops back to where you started.">
+    <meta name="twitter:description" content="An endless grid of generated gradient tiles — linear, radial, conic, striped. Drag to explore, scroll to zoom, tap any tile to copy its CSS.">
     <meta name="twitter:image" content="https://randomsitesontheweb.com/og/infinite-gradient.png">
     <!-- rsotw:og:end -->
   <style>
@@ -34,10 +34,34 @@
     #stage {
       position: fixed;
       inset: 0;
-      display: block;
+      overflow: hidden;
       cursor: grab;
     }
     #stage.dragging { cursor: grabbing; }
+    #grid {
+      position: absolute;
+      inset: 0;
+    }
+    .tile {
+      position: absolute;
+      top: 0;
+      left: 0;
+      outline: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: filter 0.15s ease;
+      will-change: transform;
+    }
+    .tile:hover { filter: brightness(1.08); }
+    .tile:active { filter: brightness(0.9); }
+    .tile.flash { filter: brightness(1.6); }
+    .tile-fade {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.65s ease;
+      pointer-events: none;
+    }
+    .tile-fade.in { opacity: 1; }
 
     .hint {
       position: fixed;
@@ -57,304 +81,536 @@
     }
     .hint.hidden { opacity: 0; }
 
-    .readout {
+    #anchorSwatch {
+      position: fixed;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px) scale(0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    #anchorSwatch.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0) scale(1); }
+    #anchorSwatch .chip {
+      width: 54px;
+      height: 54px;
+      border-radius: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+      transition: transform 0.15s ease;
+    }
+    #anchorSwatch:hover .chip { transform: scale(1.06); }
+    #anchorSwatch:active .chip { transform: scale(0.94); }
+    #anchorSwatch .caption {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.75);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    #shareBtn {
       position: fixed;
       top: 18px;
       right: 18px;
       font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
       font-size: 13px;
-      letter-spacing: 0.04em;
-      color: rgba(255, 255, 255, 0.75);
-      background: rgba(0, 0, 0, 0.25);
-      backdrop-filter: blur(6px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.8);
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 999px;
-      padding: 6px 14px;
-      pointer-events: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: opacity 0.6s ease;
+      padding: 7px 16px;
+      cursor: pointer;
+      transition: background 0.15s ease;
     }
-    .readout .swatch {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.4);
-      flex: none;
+    #shareBtn:hover { background: rgba(0, 0, 0, 0.5); }
+
+    #toast {
+      position: fixed;
+      top: 8vh;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      padding: 8px 20px;
+      pointer-events: none;
+      opacity: 0;
+    }
+    #toast.show { animation: toastIn 1.5s ease forwards; }
+    @keyframes toastIn {
+      0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+      15% { transform: translateX(-50%) scale(1.05); opacity: 1; }
+      22% { transform: translateX(-50%) scale(1); opacity: 1; }
+      78% { opacity: 1; }
+      100% { opacity: 0; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .hint, .readout { transition: none; }
+      .hint, #toast, .tile, .tile-fade { transition: none; }
     }
   </style>
 </head>
 <body>
-  <canvas id="stage"></canvas>
-  <div class="readout" id="readout"><span class="swatch" id="swatch"></span><span id="hex">#000000</span></div>
-  <p class="hint" id="hint">drag or scroll — it never repeats</p>
+  <div id="stage">
+    <div id="grid"></div>
+  </div>
+  <div id="toast"></div>
+  <button id="shareBtn" type="button">copy link</button>
+  <button id="anchorSwatch" type="button" aria-label="reset to random">
+    <span class="chip"></span>
+    <span class="caption">tap to reset</span>
+  </button>
+  <p class="hint" id="hint">drag to explore, scroll to zoom — tap a tile for more like it, hold to copy its CSS</p>
 
   <script>
     (function () {
-      var canvas = document.getElementById('stage');
-      var ctx = canvas.getContext('2d');
+      var stage = document.getElementById('stage');
+      var grid = document.getElementById('grid');
       var hint = document.getElementById('hint');
-      var readout = document.getElementById('readout');
-      var swatchEl = document.getElementById('swatch');
-      var hexEl = document.getElementById('hex');
+      var toast = document.getElementById('toast');
+      var anchorSwatch = document.getElementById('anchorSwatch');
+      var anchorChip = anchorSwatch.querySelector('.chip');
+      var shareBtn = document.getElementById('shareBtn');
+      anchorSwatch.addEventListener('click', function (e) {
+        e.stopPropagation();
+        clearAnchor();
+      });
+      shareBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        updateURL();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(location.href)
+            .then(function () { showToast('link copied'); })
+            .catch(function () { showToast('could not copy'); });
+        } else {
+          showToast('could not copy');
+        }
+      });
 
       var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var STYLES = ['linear', 'radial', 'conic', 'stripes'];
+
+      // deterministic per-tile PRNG: same (col,row) always yields the same tile
+      function hash32(x, y, seed) {
+        var h = (x * 374761393 + y * 668265263 + seed * 2147483647) | 0;
+        h = Math.imul(h ^ (h >>> 13), 1274126177);
+        h = h ^ (h >>> 16);
+        return h >>> 0;
+      }
+      function mulberry32(seed) {
+        return function () {
+          seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+          var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      function hsl(h, s, l) {
+        return 'hsl(' + Math.round(((h % 360) + 360) % 360) + ', ' + Math.round(s) + '%, ' + Math.round(l) + '%)';
+      }
+      // circular average — a plain mean of two hue angles breaks near the 0/360
+      // wrap (10 and 350 would average to 180, not 0), so go through sin/cos
+      function circularMeanHue(h1, h2) {
+        var r1 = h1 * Math.PI / 180, r2 = h2 * Math.PI / 180;
+        var deg = Math.atan2(Math.sin(r1) + Math.sin(r2), Math.cos(r1) + Math.cos(r2)) * 180 / Math.PI;
+        return ((deg % 360) + 360) % 360;
+      }
+
+      // null = fully random hues; a number = every new tile stays within this
+      // many degrees of that hue, so picking a tile gives you "more like this"
+      var anchorHue = null;
+      var anchorCol = null, anchorRow = null;
+      var anchorCss = null; // exact CSS of the anchor tile, so shared links reproduce it precisely
+      var ANCHOR_SPREAD = 40;
+
+      function tileData(col, row) {
+        var rnd = mulberry32(hash32(col, row, 977));
+        var style = STYLES[Math.floor(rnd() * STYLES.length)];
+        var h1 = anchorHue === null
+          ? rnd() * 360
+          : (((anchorHue + (rnd() * ANCHOR_SPREAD * 2 - ANCHOR_SPREAD)) % 360) + 360) % 360;
+        // when anchored, keep the second color close to h1 too — otherwise this
+        // swing (previously a full ±75°) alone can carry it clean out of the
+        // anchor's hue family, e.g. blue sliding into green
+        var h2Spread = anchorHue === null ? 150 : 55;
+        var h2 = (h1 + (rnd() * h2Spread - h2Spread / 2) + 360) % 360;
+        var c1 = hsl(h1, 25 + rnd() * 75, 12 + rnd() * 78);
+        var c2 = hsl(h2, 25 + rnd() * 75, 12 + rnd() * 78);
+        var angle = Math.floor(rnd() * 360);
+        var cx = (15 + rnd() * 70).toFixed(0);
+        var cy = (15 + rnd() * 70).toFixed(0);
+        var stripeW = 10 + Math.floor(rnd() * 46);
+
+        var css;
+        if (style === 'linear') {
+          css = 'linear-gradient(' + angle + 'deg, ' + c1 + ', ' + c2 + ')';
+        } else if (style === 'radial') {
+          css = 'radial-gradient(circle at ' + cx + '% ' + cy + '%, ' + c1 + ', ' + c2 + ')';
+        } else if (style === 'conic') {
+          css = 'conic-gradient(from ' + angle + 'deg at ' + cx + '% ' + cy + '%, ' + c1 + ', ' + c2 + ', ' + c1 + ')';
+        } else {
+          // no repeated stop positions here — each color-stop sits at a distinct
+          // point so the band smoothly interpolates instead of hard-cutting
+          css = 'repeating-linear-gradient(' + angle + 'deg, ' + c1 + ' 0px, ' + c2 + ' ' + stripeW + 'px, ' + c1 + ' ' + (stripeW * 2) + 'px)';
+        }
+        return { css: css, hue: circularMeanHue(h1, h2) };
+      }
+
       var W = 0, H = 0;
-
-      // world position (viewport center), in "field units" — one unit ~= 260px of travel
-      var SCALE = 1 / 260;
-      var worldX = 12.5, worldY = -7.3; // arbitrary offset so start isn't at origin
-      var hintHidden = false;
-
-      // -------- deterministic value noise (seeded grid + smoothstep) --------
-      function hash2(ix, iy, seed) {
-        var n = ix * 374761393 + iy * 668265263 + seed * 2147483647;
-        n = (n ^ (n >> 13)) * 1274126177;
-        n = n ^ (n >> 16);
-        return ((n >>> 0) % 100000) / 100000; // [0,1)
-      }
-      function smooth(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-      function lerp(a, b, t) { return a + (b - a) * t; }
-      function valueNoise(x, y, seed) {
-        var x0 = Math.floor(x), y0 = Math.floor(y);
-        var x1 = x0 + 1, y1 = y0 + 1;
-        var sx = smooth(x - x0), sy = smooth(y - y0);
-        var n00 = hash2(x0, y0, seed), n10 = hash2(x1, y0, seed);
-        var n01 = hash2(x0, y1, seed), n11 = hash2(x1, y1, seed);
-        var ix0 = lerp(n00, n10, sx), ix1 = lerp(n01, n11, sx);
-        return lerp(ix0, ix1, sy); // [0,1)
-      }
-      // layered octaves for gentler, organic drift
-      function fbm(x, y, seed) {
-        return valueNoise(x, y, seed) * 0.65 +
-               valueNoise(x * 2.13, y * 2.13, seed + 91) * 0.25 +
-               valueNoise(x * 4.7, y * 4.7, seed + 233) * 0.10;
+      var tileBase = 200;
+      function computeTileBase() {
+        tileBase = Math.max(120, Math.min(260, Math.min(W, H) / 2.6));
       }
 
-      // hue/sat/light fields, each its own seed so they drift independently
-      function hueAt(x, y) { return fbm(x, y, 1) * 360; }
-      function satAt(x, y) { return 55 + fbm(x, y, 2) * 40; }
-      function lightAt(x, y) { return 32 + fbm(x, y, 3) * 40; }
+      // world position of the viewport center, in tile units (1 unit = 1 tile)
+      var worldX = 3.2, worldY = -1.7;
+      var viewX = worldX, viewY = worldY;
+      var zoom = 1;
+      var MIN_ZOOM = 0.35, MAX_ZOOM = 2.4;
 
-      // shape-blend weights: how much linear / radial / conic contribute here
-      function weightsAt(x, y) {
-        var a = fbm(x * 0.6, y * 0.6, 41);
-        var b = fbm(x * 0.6 + 50, y * 0.6 + 50, 67);
-        var c = fbm(x * 0.6 + 100, y * 0.6 + 100, 89);
-        var sum = a + b + c || 1;
-        return { linear: a / sum, radial: b / sum, conic: c / sum };
-      }
-      function angleAt(x, y) { return fbm(x * 0.4, y * 0.4, 133) * Math.PI * 2; }
-      function radiusAt(x, y) { return 0.35 + fbm(x * 0.4, y * 0.4, 177) * 0.9; }
-      function conicRotAt(x, y) { return fbm(x * 0.4, y * 0.4, 211) * Math.PI * 2; }
+      function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+      function tileScreenSize() { return tileBase * zoom; }
 
-      function hslToRgb(h, s, l) {
-        s /= 100; l /= 100;
-        var c = (1 - Math.abs(2 * l - 1)) * s;
-        var hp = h / 60;
-        var x = c * (1 - Math.abs(hp % 2 - 1));
-        var r = 0, g = 0, b = 0;
-        if (hp < 1) { r = c; g = x; }
-        else if (hp < 2) { r = x; g = c; }
-        else if (hp < 3) { g = c; b = x; }
-        else if (hp < 4) { g = x; b = c; }
-        else if (hp < 5) { r = x; b = c; }
-        else { r = c; b = x; }
-        var m = l - c / 2;
-        return [
-          Math.round((r + m) * 255),
-          Math.round((g + m) * 255),
-          Math.round((b + m) * 255)
-        ];
-      }
-      function colorAt(x, y) {
-        var rgb = hslToRgb(hueAt(x, y), satAt(x, y), lightAt(x, y));
-        return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
-      }
-      function hexAt(x, y) {
-        var rgb = hslToRgb(hueAt(x, y), satAt(x, y), lightAt(x, y));
-        return '#' + rgb.map(function (v) {
-          var h = v.toString(16);
-          return h.length < 2 ? '0' + h : h;
-        }).join('');
+      var tiles = new Map(); // "col,row" -> element
+      var lastRangeKey = null;
+
+      function ensureTile(col, row) {
+        var key = col + ',' + row;
+        if (tiles.has(key)) return;
+        var el = document.createElement('div');
+        el.className = 'tile';
+        // the anchor tile keeps its exact original gradient forever (see anchorCss),
+        // rather than being re-derived, so restoring one from a shared link matches exactly
+        var data = (anchorCss && col === anchorCol && row === anchorRow)
+          ? { css: anchorCss, hue: anchorHue }
+          : tileData(col, row);
+        el.style.background = data.css;
+        el.dataset.col = col;
+        el.dataset.row = row;
+        el.dataset.hue = data.hue;
+        grid.appendChild(el);
+        tiles.set(key, el);
       }
 
-      var GRID = 5; // sample grid resolution across the viewport, per axis
-      var CELL_W, CELL_H;
+      var MORPH_MS = 650;
+      function morphTile(el) {
+        var col = +el.dataset.col, row = +el.dataset.row;
+        var data = tileData(col, row);
+        var overlay = document.createElement('div');
+        overlay.className = 'tile-fade';
+        overlay.style.background = data.css;
+        el.appendChild(overlay);
+        void overlay.offsetWidth; // force reflow so the opacity transition actually runs
+        overlay.classList.add('in');
+        var seq = (el._morphSeq || 0) + 1;
+        el._morphSeq = seq;
+        setTimeout(function () {
+          // a newer morph landed on this tile before this one finished — let it win
+          if (el._morphSeq === seq) {
+            el.style.background = data.css;
+            el.dataset.hue = data.hue;
+          }
+          if (overlay.parentNode === el) el.removeChild(overlay);
+        }, MORPH_MS);
+      }
+
+      // regenerate every tile currently on screen in place — crossfades the new
+      // gradient in over the old one rather than swapping instantly. The anchor
+      // tile itself is skipped so the one you picked stays put as the reference.
+      function regenerateAll() {
+        tiles.forEach(function (el) {
+          if (+el.dataset.col === anchorCol && +el.dataset.row === anchorRow) return;
+          morphTile(el);
+        });
+      }
+
+      function syncRange() {
+        var ts = tileScreenSize();
+        var halfW = (W / 2) / ts, halfH = (H / 2) / ts;
+        var colStart = Math.floor(viewX - halfW) - 1;
+        var colEnd = Math.ceil(viewX + halfW) + 1;
+        var rowStart = Math.floor(viewY - halfH) - 1;
+        var rowEnd = Math.ceil(viewY + halfH) + 1;
+
+        var key = colStart + '|' + colEnd + '|' + rowStart + '|' + rowEnd;
+        if (key === lastRangeKey) return;
+        lastRangeKey = key;
+
+        for (var c = colStart; c <= colEnd; c++) {
+          for (var r = rowStart; r <= rowEnd; r++) ensureTile(c, r);
+        }
+        var buf = 2;
+        tiles.forEach(function (el, k) {
+          var c = +el.dataset.col, r = +el.dataset.row;
+          if (c < colStart - buf || c > colEnd + buf || r < rowStart - buf || r > rowEnd + buf) {
+            grid.removeChild(el);
+            tiles.delete(k);
+          }
+        });
+      }
+
+      function layout() {
+        var ts = tileScreenSize();
+        tiles.forEach(function (el) {
+          var c = +el.dataset.col, r = +el.dataset.row;
+          var x = (c - viewX) * ts + W / 2;
+          var y = (r - viewY) * ts + H / 2;
+          el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+          el.style.width = (ts + 1) + 'px';
+          el.style.height = (ts + 1) + 'px';
+        });
+      }
 
       function resize() {
         W = window.innerWidth;
         H = window.innerHeight;
-        canvas.width = Math.round(W * dpr);
-        canvas.height = Math.round(H * dpr);
-        canvas.style.width = W + 'px';
-        canvas.style.height = H + 'px';
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        CELL_W = Math.ceil(W / GRID) + 2;
-        CELL_H = Math.ceil(H / GRID) + 2;
+        computeTileBase();
+        lastRangeKey = null;
+        syncRange();
+        layout();
       }
 
-      // draw by tiling small blended-gradient cells across the screen —
-      // each cell mixes a linear, radial, and conic (approximated) gradient
-      // whose parameters and colors are sampled from the continuous field.
-      function drawCell(px, py, wx, wy) {
-        var col1 = colorAt(wx, wy);
-        var col2 = colorAt(wx + 0.9, wy + 0.9);
-        var w = weightsAt(wx, wy);
-        var cx = px + CELL_W / 2, cy = py + CELL_H / 2;
-        var diag = Math.sqrt(CELL_W * CELL_W + CELL_H * CELL_H);
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(px, py, CELL_W, CELL_H);
-        ctx.clip();
-
-        // base fill so no seams show through
-        ctx.fillStyle = col1;
-        ctx.fillRect(px, py, CELL_W, CELL_H);
-
-        // linear layer
-        if (w.linear > 0.02) {
-          var ang = angleAt(wx, wy);
-          var dx = Math.cos(ang) * diag / 2, dy = Math.sin(ang) * diag / 2;
-          var lg = ctx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy);
-          lg.addColorStop(0, col1);
-          lg.addColorStop(1, col2);
-          ctx.globalAlpha = w.linear;
-          ctx.fillStyle = lg;
-          ctx.fillRect(px, py, CELL_W, CELL_H);
-        }
-
-        // radial layer
-        if (w.radial > 0.02) {
-          var r = radiusAt(wx, wy) * diag;
-          var rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-          rg.addColorStop(0, col2);
-          rg.addColorStop(1, col1);
-          ctx.globalAlpha = w.radial;
-          ctx.fillStyle = rg;
-          ctx.fillRect(px, py, CELL_W, CELL_H);
-        }
-
-        // conic layer — canvas conic gradients are supported broadly now;
-        // fall back to a diagonal sweep if unavailable
-        if (w.conic > 0.02) {
-          ctx.globalAlpha = w.conic;
-          if (ctx.createConicGradient) {
-            var cg = ctx.createConicGradient(conicRotAt(wx, wy), cx, cy);
-            cg.addColorStop(0, col1);
-            cg.addColorStop(0.5, col2);
-            cg.addColorStop(1, col1);
-            ctx.fillStyle = cg;
-          } else {
-            var ang2 = conicRotAt(wx, wy);
-            var dx2 = Math.cos(ang2) * diag / 2, dy2 = Math.sin(ang2) * diag / 2;
-            var lg2 = ctx.createLinearGradient(cx - dx2, cy - dy2, cx + dx2, cy + dy2);
-            lg2.addColorStop(0, col2);
-            lg2.addColorStop(1, col1);
-            ctx.fillStyle = lg2;
-          }
-          ctx.fillRect(px, py, CELL_W, CELL_H);
-        }
-
-        ctx.globalAlpha = 1;
-        ctx.restore();
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.remove('show');
+        void toast.offsetWidth;
+        toast.classList.add('show');
       }
 
-      function draw() {
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        var cols = Math.ceil(W / CELL_W) + 1;
-        var rows = Math.ceil(H / CELL_H) + 1;
-        for (var i = -1; i < cols; i++) {
-          for (var j = -1; j < rows; j++) {
-            var px = i * CELL_W, py = j * CELL_H;
-            var wx = worldX + (px + CELL_W / 2 - W / 2) * SCALE;
-            var wy = worldY + (py + CELL_H / 2 - H / 2) * SCALE;
-            drawCell(px, py, wx, wy);
-          }
+      function copyTile(el) {
+        var css = 'background: ' + el.style.background + ';';
+        el.classList.add('flash');
+        setTimeout(function () { el.classList.remove('flash'); }, 260);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(css)
+            .then(function () { showToast('gradient copied'); })
+            .catch(function () { showToast('could not copy'); });
+        } else {
+          showToast('could not copy');
         }
-
-        // live readout for the color at viewport center
-        var hex = hexAt(worldX, worldY);
-        hexEl.textContent = hex.toUpperCase();
-        swatchEl.style.background = hex;
       }
 
+      function anchorToTile(el) {
+        anchorHue = parseFloat(el.dataset.hue);
+        anchorCol = +el.dataset.col;
+        anchorRow = +el.dataset.row;
+        anchorCss = el.style.background;
+        anchorChip.style.background = anchorCss;
+        regenerateAll();
+        showToast('more like this');
+        anchorSwatch.classList.add('show');
+        updateURL();
+      }
+      function clearAnchor() {
+        if (anchorHue === null) return;
+        anchorHue = null;
+        anchorCol = null;
+        anchorRow = null;
+        anchorCss = null;
+        regenerateAll();
+        showToast('back to random');
+        anchorSwatch.classList.remove('show');
+        updateURL();
+      }
+
+      var hintHidden = false;
       function dismissHint() {
         if (hintHidden) return;
         hintHidden = true;
         hint.classList.add('hidden');
       }
 
-      // -------- input: drag (pointer) + wheel/trackpad scroll, free 2D --------
-      var dragging = false;
+      // -------- input: drag to pan, wheel/pinch to zoom,
+      // tap a tile for similar gradients, hold a tile to copy its CSS --------
+      var pointers = new Map();
+      var primaryId = null;
       var lastX = 0, lastY = 0;
-      var needsDraw = true;
+      var dragDist = 0;
+      var hitTile = null;
+      var prevPinchDist = null;
+      var pressTimer = null;
+      var pressHandled = false;
+      var LONG_PRESS_MS = 450;
+      var TAP_MAX_DRAG = 6;
 
-      canvas.addEventListener('pointerdown', function (e) {
-        canvas.setPointerCapture(e.pointerId);
-        dragging = true;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        canvas.classList.add('dragging');
+      function pinchDistance() {
+        var pts = Array.from(pointers.values());
+        var dx = pts[0].x - pts[1].x, dy = pts[0].y - pts[1].y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      stage.addEventListener('pointerdown', function (e) {
+        stage.setPointerCapture(e.pointerId);
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 1) {
+          primaryId = e.pointerId;
+          lastX = e.clientX; lastY = e.clientY;
+          dragDist = 0;
+          hitTile = e.target && e.target.closest ? e.target.closest('.tile') : null;
+          stage.classList.add('dragging');
+          pressHandled = false;
+          clearTimeout(pressTimer);
+          if (hitTile) {
+            pressTimer = setTimeout(function () {
+              if (dragDist < TAP_MAX_DRAG) {
+                copyTile(hitTile);
+                pressHandled = true;
+              }
+            }, LONG_PRESS_MS);
+          }
+        } else if (pointers.size === 2) {
+          stage.classList.remove('dragging');
+          prevPinchDist = pinchDistance();
+          hitTile = null;
+          clearTimeout(pressTimer);
+        }
         dismissHint();
       });
-      canvas.addEventListener('pointermove', function (e) {
-        if (!dragging) return;
-        var dx = e.clientX - lastX, dy = e.clientY - lastY;
-        lastX = e.clientX; lastY = e.clientY;
-        worldX -= dx * SCALE;
-        worldY -= dy * SCALE;
-        needsDraw = true;
-      });
-      function endDrag(e) {
-        dragging = false;
-        canvas.classList.remove('dragging');
-      }
-      canvas.addEventListener('pointerup', endDrag);
-      canvas.addEventListener('pointercancel', endDrag);
 
-      canvas.addEventListener('wheel', function (e) {
+      stage.addEventListener('pointermove', function (e) {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pointers.size >= 2) {
+          var dist = pinchDistance();
+          if (prevPinchDist) zoom = clamp(zoom * (dist / prevPinchDist), MIN_ZOOM, MAX_ZOOM);
+          prevPinchDist = dist;
+        } else if (e.pointerId === primaryId) {
+          var dx = e.clientX - lastX, dy = e.clientY - lastY;
+          lastX = e.clientX; lastY = e.clientY;
+          dragDist += Math.abs(dx) + Math.abs(dy);
+          if (dragDist >= TAP_MAX_DRAG) clearTimeout(pressTimer);
+          var s = 1 / tileScreenSize();
+          worldX -= dx * s;
+          worldY -= dy * s;
+        }
+      });
+
+      function release(e) {
+        clearTimeout(pressTimer);
+        if (e.pointerId === primaryId && pointers.size === 1 && !pressHandled && dragDist < TAP_MAX_DRAG) {
+          if (hitTile) anchorToTile(hitTile);
+          else clearAnchor();
+        }
+        pointers.delete(e.pointerId);
+        if (pointers.size < 2) prevPinchDist = null;
+        if (pointers.size === 1) {
+          primaryId = Array.from(pointers.keys())[0];
+          var p = pointers.get(primaryId);
+          lastX = p.x; lastY = p.y;
+          stage.classList.add('dragging');
+        } else if (pointers.size === 0) {
+          primaryId = null;
+          stage.classList.remove('dragging');
+        }
+      }
+      stage.addEventListener('pointerup', release);
+      stage.addEventListener('pointercancel', function (e) { hitTile = null; clearTimeout(pressTimer); release(e); });
+
+      stage.addEventListener('wheel', function (e) {
         e.preventDefault();
-        worldX += e.deltaX * SCALE;
-        worldY += e.deltaY * SCALE;
-        needsDraw = true;
+        zoom = clamp(zoom * Math.exp(-e.deltaY * 0.0022), MIN_ZOOM, MAX_ZOOM);
         dismissHint();
       }, { passive: false });
 
       var resizeTimer = null;
       window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function () { resize(); needsDraw = true; }, 200);
+        resizeTimer = setTimeout(resize, 200);
       });
 
-      // gentle ambient drift when idle, unless reduced motion is requested
+      // -------- shareable permalink: position, zoom, and anchor live in the URL --------
+      function updateURL() {
+        var params = new URLSearchParams();
+        params.set('x', worldX.toFixed(3));
+        params.set('y', worldY.toFixed(3));
+        params.set('z', zoom.toFixed(3));
+        if (anchorHue !== null && anchorCss) {
+          params.set('h', anchorHue.toFixed(2));
+          params.set('c', anchorCol);
+          params.set('r', anchorRow);
+          params.set('g', anchorCss);
+        }
+        history.replaceState(null, '', location.pathname + '?' + params.toString());
+      }
+
+      function loadFromURL() {
+        var params = new URLSearchParams(location.search);
+        if (params.has('x')) {
+          var px = parseFloat(params.get('x'));
+          if (!isNaN(px)) worldX = px;
+        }
+        if (params.has('y')) {
+          var py = parseFloat(params.get('y'));
+          if (!isNaN(py)) worldY = py;
+        }
+        if (params.has('z')) {
+          var pz = parseFloat(params.get('z'));
+          if (!isNaN(pz)) zoom = clamp(pz, MIN_ZOOM, MAX_ZOOM);
+        }
+        viewX = worldX; viewY = worldY; // snap in, no easing on the very first frame
+        if (params.has('h') && params.has('c') && params.has('r') && params.has('g')) {
+          var ph = parseFloat(params.get('h'));
+          var pc = parseInt(params.get('c'), 10);
+          var pr = parseInt(params.get('r'), 10);
+          if (!isNaN(ph) && !isNaN(pc) && !isNaN(pr)) {
+            anchorHue = ph;
+            anchorCol = pc;
+            anchorRow = pr;
+            anchorCss = params.get('g');
+            anchorChip.style.background = anchorCss;
+            anchorSwatch.classList.add('show');
+          }
+        }
+      }
+
       var lastT = null;
+      var lastUrlUpdate = 0;
       function loop(t) {
         if (lastT === null) lastT = t;
         var dt = t - lastT;
         lastT = t;
+        var dragging = pointers.size > 0;
         if (!reduceMotion && !dragging) {
           worldX += 0.000018 * dt;
           worldY += 0.000011 * dt;
-          needsDraw = true;
         }
-        if (needsDraw) {
-          draw();
-          needsDraw = false;
+        if (reduceMotion) {
+          viewX = worldX; viewY = worldY;
+        } else {
+          var k = 1 - Math.exp(-dt / 90);
+          viewX += (worldX - viewX) * k;
+          viewY += (worldY - viewY) * k;
+        }
+        syncRange();
+        layout();
+        if (t - lastUrlUpdate > 900) {
+          lastUrlUpdate = t;
+          updateURL();
         }
         requestAnimationFrame(loop);
       }
 
+      loadFromURL();
       resize();
-      draw();
       requestAnimationFrame(loop);
       setTimeout(dismissHint, 9000);
     })();
