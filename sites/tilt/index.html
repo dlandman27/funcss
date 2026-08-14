@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tilt</title>
+  <meta name="description" content="A scattered deck of cards, each tilting toward your cursor in real 3D and catching a moving glare across its face.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/tilt/">
+    <meta property="og:title" content="Tilt">
+    <meta property="og:description" content="A scattered deck of cards, each tilting toward your cursor in real 3D and catching a moving glare across its face.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/tilt.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Tilt">
+    <meta name="twitter:description" content="A scattered deck of cards, each tilting toward your cursor in real 3D and catching a moving glare across its face.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/tilt.png">
+    <!-- rsotw:og:end -->
+  <style>
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 38%, #251a3d 0%, #140f24 45%, #0a0810 100%);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage {
+      position: fixed;
+      inset: 0;
+      perspective: 1300px;
+      perspective-origin: 50% 50%;
+    }
+    .card {
+      position: absolute;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+      transform-style: preserve-3d;
+      will-change: transform;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card .glare {
+      position: absolute;
+      inset: 0;
+      border-radius: 13px;
+      background-image: radial-gradient(circle, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0) 55%);
+      background-size: 200% 200%;
+      background-position: 50% 50%;
+      background-repeat: no-repeat;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+    .card .icon {
+      width: 42%;
+      height: 42%;
+      color: rgba(255, 248, 239, 0.8);
+      pointer-events: none;
+    }
+    .card .icon svg { width: 100%; height: 100%; display: block; }
+    .card { cursor: pointer; }
+
+    .hint {
+      position: fixed;
+      top: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .hint.hidden { opacity: 0; }
+
+    .tilt-pill {
+      position: fixed;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 10, 15, 0.85);
+      color: #fff8ef;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+    .tilt-pill.visible { opacity: 1; pointer-events: auto; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hint, .tilt-pill { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+  <p class="hint" id="hint">move around</p>
+  <button class="tilt-pill" id="tiltPill">tilt to look</button>
+
+  <script>
+    (function () {
+      var stage = document.getElementById('stage');
+      var hint = document.getElementById('hint');
+      var tiltPill = document.getElementById('tiltPill');
+
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var W = 0, H = 0;
+      var MAX_TILT = 42;
+      var cards = [];
+      var pointer = { x: 0, y: 0, active: false };
+      var rafId = null;
+      var hintHidden = false;
+
+      var PALETTE = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+      var SVG_ATTR = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
+      var ICONS = [
+        '<svg ' + SVG_ATTR + '><path d="M12 3l2.3 6.6L21 12l-6.7 2.4L12 21l-2.3-6.6L3 12l6.7-2.4z"/></svg>',
+        '<svg ' + SVG_ATTR + '><path d="M13 2 5 14h6l-1 8 9-12h-6z"/></svg>',
+        '<svg ' + SVG_ATTR + '><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
+        '<svg ' + SVG_ATTR + '><path d="M12 2 22 12 12 22 2 12z"/></svg>',
+        '<svg ' + SVG_ATTR + '><path d="M12 3 21 20 3 20z"/></svg>',
+        '<svg ' + SVG_ATTR + '><circle cx="12" cy="12" r="7"/></svg>'
+      ];
+
+      function rand(min, max) { return min + Math.random() * (max - min); }
+      function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+      function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+      function buildCards() {
+        stage.innerHTML = '';
+        cards = [];
+        var isMobile = W < 600;
+        var gap = isMobile ? 5 : 7;
+        var cols = clamp(Math.round(W / (isMobile ? 52 : 62)), isMobile ? 6 : 12, isMobile ? 12 : 26);
+        var rows = clamp(Math.round(H / (isMobile ? 75 : 88)), isMobile ? 7 : 8, isMobile ? 16 : 15);
+        var maxCards = isMobile ? 60 : 130;
+        if (cols * rows > maxCards) {
+          var scale = Math.sqrt(maxCards / (cols * rows));
+          cols = Math.max(4, Math.round(cols * scale));
+          rows = Math.max(4, Math.round(rows * scale));
+        }
+        var cellW = W / cols, cellH = H / rows;
+        var influenceRadius = Math.sqrt(W * W + H * H) * 0.55;
+
+        for (var row = 0; row < rows; row++) {
+          for (var col = 0; col < cols; col++) {
+            var w = cellW - gap;
+            var h = cellH - gap;
+            var cx = col * cellW + cellW / 2;
+            var cy = row * cellH + cellH / 2;
+            var baseZ = rand(-3, 3);
+
+            var el = document.createElement('div');
+            el.className = 'card';
+            el.style.width = w + 'px';
+            el.style.height = h + 'px';
+            el.style.left = (cx - w / 2) + 'px';
+            el.style.top = (cy - h / 2) + 'px';
+            el.style.background = pick(PALETTE);
+
+            var glare = document.createElement('div');
+            glare.className = 'glare';
+            el.appendChild(glare);
+
+            var icon = document.createElement('div');
+            icon.className = 'icon';
+            icon.innerHTML = pick(ICONS);
+            el.appendChild(icon);
+
+            stage.appendChild(el);
+
+            var card = {
+              el: el, glare: glare,
+              cx: cx, cy: cy, baseZ: baseZ,
+              rx: 0, ry: 0, trx: 0, try_: 0,
+              gx: 50, gy: 50, tgx: 50, tgy: 50,
+              spinning: false, spinStart: null, spinExtra: 0,
+              influenceRadius: influenceRadius
+            };
+            el.__tiltCard = card;
+            cards.push(card);
+          }
+        }
+      }
+
+      function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        buildCards();
+        applyIdle();
+      }
+
+      function applyIdle() {
+        for (var i = 0; i < cards.length; i++) {
+          var c = cards[i];
+          c.rx = c.ry = c.trx = c.try_ = 0;
+          c.gx = c.gy = c.tgx = c.tgy = 50;
+          render(c);
+        }
+      }
+
+      function render(c) {
+        c.el.style.transform = 'rotateX(' + c.rx + 'deg) rotateY(' + (c.ry + c.spinExtra) + 'deg) rotateZ(' + c.baseZ + 'deg)';
+        c.glare.style.backgroundPosition = c.gx + '% ' + c.gy + '%';
+      }
+
+      function updateTargets() {
+        for (var i = 0; i < cards.length; i++) {
+          var c = cards[i];
+          if (!pointer.active) {
+            c.trx = 0; c.try_ = 0; c.tgx = 50; c.tgy = 50;
+            continue;
+          }
+          var dx = pointer.x - c.cx, dy = pointer.y - c.cy;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          var influence = clamp(1 - dist / c.influenceRadius, 0.3, 1);
+          var nx = dx / (dist || 1), ny = dy / (dist || 1);
+          c.trx = -ny * MAX_TILT * influence;
+          c.try_ = nx * MAX_TILT * influence;
+          c.tgx = clamp(50 + nx * 42 * influence, 4, 96);
+          c.tgy = clamp(50 + ny * 42 * influence, 4, 96);
+        }
+      }
+
+      var SPIN_MS = 650;
+      var EASE = 0.12;
+      function loop(ts) {
+        var moving = false;
+        for (var i = 0; i < cards.length; i++) {
+          var c = cards[i];
+          c.rx += (c.trx - c.rx) * EASE;
+          c.ry += (c.try_ - c.ry) * EASE;
+          c.gx += (c.tgx - c.gx) * EASE;
+          c.gy += (c.tgy - c.gy) * EASE;
+          if (c.spinning) {
+            if (c.spinStart === null) c.spinStart = ts;
+            var t = clamp((ts - c.spinStart) / SPIN_MS, 0, 1);
+            c.spinExtra = (1 - Math.pow(1 - t, 3)) * 360;
+            if (t >= 1) { c.spinning = false; c.spinExtra = 0; c.spinStart = null; }
+            moving = true;
+          }
+          render(c);
+          if (Math.abs(c.trx - c.rx) > 0.05 || Math.abs(c.try_ - c.ry) > 0.05) moving = true;
+        }
+        if (moving) {
+          rafId = requestAnimationFrame(loop);
+        } else {
+          rafId = null;
+        }
+      }
+      function wake() {
+        if (rafId === null) rafId = requestAnimationFrame(loop);
+      }
+
+      function dismissHint() {
+        if (hintHidden) return;
+        hintHidden = true;
+        hint.classList.add('hidden');
+      }
+
+      window.addEventListener('pointermove', function (e) {
+        pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true;
+        updateTargets();
+        if (!reduceMotion) wake(); else applyDirect();
+        dismissHint();
+      }, { passive: true });
+
+      stage.addEventListener('click', function (e) {
+        if (reduceMotion) return;
+        var cardEl = e.target && e.target.closest ? e.target.closest('.card') : null;
+        var c = cardEl && cardEl.__tiltCard;
+        if (!c || c.spinning) return;
+        c.spinning = true;
+        c.spinStart = null;
+        wake();
+      });
+
+      window.addEventListener('pointerleave', function () {
+        pointer.active = false;
+        updateTargets();
+        if (!reduceMotion) wake(); else applyDirect();
+      });
+
+      function applyDirect() {
+        for (var i = 0; i < cards.length; i++) {
+          var c = cards[i];
+          c.rx = c.trx; c.ry = c.try_; c.gx = c.tgx; c.gy = c.tgy;
+          render(c);
+        }
+      }
+
+      var tiltBase = null;
+      function onOrientation(e) {
+        if (e.gamma === null || e.beta === null) return;
+        if (tiltBase === null) tiltBase = { gamma: e.gamma, beta: e.beta };
+        var nx = clamp((e.gamma - tiltBase.gamma) / 28, -1, 1);
+        var ny = clamp((e.beta - tiltBase.beta) / 28, -1, 1);
+        pointer.x = W / 2 + nx * W / 2;
+        pointer.y = H / 2 + ny * H / 2;
+        pointer.active = true;
+        updateTargets();
+        if (!reduceMotion) wake(); else applyDirect();
+        dismissHint();
+      }
+
+      function enableTilt() {
+        window.addEventListener('deviceorientation', onOrientation, true);
+        tiltPill.classList.remove('visible');
+      }
+
+      var needsPermission = typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function';
+      var isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+      if (needsPermission && isTouch) {
+        tiltPill.classList.add('visible');
+        tiltPill.addEventListener('click', function () {
+          DeviceOrientationEvent.requestPermission().then(function (state) {
+            if (state === 'granted') enableTilt();
+            tiltPill.classList.remove('visible');
+          }).catch(function () {
+            tiltPill.classList.remove('visible');
+          });
+        });
+      } else if (isTouch && 'DeviceOrientationEvent' in window) {
+        enableTilt();
+      }
+
+      var resizeTimer = null;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+
+      resize();
+      setTimeout(dismissHint, 9000);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinite Gradient</title>
+  <meta name="description" content="An endless field of color. Drag or scroll in any direction — it never repeats, and never loops back to where you started.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/infinite-gradient/">
+    <meta property="og:title" content="Infinite Gradient">
+    <meta property="og:description" content="An endless field of color. Drag or scroll in any direction — it never repeats, and never loops back to where you started.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/infinite-gradient.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Infinite Gradient">
+    <meta name="twitter:description" content="An endless field of color. Drag or scroll in any direction — it never repeats, and never loops back to where you started.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/infinite-gradient.png">
+    <!-- rsotw:og:end -->
+  <style>
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b0b12;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage {
+      position: fixed;
+      inset: 0;
+      display: block;
+      cursor: grab;
+    }
+    #stage.dragging { cursor: grabbing; }
+
+    .hint {
+      position: fixed;
+      bottom: 7%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.55);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      white-space: nowrap;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .hint.hidden { opacity: 0; }
+
+    .readout {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.75);
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      padding: 6px 14px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: opacity 0.6s ease;
+    }
+    .readout .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.4);
+      flex: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hint, .readout { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="readout" id="readout"><span class="swatch" id="swatch"></span><span id="hex">#000000</span></div>
+  <p class="hint" id="hint">drag or scroll — it never repeats</p>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById('stage');
+      var ctx = canvas.getContext('2d');
+      var hint = document.getElementById('hint');
+      var readout = document.getElementById('readout');
+      var swatchEl = document.getElementById('swatch');
+      var hexEl = document.getElementById('hex');
+
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var W = 0, H = 0;
+
+      // world position (viewport center), in "field units" — one unit ~= 260px of travel
+      var SCALE = 1 / 260;
+      var worldX = 12.5, worldY = -7.3; // arbitrary offset so start isn't at origin
+      var hintHidden = false;
+
+      // -------- deterministic value noise (seeded grid + smoothstep) --------
+      function hash2(ix, iy, seed) {
+        var n = ix * 374761393 + iy * 668265263 + seed * 2147483647;
+        n = (n ^ (n >> 13)) * 1274126177;
+        n = n ^ (n >> 16);
+        return ((n >>> 0) % 100000) / 100000; // [0,1)
+      }
+      function smooth(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+      function lerp(a, b, t) { return a + (b - a) * t; }
+      function valueNoise(x, y, seed) {
+        var x0 = Math.floor(x), y0 = Math.floor(y);
+        var x1 = x0 + 1, y1 = y0 + 1;
+        var sx = smooth(x - x0), sy = smooth(y - y0);
+        var n00 = hash2(x0, y0, seed), n10 = hash2(x1, y0, seed);
+        var n01 = hash2(x0, y1, seed), n11 = hash2(x1, y1, seed);
+        var ix0 = lerp(n00, n10, sx), ix1 = lerp(n01, n11, sx);
+        return lerp(ix0, ix1, sy); // [0,1)
+      }
+      // layered octaves for gentler, organic drift
+      function fbm(x, y, seed) {
+        return valueNoise(x, y, seed) * 0.65 +
+               valueNoise(x * 2.13, y * 2.13, seed + 91) * 0.25 +
+               valueNoise(x * 4.7, y * 4.7, seed + 233) * 0.10;
+      }
+
+      // hue/sat/light fields, each its own seed so they drift independently
+      function hueAt(x, y) { return fbm(x, y, 1) * 360; }
+      function satAt(x, y) { return 55 + fbm(x, y, 2) * 40; }
+      function lightAt(x, y) { return 32 + fbm(x, y, 3) * 40; }
+
+      // shape-blend weights: how much linear / radial / conic contribute here
+      function weightsAt(x, y) {
+        var a = fbm(x * 0.6, y * 0.6, 41);
+        var b = fbm(x * 0.6 + 50, y * 0.6 + 50, 67);
+        var c = fbm(x * 0.6 + 100, y * 0.6 + 100, 89);
+        var sum = a + b + c || 1;
+        return { linear: a / sum, radial: b / sum, conic: c / sum };
+      }
+      function angleAt(x, y) { return fbm(x * 0.4, y * 0.4, 133) * Math.PI * 2; }
+      function radiusAt(x, y) { return 0.35 + fbm(x * 0.4, y * 0.4, 177) * 0.9; }
+      function conicRotAt(x, y) { return fbm(x * 0.4, y * 0.4, 211) * Math.PI * 2; }
+
+      function hslToRgb(h, s, l) {
+        s /= 100; l /= 100;
+        var c = (1 - Math.abs(2 * l - 1)) * s;
+        var hp = h / 60;
+        var x = c * (1 - Math.abs(hp % 2 - 1));
+        var r = 0, g = 0, b = 0;
+        if (hp < 1) { r = c; g = x; }
+        else if (hp < 2) { r = x; g = c; }
+        else if (hp < 3) { g = c; b = x; }
+        else if (hp < 4) { g = x; b = c; }
+        else if (hp < 5) { r = x; b = c; }
+        else { r = c; b = x; }
+        var m = l - c / 2;
+        return [
+          Math.round((r + m) * 255),
+          Math.round((g + m) * 255),
+          Math.round((b + m) * 255)
+        ];
+      }
+      function colorAt(x, y) {
+        var rgb = hslToRgb(hueAt(x, y), satAt(x, y), lightAt(x, y));
+        return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+      }
+      function hexAt(x, y) {
+        var rgb = hslToRgb(hueAt(x, y), satAt(x, y), lightAt(x, y));
+        return '#' + rgb.map(function (v) {
+          var h = v.toString(16);
+          return h.length < 2 ? '0' + h : h;
+        }).join('');
+      }
+
+      var GRID = 5; // sample grid resolution across the viewport, per axis
+      var CELL_W, CELL_H;
+
+      function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        CELL_W = Math.ceil(W / GRID) + 2;
+        CELL_H = Math.ceil(H / GRID) + 2;
+      }
+
+      // draw by tiling small blended-gradient cells across the screen —
+      // each cell mixes a linear, radial, and conic (approximated) gradient
+      // whose parameters and colors are sampled from the continuous field.
+      function drawCell(px, py, wx, wy) {
+        var col1 = colorAt(wx, wy);
+        var col2 = colorAt(wx + 0.9, wy + 0.9);
+        var w = weightsAt(wx, wy);
+        var cx = px + CELL_W / 2, cy = py + CELL_H / 2;
+        var diag = Math.sqrt(CELL_W * CELL_W + CELL_H * CELL_H);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px, py, CELL_W, CELL_H);
+        ctx.clip();
+
+        // base fill so no seams show through
+        ctx.fillStyle = col1;
+        ctx.fillRect(px, py, CELL_W, CELL_H);
+
+        // linear layer
+        if (w.linear > 0.02) {
+          var ang = angleAt(wx, wy);
+          var dx = Math.cos(ang) * diag / 2, dy = Math.sin(ang) * diag / 2;
+          var lg = ctx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy);
+          lg.addColorStop(0, col1);
+          lg.addColorStop(1, col2);
+          ctx.globalAlpha = w.linear;
+          ctx.fillStyle = lg;
+          ctx.fillRect(px, py, CELL_W, CELL_H);
+        }
+
+        // radial layer
+        if (w.radial > 0.02) {
+          var r = radiusAt(wx, wy) * diag;
+          var rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          rg.addColorStop(0, col2);
+          rg.addColorStop(1, col1);
+          ctx.globalAlpha = w.radial;
+          ctx.fillStyle = rg;
+          ctx.fillRect(px, py, CELL_W, CELL_H);
+        }
+
+        // conic layer — canvas conic gradients are supported broadly now;
+        // fall back to a diagonal sweep if unavailable
+        if (w.conic > 0.02) {
+          ctx.globalAlpha = w.conic;
+          if (ctx.createConicGradient) {
+            var cg = ctx.createConicGradient(conicRotAt(wx, wy), cx, cy);
+            cg.addColorStop(0, col1);
+            cg.addColorStop(0.5, col2);
+            cg.addColorStop(1, col1);
+            ctx.fillStyle = cg;
+          } else {
+            var ang2 = conicRotAt(wx, wy);
+            var dx2 = Math.cos(ang2) * diag / 2, dy2 = Math.sin(ang2) * diag / 2;
+            var lg2 = ctx.createLinearGradient(cx - dx2, cy - dy2, cx + dx2, cy + dy2);
+            lg2.addColorStop(0, col2);
+            lg2.addColorStop(1, col1);
+            ctx.fillStyle = lg2;
+          }
+          ctx.fillRect(px, py, CELL_W, CELL_H);
+        }
+
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+
+      function draw() {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        var cols = Math.ceil(W / CELL_W) + 1;
+        var rows = Math.ceil(H / CELL_H) + 1;
+        for (var i = -1; i < cols; i++) {
+          for (var j = -1; j < rows; j++) {
+            var px = i * CELL_W, py = j * CELL_H;
+            var wx = worldX + (px + CELL_W / 2 - W / 2) * SCALE;
+            var wy = worldY + (py + CELL_H / 2 - H / 2) * SCALE;
+            drawCell(px, py, wx, wy);
+          }
+        }
+
+        // live readout for the color at viewport center
+        var hex = hexAt(worldX, worldY);
+        hexEl.textContent = hex.toUpperCase();
+        swatchEl.style.background = hex;
+      }
+
+      function dismissHint() {
+        if (hintHidden) return;
+        hintHidden = true;
+        hint.classList.add('hidden');
+      }
+
+      // -------- input: drag (pointer) + wheel/trackpad scroll, free 2D --------
+      var dragging = false;
+      var lastX = 0, lastY = 0;
+      var needsDraw = true;
+
+      canvas.addEventListener('pointerdown', function (e) {
+        canvas.setPointerCapture(e.pointerId);
+        dragging = true;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        canvas.classList.add('dragging');
+        dismissHint();
+      });
+      canvas.addEventListener('pointermove', function (e) {
+        if (!dragging) return;
+        var dx = e.clientX - lastX, dy = e.clientY - lastY;
+        lastX = e.clientX; lastY = e.clientY;
+        worldX -= dx * SCALE;
+        worldY -= dy * SCALE;
+        needsDraw = true;
+      });
+      function endDrag(e) {
+        dragging = false;
+        canvas.classList.remove('dragging');
+      }
+      canvas.addEventListener('pointerup', endDrag);
+      canvas.addEventListener('pointercancel', endDrag);
+
+      canvas.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        worldX += e.deltaX * SCALE;
+        worldY += e.deltaY * SCALE;
+        needsDraw = true;
+        dismissHint();
+      }, { passive: false });
+
+      var resizeTimer = null;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () { resize(); needsDraw = true; }, 200);
+      });
+
+      // gentle ambient drift when idle, unless reduced motion is requested
+      var lastT = null;
+      function loop(t) {
+        if (lastT === null) lastT = t;
+        var dt = t - lastT;
+        lastT = t;
+        if (!reduceMotion && !dragging) {
+          worldX += 0.000018 * dt;
+          worldY += 0.000011 * dt;
+          needsDraw = true;
+        }
+        if (needsDraw) {
+          draw();
+          needsDraw = false;
+        }
+        requestAnimationFrame(loop);
+      }
+
+      resize();
+      draw();
+      requestAnimationFrame(loop);
+      setTimeout(dismissHint, 9000);
+    })();
+  </script>
+</body>
+</html>
