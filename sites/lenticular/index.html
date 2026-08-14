@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lenticular</title>
+  <meta name="description" content="Two scenes, sliced into fine plastic ridges. Move your cursor (or tilt your phone) side to side and watch one comb into the other.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/lenticular/">
+    <meta property="og:title" content="Lenticular">
+    <meta property="og:description" content="Two scenes, sliced into fine plastic ridges. Move your cursor (or tilt your phone) side to side and watch one comb into the other.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/lenticular.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lenticular">
+    <meta name="twitter:description" content="Two scenes, sliced into fine plastic ridges. Move your cursor (or tilt your phone) side to side and watch one comb into the other.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/lenticular.png">
+    <!-- rsotw:og:end -->
+  <style>
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a0a0f;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage {
+      position: fixed;
+      inset: 0;
+      display: block;
+    }
+
+    .hint {
+      position: fixed;
+      top: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .hint.hidden { opacity: 0; }
+
+    .tilt-pill {
+      position: fixed;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 10, 15, 0.85);
+      color: #fff8ef;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+    .tilt-pill.visible { opacity: 1; pointer-events: auto; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hint, .tilt-pill { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <p class="hint" id="hint">move side to side</p>
+  <button class="tilt-pill" id="tiltPill">tilt to view</button>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById('stage');
+      var ctx = canvas.getContext('2d');
+      var hint = document.getElementById('hint');
+      var tiltPill = document.getElementById('tiltPill');
+
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var W = 0, H = 0;
+      var STRIP_CSS = 7;
+      var stripPx = 0, numStrips = 0, thresholds = [];
+
+      var sceneA = document.createElement('canvas');
+      var sceneB = document.createElement('canvas');
+      var ctxA = sceneA.getContext('2d');
+      var ctxB = sceneB.getContext('2d');
+
+      var mixTarget = 0.5;
+      var mix = 0.5;
+      var rafId = null;
+      var hintHidden = false;
+
+      var SHAPE_TYPES = ['circle', 'ring', 'triangle', 'star', 'blob', 'bolt', 'diamond'];
+
+      function rand(min, max) { return min + Math.random() * (max - min); }
+      function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+      function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+      function makeShape(palette) {
+        var depth = Math.random();
+        var size = rand(24, 70) * (0.5 + depth * 0.9);
+        var type = pick(SHAPE_TYPES);
+        var shape = {
+          type: type,
+          x: rand(0, W),
+          y: rand(0, H),
+          size: size,
+          rot: rand(0, Math.PI * 2),
+          color: pick(palette),
+          alpha: 0.55 + depth * 0.4
+        };
+        if (type === 'blob') {
+          var n = 8, pts = [];
+          for (var i = 0; i < n; i++) pts.push(rand(0.7, 1.15));
+          shape.blobPts = pts;
+        }
+        return shape;
+      }
+
+      function pathFor(ctx2, s) {
+        var r = s.size / 2;
+        ctx2.beginPath();
+        switch (s.type) {
+          case 'circle':
+            ctx2.arc(0, 0, r, 0, Math.PI * 2);
+            break;
+          case 'ring':
+            ctx2.arc(0, 0, r, 0, Math.PI * 2);
+            ctx2.moveTo(r * 0.5, 0);
+            ctx2.arc(0, 0, r * 0.5, 0, Math.PI * 2, true);
+            break;
+          case 'diamond':
+            ctx2.moveTo(0, -r); ctx2.lineTo(r, 0); ctx2.lineTo(0, r); ctx2.lineTo(-r, 0); ctx2.closePath();
+            break;
+          case 'triangle':
+            for (var i = 0; i < 3; i++) {
+              var a = -Math.PI / 2 + i * (Math.PI * 2 / 3);
+              var px = Math.cos(a) * r, py = Math.sin(a) * r;
+              if (i === 0) ctx2.moveTo(px, py); else ctx2.lineTo(px, py);
+            }
+            ctx2.closePath();
+            break;
+          case 'star':
+            for (var j = 0; j < 10; j++) {
+              var a2 = -Math.PI / 2 + j * (Math.PI / 5);
+              var rr = j % 2 === 0 ? r : r * 0.45;
+              var px2 = Math.cos(a2) * rr, py2 = Math.sin(a2) * rr;
+              if (j === 0) ctx2.moveTo(px2, py2); else ctx2.lineTo(px2, py2);
+            }
+            ctx2.closePath();
+            break;
+          case 'bolt':
+            var pts = [[0.15, -0.5], [-0.05, -0.05], [0.2, -0.05], [-0.15, 0.5], [0.05, 0.05], [-0.2, 0.05]];
+            for (var k = 0; k < pts.length; k++) {
+              var px3 = pts[k][0] * s.size, py3 = pts[k][1] * s.size;
+              if (k === 0) ctx2.moveTo(px3, py3); else ctx2.lineTo(px3, py3);
+            }
+            ctx2.closePath();
+            break;
+          case 'blob':
+            var n = s.blobPts.length;
+            for (var m = 0; m <= n; m++) {
+              var a3 = (m / n) * Math.PI * 2;
+              var rad = r * s.blobPts[m % n];
+              var px4 = Math.cos(a3) * rad, py4 = Math.sin(a3) * rad;
+              if (m === 0) ctx2.moveTo(px4, py4); else ctx2.lineTo(px4, py4);
+            }
+            ctx2.closePath();
+            break;
+        }
+      }
+
+      function renderScene(ctx2, bg, palette, title, titleColor) {
+        ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx2.globalAlpha = 1;
+        ctx2.fillStyle = bg;
+        ctx2.fillRect(0, 0, W, H);
+
+        var count = clamp(Math.floor((W * H) / 13000), 24, 70);
+        for (var i = 0; i < count; i++) {
+          var s = makeShape(palette);
+          ctx2.save();
+          ctx2.translate(s.x, s.y);
+          ctx2.rotate(s.rot);
+          ctx2.globalAlpha = s.alpha;
+          pathFor(ctx2, s);
+          ctx2.fillStyle = s.color;
+          ctx2.fill();
+          ctx2.restore();
+        }
+
+        ctx2.globalAlpha = 1;
+        var fontSize = clamp(W * 0.14, 42, 130);
+        ctx2.font = "900 " + fontSize + "px 'Arial Black', Arial, sans-serif";
+        ctx2.textAlign = 'center';
+        ctx2.textBaseline = 'middle';
+        ctx2.shadowColor = 'rgba(0,0,0,0.55)';
+        ctx2.shadowBlur = fontSize * 0.12;
+        ctx2.fillStyle = titleColor;
+        ctx2.fillText(title, W / 2, H / 2);
+        ctx2.shadowBlur = 0;
+      }
+
+      function generateScenes() {
+        renderScene(ctxA, '#241a1a', ['#f0563e', '#f47b28', '#f7c948', '#ff7fa5'], 'HELLO', '#f7c948');
+        renderScene(ctxB, '#111a22', ['#5aa0db', '#2fb0a3', '#a98fd0', '#b7ce3c'], 'GOODBYE', '#5aa0db');
+      }
+
+      function computeThresholds() {
+        stripPx = Math.max(1, Math.round(STRIP_CSS * dpr));
+        numStrips = Math.ceil(canvas.width / stripPx);
+        thresholds = new Array(numStrips);
+        var phase = 0;
+        for (var i = 0; i < numStrips; i++) {
+          phase = (phase + 0.6180339887) % 1;
+          thresholds[i] = phase;
+        }
+      }
+
+      function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = sceneA.width = sceneB.width = Math.round(W * dpr);
+        canvas.height = sceneA.height = sceneB.height = Math.round(H * dpr);
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        computeThresholds();
+        generateScenes();
+        draw();
+      }
+
+      function draw() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        for (var i = 0; i < numStrips; i++) {
+          var x = i * stripPx;
+          var w = Math.min(stripPx, canvas.width - x);
+          if (w <= 0) continue;
+          var source = mix > thresholds[i] ? sceneB : sceneA;
+          ctx.drawImage(source, x, 0, w, canvas.height, x, 0, w, canvas.height);
+          if (i % 2 === 0) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(x, 0, w, canvas.height);
+          }
+        }
+      }
+
+      function dismissHint() {
+        if (hintHidden) return;
+        hintHidden = true;
+        hint.classList.add('hidden');
+      }
+
+      var EASE = 0.12;
+      function loop() {
+        mix += (mixTarget - mix) * EASE;
+        draw();
+        if (Math.abs(mixTarget - mix) > 0.0015) {
+          rafId = requestAnimationFrame(loop);
+        } else {
+          mix = mixTarget;
+          draw();
+          rafId = null;
+        }
+      }
+      function wake() {
+        if (rafId === null) rafId = requestAnimationFrame(loop);
+      }
+
+      function setMixFromX(clientX) {
+        mixTarget = clamp(clientX / W, 0, 1);
+        wake();
+        dismissHint();
+      }
+
+      window.addEventListener('pointermove', function (e) {
+        setMixFromX(e.clientX);
+      }, { passive: true });
+
+      var tiltBase = null;
+      function onOrientation(e) {
+        if (e.gamma === null) return;
+        if (tiltBase === null) tiltBase = e.gamma;
+        var norm = clamp((e.gamma - tiltBase) / 32, -1, 1);
+        mixTarget = (norm + 1) / 2;
+        wake();
+        dismissHint();
+      }
+
+      function enableTilt() {
+        window.addEventListener('deviceorientation', onOrientation, true);
+        tiltPill.classList.remove('visible');
+      }
+
+      var needsPermission = typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function';
+      var isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+      if (needsPermission && isTouch) {
+        tiltPill.classList.add('visible');
+        tiltPill.addEventListener('click', function () {
+          DeviceOrientationEvent.requestPermission().then(function (state) {
+            if (state === 'granted') enableTilt();
+            tiltPill.classList.remove('visible');
+          }).catch(function () {
+            tiltPill.classList.remove('visible');
+          });
+        });
+      } else if (isTouch && 'DeviceOrientationEvent' in window) {
+        enableTilt();
+      }
+
+      var resizeTimer = null;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+
+      resize();
+      setTimeout(dismissHint, 9000);
+    })();
+  </script>
+</body>
+</html>
