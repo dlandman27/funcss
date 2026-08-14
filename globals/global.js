@@ -118,13 +118,16 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             + 'padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;'
             + (reduce ? '' : 'transition:opacity .18s ease;') + '}'
             + '.toast.show{opacity:1}'
-            + '@media (max-width:520px){.chip{width:40px;height:40px}.chip svg{width:20px;height:20px}}';
+            + '@media (max-width:520px){.chip{width:40px;height:40px}.chip svg{width:20px;height:20px}}'
+            + '.confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:2147483000;'
+            + (reduce ? 'transition:opacity .5s ease;' : '') + '}';
 
         var SVG = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"';
         var ICONS = {
             shuffle: '<svg ' + SVG + '><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>',
             share: '<svg ' + SVG + '><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>',
             home: '<svg ' + SVG + '><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+            confetti: '<svg ' + SVG + '><path d="M12 3l1.8 4.9L19 9.5l-5.2 1.6L12 16l-1.8-4.9L5 9.5l5.2-1.6z"/><circle cx="19.5" cy="18" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="5" r="1" fill="currentColor" stroke="none"/></svg>',
             // Close (X), shown on the FAB while the menu is open.
             close: '<svg ' + SVG + '><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
         };
@@ -133,6 +136,7 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
         var chips = [
             { icon: ICONS.home, label: 'All sites', href: RSOTW_HOME_URL, ev: 'nav_home' },
             { icon: ICONS.share, label: 'Share this', act: share, ev: 'share' },
+            { icon: ICONS.confetti, label: 'Confetti', act: confetti, ev: 'confetti' },
             { icon: ICONS.shuffle, label: 'Random site', act: shuffle, ev: 'shuffle' }
         ];
 
@@ -151,7 +155,8 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             + '<button class="chip fab" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">'
             + '<img class="logo" src="/apple-touch-icon.png" alt="" aria-hidden="true">'
             + '<span class="x">' + ICONS.close + '</span></button>'
-            + '</div><div class="toast" role="status" aria-live="polite"></div>';
+            + '</div><div class="toast" role="status" aria-live="polite"></div>'
+            + '<canvas class="confetti-canvas" aria-hidden="true"></canvas>';
         root.innerHTML = html;
         document.body.appendChild(host);
 
@@ -227,6 +232,96 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
                 } catch (e) { flash('Copy failed'); }
             }
         }
+
+        var CONFETTI_COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+        var confettiCanvas = root.querySelector('.confetti-canvas');
+        var confettiCtx = confettiCanvas.getContext('2d');
+        var confettiRafId = null;
+        var confettiDpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        function sizeConfettiCanvas() {
+            confettiCanvas.width = Math.round(window.innerWidth * confettiDpr);
+            confettiCanvas.height = Math.round(window.innerHeight * confettiDpr);
+            confettiCtx.setTransform(confettiDpr, 0, 0, confettiDpr, 0, 0);
+        }
+
+        function confetti() {
+            sizeConfettiCanvas();
+            var w = window.innerWidth, h = window.innerHeight;
+            var count = reduce ? 26 : 90;
+            var pieces = [];
+            for (var i = 0; i < count; i++) {
+                var angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
+                var speed = 4 + Math.random() * 7;
+                pieces.push({
+                    x: w - 40 - Math.random() * 30,
+                    y: h - 40 - Math.random() * 30,
+                    vx: Math.cos(angle) * speed - 2,
+                    vy: Math.sin(angle) * speed,
+                    size: 5 + Math.random() * 5,
+                    color: CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0],
+                    rot: Math.random() * Math.PI * 2,
+                    vr: (Math.random() - 0.5) * 0.3,
+                    life: 0,
+                    maxLife: 90 + Math.random() * 40
+                });
+            }
+
+            if (confettiRafId !== null) cancelAnimationFrame(confettiRafId);
+
+            if (reduce) {
+                confettiCtx.clearRect(0, 0, w, h);
+                for (var s = 0; s < pieces.length; s++) drawPiece(pieces[s]);
+                confettiCanvas.style.opacity = '1';
+                setTimeout(function () {
+                    confettiCanvas.style.opacity = '0';
+                    setTimeout(function () { confettiCtx.clearRect(0, 0, w, h); }, 550);
+                }, 900);
+                return;
+            }
+
+            confettiCanvas.style.opacity = '1';
+            var gravity = 0.18, drag = 0.985;
+            function drawPiece(p) {
+                confettiCtx.save();
+                confettiCtx.translate(p.x, p.y);
+                confettiCtx.rotate(p.rot);
+                confettiCtx.fillStyle = p.color;
+                confettiCtx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.66);
+                confettiCtx.restore();
+            }
+            function tick() {
+                confettiCtx.clearRect(0, 0, w, h);
+                var alive = false;
+                for (var k = 0; k < pieces.length; k++) {
+                    var p = pieces[k];
+                    p.life++;
+                    if (p.life > p.maxLife) continue;
+                    p.vx *= drag;
+                    p.vy = p.vy * drag + gravity;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rot += p.vr;
+                    var fadeIn = Math.min(1, p.life / 6);
+                    var fadeOut = p.life > p.maxLife - 20 ? (p.maxLife - p.life) / 20 : 1;
+                    confettiCtx.globalAlpha = Math.max(0, fadeIn * fadeOut);
+                    if (p.y < h + 40) alive = true;
+                    drawPiece(p);
+                }
+                confettiCtx.globalAlpha = 1;
+                if (alive) {
+                    confettiRafId = requestAnimationFrame(tick);
+                } else {
+                    confettiRafId = null;
+                    confettiCtx.clearRect(0, 0, w, h);
+                }
+            }
+            confettiRafId = requestAnimationFrame(tick);
+        }
+
+        window.addEventListener('resize', function () {
+            if (confettiRafId !== null) sizeConfettiCanvas();
+        });
 
         var catalogPromise = null;
         function shuffle() {
