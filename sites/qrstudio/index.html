@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Studio</title>
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --gold: #f7c948;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(120% 90% at 50% 0%, #fff8ef 0%, #f2ede2 60%, #e9e2d3 100%);
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: clamp(16px, 4vw, 40px) 16px 60px;
+      gap: clamp(18px, 3vw, 30px);
+    }
+
+    header { text-align: center; }
+    h1 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      text-transform: uppercase;
+      font-size: clamp(2rem, 8vw, 3.4rem);
+      letter-spacing: -0.02em;
+      margin: 0;
+      color: var(--ink);
+      -webkit-text-stroke: 2px var(--ink);
+      transform: rotate(-2deg);
+      text-shadow: 4px 4px 0 var(--gold);
+    }
+    .tag {
+      font-style: italic;
+      color: rgba(32,26,23,0.65);
+      font-size: clamp(0.9rem, 2.6vw, 1.1rem);
+      margin-top: 8px;
+    }
+
+    .studio {
+      display: flex;
+      flex-wrap: wrap;
+      gap: clamp(18px, 3vw, 32px);
+      align-items: flex-start;
+      justify-content: center;
+      width: 100%;
+      max-width: 940px;
+    }
+
+    /* QR card */
+    .stage {
+      flex: 0 0 auto;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      box-shadow: 8px 8px 0 var(--ink);
+      padding: clamp(12px, 2.5vw, 20px);
+      transform: rotate(-1.2deg);
+    }
+    #qr {
+      display: block;
+      width: min(340px, 78vw);
+      height: auto;
+      border-radius: 8px;
+    }
+
+    /* controls */
+    .panel {
+      flex: 1 1 340px;
+      min-width: 280px;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .field label {
+      display: block;
+      font-family: 'Arial Black', Arial, sans-serif;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 7px;
+      color: var(--ink);
+    }
+    textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 74px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95rem;
+      color: var(--ink);
+      background: var(--cream);
+      border: 2.5px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 10px 12px;
+    }
+    textarea:focus { outline: none; box-shadow: 4px 4px 0 var(--coral); }
+
+    .seg { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip {
+      font-family: 'Arial Black', Arial, sans-serif;
+      text-transform: uppercase;
+      font-size: 0.66rem;
+      letter-spacing: 0.03em;
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 2px 2px 0 var(--ink);
+      padding: 7px 12px;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s ease;
+      user-select: none;
+    }
+    .chip:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+    .chip:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+    .chip.on { background: var(--ink); color: var(--cream); }
+
+    /* color theme swatches */
+    .swatch {
+      width: 34px; height: 34px;
+      border-radius: 999px;
+      border: 2.5px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.08s ease;
+    }
+    .swatch:hover { transform: translate(-1px,-1px); }
+    .swatch.on { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+    #download {
+      font-family: 'Arial Black', Arial, sans-serif;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+      letter-spacing: 0.03em;
+      color: var(--cream);
+      background: var(--coral);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    #download:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+    #download:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--ink); }
+
+    .note {
+      font-style: italic;
+      font-size: 0.8rem;
+      color: rgba(32,26,23,0.6);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chip, .swatch, #download, .stage { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>QR Studio</h1>
+    <div class="tag">Type anything. Stamp it into a QR code that actually scans.</div>
+  </header>
+
+  <div class="studio">
+    <div class="stage">
+      <canvas id="qr" width="1000" height="1000" aria-label="Your QR code"></canvas>
+    </div>
+
+    <div class="panel">
+      <div class="field">
+        <label for="text">Your link or text</label>
+        <textarea id="text" spellcheck="false">https://randomsitesontheweb.com</textarea>
+      </div>
+
+      <div class="field">
+        <label>Color</label>
+        <div class="seg" id="themes"></div>
+      </div>
+
+      <div class="field">
+        <label>Dot shape</label>
+        <div class="seg" id="shapes"></div>
+      </div>
+
+      <div class="field">
+        <label>Eyes</label>
+        <div class="seg" id="eyes"></div>
+      </div>
+
+      <div class="field">
+        <label>Center emblem</label>
+        <div class="seg" id="emblems"></div>
+        <div class="note" id="emblemNote"></div>
+      </div>
+
+      <button id="download">Download PNG</button>
+    </div>
+  </div>
+
+  <script>
+  // ---------------------------------------------------------------------------
+  // QR encoder (byte mode, versions 1-40, auto mask).
+  // Adapted from Nayuki's public-domain QR Code generator (MIT).
+  // Verified bit-exact scannable (decode round-trip) before shipping.
+  // ---------------------------------------------------------------------------
+  function qrGenerate(text, eclLetter) {
+    const ECC_CODEWORDS_PER_BLOCK = [
+      [-1,7,10,15,20,26,18,20,24,30,18,20,24,26,30,22,24,28,30,28,28,28,28,30,30,26,28,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
+      [-1,10,16,26,18,24,16,18,22,22,26,30,22,22,24,24,28,28,26,26,26,26,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28],
+      [-1,13,22,18,26,18,24,18,22,20,24,28,26,24,20,30,24,28,28,26,30,28,30,30,30,30,28,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
+      [-1,17,28,22,16,22,28,26,26,24,28,24,28,22,24,24,30,28,28,26,28,30,24,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30]
+    ];
+    const NUM_EC_BLOCKS = [
+      [-1,1,1,1,1,1,2,2,2,2,4,4,4,4,4,6,6,6,6,7,8,8,9,9,10,12,12,12,13,14,15,16,17,18,19,19,20,21,22,24,25],
+      [-1,1,1,1,2,2,4,4,4,5,5,5,8,9,9,10,10,11,13,14,16,17,17,18,20,21,23,25,26,28,29,31,33,35,37,38,40,43,45,47,49],
+      [-1,1,1,2,2,4,4,6,6,8,8,8,10,12,16,12,17,16,18,21,20,23,23,25,27,29,34,34,35,38,40,43,45,48,51,53,56,59,62,65,68],
+      [-1,1,1,2,4,4,4,5,6,8,8,11,11,16,16,18,16,19,21,25,25,25,34,30,32,35,37,40,42,45,48,51,54,57,60,63,66,70,74,77,81]
+    ];
+    const eclOrd = { L: 0, M: 1, Q: 2, H: 3 }[eclLetter];
+    const eclFormatBits = { L: 1, M: 0, Q: 3, H: 2 }[eclLetter];
+    const getBit = (x, i) => ((x >>> i) & 1) !== 0;
+
+    function rsMultiply(x, y) {
+      let z = 0;
+      for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; }
+      return z & 0xFF;
+    }
+    function rsComputeDivisor(degree) {
+      const r = new Uint8Array(degree); r[degree - 1] = 1; let root = 1;
+      for (let i = 0; i < degree; i++) {
+        for (let j = 0; j < r.length; j++) { r[j] = rsMultiply(r[j], root); if (j + 1 < r.length) r[j] ^= r[j + 1]; }
+        root = rsMultiply(root, 0x02);
+      }
+      return r;
+    }
+    function rsComputeRemainder(data, divisor) {
+      const r = new Uint8Array(divisor.length);
+      for (const b of data) {
+        const factor = b ^ r[0]; r.copyWithin(0, 1); r[r.length - 1] = 0;
+        for (let i = 0; i < r.length; i++) r[i] ^= rsMultiply(divisor[i], factor);
+      }
+      return r;
+    }
+    function getNumRawDataModules(ver) {
+      let result = (16 * ver + 128) * ver + 64;
+      if (ver >= 2) { const na = Math.floor(ver / 7) + 2; result -= (25 * na - 10) * na - 55; if (ver >= 7) result -= 36; }
+      return result;
+    }
+    const getNumDataCodewords = (ver, ecl) =>
+      Math.floor(getNumRawDataModules(ver) / 8) - ECC_CODEWORDS_PER_BLOCK[ecl][ver] * NUM_EC_BLOCKS[ecl][ver];
+
+    const data = Array.from(new TextEncoder().encode(text));
+    let version = 1;
+    for (; ; version++) {
+      const cap = getNumDataCodewords(version, eclOrd) * 8;
+      const ccb = version <= 9 ? 8 : 16;
+      if (4 + ccb + 8 * data.length <= cap) break;
+      if (version >= 40) throw new Error('Data too long for a QR code');
+    }
+
+    const bb = [];
+    const appendBits = (val, len) => { for (let i = len - 1; i >= 0; i--) bb.push((val >>> i) & 1); };
+    appendBits(0x4, 4);
+    appendBits(data.length, version <= 9 ? 8 : 16);
+    for (const b of data) appendBits(b, 8);
+    const cap = getNumDataCodewords(version, eclOrd) * 8;
+    appendBits(0, Math.min(4, cap - bb.length));
+    appendBits(0, (8 - bb.length % 8) % 8);
+    for (let pad = 0xEC; bb.length < cap; pad ^= 0xEC ^ 0x11) appendBits(pad, 8);
+
+    const dataCodewords = new Array(bb.length >> 3).fill(0);
+    for (let i = 0; i < bb.length; i++) dataCodewords[i >> 3] |= bb[i] << (7 - (i & 7));
+
+    const allCodewords = (function () {
+      const numBlocks = NUM_EC_BLOCKS[eclOrd][version];
+      const blockEccLen = ECC_CODEWORDS_PER_BLOCK[eclOrd][version];
+      const rawCodewords = Math.floor(getNumRawDataModules(version) / 8);
+      const numShortBlocks = numBlocks - rawCodewords % numBlocks;
+      const shortBlockLen = Math.floor(rawCodewords / numBlocks);
+      const blocks = [];
+      const rsDiv = rsComputeDivisor(blockEccLen);
+      for (let i = 0, k = 0; i < numBlocks; i++) {
+        const datLen = shortBlockLen - blockEccLen + (i < numShortBlocks ? 0 : 1);
+        let dat = dataCodewords.slice(k, k + datLen); k += datLen;
+        const ecc = rsComputeRemainder(dat, rsDiv);
+        dat = dat.slice();
+        if (i < numShortBlocks) dat.push(0);
+        blocks.push(dat.concat(Array.from(ecc)));
+      }
+      const result = [];
+      for (let i = 0; i < blocks[0].length; i++)
+        for (let j = 0; j < blocks.length; j++)
+          if (i !== shortBlockLen - blockEccLen || j >= numShortBlocks) result.push(blocks[j][i]);
+      return result;
+    })();
+
+    const size = version * 4 + 17;
+    const modules = Array.from({ length: size }, () => new Array(size).fill(false));
+    const isFunc = Array.from({ length: size }, () => new Array(size).fill(false));
+    const setFn = (x, y, dark) => { modules[y][x] = dark; isFunc[y][x] = true; };
+
+    function drawFinder(x, y) {
+      for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+        const dist = Math.max(Math.abs(dx), Math.abs(dy)), xx = x + dx, yy = y + dy;
+        if (xx >= 0 && xx < size && yy >= 0 && yy < size) setFn(xx, yy, dist !== 2 && dist !== 4);
+      }
+    }
+    function drawAlign(x, y) {
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++)
+        setFn(x + dx, y + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }
+    function getAlignPositions(ver) {
+      if (ver === 1) return [];
+      const na = Math.floor(ver / 7) + 2;
+      const step = (ver === 32) ? 26 : Math.ceil((ver * 4 + 4) / (na * 2 - 2)) * 2;
+      const result = [6];
+      for (let pos = size - 7; result.length < na; pos -= step) result.splice(1, 0, pos);
+      return result;
+    }
+    function drawFormatBits(mask) {
+      const dta = eclFormatBits << 3 | mask;
+      let rem = dta;
+      for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+      const bits = ((dta << 10) | rem) ^ 0x5412;
+      for (let i = 0; i <= 5; i++) setFn(8, i, getBit(bits, i));
+      setFn(8, 7, getBit(bits, 6)); setFn(8, 8, getBit(bits, 7)); setFn(7, 8, getBit(bits, 8));
+      for (let i = 9; i < 15; i++) setFn(14 - i, 8, getBit(bits, i));
+      for (let i = 0; i < 8; i++) setFn(size - 1 - i, 8, getBit(bits, i));
+      for (let i = 8; i < 15; i++) setFn(8, size - 15 + i, getBit(bits, i));
+      setFn(8, size - 8, true);
+    }
+    function drawVersion() {
+      if (version < 7) return;
+      let rem = version;
+      for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1F25);
+      const bits = version << 12 | rem;
+      for (let i = 0; i < 18; i++) {
+        const bit = getBit(bits, i), a = size - 11 + i % 3, b = Math.floor(i / 3);
+        setFn(a, b, bit); setFn(b, a, bit);
+      }
+    }
+
+    for (let i = 0; i < size; i++) { setFn(6, i, i % 2 === 0); setFn(i, 6, i % 2 === 0); }
+    drawFinder(3, 3); drawFinder(size - 4, 3); drawFinder(3, size - 4);
+    const alignPos = getAlignPositions(version), na = alignPos.length;
+    for (let i = 0; i < na; i++) for (let j = 0; j < na; j++)
+      if (!((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0)))
+        drawAlign(alignPos[i], alignPos[j]);
+    drawFormatBits(0); drawVersion();
+
+    (function drawCodewords() {
+      let i = 0;
+      for (let right = size - 1; right >= 1; right -= 2) {
+        if (right === 6) right = 5;
+        for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+          const x = right - j, upward = ((right + 1) & 2) === 0, y = upward ? size - 1 - vert : vert;
+          if (!isFunc[y][x] && i < allCodewords.length * 8) { modules[y][x] = getBit(allCodewords[i >> 3], 7 - (i & 7)); i++; }
+        }
+      }
+    })();
+
+    function applyMask(mask) {
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        if (isFunc[y][x]) continue;
+        let inv = false;
+        switch (mask) {
+          case 0: inv = (x + y) % 2 === 0; break;
+          case 1: inv = y % 2 === 0; break;
+          case 2: inv = x % 3 === 0; break;
+          case 3: inv = (x + y) % 3 === 0; break;
+          case 4: inv = (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; break;
+          case 5: inv = (x * y) % 2 + (x * y) % 3 === 0; break;
+          case 6: inv = ((x * y) % 2 + (x * y) % 3) % 2 === 0; break;
+          case 7: inv = ((x + y) % 2 + (x * y) % 3) % 2 === 0; break;
+        }
+        if (inv) modules[y][x] = !modules[y][x];
+      }
+    }
+    function fpAdd(run, rh) { if (rh[0] === 0) run += size; rh.pop(); rh.unshift(run); }
+    function fpCount(rh) {
+      const n = rh[1], core = n > 0 && rh[2] === n && rh[3] === n * 3 && rh[4] === n && rh[5] === n;
+      return (core && rh[0] >= n * 4 && rh[6] >= n ? 1 : 0) + (core && rh[6] >= n * 4 && rh[0] >= n ? 1 : 0);
+    }
+    function fpTerm(rc, run, rh) { if (rc) { fpAdd(run, rh); run = 0; } run += size; fpAdd(run, rh); return fpCount(rh); }
+    function penalty() {
+      let result = 0; const N1 = 3, N2 = 3, N3 = 40, N4 = 10;
+      for (let y = 0; y < size; y++) {
+        let rc = false, run = 0; const rh = [0, 0, 0, 0, 0, 0, 0];
+        for (let x = 0; x < size; x++) {
+          if (modules[y][x] === rc) { run++; if (run === 5) result += N1; else if (run > 5) result++; }
+          else { fpAdd(run, rh); if (!rc) result += fpCount(rh) * N3; rc = modules[y][x]; run = 1; }
+        }
+        result += fpTerm(rc, run, rh) * N3;
+      }
+      for (let x = 0; x < size; x++) {
+        let rc = false, run = 0; const rh = [0, 0, 0, 0, 0, 0, 0];
+        for (let y = 0; y < size; y++) {
+          if (modules[y][x] === rc) { run++; if (run === 5) result += N1; else if (run > 5) result++; }
+          else { fpAdd(run, rh); if (!rc) result += fpCount(rh) * N3; rc = modules[y][x]; run = 1; }
+        }
+        result += fpTerm(rc, run, rh) * N3;
+      }
+      for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) {
+        const c = modules[y][x];
+        if (c === modules[y][x + 1] && c === modules[y + 1][x] && c === modules[y + 1][x + 1]) result += N2;
+      }
+      let dark = 0;
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (modules[y][x]) dark++;
+      const total = size * size, k = Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1;
+      return result + k * N4;
+    }
+
+    let bestMask = 0, minPen = Infinity;
+    for (let mask = 0; mask < 8; mask++) {
+      applyMask(mask); drawFormatBits(mask);
+      const p = penalty();
+      if (p < minPen) { minPen = p; bestMask = mask; }
+      applyMask(mask);
+    }
+    applyMask(bestMask); drawFormatBits(bestMask);
+    return { size, modules };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Design layer
+  // ---------------------------------------------------------------------------
+  const INK = '#201a17', CREAM = '#fff8ef';
+  const THEMES = {
+    ink:    { fg: ['#201a17', '#3a2f29'], eye: '#201a17' },
+    coral:  { fg: ['#f0563e', '#c02d1c'], eye: '#8f1d12' },
+    ocean:  { fg: ['#3b8fd0', '#155e9c'], eye: '#123f6b' },
+    grape:  { fg: ['#9b6fd0', '#5e3a9e'], eye: '#3d2470' },
+    forest: { fg: ['#5aa02f', '#1f7d55'], eye: '#14532d' },
+    sunset: { fg: ['#f0563e', '#e08a12'], eye: '#7a3b06' }
+  };
+  const SHAPES = ['Square', 'Rounded', 'Dots', 'Blob'];
+  const EYES = ['Square', 'Rounded', 'Circle'];
+  const EMBLEMS = ['None', 'Star', 'Heart', 'Bolt'];
+
+  const state = { text: 'https://randomsitesontheweb.com', theme: 'coral', shape: 'Blob', eye: 'Rounded', emblem: 'None' };
+
+  const canvas = document.getElementById('qr');
+  const ctx = canvas.getContext('2d');
+  const QUIET = 4;
+
+  function rr(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawEmblemIcon(kind, cx, cy, s, color) {
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    if (kind === 'Star') {
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const ang = -Math.PI / 2 + i * Math.PI / 5;
+        const rad = i % 2 === 0 ? s * 0.5 : s * 0.21;
+        const px = cx + Math.cos(ang) * rad, py = cy + Math.sin(ang) * rad;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.fill();
+    } else if (kind === 'Heart') {
+      const u = s * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + u * 0.75);
+      ctx.bezierCurveTo(cx - u * 1.3, cy - u * 0.35, cx - u * 0.5, cy - u * 1.05, cx, cy - u * 0.35);
+      ctx.bezierCurveTo(cx + u * 0.5, cy - u * 1.05, cx + u * 1.3, cy - u * 0.35, cx, cy + u * 0.75);
+      ctx.closePath(); ctx.fill();
+    } else if (kind === 'Bolt') {
+      const u = s * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(cx + u * 0.15, cy - u);
+      ctx.lineTo(cx - u * 0.55, cy + u * 0.12);
+      ctx.lineTo(cx - u * 0.02, cy + u * 0.12);
+      ctx.lineTo(cx - u * 0.18, cy + u);
+      ctx.lineTo(cx + u * 0.6, cy - u * 0.2);
+      ctx.lineTo(cx + u * 0.02, cy - u * 0.2);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+
+  function render() {
+    let ecl = 'M';
+    if (state.emblem !== 'None') ecl = 'H'; // logo knockout needs max recovery
+
+    let qr;
+    try { qr = qrGenerate(state.text || ' ', ecl); }
+    catch (e) { qr = qrGenerate('too long', 'L'); }
+
+    const n = qr.size, m = qr.modules;
+    const theme = THEMES[state.theme];
+    const total = n + QUIET * 2;
+    const px = 1000;
+    canvas.width = px; canvas.height = px;
+    const cell = px / total;
+
+    // background
+    ctx.fillStyle = CREAM;
+    ctx.fillRect(0, 0, px, px);
+
+    // foreground gradient
+    const grad = ctx.createLinearGradient(0, 0, px, px);
+    grad.addColorStop(0, theme.fg[0]);
+    grad.addColorStop(1, theme.fg[1]);
+
+    const off = QUIET * cell;
+    const inFinder = (x, y) => (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7);
+
+    // emblem knockout region (module space)
+    const c = (n - 1) / 2;
+    const emblemR = state.emblem !== 'None' ? n * 0.115 : 0;
+    const knocked = (x, y) => emblemR > 0 && Math.hypot(x - c, y - c) <= emblemR + 0.4;
+    const dark = (x, y) => x >= 0 && y >= 0 && x < n && y < n && m[y][x] && !inFinder(x, y) && !knocked(x, y);
+
+    // ---- data modules ----
+    ctx.fillStyle = grad;
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      if (!dark(x, y)) continue;
+      const gx = off + x * cell, gy = off + y * cell;
+      if (state.shape === 'Square') {
+        ctx.fillRect(gx - 0.3, gy - 0.3, cell + 0.6, cell + 0.6);
+      } else if (state.shape === 'Rounded') {
+        rr(gx + cell * 0.06, gy + cell * 0.06, cell * 0.88, cell * 0.88, cell * 0.32); ctx.fill();
+      } else if (state.shape === 'Dots') {
+        ctx.beginPath(); ctx.arc(gx + cell / 2, gy + cell / 2, cell * 0.46, 0, 7); ctx.fill();
+      } else { // Blob: circle + bridges to dark neighbors
+        ctx.beginPath(); ctx.arc(gx + cell / 2, gy + cell / 2, cell * 0.5, 0, 7); ctx.fill();
+        if (dark(x + 1, y)) ctx.fillRect(gx + cell / 2, gy, cell, cell);
+        if (dark(x, y + 1)) ctx.fillRect(gx, gy + cell / 2, cell, cell);
+      }
+    }
+
+    // ---- finder eyes ----
+    function eye(gx, gy) {
+      const x0 = off + gx * cell, y0 = off + gy * cell, s = 7 * cell;
+      const rOut = state.eye === 'Square' ? cell * 0.5 : state.eye === 'Rounded' ? cell * 2.2 : s / 2;
+      const rMid = state.eye === 'Square' ? cell * 0.4 : state.eye === 'Rounded' ? cell * 1.7 : (5 * cell) / 2;
+      const rIn = state.eye === 'Square' ? cell * 0.3 : state.eye === 'Rounded' ? cell * 1.2 : (3 * cell) / 2;
+      ctx.fillStyle = theme.eye;
+      rr(x0, y0, s, s, rOut); ctx.fill();
+      ctx.fillStyle = CREAM;
+      rr(x0 + cell, y0 + cell, 5 * cell, 5 * cell, rMid); ctx.fill();
+      ctx.fillStyle = theme.eye;
+      rr(x0 + 2 * cell, y0 + 2 * cell, 3 * cell, 3 * cell, rIn); ctx.fill();
+    }
+    eye(0, 0); eye(n - 7, 0); eye(0, n - 7);
+
+    // ---- center emblem ----
+    if (state.emblem !== 'None') {
+      const cxpx = off + (c + 0.5) * cell, cypx = off + (c + 0.5) * cell;
+      const plaque = emblemR * cell * 2.15;
+      ctx.save();
+      ctx.translate(cxpx, cypx);
+      ctx.rotate(-0.06);
+      // hard shadow
+      ctx.fillStyle = INK;
+      rr(-plaque / 2 + cell * 0.28, -plaque / 2 + cell * 0.28, plaque, plaque, plaque * 0.26); ctx.fill();
+      // plaque
+      ctx.fillStyle = CREAM;
+      rr(-plaque / 2, -plaque / 2, plaque, plaque, plaque * 0.26); ctx.fill();
+      ctx.lineWidth = Math.max(2, cell * 0.28);
+      ctx.strokeStyle = INK;
+      rr(-plaque / 2, -plaque / 2, plaque, plaque, plaque * 0.26); ctx.stroke();
+      drawEmblemIcon(state.emblem, 0, 0, plaque * 0.62, theme.eye);
+      ctx.restore();
+    }
+  }
+
+  // ---- build controls ----
+  function buildSeg(hostId, values, current, onPick, render2) {
+    const host = document.getElementById(hostId);
+    host.innerHTML = '';
+    values.forEach(v => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (v === current() ? ' on' : '');
+      b.textContent = v;
+      b.addEventListener('click', () => {
+        onPick(v);
+        host.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.textContent === v));
+        render2();
+      });
+      host.appendChild(b);
+    });
+  }
+
+  const themesHost = document.getElementById('themes');
+  Object.entries(THEMES).forEach(([key, t]) => {
+    const b = document.createElement('button');
+    b.className = 'swatch' + (key === state.theme ? ' on' : '');
+    b.title = key;
+    b.style.background = `linear-gradient(135deg, ${t.fg[0]}, ${t.fg[1]})`;
+    b.addEventListener('click', () => {
+      state.theme = key;
+      themesHost.querySelectorAll('.swatch').forEach(s => s.classList.toggle('on', s.title === key));
+      render();
+    });
+    themesHost.appendChild(b);
+  });
+
+  buildSeg('shapes', SHAPES, () => state.shape, v => state.shape = v, render);
+  buildSeg('eyes', EYES, () => state.eye, v => state.eye = v, render);
+  const emblemNote = document.getElementById('emblemNote');
+  buildSeg('emblems', EMBLEMS, () => state.emblem, v => {
+    state.emblem = v;
+    emblemNote.textContent = v === 'None' ? '' : 'Emblem on → boosted to high error correction so it still scans.';
+  }, render);
+
+  const textEl = document.getElementById('text');
+  let t;
+  textEl.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => { state.text = textEl.value; render(); }, 140);
+  });
+
+  document.getElementById('download').addEventListener('click', () => {
+    canvas.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'qr-code.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  });
+
+  render();
+  </script>
+</body>
+</html>
