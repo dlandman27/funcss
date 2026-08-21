@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dead Weight</title>
+  <meta name="description" content="Your cursor gained weight. It lags, sags, and falls when you stop moving — and the magnets you plant yank it right off course.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/deadweight/">
+    <meta property="og:title" content="Dead Weight">
+    <meta property="og:description" content="Your cursor gained weight. It lags, sags, and falls when you stop moving — and the magnets you plant yank it right off course.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/deadweight.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Dead Weight">
+    <meta name="twitter:description" content="Your cursor gained weight. It lags, sags, and falls when you stop moving — and the magnets you plant yank it right off course.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/deadweight.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --gold: #f7c948;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--paper);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      cursor: none;
+    }
+    #stage { position: fixed; inset: 0; display: block; cursor: none; }
+
+    #stage.shake { animation: shake 0.25s linear; }
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-5px, 4px); }
+      40% { transform: translate(4px, -3px); }
+      60% { transform: translate(-3px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #stage.shake { animation: none; }
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 15px;
+      color: rgba(32, 26, 23, 0.55);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .hint.hidden { opacity: 0; }
+
+    .pill {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(32, 26, 23, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0.95;
+      transition: opacity 0.5s ease;
+      cursor: none;
+    }
+    .pill.dim { opacity: 0.16; }
+    .pill:hover { opacity: 1; }
+
+    .pill button {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 12px;
+      box-shadow: 2px 2px 0 #000;
+      cursor: none;
+      transform: rotate(-1deg);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+    .pill button:nth-child(2) { transform: rotate(1.5deg); }
+    .pill button:nth-child(3) { transform: rotate(-2deg); }
+    .pill button:hover { transform: translate(-1px, -1px) rotate(-1deg); box-shadow: 3px 3px 0 #000; }
+    .pill button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #000; }
+    .pill button.on { background: var(--coral); color: var(--cream); }
+    .pill button.clear { background: var(--sky); }
+
+    @media (max-width: 480px) {
+      .hint { font-size: 12px; bottom: 14%; }
+      .pill { gap: 6px; padding: 6px 8px; bottom: 14px; }
+      .pill button { font-size: 10px; padding: 5px 9px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="hint" id="hint">your cursor gained weight &mdash; tap to plant a magnet</div>
+  <div class="pill" id="pill">
+    <button id="btn-feather" data-weight="feather">Feather</button>
+    <button id="btn-brick" data-weight="brick">Brick</button>
+    <button id="btn-anvil" data-weight="anvil">Anvil</button>
+    <button id="btn-clear" class="clear">Clear</button>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+    var pill = document.getElementById('pill');
+
+    var INK = '#201a17';
+    var PAPER = '#f2ede2';
+    var CREAM = '#fff8ef';
+    var CORAL = '#f0563e';
+    var SKY = '#5aa0db';
+    var GOLD = '#f7c948';
+
+    // how heavy the cursor is: spring grip toward the real pointer,
+    // damping, gravity, and how much magnets get to shove it around
+    var WEIGHTS = {
+      feather: { k: 120, damp: 14, g: 350, magScale: 1.6 },
+      brick:   { k: 45,  damp: 8,  g: 1600, magScale: 1.0 },
+      anvil:   { k: 16,  damp: 4.5, g: 2200, magScale: 0.6 }
+    };
+
+    var MAG_RANGE = 240;
+    var MAG_G = 2600000;      // px^3/s^2
+    var MAG_MIN_R = 34;
+    var MAG_CORE_R = 46;      // attractors shove back inside this so the cursor orbits, never sticks
+    var MAX_SPEED = 3800;
+    var MAX_MAGNETS = 10;
+    var GOLD_CHANCE = 0.045;
+    var IDLE_BEFORE_DROP_MS = 700;
+
+    var width = 0, height = 0, dpr = 1;
+    var paperGrad = null;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var weightKey = 'brick';
+    var real = { x: -9999, y: -9999, active: false, lastMove: 0 };
+    var demo = { on: true, t: 0 };
+    var cur = { x: 0, y: 0, vx: 0, vy: 0, rot: 0, squash: 0, grip: 1, prevVx: 0 };
+    var bob = { ang: 0, vel: 0 };     // the little weight dangling off the arrow's tail
+    var gold = false;
+    var magnets = [];                 // { fx, fy, x, y, pol (1 pull / -1 push), popT }
+    var nextPol = 1;
+    var particles = [];
+    var lastFrame = 0;
+    var hintDone = false;
+    var down = null;
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+    function rollGold() { gold = Math.random() < GOLD_CHANCE; }
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem('deadweight');
+        if (!raw) return;
+        var s = JSON.parse(raw);
+        if (WEIGHTS[s.weight]) weightKey = s.weight;
+        if (Array.isArray(s.magnets)) {
+          magnets = s.magnets.slice(0, MAX_MAGNETS).map(function (m) {
+            return { fx: m.fx, fy: m.fy, x: 0, y: 0, pol: m.pol === -1 ? -1 : 1, popT: 0 };
+          });
+          if (magnets.length) nextPol = -magnets[magnets.length - 1].pol;
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('deadweight', JSON.stringify({
+          weight: weightKey,
+          magnets: magnets.map(function (m) { return { fx: m.fx, fy: m.fy, pol: m.pol }; })
+        }));
+      } catch (e) { /* ignore */ }
+    }
+
+    function defaultMagnets() {
+      magnets = [
+        { fx: 0.24, fy: 0.32, pol: 1 },
+        { fx: 0.76, fy: 0.28, pol: -1 },
+        { fx: 0.58, fy: 0.68, pol: 1 }
+      ].map(function (m) { return { fx: m.fx, fy: m.fy, x: 0, y: 0, pol: m.pol, popT: 0 }; });
+      nextPol = -1;
+    }
+
+    function placeMagnets() {
+      for (var i = 0; i < magnets.length; i++) {
+        magnets[i].x = magnets[i].fx * width;
+        magnets[i].y = magnets[i].fy * height;
+      }
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      paperGrad = ctx.createRadialGradient(width / 2, height * 0.42, 0, width / 2, height * 0.42, Math.max(width, height) * 0.75);
+      paperGrad.addColorStop(0, CREAM);
+      paperGrad.addColorStop(1, PAPER);
+      placeMagnets();
+    }
+
+    // ---------- input ----------
+
+    function firstTouch() {
+      if (demo.on) {
+        demo.on = false;
+        cur.x = real.x;
+        cur.y = real.y;
+        cur.vx = 0; cur.vy = 0;
+      }
+      if (!hintDone) {
+        hintDone = true;
+        setTimeout(function () { hint.classList.add('hidden'); }, 2500);
+        setTimeout(function () { pill.classList.add('dim'); }, 5000);
+      }
+    }
+
+    window.addEventListener('pointermove', function (e) {
+      var moved = Math.abs(e.clientX - real.x) + Math.abs(e.clientY - real.y);
+      real.x = e.clientX;
+      real.y = e.clientY;
+      real.active = true;
+      if (moved > 2) real.lastMove = performance.now();
+      firstTouch();
+    });
+
+    canvas.addEventListener('pointerdown', function (e) {
+      real.x = e.clientX;
+      real.y = e.clientY;
+      real.active = true;
+      real.lastMove = performance.now();
+      firstTouch();
+      down = { x: e.clientX, y: e.clientY, t: performance.now() };
+    });
+
+    canvas.addEventListener('pointerup', function (e) {
+      if (!down) return;
+      var dist = Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y);
+      var dt = performance.now() - down.t;
+      down = null;
+      if (dist < 12 && dt < 300) addMagnet(e.clientX, e.clientY);
+    });
+
+    document.documentElement.addEventListener('pointerleave', function () {
+      real.active = false;
+    });
+
+    function addMagnet(x, y) {
+      magnets.push({ fx: x / width, fy: y / height, x: x, y: y, pol: nextPol, popT: 1 });
+      nextPol = -nextPol;
+      if (magnets.length > MAX_MAGNETS) magnets.shift();
+      for (var i = 0; i < 6; i++) spawnDust(x, y, INK);
+      saveState();
+    }
+
+    // ---------- pill ----------
+
+    var weightButtons = pill.querySelectorAll('button[data-weight]');
+    function syncPill() {
+      for (var i = 0; i < weightButtons.length; i++) {
+        weightButtons[i].classList.toggle('on', weightButtons[i].getAttribute('data-weight') === weightKey);
+      }
+    }
+    for (var b = 0; b < weightButtons.length; b++) {
+      weightButtons[b].addEventListener('click', function () {
+        weightKey = this.getAttribute('data-weight');
+        rollGold();
+        bob.ang = 0; bob.vel = 0;
+        syncPill();
+        saveState();
+      });
+    }
+    document.getElementById('btn-clear').addEventListener('click', function () {
+      for (var i = 0; i < magnets.length; i++) spawnDust(magnets[i].x, magnets[i].y, INK);
+      magnets = [];
+      saveState();
+    });
+
+    // ---------- physics ----------
+
+    function magnetAccel(x, y, scale) {
+      var ax = 0, ay = 0;
+      for (var i = 0; i < magnets.length; i++) {
+        var m = magnets[i];
+        var dx = m.x - x, dy = m.y - y;
+        var r = Math.sqrt(dx * dx + dy * dy);
+        if (r > MAG_RANGE || r < 0.001) continue;
+        var nx = dx / r, ny = dy / r;
+        // direction normalized, magnitude clamped separately: the pull holds all the way in
+        var mag = MAG_G / Math.pow(Math.max(r, MAG_MIN_R), 2);
+        if (mag > 2600) mag = 2600;
+        mag *= m.pol;
+        if (m.pol === 1 && r < MAG_CORE_R) {
+          // repulsive core so the cursor orbits an attractor instead of sticking to it
+          mag -= ((MAG_CORE_R - r) / MAG_CORE_R) * 4600;
+        }
+        ax += nx * mag;
+        ay += ny * mag;
+      }
+      var total = Math.sqrt(ax * ax + ay * ay);
+      if (total > 4200) { ax = ax / total * 4200; ay = ay / total * 4200; }
+      return { x: ax * scale, y: ay * scale };
+    }
+
+    function target() {
+      if (demo.on) {
+        return {
+          x: width / 2 + Math.sin(demo.t * 0.7) * width * 0.24,
+          y: height * 0.4 + Math.sin(demo.t * 1.13 + 1) * height * 0.14,
+          active: true,
+          idle: false
+        };
+      }
+      return {
+        x: real.x,
+        y: real.y,
+        active: real.active,
+        idle: performance.now() - real.lastMove > IDLE_BEFORE_DROP_MS
+      };
+    }
+
+    function step(dt) {
+      var dtS = Math.min(dt, 40) / 1000;
+      if (demo.on) demo.t += dtS;
+      var w = WEIGHTS[weightKey];
+      var t = target();
+
+      // grip: your hand's hold on the cursor. Stop moving and it lets go — the cursor drops.
+      if (t.active && !t.idle) cur.grip = Math.min(1, cur.grip + dtS * 6);
+      else cur.grip = Math.max(0, cur.grip - dtS * 2);
+
+      var prevVx = cur.vx;
+
+      var ax = (t.x - cur.x) * w.k * cur.grip - cur.vx * w.damp * cur.grip;
+      var ay = (t.y - cur.y) * w.k * cur.grip - cur.vy * w.damp * cur.grip;
+      ay += w.g;
+      var mag = magnetAccel(cur.x, cur.y, w.magScale);
+      ax += mag.x;
+      ay += mag.y;
+
+      cur.vx += ax * dtS;
+      cur.vy += ay * dtS;
+      // a little air drag so a dropped cursor doesn't accelerate forever
+      cur.vx *= Math.exp(-0.3 * dtS);
+      cur.vy *= Math.exp(-0.3 * dtS);
+
+      var sp = Math.sqrt(cur.vx * cur.vx + cur.vy * cur.vy);
+      if (sp > MAX_SPEED) { cur.vx = cur.vx / sp * MAX_SPEED; cur.vy = cur.vy / sp * MAX_SPEED; }
+
+      cur.x += cur.vx * dtS;
+      cur.y += cur.vy * dtS;
+
+      // walls + floor
+      var floorY = height - 40;
+      if (cur.x < 4) { cur.x = 4; if (cur.vx < 0) { cur.vx = -cur.vx * 0.4; cur.squash = 1; } }
+      if (cur.x > width - 14) { cur.x = width - 14; if (cur.vx > 0) { cur.vx = -cur.vx * 0.4; cur.squash = 1; } }
+      if (cur.y < 4) { cur.y = 4; if (cur.vy < 0) cur.vy = -cur.vy * 0.3; }
+      var onFloor = false;
+      if (cur.y >= floorY) {
+        cur.y = floorY;
+        if (cur.vy > 0) {
+          var impact = cur.vy;
+          cur.vy = -cur.vy * 0.32;
+          if (Math.abs(cur.vy) < 80) cur.vy = 0;
+          cur.vx *= 0.9;
+          cur.squash = 1;
+          if (impact > 900 && weightKey === 'anvil') thud(cur.x, height);
+          else if (impact > 500) { for (var i = 0; i < 5; i++) spawnDust(cur.x, height - 8, INK); }
+        }
+        onFloor = cur.vy === 0;
+      }
+
+      if (cur.squash > 0) cur.squash = Math.max(0, cur.squash - dtS * 6);
+
+      // lean toward whatever is dragging it; tip over when dropped on the floor
+      var rotTarget;
+      if (onFloor && cur.grip < 0.05 && Math.abs(cur.vx) < 30) rotTarget = 1.35;
+      else rotTarget = clamp((t.x - cur.x) * 0.012, -0.55, 0.55) * cur.grip;
+      cur.rot += (rotTarget - cur.rot) * Math.min(1, dtS * 8);
+
+      // dangling weight: a damped pendulum driven by the cursor's sideways acceleration
+      var axCursor = (cur.vx - prevVx) / dtS;
+      bob.vel += (-60 * Math.sin(bob.ang) - (axCursor * 0.055) * Math.cos(bob.ang) - bob.vel * 3.5) * dtS;
+      bob.ang += bob.vel * dtS;
+      bob.ang = clamp(bob.ang, -1.5, 1.5);
+    }
+
+    function thud(x, floorY) {
+      if (!reduceMotion) {
+        canvas.classList.remove('shake');
+        void canvas.offsetWidth;
+        canvas.classList.add('shake');
+      }
+      for (var i = 0; i < 14; i++) spawnDust(x + (Math.random() - 0.5) * 50, floorY - 6, Math.random() < 0.5 ? INK : CREAM);
+      particles.push({ type: 'text', str: 'THUD', x: x, y: floorY - 70, t: 1, rot: (Math.random() - 0.5) * 0.3 });
+      if (particles.length > 120) particles.splice(0, particles.length - 120);
+    }
+
+    function spawnDust(x, y, color) {
+      particles.push({
+        type: 'dust', x: x, y: y,
+        vx: (Math.random() - 0.5) * 240,
+        vy: -Math.random() * 200 - 40,
+        r: 2 + Math.random() * 3.5,
+        t: 1, color: color
+      });
+      if (particles.length > 120) particles.splice(0, particles.length - 120);
+    }
+
+    function stepParticles(dtS) {
+      for (var i = particles.length - 1; i >= 0; i--) {
+        var p = particles[i];
+        if (p.type === 'dust') {
+          p.x += p.vx * dtS;
+          p.y += p.vy * dtS;
+          p.vy += 600 * dtS;
+          p.t -= dtS * 1.6;
+        } else {
+          p.y -= 26 * dtS;
+          p.t -= dtS * 0.9;
+        }
+        if (p.t <= 0) particles.splice(i, 1);
+      }
+    }
+
+    // ---------- drawing ----------
+
+    function popScale(t) {
+      // t goes 1 -> 0; scale 0.2 -> 1.15 -> 1 with overshoot
+      if (t <= 0) return 1;
+      var u = 1 - t;
+      if (u < 0.7) return 0.2 + (1.15 - 0.2) * (u / 0.7);
+      return 1.15 - 0.15 * ((u - 0.7) / 0.3);
+    }
+
+    function sticker(drawPath, fill, lineW) {
+      ctx.save();
+      ctx.translate(2, 2);
+      drawPath(ctx);
+      ctx.fillStyle = INK;
+      ctx.fill();
+      ctx.restore();
+      drawPath(ctx);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.lineWidth = lineW || 2;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+    }
+
+    function drawMagnet(m, now) {
+      var s = m.popT > 0 ? popScale(m.popT) : 1;
+      if (m.popT > 0) m.popT = Math.max(0, m.popT - 0.05);
+
+      // field ring — the dashes crawl forever, so the page is never a still frame
+      ctx.save();
+      ctx.translate(m.x, m.y);
+      ctx.globalAlpha = 0.13;
+      ctx.strokeStyle = m.pol === 1 ? CORAL : SKY;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 8]);
+      ctx.lineDashOffset = (m.pol === 1 ? -1 : 1) * (now / 40 % 14);
+      ctx.beginPath();
+      ctx.arc(0, 0, MAG_RANGE * 0.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+
+      ctx.scale(s, s);
+      var R = 14, w = 7, H = 11;
+      function horseshoe(c) {
+        c.beginPath();
+        c.moveTo(-R, 0);
+        c.arc(0, 0, R, Math.PI, 0);
+        c.lineTo(R, H);
+        c.lineTo(R - w, H);
+        c.lineTo(R - w, 0);
+        c.arc(0, 0, R - w, 0, Math.PI, true);
+        c.lineTo(-R, H);
+        c.closePath();
+      }
+      sticker(horseshoe, m.pol === 1 ? CORAL : SKY, 2);
+      // silver tips
+      ctx.fillStyle = CREAM;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(-R, H - 4, w, 5); ctx.strokeRect(-R, H - 4, w, 5);
+      ctx.fillRect(R - w, H - 4, w, 5); ctx.strokeRect(R - w, H - 4, w, 5);
+      // polarity glyph in the gap
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-3.5, 6); ctx.lineTo(3.5, 6);
+      if (m.pol === 1) { ctx.moveTo(0, 2.5); ctx.lineTo(0, 9.5); }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function arrowPath(c) {
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.lineTo(0, 17);
+      c.lineTo(4.4, 13.2);
+      c.lineTo(7.4, 20);
+      c.lineTo(10.4, 18.6);
+      c.lineTo(7.5, 11.9);
+      c.lineTo(12.5, 11.6);
+      c.closePath();
+    }
+
+    function anvilGlyph(c) {
+      c.beginPath();
+      c.moveTo(-11, -7);
+      c.lineTo(6, -7);
+      c.quadraticCurveTo(13, -7, 15, -3.5);
+      c.quadraticCurveTo(9, -1.5, 4.5, -2);
+      c.lineTo(3, 1.5);
+      c.lineTo(7, 4);
+      c.lineTo(7, 8);
+      c.lineTo(-7, 8);
+      c.lineTo(-7, 4);
+      c.lineTo(-3, 1.5);
+      c.lineTo(-4.5, -2);
+      c.lineTo(-11, -2);
+      c.closePath();
+    }
+
+    function brickGlyph(c) {
+      c.beginPath();
+      c.rect(-8, -5, 16, 10);
+    }
+
+    function featherGlyph(c) {
+      c.beginPath();
+      c.moveTo(0, -9);
+      c.quadraticCurveTo(7, -4, 5, 3);
+      c.quadraticCurveTo(3, 8, 0, 9);
+      c.quadraticCurveTo(-3, 8, -5, 3);
+      c.quadraticCurveTo(-7, -4, 0, -9);
+      c.closePath();
+    }
+
+    function drawDanglingWeight() {
+      // attach at the arrow's tail, swing by bob.ang
+      var c = Math.cos(cur.rot), s = Math.sin(cur.rot);
+      var lx = 5, ly = 18;
+      var axp = cur.x + lx * c - ly * s;
+      var ayp = cur.y + lx * s + ly * c;
+      var L = 16;
+      var bx = axp + Math.sin(bob.ang) * L;
+      var by = ayp + Math.cos(bob.ang) * L;
+
+      ctx.beginPath();
+      ctx.moveTo(axp, ayp);
+      ctx.lineTo(bx, by);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(bx, by + 6);
+      ctx.rotate(-bob.ang * 0.6);
+      if (weightKey === 'anvil') {
+        ctx.scale(0.9, 0.9);
+        sticker(anvilGlyph, gold ? GOLD : '#8b8578', 1.8);
+      } else if (weightKey === 'brick') {
+        sticker(brickGlyph, gold ? GOLD : CORAL, 1.8);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-8, 0); ctx.lineTo(8, 0);
+        ctx.moveTo(-2, -5); ctx.lineTo(-2, 0);
+        ctx.moveTo(3, 0); ctx.lineTo(3, 5);
+        ctx.stroke();
+      } else {
+        ctx.scale(0.8, 0.8);
+        sticker(featherGlyph, gold ? GOLD : SKY, 1.8);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -7); ctx.lineTo(0, 7);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawCursor() {
+      drawDanglingWeight();
+      ctx.save();
+      ctx.translate(cur.x, cur.y);
+      ctx.rotate(cur.rot);
+      var sq = cur.squash * 0.25;
+      ctx.scale(1 + sq, 1 - sq);
+      sticker(arrowPath, CREAM, 2);
+      ctx.restore();
+    }
+
+    function drawRealMarker(t) {
+      // where you're actually pointing — only shows when the cursor is misbehaving
+      var dx = cur.x - t.x, dy = cur.y - t.y;
+      if (dx * dx + dy * dy < 400) return;
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(t.x - 8, t.y); ctx.lineTo(t.x - 5, t.y);
+      ctx.moveTo(t.x + 5, t.y); ctx.lineTo(t.x + 8, t.y);
+      ctx.moveTo(t.x, t.y - 8); ctx.lineTo(t.x, t.y - 5);
+      ctx.moveTo(t.x, t.y + 5); ctx.lineTo(t.x, t.y + 8);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        if (p.type === 'dust') {
+          ctx.globalAlpha = Math.max(0, p.t) * 0.7;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        } else {
+          var scale = p.t > 0.85 ? 0.4 + (1 - p.t) / 0.15 * 0.6 : 1;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.scale(scale, scale);
+          ctx.globalAlpha = Math.min(1, p.t * 2);
+          ctx.font = '900 34px "Arial Black", Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.lineJoin = 'round';
+          ctx.strokeStyle = INK;
+          ctx.lineWidth = 6;
+          ctx.strokeText(p.str, 0, 0);
+          ctx.fillStyle = CORAL;
+          ctx.fillText(p.str, 0, 0);
+          ctx.restore();
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    function draw(now) {
+      ctx.fillStyle = paperGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      for (var i = 0; i < magnets.length; i++) drawMagnet(magnets[i], now);
+
+      var t = target();
+      if (t.active) drawRealMarker(t);
+      drawCursor();
+      drawParticles();
+    }
+
+    // ---------- loop ----------
+
+    var running = false;
+    function frame(now) {
+      if (!running) return;
+      var dt = lastFrame ? now - lastFrame : 16;
+      lastFrame = now;
+      step(dt);
+      stepParticles(Math.min(dt, 40) / 1000);
+      draw(now);
+      requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (running) return;
+      running = true;
+      lastFrame = 0;
+      requestAnimationFrame(frame);
+    }
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) running = false;
+      else start();
+    });
+
+    // ---------- boot ----------
+
+    loadState();
+    if (!magnets.length) defaultMagnets();
+    syncPill();
+    window.addEventListener('resize', debounce(resize, 150));
+    resize();
+    cur.x = width / 2;
+    cur.y = height * 0.4;
+    rollGold();
+    setTimeout(function () { if (!hintDone) hint.classList.add('hidden'); }, 12000);
+    start();
+  })();
+  </script>
+</body>
+</html>

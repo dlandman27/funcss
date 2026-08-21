@@ -79,6 +79,11 @@ Awesome where it's already loaded). Emoji render differently per platform and br
   seconds before dissolving.
 - Hover on stickers: `transform: translate(-2px, -2px) rotate(...)` + grow the hard shadow.
   Active: press down (`translate(2px, 2px)`, shrink shadow).
+- **Vanilla Motion (motion.dev) is allowed** when springs/gestures/scroll-linking beat
+  CSS: `import { animate, scroll, inView, stagger, press, hover } from
+  "https://cdn.jsdelivr.net/npm/motion@12.15.0/+esm"`. Springs suit the house feel —
+  things should THUNK, overshoot, and settle, not ease politely. CSS/WAAPI stays the
+  default; Motion is for when the animation is the mechanic, not decoration.
 
 ## Feel: effects must DO something
 
@@ -119,7 +124,9 @@ void"). Hints are one italic Georgia line ("draw anywhere — it tiles") that fa
 
 - One self-contained `index.html`; first tag in `<head>`:
   `<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>`
-- `<meta charset>` + viewport; vanilla HTML/CSS/JS only, no libraries.
+- `<meta charset>` + viewport; vanilla HTML/CSS/JS first. CDN packages allowed as ESM
+  imports at the top of a module script, **pinned to exact versions**, only when the
+  library is the mechanic. No frameworks, nothing needing a build step.
 - Canvas: cap `devicePixelRatio` at 2; debounced resize handler.
 - rAF loops must **sleep when idle** (stop scheduling when nothing animates; restart on
   input) — don't burn battery drawing a still frame.

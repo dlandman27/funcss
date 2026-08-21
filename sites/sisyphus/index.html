@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sisyphus</title>
+  <meta name="description" content="Scroll to push the boulder up a mountain that never ends. Stop, and it all comes back down.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/sisyphus/">
+    <meta property="og:title" content="Sisyphus">
+    <meta property="og:description" content="Scroll to push the boulder up a mountain that never ends. Stop, and it all comes back down.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/sisyphus.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sisyphus">
+    <meta name="twitter:description" content="Scroll to push the boulder up a mountain that never ends. Stop, and it all comes back down.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/sisyphus.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --gold: #f7c948;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--cream);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+    #stage { position: fixed; inset: 0; display: block; }
+
+    #stage.shake { animation: shake 0.22s linear; }
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-4px, 3px); }
+      50% { transform: translate(3px, -2px); }
+      75% { transform: translate(-2px, 2px); }
+      100% { transform: translate(0, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #stage.shake { animation: none; }
+    }
+
+    .plaques {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .plaque {
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 5px 12px;
+      font-family: Georgia, 'Times New Roman', serif;
+      width: max-content;
+    }
+    .plaque:nth-child(1) { transform: rotate(-1.2deg); }
+    .plaque:nth-child(2) { transform: rotate(0.8deg); background: var(--gold); }
+    .plaque:nth-child(3) { transform: rotate(-0.6deg); }
+    .plaque .label {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 8px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+    .plaque .value {
+      font-style: italic;
+      font-size: 15px;
+      color: var(--ink);
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 9%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 15px;
+      color: rgba(32, 26, 23, 0.6);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .hint.hidden { opacity: 0; }
+
+    .fine {
+      position: fixed;
+      bottom: 14px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 12px;
+      color: rgba(32, 26, 23, 0.38);
+      pointer-events: none;
+    }
+
+    @media (max-width: 480px) {
+      .plaque .value { font-size: 13px; }
+      .hint { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="plaques">
+    <div class="plaque"><div class="label">Altitude</div><div class="value" id="alt">0 m</div></div>
+    <div class="plaque"><div class="label">Best</div><div class="value" id="best">0 m</div></div>
+    <div class="plaque"><div class="label">Rollbacks</div><div class="value" id="attempts">0</div></div>
+  </div>
+  <div class="hint" id="hint">scroll to push the boulder</div>
+  <div class="fine">one must imagine sisyphus happy.</div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+    var altEl = document.getElementById('alt');
+    var bestEl = document.getElementById('best');
+    var attemptsEl = document.getElementById('attempts');
+
+    var INK = '#201a17';
+    var CREAM = '#fff8ef';
+    var CORAL = '#f0563e';
+    var LIME = '#b7ce3c';
+    var GOLD = '#f7c948';
+
+    var BOULDER_R = 46;
+    var M_PER_PX = 0.35;        // world px of height -> meters on the plaque
+
+    var GRAV = 950;             // px/s^2, applied along the slope
+    var PUSH_K = 2.1;           // scroll px -> slope velocity
+    var PULL_K = 1.1;           // scrolling the wrong way drags it back
+    var FRICTION = 2.4;         // per second
+    var MAX_UP = 950;           // px/s
+    var MAX_DOWN = -1500;
+    var GOLD_CHANCE = 0.03;
+
+    var width = 0, height = 0, dpr = 1;
+    var scale = 1;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var x = 0, v = 0;           // horizontal world position + arclength velocity
+    var roll = 0;
+    var maxAltSinceBottom = 0;
+    var stats = { best: 0, attempts: 0 };
+    var goldBoulder = false;
+    var clouds = [];
+    var milestones = [];        // { x, m } signposts every 250 m
+    var milestoneCursor = 0;    // how far we've scanned for crossings
+    var camX = 0, camY = 0;
+    var lastFrame = 0;
+    var hintDone = false;
+    var touchY = null;
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function clamp(a, lo, hi) { return a < lo ? lo : (a > hi ? hi : a); }
+    function lerp(a, b, u) { return a + (b - a) * u; }
+
+    // ---------- the endless mountain ----------
+    // strictly uphill; steepness undulates so some stretches are merciful and some are not
+
+    function slopeDeriv(px) {
+      if (px <= 0) return 0;
+      return 0.62 + 0.30 * Math.sin(px / 520) + 0.18 * Math.sin(px / 173 + 1.3);
+    }
+    function slopeY(px) {
+      if (px <= 0) return 0;
+      // analytic integral of slopeDeriv
+      return 0.62 * px
+        - 0.30 * 520 * (Math.cos(px / 520) - 1)
+        - 0.18 * 173 * (Math.cos(px / 173 + 1.3) - Math.cos(1.3));
+    }
+    function slopeAngle(px) { return Math.atan(slopeDeriv(px)); }
+    function meters(px) { return slopeY(px) * M_PER_PX; }
+
+    function extendMilestones(upToX) {
+      while (milestoneCursor < upToX) {
+        var next = milestoneCursor + 24;
+        var m0 = meters(milestoneCursor), m1 = meters(next);
+        var k0 = Math.floor(m0 / 250), k1 = Math.floor(m1 / 250);
+        if (k1 > k0) milestones.push({ x: next, m: k1 * 250 });
+        milestoneCursor = next;
+      }
+    }
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem('sisyphus');
+        if (!raw) return;
+        var st = JSON.parse(raw);
+        if (typeof st.best === 'number' && st.best >= 0) stats.best = st.best;
+        if (typeof st.attempts === 'number' && st.attempts >= 0) stats.attempts = st.attempts;
+      } catch (e) { /* ignore */ }
+    }
+    function saveState() {
+      try { localStorage.setItem('sisyphus', JSON.stringify(stats)); } catch (e) { /* ignore */ }
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      scale = clamp(Math.min(width, height) / 900, 0.45, 1);
+      if (!clouds.length) {
+        for (var i = 0; i < 7; i++) {
+          clouds.push({
+            off: Math.random() * 3000,     // world-x offset, tiles around the camera
+            h: 150 + Math.random() * 420,  // height above the slope
+            r: 60 + Math.random() * 70,
+            drift: 6 + Math.random() * 12
+          });
+        }
+      }
+    }
+
+    // ---------- input ----------
+
+    function firstTouch() {
+      if (!hintDone) {
+        hintDone = true;
+        setTimeout(function () { hint.classList.add('hidden'); }, 2500);
+      }
+    }
+
+    function push(deltaPx) {
+      firstTouch();
+      if (deltaPx > 0) v += deltaPx * PUSH_K;
+      else v += deltaPx * PULL_K;
+      v = clamp(v, MAX_DOWN, MAX_UP);
+    }
+
+    window.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      var d = e.deltaY;
+      if (e.deltaMode === 1) d *= 40;
+      else if (e.deltaMode === 2) d *= height;
+      push(d);
+    }, { passive: false });
+
+    window.addEventListener('pointerdown', function (e) { touchY = e.clientY; });
+    window.addEventListener('pointermove', function (e) {
+      if (touchY === null) return;
+      push((touchY - e.clientY) * 2.2); // swipe up = scroll down = push
+      touchY = e.clientY;
+    });
+    window.addEventListener('pointerup', function () { touchY = null; });
+    window.addEventListener('pointercancel', function () { touchY = null; });
+
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); push(90); }
+      if (e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); push(-90); }
+    });
+
+    // ---------- physics ----------
+
+    function rollGold() { goldBoulder = Math.random() < GOLD_CHANCE; }
+
+    function step(dt) {
+      var dtS = Math.min(dt, 40) / 1000;
+      var ang = slopeAngle(x);
+
+      v -= GRAV * Math.sin(ang) * dtS;
+      v -= v * FRICTION * dtS;
+      v = clamp(v, MAX_DOWN, MAX_UP);
+
+      x += v * Math.cos(ang) * dtS;
+      roll += (v * dtS) / (BOULDER_R * 0.9);
+
+      if (x <= 0) {
+        x = 0;
+        if (v < 0) {
+          if (maxAltSinceBottom > 80) {
+            stats.attempts++;
+            saveState();
+            if (v < -500 && !reduceMotion) {
+              canvas.classList.remove('shake');
+              void canvas.offsetWidth;
+              canvas.classList.add('shake');
+            }
+          }
+          maxAltSinceBottom = 0;
+          v = -v * 0.15;
+          if (Math.abs(v) < 20) v = 0;
+        }
+      }
+
+      var alt = meters(x);
+      maxAltSinceBottom = Math.max(maxAltSinceBottom, alt);
+      if (alt > stats.best) {
+        stats.best = Math.round(alt);
+        if (Math.floor(alt) % 10 === 0) saveState(); // don't hammer storage
+      }
+
+      extendMilestones(x + width / scale + 600);
+
+      // camera eases toward the boulder
+      var targetCamX = x - (width * 0.42) / scale;
+      var targetCamY = slopeY(x) - (height * 0.34) / scale;
+      camX += (targetCamX - camX) * Math.min(1, dtS * 5);
+      camY += (targetCamY - camY) * Math.min(1, dtS * 5);
+
+      for (var i = 0; i < clouds.length; i++) clouds[i].off += clouds[i].drift * dtS;
+    }
+
+    // ---------- drawing ----------
+
+    function wx(px) { return (px - camX) * scale; }
+    function wy(py) { return height * 0.62 - (py - camY) * scale; }
+
+    function skyColors(alt) {
+      // cream valley -> pale blue -> deep night at silly altitudes
+      var u1 = clamp(alt / 4000, 0, 1);
+      var u2 = clamp((alt - 6000) / 8000, 0, 1);
+      function mix(a, b, u) {
+        return [Math.round(lerp(a[0], b[0], u)), Math.round(lerp(a[1], b[1], u)), Math.round(lerp(a[2], b[2], u))];
+      }
+      var top = mix(mix([220, 238, 251], [122, 166, 214], u1), [24, 26, 54], u2);
+      var bot = mix(mix([255, 248, 239], [190, 216, 240], u1), [58, 62, 105], u2);
+      return { top: 'rgb(' + top.join(',') + ')', bot: 'rgb(' + bot.join(',') + ')', night: u2 };
+    }
+
+    function drawSky(alt) {
+      var c = skyColors(alt);
+      var g = ctx.createLinearGradient(0, 0, 0, height);
+      g.addColorStop(0, c.top);
+      g.addColorStop(1, c.bot);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, width, height);
+      if (c.night > 0.05) {
+        ctx.fillStyle = 'rgba(255, 248, 239, ' + (0.9 * c.night) + ')';
+        for (var i = 0; i < 40; i++) {
+          // deterministic star field per screen-tile
+          var sx = ((i * 379 + 41) % 100) / 100 * width;
+          var sy = ((i * 233 + 89) % 100) / 100 * height * 0.7;
+          ctx.fillRect(sx, sy, 2, 2);
+        }
+      }
+      return c.night;
+    }
+
+    function drawSun(night) {
+      ctx.globalAlpha = 1 - night * 0.85;
+      ctx.beginPath();
+      ctx.arc(width - 90, 90, 34, 0, Math.PI * 2);
+      ctx.fillStyle = INK;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(width - 93, 87, 34, 0, Math.PI * 2);
+      ctx.fillStyle = GOLD;
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawClouds() {
+      for (var i = 0; i < clouds.length; i++) {
+        var c = clouds[i];
+        var span = (width / scale) + 1200;
+        var worldX = camX - 600 + ((c.off % span) + span) % span;
+        var gx = wx(worldX);
+        var gy = wy(slopeY(worldX) + c.h);
+        if (gy < -150 || gy > height + 150) continue;
+        var r = c.r * scale;
+        ctx.beginPath();
+        ctx.arc(gx, gy, r * 0.5, 0, Math.PI * 2);
+        ctx.arc(gx + r * 0.42, gy + r * 0.08, r * 0.38, 0, Math.PI * 2);
+        ctx.arc(gx - r * 0.42, gy + r * 0.1, r * 0.34, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 248, 239, 0.8)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(32, 26, 23, 0.22)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function drawMountain() {
+      var x0 = camX - 100 / scale;
+      var x1 = camX + (width + 100) / scale;
+      var stepPx = (x1 - x0) / 56;
+      function outline(ox, oy) {
+        ctx.beginPath();
+        ctx.moveTo(wx(x0) + ox, wy(slopeY(x0)) + oy);
+        for (var px = x0 + stepPx; px <= x1; px += stepPx) ctx.lineTo(wx(px) + ox, wy(slopeY(px)) + oy);
+        ctx.lineTo(width + 60, height + 60);
+        ctx.lineTo(-60, height + 60);
+        ctx.closePath();
+      }
+      outline(4, 4);
+      ctx.fillStyle = INK;
+      ctx.fill();
+      outline(0, 0);
+      ctx.fillStyle = LIME;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+    }
+
+    function drawMilestones() {
+      for (var i = 0; i < milestones.length; i++) {
+        var ms = milestones[i];
+        var gx = wx(ms.x);
+        if (gx < -80 || gx > width + 80) continue;
+        var gy = wy(slopeY(ms.x));
+        ctx.save();
+        ctx.translate(gx, gy);
+        ctx.scale(scale, scale);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -42);
+        ctx.stroke();
+        var label = ms.m + ' m';
+        ctx.font = '900 11px "Arial Black", Arial, sans-serif';
+        var tw = ctx.measureText(label).width + 14;
+        ctx.fillStyle = INK;
+        ctx.fillRect(-tw / 2 + 2, -60 + 2, tw, 20);
+        ctx.fillStyle = CREAM;
+        ctx.fillRect(-tw / 2, -60, tw, 20);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-tw / 2, -60, tw, 20);
+        ctx.fillStyle = INK;
+        ctx.textAlign = 'center';
+        ctx.fillText(label, 0, -46);
+        ctx.restore();
+      }
+    }
+
+    function drawBoulder() {
+      var ang = slopeAngle(x);
+      var gx = wx(x);
+      var gy = wy(slopeY(x)) - BOULDER_R * scale * Math.cos(ang);
+      var r = BOULDER_R * scale;
+      ctx.save();
+      ctx.translate(gx, gy);
+      ctx.rotate(roll);
+      ctx.beginPath();
+      ctx.arc(3, 3, r, 0, Math.PI * 2);
+      ctx.fillStyle = INK;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = goldBoulder ? GOLD : CORAL;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(32, 26, 23, 0.28)';
+      ctx.beginPath(); ctx.arc(-r * 0.35, -r * 0.2, r * 0.16, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r * 0.3, r * 0.28, r * 0.12, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r * 0.1, -r * 0.42, r * 0.09, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSisyphus() {
+      var ang = slopeAngle(x);
+      var pushing = v >= -10;
+      var gxw = x - Math.cos(ang) * (BOULDER_R + 26);
+      var gyw = slopeY(x) - Math.sin(ang) * (BOULDER_R + 26);
+      // he stands on the slope beneath his own feet, not the boulder's
+      gyw = slopeY(gxw);
+      var gx = wx(gxw), gy = wy(gyw);
+      var lean = pushing ? -0.5 : 0.25;
+      var ph = roll * 2;
+
+      ctx.save();
+      ctx.translate(gx, gy);
+      ctx.rotate(-ang + lean * 0.35);
+      ctx.scale(scale, scale);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-10 + Math.sin(ph) * 6, 16);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-2 + Math.sin(ph + Math.PI) * 6, 17);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(12, -22);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(12, -22);
+      ctx.lineTo(26, -14);
+      ctx.moveTo(12, -22);
+      ctx.lineTo(25, -22);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(14, -32, 7.5, 0, Math.PI * 2);
+      ctx.fillStyle = CREAM;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw() {
+      var alt = meters(x);
+      var night = drawSky(alt);
+      drawSun(night);
+      drawClouds();
+      drawMountain();
+      drawMilestones();
+      drawBoulder();
+      drawSisyphus();
+
+      altEl.textContent = Math.round(alt) + ' m';
+      bestEl.textContent = stats.best + ' m';
+      attemptsEl.textContent = stats.attempts;
+    }
+
+    // ---------- loop ----------
+
+    var running = false;
+    function frame(now) {
+      if (!running) return;
+      var dt = lastFrame ? now - lastFrame : 16;
+      lastFrame = now;
+      step(dt);
+      draw();
+      requestAnimationFrame(frame);
+    }
+    function start() {
+      if (running) return;
+      running = true;
+      lastFrame = 0;
+      requestAnimationFrame(frame);
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { running = false; saveState(); }
+      else start();
+    });
+    window.addEventListener('pagehide', saveState);
+
+    // ---------- boot ----------
+
+    loadState();
+    rollGold();
+    window.addEventListener('resize', debounce(resize, 150));
+    resize();
+    extendMilestones(3000);
+    setTimeout(function () { if (!hintDone) hint.classList.add('hidden'); }, 12000);
+    start();
+  })();
+  </script>
+</body>
+</html>

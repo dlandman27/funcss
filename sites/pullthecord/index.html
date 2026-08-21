@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pull the Cord</title>
+  <meta name="description" content="A bulb, a cord, a room. Pull the cord and the lights go out — everywhere.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/pullthecord/">
+    <meta property="og:title" content="Pull the Cord">
+    <meta property="og:description" content="A bulb, a cord, a room. Yank the cord — it clicks, springs back, and the lights go out everywhere.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/pullthecord.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pull the Cord">
+    <meta name="twitter:description" content="A bulb, a cord, a room. Yank the cord — it clicks, springs back, and the lights go out everywhere.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/pullthecord.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --gold: #f7c948;
+      --orange: #f47b28;
+      --bg: var(--paper);
+      --fg: var(--ink);
+      --line: var(--ink);
+      --glass: #efe7d8;
+    }
+    body[data-theme="dark"] {
+      --bg: #191512;
+      --fg: var(--cream);
+      --line: var(--cream);
+      --glass: #3a332c;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background-color 0.35s ease, color 0.35s ease;
+    }
+
+    .badge {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: var(--ink);
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 14px;
+      box-shadow: 3px 3px 0 var(--ink);
+      transform: rotate(-4deg);
+      z-index: 5;
+    }
+
+    .glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: 0;
+    }
+    body[data-theme="light"] .glow { opacity: 1; }
+
+    .fixture {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .wire { width: 3px; height: clamp(44px, 9vh, 80px); background: var(--line); }
+    .socket {
+      width: 34px;
+      height: 26px;
+      background: var(--glass);
+      border: 3px solid var(--line);
+      border-radius: 6px 6px 2px 2px;
+      background-image: repeating-linear-gradient(to bottom, transparent 0 4px, color-mix(in srgb, var(--line) 35%, transparent) 4px 6px);
+    }
+    .bulb {
+      width: clamp(64px, 12vw, 86px);
+      aspect-ratio: 1;
+      margin-top: -2px;
+      background: var(--glass);
+      border: 3px solid var(--line);
+      border-radius: 50%;
+      box-shadow: 5px 5px 0 rgba(32, 26, 23, 0.25);
+      position: relative;
+      transition: background-color 0.35s ease, box-shadow 0.35s ease;
+      will-change: transform;
+    }
+    body[data-theme="light"] .bulb {
+      background: var(--gold);
+      box-shadow: 5px 5px 0 rgba(32, 26, 23, 0.25), 0 0 46px 10px rgba(247, 201, 72, 0.55);
+    }
+    .bulb::after {
+      content: '';
+      position: absolute;
+      top: 38%;
+      left: 32%;
+      width: 36%;
+      height: 26%;
+      border: 2.5px solid var(--line);
+      border-top: none;
+      border-radius: 0 0 50% 50%;
+      opacity: 0.75;
+    }
+    @keyframes flicker {
+      0%, 100% { filter: none; }
+      15% { filter: brightness(0.3); }
+      30% { filter: none; }
+      42% { filter: brightness(0.4); }
+      55% { filter: none; }
+      70% { filter: brightness(0.25); }
+    }
+    .bulb.flicker { animation: flicker 0.55s steps(1); }
+
+    svg.cord {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .cord path { stroke: var(--line); stroke-width: 3; fill: none; stroke-linecap: round; }
+
+    .handle {
+      position: fixed;
+      width: 20px;
+      height: 38px;
+      background: var(--orange);
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 rgba(32, 26, 23, 0.45);
+      cursor: grab;
+      touch-action: none;
+      z-index: 3;
+      will-change: transform;
+    }
+    .handle.held { cursor: grabbing; }
+    .handle::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      right: 3px;
+      top: 8px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--ink);
+      opacity: 0.5;
+      box-shadow: 0 7px 0 rgba(32, 26, 23, 0.5), 0 14px 0 rgba(32, 26, 23, 0.5);
+    }
+
+    .moth {
+      position: fixed;
+      width: 14px;
+      height: 10px;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+    }
+    .moth.here { opacity: 1; }
+    .moth .body {
+      position: absolute;
+      left: 5px;
+      top: 1px;
+      width: 4px;
+      height: 8px;
+      background: var(--ink);
+      border-radius: 999px;
+    }
+    .moth .w {
+      position: absolute;
+      top: 0;
+      width: 7px;
+      height: 9px;
+      background: var(--cream);
+      border: 1.5px solid var(--ink);
+      border-radius: 60% 60% 40% 40%;
+      animation: flap 0.12s infinite alternate ease-in-out;
+    }
+    .moth .w.l { left: -1px; transform-origin: right center; }
+    .moth .w.r { right: -1px; transform-origin: left center; animation-delay: 0.06s; }
+    @keyframes flap {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(0.35); }
+    }
+    .orbit { animation: orbit 5.5s linear infinite; }
+    @keyframes orbit {
+      from { transform: rotate(0deg) translateX(72px) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(72px) rotate(-360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .orbit { animation-duration: 14s; }
+      .bulb.flicker { animation: none; }
+    }
+
+    .hint {
+      position: fixed;
+      left: 50%;
+      top: 58%;
+      transform: translateX(-50%);
+      font-style: italic;
+      font-size: 16px;
+      opacity: 0.7;
+      transition: opacity 2s;
+      z-index: 1;
+      white-space: nowrap;
+    }
+
+    .plaque {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translateX(-50%) rotate(-1deg);
+      background: var(--cream);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 4px 4px 0 rgba(32, 26, 23, 0.4);
+      padding: 12px 22px;
+      text-align: center;
+      max-width: min(86vw, 380px);
+      z-index: 4;
+    }
+    .plaque .head {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+    .plaque .notice { font-style: italic; font-size: 14.5px; line-height: 1.45; }
+    .plaque .tally { font-style: italic; font-size: 12px; opacity: 0.55; margin-top: 6px; }
+  </style>
+</head>
+<body data-theme="light">
+  <span class="badge">PULL THE CORD</span>
+  <div class="glow" id="glow"></div>
+
+  <div class="fixture" id="fixture">
+    <div class="wire"></div>
+    <div class="socket" id="socket"></div>
+    <div class="bulb" id="bulb"></div>
+  </div>
+
+  <svg class="cord" id="cordSvg"><path id="cordPath" d=""></path></svg>
+  <div class="handle" id="handle"></div>
+
+  <div class="moth" id="moth"><div class="orbit"><div class="body"></div><span class="w l"></span><span class="w r"></span></div></div>
+
+  <p class="hint" id="hint">pull it</p>
+
+  <div class="plaque">
+    <p class="head">NOTICE</p>
+    <p class="notice" id="notice">Please turn the light off when you leave.</p>
+    <p class="tally" id="tally">pulls to date: 0</p>
+  </div>
+
+  <script type="module">
+    let animate;
+    try {
+      ({ animate } = await import("https://cdn.jsdelivr.net/npm/motion@12.15.0/+esm"));
+    } catch (err) {
+      document.getElementById('hint').textContent = 'the cord is stuck. try again later.';
+    }
+
+    if (animate) {
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+      const socket = document.getElementById('socket');
+      const bulb = document.getElementById('bulb');
+      const handle = document.getElementById('handle');
+      const cordPath = document.getElementById('cordPath');
+      const glow = document.getElementById('glow');
+      const moth = document.getElementById('moth');
+      const notice = document.getElementById('notice');
+      const tally = document.getElementById('tally');
+      const hint = document.getElementById('hint');
+
+      const REST = 150;      // cord length at rest
+      const THRESHOLD = 115; // pull distance that clicks
+
+      let anchor = { x: 0, y: 0 };
+      const state = { dx: 0, dy: 0 };
+
+      const measure = () => {
+        const r = socket.getBoundingClientRect();
+        anchor = { x: r.right - 4, y: r.bottom - 8 };
+        const b = bulb.getBoundingClientRect();
+        moth.style.left = (b.left + b.width / 2 - 7) + 'px';
+        moth.style.top = (b.top + b.height / 2 - 5) + 'px';
+        glow.style.background = `radial-gradient(circle at 50% ${b.top + b.height / 2}px, rgba(247,201,72,0.30), transparent 52%)`;
+        draw();
+      };
+
+      const draw = () => {
+        const hx = anchor.x + state.dx;
+        const hy = anchor.y + REST + state.dy;
+        const dist = Math.hypot(state.dx, REST + state.dy);
+        const slack = Math.max(0, REST - dist);
+        const mx = (anchor.x + hx) / 2 + state.dx * 0.1;
+        const my = (anchor.y + hy) / 2 + slack * 0.8;
+        cordPath.setAttribute('d', `M ${anchor.x} ${anchor.y} Q ${mx} ${my} ${hx} ${hy}`);
+        handle.style.transform =
+          `translate(${hx - 10}px, ${hy - 4}px) rotate(${clamp(state.dx * 0.18, -22, 22)}deg)`;
+      };
+
+      // --- theme ---
+      let pulls = 0, theme = 'light';
+      try {
+        pulls = +localStorage.getItem('cord-pulls') || 0;
+        theme = localStorage.getItem('cord-theme') || 'light';
+      } catch (e) {}
+      const showTally = () => { tally.textContent = 'pulls to date: ' + pulls; };
+      showTally();
+
+      let mothT;
+      const scheduleMoth = () => {
+        clearTimeout(mothT);
+        moth.classList.remove('here');
+        if (theme === 'light') mothT = setTimeout(() => moth.classList.add('here'), 12000);
+      };
+
+      const applyTheme = () => {
+        document.body.dataset.theme = theme;
+        notice.textContent = theme === 'light'
+          ? 'Please turn the light off when you leave.'
+          : 'It is now dark. You did this.';
+        scheduleMoth();
+      };
+      applyTheme();
+
+      const toggle = () => {
+        theme = theme === 'light' ? 'dark' : 'light';
+        pulls++;
+        try {
+          localStorage.setItem('cord-theme', theme);
+          localStorage.setItem('cord-pulls', pulls);
+        } catch (e) {}
+        applyTheme();
+        showTally();
+        if (navigator.vibrate) navigator.vibrate(40);
+        animate(bulb, { scaleY: [0.88, 1], scaleX: [1.08, 1] },
+          { type: 'spring', stiffness: 500, damping: reduce ? 20 : 9 });
+        if (theme === 'light' && !reduce && Math.random() < 0.03) {
+          bulb.classList.add('flicker');
+          setTimeout(() => bulb.classList.remove('flicker'), 600);
+        }
+      };
+
+      // --- drag ---
+      let anims = [];
+      const stopAnims = () => { anims.forEach(a => a.stop()); anims = []; };
+
+      let hinted = false;
+      const fadeHint = () => { if (!hinted) { hinted = true; hint.style.opacity = 0; } };
+      setTimeout(fadeHint, 10000);
+
+      handle.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        fadeHint();
+        stopAnims();
+        handle.classList.add('held');
+        handle.setPointerCapture(e.pointerId);
+        const ox = e.clientX - state.dx, oy = e.clientY - state.dy;
+        let lx = e.clientX, ly = e.clientY, lt = performance.now(), vx = 0, vy = 0;
+        let clicked = false;
+
+        const move = ev => {
+          const t = performance.now(), dt = Math.max(1, t - lt);
+          vx = (ev.clientX - lx) / dt * 1000;
+          vy = (ev.clientY - ly) / dt * 1000;
+          lx = ev.clientX; ly = ev.clientY; lt = t;
+          state.dx = clamp(ev.clientX - ox, -240, 240);
+          state.dy = clamp(ev.clientY - oy, -REST * 0.55, 420);
+          draw();
+          // the mechanism clicks mid-pull, like a real cord
+          if (!clicked && state.dy > THRESHOLD) { clicked = true; toggle(); }
+        };
+        const up = () => {
+          handle.removeEventListener('pointermove', move);
+          handle.removeEventListener('pointerup', up);
+          handle.removeEventListener('pointercancel', up);
+          handle.classList.remove('held');
+          stopAnims();
+          anims = [
+            animate(state.dx, 0, {
+              type: 'spring', stiffness: 190, damping: reduce ? 16 : 4.5,
+              velocity: clamp(vx, -2500, 2500),
+              onUpdate: v => { state.dx = v; draw(); }
+            }),
+            animate(state.dy, 0, {
+              type: 'spring', stiffness: 320, damping: reduce ? 18 : 9,
+              velocity: clamp(vy, -2500, 2500),
+              onUpdate: v => { state.dy = v; }
+            })
+          ];
+        };
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('pointerup', up);
+        handle.addEventListener('pointercancel', up);
+      });
+
+      let rzT;
+      addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(measure, 120); });
+      measure();
+    }
+  </script>
+</body>
+</html>

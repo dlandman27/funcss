@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyperspace</title>
+  <meta name="description" content="Drift through the stars, or hold anywhere to punch it. Destination: none.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/hyperspace/">
+    <meta property="og:title" content="Hyperspace">
+    <meta property="og:description" content="Drift through the stars, or hold anywhere to punch it — the stars streak, the odometer climbs, physics is notified. Destination: none.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/hyperspace.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Hyperspace">
+    <meta name="twitter:description" content="Drift through the stars, or hold anywhere to punch it — the stars streak, the odometer climbs, physics is notified. Destination: none.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/hyperspace.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --gold: #f7c948;
+      --coral: #f0563e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--ink);
+      color: var(--cream);
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    canvas { position: fixed; inset: 0; display: block; }
+
+    .badge {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: var(--ink);
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 14px;
+      box-shadow: 3px 3px 0 rgba(255, 248, 239, 0.35);
+      transform: rotate(-4deg);
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .hint {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-style: italic;
+      font-size: 16px;
+      opacity: 0.75;
+      transition: opacity 2s;
+      z-index: 4;
+      pointer-events: none;
+      white-space: nowrap;
+      text-shadow: 0 1px 0 var(--ink);
+    }
+
+    .dash {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) rotate(-0.8deg);
+      background: var(--cream);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 4px 4px 0 rgba(255, 248, 239, 0.3);
+      padding: 10px 24px;
+      text-align: center;
+      z-index: 5;
+      pointer-events: none;
+      max-width: min(90vw, 440px);
+      transition: opacity 0.5s;
+    }
+    body.warping .dash { opacity: 0.85; }
+    .dash .head {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    .dash .dist {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(16px, 3.6vw, 22px);
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .dash .stat {
+      font-style: italic;
+      font-size: 13px;
+      opacity: 0.8;
+      margin-top: 3px;
+      min-height: 1.4em;
+    }
+    .dash .stat.alert { color: var(--coral); opacity: 1; }
+  </style>
+</head>
+<body>
+  <span class="badge">HYPERSPACE</span>
+  <p class="hint" id="hint">hold anywhere to punch it</p>
+  <div class="dash">
+    <p class="head">ODOMETER</p>
+    <p class="dist" id="dist">0 km</p>
+    <p class="stat" id="stat">status: drifting. destination: none.</p>
+  </div>
+
+  <script type="module">
+    let THREE;
+    try {
+      THREE = await import("https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js");
+    } catch (err) {
+      document.getElementById('stat').textContent = 'status: engine failure. try again later.';
+    }
+
+    if (THREE) {
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+      const lerp = (a, b, t) => a + (b - a) * t;
+
+      const distEl = document.getElementById('dist');
+      const statEl = document.getElementById('stat');
+      const hint = document.getElementById('hint');
+
+      // --- scene ---
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setClearColor(0x201a17, 1);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(innerWidth, innerHeight);
+      document.body.prepend(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 4200);
+      camera.position.set(0, 0, 0);
+
+      const N = 4000;
+      const SPREAD = 850, DEPTH = 3600, AHEAD = 30;
+      const PALETTE = [
+        [1, 0.973, 0.937, 0.70],   // cream
+        [0.969, 0.788, 0.282, 0.12], // gold
+        [0.353, 0.627, 0.859, 0.09], // sky
+        [1, 0.498, 0.647, 0.09]     // pink
+      ];
+      const pickColor = () => {
+        let r = Math.random();
+        for (const [cr, cg, cb, w] of PALETTE) { if ((r -= w) <= 0) return [cr, cg, cb]; }
+        return [1, 0.973, 0.937];
+      };
+
+      const pos = new Float32Array(N * 3);
+      const col = new Float32Array(N * 3);
+      const linePos = new Float32Array(N * 6);
+      const lineCol = new Float32Array(N * 6);
+      for (let i = 0; i < N; i++) {
+        pos[i * 3] = (Math.random() - 0.5) * 2 * SPREAD;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 2 * SPREAD;
+        pos[i * 3 + 2] = AHEAD - Math.random() * DEPTH;
+        const [r, g, b] = pickColor();
+        col[i * 3] = r; col[i * 3 + 1] = g; col[i * 3 + 2] = b;
+        lineCol[i * 6] = r; lineCol[i * 6 + 1] = g; lineCol[i * 6 + 2] = b;
+        lineCol[i * 6 + 3] = r; lineCol[i * 6 + 4] = g; lineCol[i * 6 + 5] = b;
+      }
+
+      const ptsGeo = new THREE.BufferGeometry();
+      ptsGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      ptsGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      const points = new THREE.Points(ptsGeo, new THREE.PointsMaterial({
+        size: 2.4, vertexColors: true, sizeAttenuation: true, transparent: true, opacity: 0.95
+      }));
+      scene.add(points);
+
+      const lineGeo = new THREE.BufferGeometry();
+      lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
+      lineGeo.setAttribute('color', new THREE.BufferAttribute(lineCol, 3));
+      const lineMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0 });
+      const streaks = new THREE.LineSegments(lineGeo, lineMat);
+      scene.add(streaks);
+
+      // --- flight model ---
+      const VMIN = 26, VMAX = reduce ? 900 : 2600;
+      const C = 299792; // km/s
+      const TOP_KMS = C * 1.6;
+      let vu = VMIN, holding = false;
+      const steer = { x: 0, y: 0 };
+
+      let km = 0;
+      try { km = +localStorage.getItem('hyperspace-km') || 0; } catch (e) {}
+      const saveKm = () => { try { localStorage.setItem('hyperspace-km', Math.round(km)); } catch (e) {} };
+      setInterval(saveKm, 2500);
+      addEventListener('pagehide', saveKm);
+
+      const fmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+      const fmt2 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+      const AU = 1.496e8, LY = 9.4607e12;
+      const showDist = () => {
+        if (km < 1e9) distEl.textContent = fmt.format(km) + ' km';
+        else if (km < LY) distEl.textContent = fmt2.format(km / AU) + ' AU';
+        else distEl.textContent = fmt2.format(km / LY) + ' lightyears';
+      };
+      showDist();
+
+      let overrideT = 0;
+      const setStatus = kms => {
+        if (overrideT > 0) return;
+        statEl.classList.remove('alert');
+        if (kms < 100) statEl.textContent = 'status: drifting. destination: none.';
+        else if (kms < C) statEl.textContent = `velocity: ${fmt.format(kms)} km/s. making excellent time.`;
+        else {
+          statEl.textContent = `velocity: ${fmt.format(kms)} km/s. c exceeded. physics has been notified.`;
+          statEl.classList.add('alert');
+        }
+      };
+
+      let hinted = false;
+      const fadeHint = () => { if (!hinted) { hinted = true; hint.style.opacity = 0; } };
+      setTimeout(fadeHint, 10000);
+
+      // --- input ---
+      addEventListener('pointermove', e => {
+        steer.x = (e.clientX / innerWidth - 0.5) * 2;
+        steer.y = (e.clientY / innerHeight - 0.5) * 2;
+      });
+      addEventListener('pointerdown', () => {
+        holding = true;
+        fadeHint();
+        document.body.classList.add('warping');
+      });
+      const release = () => {
+        if (!holding) return;
+        holding = false;
+        document.body.classList.remove('warping');
+        if (vu > VMAX * 0.8 && Math.random() < 0.03) {
+          statEl.textContent = 'you just missed something beautiful.';
+          overrideT = 4;
+        }
+      };
+      addEventListener('pointerup', release);
+      addEventListener('pointercancel', release);
+
+      let rzT;
+      addEventListener('resize', () => {
+        clearTimeout(rzT);
+        rzT = setTimeout(() => {
+          camera.aspect = innerWidth / innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(innerWidth, innerHeight);
+        }, 120);
+      });
+
+      // --- loop ---
+      let last = performance.now(), raf = null, hudT = 0;
+      const tick = now => {
+        raf = requestAnimationFrame(tick);
+        const dt = clamp((now - last) / 1000, 0, 0.05);
+        last = now;
+
+        vu = holding ? lerp(vu, VMAX, 1 - Math.exp(-dt * 1.1))
+                     : lerp(vu, VMIN, 1 - Math.exp(-dt * 2.2));
+        const t = (vu - VMIN) / (VMAX - VMIN);
+        const kms = 7 + t * (TOP_KMS - 7);
+        km += kms * dt;
+
+        // advance stars, wrap the ones behind us
+        const dz = vu * dt;
+        const tail = Math.min(140, vu * 0.055);
+        for (let i = 0; i < N; i++) {
+          let z = pos[i * 3 + 2] + dz;
+          if (z > AHEAD) {
+            z -= DEPTH;
+            pos[i * 3] = (Math.random() - 0.5) * 2 * SPREAD;
+            pos[i * 3 + 1] = (Math.random() - 0.5) * 2 * SPREAD;
+          }
+          pos[i * 3 + 2] = z;
+          const x = pos[i * 3], y = pos[i * 3 + 1];
+          linePos[i * 6] = x; linePos[i * 6 + 1] = y; linePos[i * 6 + 2] = z;
+          linePos[i * 6 + 3] = x; linePos[i * 6 + 4] = y; linePos[i * 6 + 5] = z - tail;
+        }
+        ptsGeo.attributes.position.needsUpdate = true;
+        lineGeo.attributes.position.needsUpdate = true;
+        lineMat.opacity = clamp(t * 1.4, 0, 0.85);
+        points.material.opacity = lerp(0.95, 0.35, t);
+
+        // steer + fov kick
+        camera.position.x = lerp(camera.position.x, steer.x * 70, 1 - Math.exp(-dt * 3));
+        camera.position.y = lerp(camera.position.y, -steer.y * 45, 1 - Math.exp(-dt * 3));
+        camera.lookAt(steer.x * 40, -steer.y * 25, -600);
+        const targetFov = reduce ? 60 : lerp(60, 84, t);
+        if (Math.abs(camera.fov - targetFov) > 0.05) {
+          camera.fov = lerp(camera.fov, targetFov, 1 - Math.exp(-dt * 4));
+          camera.updateProjectionMatrix();
+        }
+
+        // HUD at ~10fps
+        hudT += dt;
+        if (hudT > 0.1) {
+          hudT = 0;
+          if (overrideT > 0) { overrideT -= 0.1; }
+          showDist();
+          setStatus(kms);
+        }
+
+        renderer.render(scene, camera);
+      };
+      raf = requestAnimationFrame(tick);
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          cancelAnimationFrame(raf);
+          raf = null;
+          saveKm();
+        } else if (!raf) {
+          last = performance.now();
+          raf = requestAnimationFrame(tick);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

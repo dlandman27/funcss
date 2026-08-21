@@ -26,4 +26,15 @@ Examples: `/brainstorm`, `/brainstorm music`, `/brainstorm games`, `/brainstorm 
    - Fun or surprising — something that makes you think "why does this exist? I love it"
    - Interactive where possible (clicks, typing, mouse movement, timers, etc.)
 
+   Sites may pull in CDN packages via pinned ESM imports (see `new-site.md`), which opens
+   categories that vanilla JS couldn't reach — include some of these in the mix:
+   - **3D** (Three.js) — low-poly sticker-comic dioramas, spinnable objects, dice you throw
+   - **Sound** (Tone.js) — instruments, generative music boxes, noise toys
+   - **Real physics** (matter-js) — ragdolls, dominoes, soft bodies, chain reactions
+   - **Springy motion** (Motion) — drag-and-fling, gesture-driven toys
+   - **In-browser ML** (MediaPipe) — hand/face tracking toys
+
+   The idea must come first, the import second — "what would be funny," never "what can
+   the library do." A library demo wearing the house palette is a failure.
+
 4. **After listing the ideas**, ask the user which one(s) they want to build, then offer to run `/new-site` for them.

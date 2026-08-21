@@ -20,7 +20,17 @@ Example: `/new-site typeracer "Type Racer" "Race against the clock to type a ran
    Build a complete, polished, self-contained site. Follow these rules exactly:
    - First tag in `<head>` must be: `<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>`
    - Include `<meta charset="UTF-8">` and `<meta name="viewport" content="width=device-width, initial-scale=1.0">`
-   - Vanilla HTML + CSS + JS only — no external libraries, no CDN imports, no frameworks
+   - Vanilla HTML + CSS + JS first. CDN packages are allowed via ESM imports at the top of
+     a `<script type="module">` — but only when the library IS the mechanic (springs via
+     Motion, 3D via Three.js, audio via Tone.js, real physics via matter-js), never for
+     things CSS/WAAPI or a cheap hand-rolled sim can do:
+     ```html
+     <script type="module">
+       import { animate, spring, press } from "https://cdn.jsdelivr.net/npm/motion@12.15.0/+esm";
+     </script>
+     ```
+     **Pin exact versions** — these sites sit untouched forever; `@latest` rots.
+     No frameworks (React/Vue/etc) — nothing that wants JSX or a build step.
    - Fully self-contained in one file
    - Responsive — must look good on mobile
    - Creative and fun — make it genuinely interesting, not generic

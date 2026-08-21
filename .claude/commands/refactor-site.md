@@ -34,7 +34,9 @@ Example: `/refactor-site prefixsuffix rename to "The Longest Name" and make the 
      (older sites are missing it — always add it during a refactor)
    - Include `<meta charset="UTF-8">` and `<meta name="viewport" content="width=device-width, initial-scale=1.0">`
    - `<title>` must match the new catalog `name`
-   - Vanilla HTML + CSS + JS only, fully self-contained in one file, no CDN imports
+   - Vanilla HTML + CSS + JS first, fully self-contained in one file. Pinned CDN ESM
+     imports are allowed when the library is the mechanic (see `new-site.md`) — but don't
+     retrofit a library into a site whose hand-rolled version already works
    - Responsive — must look good on mobile
    - **Read `.claude/commands/site-style.md` first and follow it** — the sticker-comic design
      language, interaction feel, voice, and tech checklist for every site

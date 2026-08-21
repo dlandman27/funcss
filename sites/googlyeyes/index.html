@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Googly Eyes</title>
+  <meta name="description" content="A wall of googly eyes. They follow your cursor, droop when you stop, and rattle when you knock.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/googlyeyes/">
+    <meta property="og:title" content="Googly Eyes">
+    <meta property="og:description" content="A wall of googly eyes. They follow your cursor, droop when you stop, and rattle when you knock.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/googlyeyes.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Googly Eyes">
+    <meta name="twitter:description" content="A wall of googly eyes. They follow your cursor, droop when you stop, and rattle when you knock.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/googlyeyes.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root { --ink: #201a17; --paper: #f2ede2; --cream: #fff8ef; --royal: #3d51c9; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--royal);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage { position: fixed; inset: 0; display: block; }
+
+    #stage.shake { animation: shake 0.22s linear; }
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-4px, 3px); }
+      50% { transform: translate(3px, -2px); }
+      75% { transform: translate(-2px, 2px); }
+      100% { transform: translate(0, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #stage.shake { animation: none; }
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 15px;
+      color: rgba(255, 248, 239, 0.85);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .hint.hidden { opacity: 0; }
+
+    @media (max-width: 480px) {
+      .hint { font-size: 12px; bottom: 5%; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="hint" id="hint">they follow you &mdash; knock to rattle them</div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+
+    var INK = '#201a17';
+    var PAPER = '#f2ede2';
+    var CREAM = '#fff8ef';
+
+    var GRAVITY = 900;
+    var FOLLOW_K = 260;        // spring toward where you're pointing — must dwarf gravity inside the tiny dome
+    var FOLLOW_DAMP = 10.5;    // underdamped on purpose: overshoot and wobble is the whole googly point
+    var RIM_BOUNCE = 0.25;     // pupil bounces a little off the dome rim
+    var RIM_SLIDE = 0.985;     // ...and slides along it
+    var IDLE_BEFORE_DROOP_MS = 1200;
+    var WINK_CHANCE = 0.08;
+    var BLOODSHOT_CHANCE = 0.03;
+
+    var width = 0, height = 0, dpr = 1;
+    var paperGrad = null;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var pointer = { x: -9999, y: -9999, active: false, lastMove: 0 };
+    var pairs = [];    // { x, y, r, gap, eyes: [eye, eye], nextBlink, blinkT, wink }
+    var bloodshotEye = null;
+    var lastFrame = 0;
+    var hintDone = false;
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function makeEye(cx, cy, r) {
+      var travel = r * 0.44;
+      return {
+        cx: cx, cy: cy, r: r,
+        pupilR: r * 0.42,
+        travel: travel,
+        px: (Math.random() - 0.5) * travel,
+        py: (Math.random() - 0.5) * travel,
+        vx: 0, vy: 0
+      };
+    }
+
+    function buildField() {
+      pairs = [];
+      bloodshotEye = null;
+      var failures = 0;
+      var attempts = 0;
+      while (failures < 90 && attempts < 3000) {
+        attempts++;
+        var r = 20 + Math.pow(Math.random(), 1.6) * 40;
+        var gap = r * 0.16;
+        var halfW = r * 2 + gap / 2;
+        var x = halfW + Math.random() * (width - halfW * 2);
+        var y = r + Math.random() * (height - r * 2);
+        if (width <= halfW * 2 || height <= r * 2) { failures++; continue; }
+        var lx = x - r - gap / 2, rx = x + r + gap / 2;
+        var ok = true;
+        for (var i = 0; i < pairs.length; i++) {
+          var p = pairs[i];
+          for (var e = 0; e < 2; e++) {
+            var other = p.eyes[e];
+            var minD = other.r + r + 6;
+            var d1 = (other.cx - lx) * (other.cx - lx) + (other.cy - y) * (other.cy - y);
+            var d2 = (other.cx - rx) * (other.cx - rx) + (other.cy - y) * (other.cy - y);
+            if (d1 < minD * minD || d2 < minD * minD) { ok = false; break; }
+          }
+          if (!ok) break;
+        }
+        if (!ok) { failures++; continue; }
+        failures = 0;
+        pairs.push({
+          eyes: [makeEye(lx, y, r), makeEye(rx, y, r)],
+          nextBlink: performance.now() + 2000 + Math.random() * 10000,
+          blinkT: 0,
+          wink: -1
+        });
+      }
+      if (Math.random() < BLOODSHOT_CHANCE && pairs.length) {
+        var bp = pairs[Math.floor(Math.random() * pairs.length)];
+        bloodshotEye = bp.eyes[Math.floor(Math.random() * 2)];
+      }
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      paperGrad = ctx.createRadialGradient(width / 2, height * 0.42, 0, width / 2, height * 0.42, Math.max(width, height) * 0.75);
+      paperGrad.addColorStop(0, '#4a60e0');
+      paperGrad.addColorStop(1, '#32419f');
+      buildField();
+    }
+
+    // ---------- input ----------
+
+    function firstTouch() {
+      if (!hintDone) {
+        hintDone = true;
+        setTimeout(function () { hint.classList.add('hidden'); }, 2500);
+      }
+    }
+
+    window.addEventListener('pointermove', function (e) {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.active = true;
+      pointer.lastMove = performance.now();
+      firstTouch();
+    });
+
+    canvas.addEventListener('pointerdown', function (e) {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.active = true;
+      pointer.lastMove = performance.now();
+      firstTouch();
+      knock();
+    });
+
+    document.documentElement.addEventListener('pointerleave', function () {
+      pointer.active = false;
+    });
+
+    function knock() {
+      for (var i = 0; i < pairs.length; i++) {
+        for (var e = 0; e < 2; e++) {
+          var eye = pairs[i].eyes[e];
+          eye.vx += (Math.random() - 0.5) * 900;
+          eye.vy += -(150 + Math.random() * 600);
+        }
+      }
+      if (!reduceMotion) {
+        canvas.classList.remove('shake');
+        void canvas.offsetWidth;
+        canvas.classList.add('shake');
+      }
+    }
+
+    // ---------- physics ----------
+
+    function stepEye(eye, dtS, grip, now) {
+      var ax = 0, ay = GRAVITY;
+      if (grip > 0 && pointer.active) {
+        var dx = pointer.x - eye.cx, dy = pointer.y - eye.cy;
+        var d = Math.sqrt(dx * dx + dy * dy) || 1;
+        var reach = Math.min(1, d / (eye.r * 3));
+        var tx = (dx / d) * eye.travel * reach;
+        var ty = (dy / d) * eye.travel * reach;
+        ax += ((tx - eye.px) * FOLLOW_K - eye.vx * FOLLOW_DAMP) * grip;
+        ay += ((ty - eye.py) * FOLLOW_K - eye.vy * FOLLOW_DAMP) * grip;
+      } else {
+        // droopy: just a bit of friction so they settle at the bottom of the dome
+        ax -= eye.vx * 2.2;
+        ay -= eye.vy * 2.2;
+      }
+
+      eye.vx += ax * dtS;
+      eye.vy += ay * dtS;
+      eye.px += eye.vx * dtS;
+      eye.py += eye.vy * dtS;
+
+      // dome rim: clamp, bounce the radial part, slide the tangential part
+      var len = Math.sqrt(eye.px * eye.px + eye.py * eye.py);
+      if (len > eye.travel) {
+        var nx = eye.px / len, ny = eye.py / len;
+        eye.px = nx * eye.travel;
+        eye.py = ny * eye.travel;
+        var vr = eye.vx * nx + eye.vy * ny;
+        if (vr > 0) {
+          eye.vx -= nx * vr * (1 + RIM_BOUNCE);
+          eye.vy -= ny * vr * (1 + RIM_BOUNCE);
+          eye.vx *= RIM_SLIDE;
+          eye.vy *= RIM_SLIDE;
+        }
+      }
+    }
+
+    function step(dt, now) {
+      var dtS = Math.min(dt, 40) / 1000;
+      var idle = !pointer.active || now - pointer.lastMove > IDLE_BEFORE_DROOP_MS;
+      var grip = idle ? 0 : 1;
+
+      for (var i = 0; i < pairs.length; i++) {
+        var p = pairs[i];
+        stepEye(p.eyes[0], dtS, grip, now);
+        stepEye(p.eyes[1], dtS, grip, now);
+
+        // blinking
+        if (p.blinkT > 0) {
+          p.blinkT -= dtS * 5;
+          if (p.blinkT <= 0) {
+            p.blinkT = 0;
+            p.wink = -1;
+            p.nextBlink = now + 2500 + Math.random() * 10000;
+          }
+        } else if (now >= p.nextBlink) {
+          p.blinkT = 1;
+          p.wink = Math.random() < WINK_CHANCE ? Math.floor(Math.random() * 2) : -1;
+        }
+      }
+    }
+
+    // ---------- drawing ----------
+
+    function drawEye(eye, blink) {
+      ctx.save();
+      ctx.translate(eye.cx, eye.cy);
+
+      // sticker shadow
+      ctx.beginPath();
+      ctx.arc(2.5, 2.5, eye.r, 0, Math.PI * 2);
+      ctx.fillStyle = INK;
+      ctx.fill();
+
+      // sclera
+      ctx.beginPath();
+      ctx.arc(0, 0, eye.r, 0, Math.PI * 2);
+      ctx.fillStyle = CREAM;
+      ctx.fill();
+      ctx.lineWidth = Math.max(2, eye.r * 0.07);
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+
+      // everything inside the dome clips to it
+      ctx.beginPath();
+      ctx.arc(0, 0, eye.r - 1, 0, Math.PI * 2);
+      ctx.clip();
+
+      if (eye === bloodshotEye) {
+        ctx.strokeStyle = 'rgba(240, 86, 62, 0.55)';
+        ctx.lineWidth = 1.2;
+        for (var v = 0; v < 5; v++) {
+          var a = (v / 5) * Math.PI * 2 + 0.4;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * eye.r * 0.95, Math.sin(a) * eye.r * 0.95);
+          ctx.quadraticCurveTo(
+            Math.cos(a + 0.2) * eye.r * 0.6, Math.sin(a + 0.2) * eye.r * 0.6,
+            Math.cos(a - 0.15) * eye.r * 0.4, Math.sin(a - 0.15) * eye.r * 0.4
+          );
+          ctx.stroke();
+        }
+      }
+
+      // pupil
+      ctx.beginPath();
+      ctx.arc(eye.px, eye.py, eye.pupilR, 0, Math.PI * 2);
+      ctx.fillStyle = INK;
+      ctx.fill();
+      // pupil glint
+      ctx.beginPath();
+      ctx.arc(eye.px - eye.pupilR * 0.3, eye.py - eye.pupilR * 0.3, eye.pupilR * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = CREAM;
+      ctx.fill();
+
+      // eyelid sweeps down over the dome
+      if (blink > 0) {
+        var lid = Math.sin(blink * Math.PI); // 0 -> 1 -> 0
+        var lidY = -eye.r + 2 * eye.r * lid;
+        ctx.fillStyle = PAPER;
+        ctx.fillRect(-eye.r, -eye.r, eye.r * 2, lidY + eye.r);
+        ctx.beginPath();
+        ctx.moveTo(-eye.r, lidY);
+        ctx.lineTo(eye.r, lidY);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // dome glint on top of everything, even closed lids
+      ctx.save();
+      ctx.translate(eye.cx, eye.cy);
+      ctx.beginPath();
+      ctx.arc(0, 0, eye.r * 0.72, Math.PI * 1.05, Math.PI * 1.45);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.lineWidth = Math.max(1.5, eye.r * 0.08);
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.fillStyle = paperGrad;
+      ctx.fillRect(0, 0, width, height);
+      for (var i = 0; i < pairs.length; i++) {
+        var p = pairs[i];
+        var blink = p.blinkT > 0 ? 1 - p.blinkT : 0;
+        drawEye(p.eyes[0], p.wink === -1 || p.wink === 0 ? blink : 0);
+        drawEye(p.eyes[1], p.wink === -1 || p.wink === 1 ? blink : 0);
+      }
+    }
+
+    // ---------- loop ----------
+
+    var running = false;
+    function frame(now) {
+      if (!running) return;
+      var dt = lastFrame ? now - lastFrame : 16;
+      lastFrame = now;
+      step(dt, now);
+      draw();
+      requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (running) return;
+      running = true;
+      lastFrame = 0;
+      requestAnimationFrame(frame);
+    }
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) running = false;
+      else start();
+    });
+
+    // ---------- boot ----------
+
+    window.addEventListener('resize', debounce(resize, 150));
+    resize();
+    setTimeout(knock, 700); // wake the wall up on arrival
+    setTimeout(function () { if (!hintDone) hint.classList.add('hidden'); }, 12000);
+    start();
+  })();
+  </script>
+</body>
+</html>
