@@ -147,7 +147,10 @@ function generateSitemap(catalog) {
 }
 
 function generateRobots() {
-  return `User-agent: *\nAllow: /\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`;
+  // Crawl-delay is advisory only — the bots behind the Aug 2026 bandwidth
+  // overage spoofed browser UAs and ignore robots.txt. Real protection lives
+  // in the Vercel Firewall (bot challenge + rate limits), not here.
+  return `User-agent: *\nAllow: /\nDisallow: /api/\nCrawl-delay: 10\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`;
 }
 
 // schema.org CollectionPage + ItemList for the home page (SEO / rich results).

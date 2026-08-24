@@ -247,6 +247,14 @@ test('generateRobots allows all and points at the sitemap', () => {
   assert.match(txt, /Sitemap: https:\/\/randomsitesontheweb\.com\/sitemap\.xml/);
 });
 
+test('generateRobots throttles crawlers and keeps them off the API', () => {
+  const { generateRobots } = require('../scripts/build.js');
+  const txt = generateRobots();
+  assert.match(txt, /Crawl-delay: 10/);
+  assert.match(txt, /Disallow: \/api\//);
+  assert.ok(txt.indexOf('User-agent: *') < txt.indexOf('Crawl-delay: 10'), 'directives belong to the * group');
+});
+
 test('renderJsonLd emits a CollectionPage ItemList of visible toys, script-safe', () => {
   const { renderJsonLd } = require('../scripts/build.js');
   const html = renderJsonLd(CATALOG);
