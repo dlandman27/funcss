@@ -21,6 +21,15 @@ app.get(/^\/([a-z0-9_-]+)\/?$/i, (req, res, next) => {
   if (fs.existsSync(file)) return res.sendFile(file);
   return next();
 });
+// Toy pages reference assets relatively (./Boat.glb), which resolve to
+// /<slug>/<file> at the clean URL — serve those from sites/<slug>/ too.
+app.get(/^\/([a-z0-9_-]+)\/(.+)$/i, (req, res, next) => {
+  const dir = path.join(__dirname, 'sites', req.params[0]);
+  const file = path.resolve(dir, req.params[1]);
+  if (!file.startsWith(dir + path.sep)) return next(); // block traversal out of the toy dir
+  if (fs.existsSync(file) && fs.statSync(file).isFile()) return res.sendFile(file);
+  return next();
+});
 
 // Serve the site from the repo root (index.html, sites/, favicons, etc.)
 app.use(express.static(__dirname));
