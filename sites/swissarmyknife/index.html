@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swiss Army Knife</title>
+  <meta name="description" content="A pocket knife for images — fold out the crop blade, the filter glass, the resize scissors. Everything happens on your device.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/swissarmyknife/">
+    <meta property="og:title" content="Swiss Army Knife">
+    <meta property="og:description" content="A pocket knife for images — fold out the crop blade, the filter glass, the resize scissors. Everything happens on your device.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/swissarmyknife.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Swiss Army Knife">
+    <meta name="twitter:description" content="A pocket knife for images — fold out the crop blade, the filter glass, the resize scissors. Everything happens on your device.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/swissarmyknife.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --orange: #f47b28;
+      --pink: #ff7fa5;
+      --teal: #2fb0a3;
+      --gold: #f7c948;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body.dragging::after {
+      content: '';
+      position: fixed; inset: 10px;
+      border: 4px dashed var(--ink);
+      border-radius: 18px;
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    .app {
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 14px 8px;
+      gap: 8px;
+    }
+
+    /* ---------- header ---------- */
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .title-sticker {
+      display: inline-block;
+      background: var(--coral);
+      color: var(--cream);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(15px, 3.4vw, 22px);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0 var(--ink);
+      transform: rotate(-2deg);
+      -webkit-text-stroke: 1px var(--ink);
+      paint-order: stroke fill;
+    }
+    .subplaque {
+      font-style: italic;
+      font-size: clamp(11px, 2.4vw, 14px);
+      opacity: .75;
+      margin: 6px 0 0 6px;
+    }
+    .top-actions { display: flex; gap: 8px; margin-top: 2px; }
+
+    .chip {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 12px;
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      transition: transform .12s, box-shadow .12s, opacity .2s;
+    }
+    .chip:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+    .chip:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+    .chip:disabled { opacity: .35; cursor: default; }
+
+    /* ---------- workspace ---------- */
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .frame {
+      position: relative;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 8px;
+      max-width: 100%;
+      max-height: 100%;
+      display: none;
+    }
+    .frame.on { display: block; animation: thunk .4s cubic-bezier(.34,1.56,.64,1); }
+    .frame .canvas-clip {
+      position: relative;
+      overflow: hidden;
+      line-height: 0;
+      border-radius: 4px;
+    }
+    #view {
+      display: block;
+      max-width: calc(100vw - 60px);
+      max-height: max(180px, calc(100dvh - 310px));
+      width: auto;
+      height: auto;
+      transform-origin: 0 0;
+    }
+    #view.zoomed { cursor: grab; }
+    #view.pickable { cursor: crosshair; }
+    @keyframes thunk {
+      0% { transform: scale(.6); }
+      65% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    /* dims readout under the frame */
+    .dims-tag {
+      position: absolute;
+      bottom: -14px;
+      right: 14px;
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 2px 2px 0 var(--ink);
+      font-style: italic;
+      font-size: 11px;
+      padding: 2px 10px;
+      transform: rotate(1.5deg);
+    }
+
+    /* ---------- empty state ---------- */
+    .dropzone {
+      border: 4px dashed var(--ink);
+      border-radius: 18px;
+      background: var(--cream);
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: clamp(24px, 6vw, 56px) clamp(28px, 8vw, 72px);
+      text-align: center;
+      cursor: pointer;
+      transform: rotate(-1deg);
+      transition: transform .15s;
+      max-width: min(90vw, 460px);
+    }
+    .dropzone:hover { transform: rotate(-1deg) translate(-2px, -2px); }
+    .dropzone .loud {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(22px, 6vw, 40px);
+      text-transform: uppercase;
+      color: var(--coral);
+      -webkit-text-stroke: 1.5px var(--ink);
+      paint-order: stroke fill;
+      letter-spacing: 1px;
+    }
+    .dropzone .quiet {
+      font-style: italic;
+      font-size: clamp(12px, 2.8vw, 15px);
+      margin-top: 10px;
+      opacity: .75;
+      line-height: 1.5;
+    }
+
+    /* ---------- crop overlay ---------- */
+    .cropbox {
+      position: absolute;
+      border: 3px solid var(--gold);
+      outline: 2px solid var(--ink);
+      outline-offset: -1px;
+      box-shadow: 0 0 0 9999px rgba(32, 26, 23, .48);
+      cursor: move;
+      touch-action: none;
+      display: none;
+    }
+    .cropbox.on { display: block; }
+    .cropbox .handle {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      border-radius: 5px;
+      touch-action: none;
+    }
+    .handle.nw { top: -12px; left: -12px; cursor: nwse-resize; }
+    .handle.ne { top: -12px; right: -12px; cursor: nesw-resize; }
+    .handle.sw { bottom: -12px; left: -12px; cursor: nesw-resize; }
+    .handle.se { bottom: -12px; right: -12px; cursor: nwse-resize; }
+
+    /* ---------- dock: panel + pills + knife ---------- */
+    .dock {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      padding-bottom: 4px;
+    }
+
+    .panel {
+      display: none;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 5px 5px 0 var(--ink);
+      padding: 12px 16px;
+      z-index: 5;
+      position: relative;
+      max-width: min(94vw, 560px);
+    }
+    .panel.on { display: block; animation: thunk .35s cubic-bezier(.34,1.56,.64,1); }
+    .panel .row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .panel .row + .row { margin-top: 10px; }
+    .panel label { font-style: italic; font-size: 12px; }
+
+    .opt {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      text-transform: uppercase;
+      background: var(--paper);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 5px 11px;
+      box-shadow: 2px 2px 0 var(--ink);
+      cursor: pointer;
+      transition: transform .1s, box-shadow .1s, background .1s;
+    }
+    .opt:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+    .opt:active:not(:disabled) { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+    .opt:disabled { opacity: .35; cursor: default; }
+    .opt.sel { background: var(--acc, var(--sky)); }
+
+    .apply {
+      background: var(--gold);
+      font-size: 12px;
+      padding: 7px 16px;
+    }
+
+    .panel input[type="text"] {
+      width: 160px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--ink);
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: inset 2px 2px 0 rgba(32,26,23,.12);
+      padding: 5px 8px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .panel input[type="number"] {
+      width: 76px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--ink);
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: inset 2px 2px 0 rgba(32,26,23,.12);
+      padding: 5px 8px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .panel input[type="color"] {
+      width: 44px;
+      height: 32px;
+      padding: 2px;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: 2px 2px 0 var(--ink);
+      cursor: pointer;
+    }
+    .panel input[type="range"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 130px;
+      height: 8px;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .panel input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .panel input[type="range"]::-moz-range-thumb {
+      width: 16px; height: 16px;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .size-line {
+      font-style: italic;
+      font-size: 13px;
+      min-width: 150px;
+      text-align: center;
+    }
+    .swatch {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: 2px 2px 0 var(--ink);
+      cursor: pointer;
+      transition: transform .1s, box-shadow .1s;
+    }
+    .swatch:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+    .swatch:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+
+    /* ---------- knife menu (the full kit) ---------- */
+    .kmenu {
+      display: none;
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      translate: -50% 0;
+      rotate: -.6deg;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 5px 5px 0 var(--ink);
+      padding: 12px;
+      z-index: 7;
+    }
+    .kmenu.on {
+      display: grid;
+      grid-template-columns: repeat(4, auto);
+      gap: 8px;
+      animation: thunk .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    @media (max-width: 420px) {
+      .kmenu.on { grid-template-columns: repeat(2, auto); }
+    }
+    .k-hint {
+      position: absolute;
+      bottom: 26px;
+      left: calc(50% + 178px);
+      font-style: italic;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity .8s;
+      pointer-events: none;
+    }
+    .k-hint.show { opacity: .7; }
+    @media (max-width: 760px) { .k-hint { display: none; } }
+
+    /* ---------- the knife ---------- */
+    .knife-wrap {
+      filter: drop-shadow(5px 5px 0 var(--ink));
+      z-index: 2;
+      margin-top: 2px;
+    }
+    .knife {
+      position: relative;
+      width: 320px;
+      height: 70px;
+    }
+    .tool {
+      position: absolute;
+      width: 210px;
+      height: 48px;
+      top: 11px;
+      z-index: 1;
+      transition: transform .55s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none;
+    }
+    .tool svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .tool.right { right: 14px; transform-origin: calc(100% - 24px) 50%; }
+    .tool.left  { left: 14px;  transform-origin: 24px 50%; }
+    .tool.right.out { transform: rotate(118deg); }
+    .tool.left.out { transform: rotate(-118deg); }
+    #t-resize.out { transform: rotate(78deg); }
+    #t-bucket.out { transform: rotate(96deg); }
+    #t-export.out { transform: rotate(-78deg); }
+    #t-picker.out { transform: rotate(-98deg); }
+    #t-rotate.out { transform: rotate(-64deg); }
+    #t-fish { width: 150px; }
+    #t-fish.out { transform: rotate(100deg); }
+    .k-body {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: var(--coral);
+      border: 3px solid var(--ink);
+      border-radius: 34px;
+      cursor: pointer;
+    }
+    .k-body svg { display: block; width: 100%; height: 100%; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tool { transition-duration: .01s; }
+      .frame.on, .panel.on, .kmenu.on { animation: none; }
+    }
+    @media (max-width: 420px) {
+      .knife-wrap { transform: scale(.82); transform-origin: bottom center; margin-top: -8px; }
+      .app { padding: 10px 10px 6px; }
+    }
+
+    /* ---------- footer plaque ---------- */
+    .ledger {
+      position: fixed;
+      left: 12px;
+      bottom: 8px;
+      font-style: italic;
+      font-size: 11px;
+      opacity: .55;
+      pointer-events: none;
+    }
+    @media (max-width: 700px) { .ledger { display: none; } }
+
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <div class="title-sticker">Swiss Army Knife</div>
+        <div class="subplaque">standard issue, for images. nothing leaves this page.</div>
+      </div>
+      <div class="top-actions">
+        <button class="chip" id="undoBtn" disabled>Undo</button>
+        <button class="chip" id="resetBtn" disabled>Start Over</button>
+        <button class="chip" id="newBtn">New Image</button>
+      </div>
+    </header>
+
+    <div class="workspace" id="workspace">
+      <div class="dropzone" id="dropzone">
+        <div class="loud">Drop an Image</div>
+        <div class="quiet">or click to browse — everything is handled<br>on your device. the knife insists.</div>
+      </div>
+      <div class="frame" id="frame">
+        <div class="canvas-clip" id="clip">
+          <canvas id="view"></canvas>
+          <div class="cropbox" id="cropbox">
+            <div class="handle nw" data-h="nw"></div>
+            <div class="handle ne" data-h="ne"></div>
+            <div class="handle sw" data-h="sw"></div>
+            <div class="handle se" data-h="se"></div>
+          </div>
+        </div>
+        <div class="dims-tag" id="dimsTag"></div>
+      </div>
+    </div>
+
+    <div class="dock">
+      <!-- crop panel -->
+      <div class="panel" id="p-crop" style="--acc: var(--sky)">
+        <div class="row">
+          <button class="opt sel" data-aspect="free">Free</button>
+          <button class="opt" data-aspect="1">1:1</button>
+          <button class="opt" data-aspect="1.3333">4:3</button>
+          <button class="opt" data-aspect="1.7778">16:9</button>
+          <button class="opt apply" id="cropApply">Cut It</button>
+        </div>
+      </div>
+
+      <!-- filters panel -->
+      <div class="panel" id="p-filters" style="--acc: var(--purple)">
+        <div class="row">
+          <button class="opt" data-f="invert">Invert</button>
+          <button class="opt" data-f="grayscale">Grayscale</button>
+          <button class="opt" data-f="sepia">Sepia</button>
+        </div>
+        <div class="row">
+          <label>brightness</label>
+          <input type="range" id="fBright" min="20" max="200" value="100">
+          <label>contrast</label>
+          <input type="range" id="fContrast" min="20" max="200" value="100">
+          <button class="opt apply" id="filterApply">Apply</button>
+        </div>
+      </div>
+
+      <!-- resize panel -->
+      <div class="panel" id="p-resize" style="--acc: var(--lime)">
+        <div class="row">
+          <input type="number" id="rW" min="1" max="8192"> <label>×</label>
+          <input type="number" id="rH" min="1" max="8192">
+          <button class="opt sel" id="rLock">Locked</button>
+          <button class="opt" data-pct="25">25%</button>
+          <button class="opt" data-pct="50">50%</button>
+          <button class="opt" data-pct="75">75%</button>
+          <button class="opt apply" id="resizeApply">Snip</button>
+        </div>
+      </div>
+
+      <!-- export panel -->
+      <div class="panel" id="p-export" style="--acc: var(--gold)">
+        <div class="row">
+          <button class="opt sel" data-fmt="image/png">PNG</button>
+          <button class="opt" data-fmt="image/jpeg">JPG</button>
+          <button class="opt" data-fmt="image/webp" id="webpOpt">WebP</button>
+          <button class="opt" data-fmt="image/avif" id="avifOpt">AVIF</button>
+          <button class="opt" data-fmt="image/bmp">BMP</button>
+          <button class="opt" data-fmt="image/x-icon">ICO</button>
+          <span id="qualityWrap" style="display:none">
+            <label>quality</label>
+            <input type="range" id="eQuality" min="5" max="100" value="85">
+          </span>
+        </div>
+        <div class="row">
+          <label>save as</label>
+          <input type="text" id="eName" spellcheck="false">
+          <label id="extLabel">.png</label>
+        </div>
+        <div class="row">
+          <span class="size-line" id="sizeLine">measuring…</span>
+          <button class="opt" id="copyBtn">Copy</button>
+          <button class="opt apply" id="downloadBtn">Download</button>
+        </div>
+      </div>
+
+      <!-- bucket panel -->
+      <div class="panel" id="p-bucket" style="--acc: var(--orange)">
+        <div class="row">
+          <label>paint</label>
+          <input type="color" id="bColor" value="#f0563e">
+          <label>tolerance</label>
+          <input type="range" id="bTol" min="0" max="100" value="24">
+        </div>
+        <div class="row"><label>click the image to pour — it fills everything connected that matches</label></div>
+      </div>
+
+      <!-- color picker panel -->
+      <div class="panel" id="p-picker" style="--acc: var(--pink)">
+        <div class="row" id="palRow"></div>
+        <div class="row" id="pickRow" style="display:none"></div>
+        <div class="row">
+          <label id="pickMsg">click the image to pluck a color — click a chip to copy it</label>
+          <button class="opt apply" id="palBtn">Save Palette</button>
+          <button class="opt" id="palJsonBtn">JSON</button>
+        </div>
+      </div>
+
+      <!-- bg remove panel -->
+      <div class="panel" id="p-bgremove" style="--acc: var(--teal)">
+        <div class="row">
+          <label>tolerance</label>
+          <input type="range" id="gTol" min="0" max="100" value="26">
+          <label>click the background — export as PNG to keep the hole</label>
+        </div>
+      </div>
+
+      <!-- rotate panel -->
+      <div class="panel" id="p-rotate" style="--acc: var(--coral)">
+        <div class="row">
+          <button class="opt" data-rot="ccw">90° Left</button>
+          <button class="opt" data-rot="cw">90° Right</button>
+          <button class="opt" data-rot="fh">Flip H</button>
+          <button class="opt" data-rot="fv">Flip V</button>
+        </div>
+      </div>
+
+      <!-- the full kit, behind the handle -->
+      <div class="kmenu" id="kmenu">
+        <button class="opt kchip" data-tool="crop" style="--acc: var(--sky)" disabled>Crop</button>
+        <button class="opt kchip" data-tool="filters" style="--acc: var(--purple)" disabled>Filters</button>
+        <button class="opt kchip" data-tool="resize" style="--acc: var(--lime)" disabled>Resize</button>
+        <button class="opt kchip" data-tool="export" style="--acc: var(--gold)" disabled>Export</button>
+        <button class="opt kchip" data-tool="bucket" style="--acc: var(--orange)" disabled>Bucket</button>
+        <button class="opt kchip" data-tool="picker" style="--acc: var(--pink)" disabled>Colors</button>
+        <button class="opt kchip" data-tool="bgremove" style="--acc: var(--teal)" disabled>Erase BG</button>
+        <button class="opt kchip" data-tool="rotate" style="--acc: var(--coral)" disabled>Rotate</button>
+      </div>
+      <div class="k-hint" id="kHint">psst — the handle opens the rest of the kit</div>
+
+      <div class="knife-wrap">
+        <div class="knife">
+          <!-- blade: crop (right pivot) -->
+          <div class="tool right" id="t-crop">
+            <svg viewBox="0 0 210 48">
+              <path d="M6 24 Q 26 13 74 12 L 194 12 Q 204 12 204 22 L 204 26 Q 204 34 194 34 L 84 34 Q 30 33 6 24 Z"
+                    fill="#fff8ef" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>
+              <line x1="118" y1="19" x2="152" y2="19" stroke="#201a17" stroke-width="3" stroke-linecap="round" opacity=".45"/>
+              <circle cx="186" cy="24" r="4" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- scissors: resize (right pivot) -->
+          <div class="tool right" id="t-resize">
+            <svg viewBox="0 0 210 48">
+              <path d="M152 24 L18 15 Q 8 17 10 21 L 150 28 Z" fill="#fff8ef" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M152 24 L18 33 Q 8 31 10 27 L 150 20 Z" fill="#fff8ef" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>
+              <circle cx="172" cy="13" r="9" fill="none" stroke="#201a17" stroke-width="9"/>
+              <circle cx="172" cy="13" r="9" fill="none" stroke="#f0563e" stroke-width="5"/>
+              <circle cx="172" cy="35" r="9" fill="none" stroke="#201a17" stroke-width="9"/>
+              <circle cx="172" cy="35" r="9" fill="none" stroke="#f0563e" stroke-width="5"/>
+              <circle cx="152" cy="24" r="4" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- can opener: bucket fill (right pivot) -->
+          <div class="tool right" id="t-bucket">
+            <svg viewBox="0 0 210 48">
+              <rect x="64" y="20" width="126" height="8" rx="4" fill="#fff8ef" stroke="#201a17" stroke-width="3"/>
+              <path d="M70 24 Q 52 8 30 14 Q 20 17 22 24 Q 24 32 36 34 Q 56 36 70 24 Z"
+                    fill="#fff8ef" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M34 36 q -5 9 0 12 q 6 -3 0 -12 Z" fill="#f47b28" stroke="#201a17" stroke-width="2" stroke-linejoin="round"/>
+              <circle cx="186" cy="24" r="4" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- saw: bg remover (right pivot) -->
+          <div class="tool right" id="t-bgremove">
+            <svg viewBox="0 0 210 48">
+              <path d="M10 18 L188 12 Q198 12 199 20 L200 30 L190 30 L182 23 L174 30 L166 23 L158 30 L150 23 L142 30 L134 23 L126 30 L118 23 L110 30 L102 23 L94 30 L86 23 L78 30 L70 23 L62 30 L54 23 L46 30 L38 23 L30 30 L22 24 Z"
+                    fill="#fff8ef" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>
+              <circle cx="186" cy="24" r="4" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- magnifier: filters (left pivot) -->
+          <div class="tool left" id="t-filters">
+            <svg viewBox="0 0 210 48">
+              <rect x="20" y="19" width="116" height="10" rx="5" fill="#5aa0db" stroke="#201a17" stroke-width="3"/>
+              <circle cx="156" cy="24" r="23" fill="#5aa0db" stroke="#201a17" stroke-width="3"/>
+              <circle cx="156" cy="24" r="14" fill="#fff8ef" stroke="#201a17" stroke-width="3"/>
+              <line x1="150" y1="18" x2="158" y2="26" stroke="#201a17" stroke-width="2.5" stroke-linecap="round" opacity=".3"/>
+              <circle cx="24" cy="24" r="4" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- corkscrew: export (left pivot) -->
+          <div class="tool left" id="t-export">
+            <svg viewBox="0 0 210 48">
+              <rect x="20" y="20" width="64" height="8" rx="4" fill="#fff8ef" stroke="#201a17" stroke-width="3"/>
+              <path d="M84 24 Q92 8 100 24 Q108 40 116 24 Q124 8 132 24 Q140 40 148 24 Q156 8 164 24 Q172 40 180 24 Q186 12 192 20"
+                    fill="none" stroke="#201a17" stroke-width="9" stroke-linecap="round"/>
+              <path d="M84 24 Q92 8 100 24 Q108 40 116 24 Q124 8 132 24 Q140 40 148 24 Q156 8 164 24 Q172 40 180 24 Q186 12 192 20"
+                    fill="none" stroke="#f7c948" stroke-width="4.5" stroke-linecap="round"/>
+              <circle cx="24" cy="24" r="4" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- tweezers: color picker (left pivot) -->
+          <div class="tool left" id="t-picker">
+            <svg viewBox="0 0 210 48">
+              <rect x="16" y="17" width="18" height="14" rx="4" fill="#f7c948" stroke="#201a17" stroke-width="2.5"/>
+              <path d="M30 20 L186 14 L186 19 L32 24 Z" fill="#fff8ef" stroke="#201a17" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M30 28 L186 34 L186 29 L32 24 Z" fill="#fff8ef" stroke="#201a17" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="24" cy="24" r="4" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- awl: rotate/flip (left pivot) -->
+          <div class="tool left" id="t-rotate">
+            <svg viewBox="0 0 210 48">
+              <path d="M24 20 L150 18 L186 24 L150 30 L24 28 Z" fill="#fff8ef" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>
+              <line x1="60" y1="24" x2="120" y2="24" stroke="#201a17" stroke-width="2" stroke-linecap="round" opacity=".3"/>
+              <circle cx="24" cy="24" r="4" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- the fish scaler. it is not documented. -->
+          <div class="tool right" id="t-fish">
+            <svg viewBox="0 0 150 48">
+              <path d="M14 24 Q 40 6 80 10 Q 108 13 120 24 Q 108 35 80 38 Q 40 42 14 24 Z"
+                    fill="#b7ce3c" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M116 24 L140 12 L140 36 Z" fill="#b7ce3c" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>
+              <circle cx="34" cy="21" r="3" fill="#201a17"/>
+            </svg>
+          </div>
+          <div class="k-body" id="kbody" title="the full kit">
+            <svg viewBox="0 0 320 70">
+              <path d="M160 20 h8 v11 h11 v8 h-11 v11 h-8 v-11 h-11 v-8 h11 Z"
+                    fill="#fff8ef" stroke="#201a17" stroke-width="2.5" stroke-linejoin="round"
+                    transform="translate(-4 -5)"/>
+              <circle cx="296" cy="35" r="5" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+              <circle cx="24" cy="35" r="5" fill="#d9d2c4" stroke="#201a17" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ledger" id="ledger"></div>
+  <input type="file" id="fileInput" accept="image/*">
+
+  <script>
+    'use strict';
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => [...document.querySelectorAll(s)];
+
+    const MAX_DIM = 4096;
+    const CROP_BW = 3; // cropbox border width — must match the CSS border
+    const view = $('#view');
+    const vctx = view.getContext('2d');
+
+    // ---------- state ----------
+    let work = null;          // offscreen canvas, current image state (full res)
+    let original = null;      // canvas snapshot of the freshly-loaded image
+    let prev = null;          // one-step undo snapshot
+    let activeTool = null;
+    let fileBase = 'image';
+
+    // crop state (image px)
+    let crop = null;          // {x, y, w, h}
+    let cropAspect = null;    // null = free, else w/h ratio
+
+    // filter state
+    const filt = { invert: false, grayscale: false, sepia: false, bright: 100, contrast: 100 };
+
+    // export state
+    let expFmt = 'image/png';
+    let expQuality = 0.85;
+    let sizeToken = 0;
+
+    // picker state
+    const picked = [];
+
+    // zoom/pan state (CSS px in the canvas's layout box, origin top-left)
+    let zoom = 1, panX = 0, panY = 0;
+
+    // ---------- ledger (deadpan op counter) ----------
+    let ops = 0;
+    try { ops = parseInt(localStorage.getItem('sak-ops') || '0', 10) || 0; } catch (e) {}
+    function bumpLedger() {
+      ops++;
+      try { localStorage.setItem('sak-ops', String(ops)); } catch (e) {}
+      renderLedger();
+    }
+    function renderLedger() {
+      $('#ledger').textContent = ops > 0 ? `operations performed to date: ${ops.toLocaleString()}` : '';
+    }
+    renderLedger();
+
+    // ---------- canvas helpers ----------
+    function cloneCanvas(src) {
+      const c = document.createElement('canvas');
+      c.width = src.width; c.height = src.height;
+      c.getContext('2d').drawImage(src, 0, 0);
+      return c;
+    }
+    function snapshot() {
+      prev = cloneCanvas(work);
+      $('#undoBtn').disabled = false;
+    }
+    function render() {
+      if (view.width !== work.width || view.height !== work.height) resetZoom();
+      view.width = work.width;
+      view.height = work.height;
+      vctx.drawImage(work, 0, 0);
+      updateDimsTag();
+      if (activeTool === 'crop') requestAnimationFrame(layoutCrop);
+      if (activeTool === 'export') updateSizeLine();
+      if (activeTool === 'picker') renderPalette();
+    }
+    function updateDimsTag() {
+      if (!work) return;
+      const z = zoom > 1 ? ` · ${Math.round(zoom * 100)}%` : '';
+      $('#dimsTag').textContent = `${work.width} × ${work.height}${z}`;
+    }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    const rgbHex = (r, g, b) => '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+
+    // ---------- loading ----------
+    function loadFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      fileBase = (file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (!w || !h) return;
+        const scale = Math.min(1, MAX_DIM / Math.max(w, h));
+        w = Math.round(w * scale); h = Math.round(h * scale);
+        work = document.createElement('canvas');
+        work.width = w; work.height = h;
+        const ctx = work.getContext('2d');
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, w, h);
+        original = cloneCanvas(work);
+        prev = null;
+        picked.length = 0;
+        clearFilterPreview();
+        $('#dropzone').style.display = 'none';
+        $('#frame').classList.add('on');
+        $('#undoBtn').disabled = true;
+        $('#resetBtn').disabled = false;
+        $$('.kchip').forEach(p => p.disabled = false);
+        $('#eName').value = fileBase + '-cut';
+        setTool(null);
+        render();
+        $('#kmenu').classList.add('on'); // present the kit
+        maybeHint();
+      };
+      img.onerror = () => URL.revokeObjectURL(url);
+      img.src = url;
+    }
+
+    $('#dropzone').addEventListener('click', () => $('#fileInput').click());
+    $('#newBtn').addEventListener('click', () => $('#fileInput').click());
+    $('#fileInput').addEventListener('change', (e) => {
+      loadFile(e.target.files[0]);
+      e.target.value = '';
+    });
+
+    let dragDepth = 0;
+    window.addEventListener('dragenter', (e) => { e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
+    window.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); } });
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragDepth = 0;
+      document.body.classList.remove('dragging');
+      loadFile(e.dataTransfer.files[0]);
+    });
+    window.addEventListener('paste', (e) => {
+      const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+      if (item) loadFile(item.getAsFile());
+    });
+
+    // ---------- undo / reset ----------
+    $('#undoBtn').addEventListener('click', () => {
+      if (!prev) return;
+      work = prev;
+      prev = null;
+      $('#undoBtn').disabled = true;
+      clearFilterPreview();
+      if (activeTool === 'crop') resetCropBox();
+      if (activeTool === 'resize') primeResizeInputs();
+      render();
+    });
+    $('#resetBtn').addEventListener('click', () => {
+      if (!original) return;
+      snapshot();
+      work = cloneCanvas(original);
+      clearFilterPreview();
+      if (activeTool === 'crop') resetCropBox();
+      if (activeTool === 'resize') primeResizeInputs();
+      render();
+    });
+
+    // ---------- tool switching + knife choreography ----------
+    const TOOLS = ['crop', 'filters', 'resize', 'export', 'bucket', 'picker', 'bgremove', 'rotate'];
+    function setTool(name) {
+      if (name === activeTool) name = null; // re-selecting folds it back in
+      TOOLS.forEach(t => {
+        $(`#t-${t}`).classList.toggle('out', t === name);
+        $(`#p-${t}`).classList.toggle('on', t === name);
+      });
+      $$('.kchip').forEach(c => c.classList.toggle('sel', c.dataset.tool === name));
+      $('#kmenu').classList.remove('on');
+      const wasCrop = activeTool === 'crop';
+      activeTool = name;
+      clearFilterPreview();
+      view.classList.toggle('pickable', ['bucket', 'picker', 'bgremove'].includes(name));
+      if (name === 'crop') { resetCropBox(); }
+      else if (wasCrop) { $('#cropbox').classList.remove('on'); }
+      if (name === 'resize') primeResizeInputs();
+      if (name === 'export') updateSizeLine();
+      if (name === 'picker') renderPalette();
+      // the fish scaler makes an appearance. rarely. it does not explain itself.
+      if (name && Math.random() < 0.03) {
+        const fish = $('#t-fish');
+        fish.classList.add('out');
+        setTimeout(() => fish.classList.remove('out'), 1500);
+      }
+    }
+    $$('.kchip').forEach(c => c.addEventListener('click', () => setTool(c.dataset.tool)));
+
+    // the handle opens the full kit
+    $('#kbody').addEventListener('click', () => {
+      if (!work) return;
+      $('#kHint').classList.remove('show');
+      $('#kmenu').classList.toggle('on');
+    });
+    document.addEventListener('click', (e) => {
+      const menu = $('#kmenu');
+      if (!menu.classList.contains('on')) return;
+      if (e.target.closest('#kmenu') || e.target.closest('#kbody')) return;
+      menu.classList.remove('on');
+    });
+    function maybeHint() {
+      let seen = false;
+      try { seen = !!localStorage.getItem('sak-hint'); } catch (e) {}
+      if (seen) return;
+      try { localStorage.setItem('sak-hint', '1'); } catch (e) {}
+      const h = $('#kHint');
+      h.classList.add('show');
+      setTimeout(() => h.classList.remove('show'), 9000);
+    }
+
+    // ---------- CROP ----------
+    const cropbox = $('#cropbox');
+    function resetCropBox() {
+      const w = Math.round(work.width * 0.8);
+      const h0 = Math.round(work.height * 0.8);
+      let h = cropAspect ? Math.round(w / cropAspect) : h0;
+      let ww = w;
+      if (h > work.height) { h = work.height; ww = cropAspect ? Math.round(h * cropAspect) : w; }
+      crop = {
+        x: Math.round((work.width - ww) / 2),
+        y: Math.round((work.height - h) / 2),
+        w: ww, h
+      };
+      cropbox.classList.add('on');
+      requestAnimationFrame(layoutCrop);
+    }
+    function viewScale() {
+      const r = view.getBoundingClientRect();
+      return { sx: r.width / work.width, sy: r.height / work.height };
+    }
+    function layoutCrop() {
+      if (!crop) return;
+      const vr = view.getBoundingClientRect();
+      const cr = $('#clip').getBoundingClientRect();
+      const sx = vr.width / work.width, sy = vr.height / work.height;
+      // offset by the view's zoom/pan position, and by the border width
+      // so the box INTERIOR is exactly what gets cut
+      cropbox.style.left = (vr.left - cr.left + crop.x * sx - CROP_BW) + 'px';
+      cropbox.style.top = (vr.top - cr.top + crop.y * sy - CROP_BW) + 'px';
+      cropbox.style.width = (crop.w * sx + CROP_BW * 2) + 'px';
+      cropbox.style.height = (crop.h * sy + CROP_BW * 2) + 'px';
+    }
+    window.addEventListener('resize', () => {
+      clampPan();
+      applyZoom();
+    });
+
+    let drag = null; // {mode: 'move'|'nw'|..., startX, startY, orig: {...crop}}
+    cropbox.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      cropbox.setPointerCapture(e.pointerId);
+      const mode = e.target.dataset.h || 'move';
+      drag = { mode, startX: e.clientX, startY: e.clientY, orig: { ...crop } };
+    });
+    cropbox.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const { sx, sy } = viewScale();
+      const dx = (e.clientX - drag.startX) / sx;
+      const dy = (e.clientY - drag.startY) / sy;
+      const o = drag.orig;
+      const MIN = 16;
+      if (drag.mode === 'move') {
+        crop.x = clamp(Math.round(o.x + dx), 0, work.width - o.w);
+        crop.y = clamp(Math.round(o.y + dy), 0, work.height - o.h);
+      } else {
+        const anchorX = drag.mode.includes('w') ? o.x + o.w : o.x;
+        const anchorY = drag.mode.includes('n') ? o.y + o.h : o.y;
+        let px = clamp(Math.round((drag.mode.includes('w') ? o.x : o.x + o.w) + dx), 0, work.width);
+        let py = clamp(Math.round((drag.mode.includes('n') ? o.y : o.y + o.h) + dy), 0, work.height);
+        let w = Math.max(MIN, Math.abs(px - anchorX));
+        let h = Math.max(MIN, Math.abs(py - anchorY));
+        if (cropAspect) {
+          h = w / cropAspect;
+          const roomY = py < anchorY || drag.mode.includes('n') ? anchorY : work.height - anchorY;
+          if (h > roomY) { h = roomY; w = h * cropAspect; }
+          const roomX = drag.mode.includes('w') ? anchorX : work.width - anchorX;
+          if (w > roomX) { w = roomX; h = w / cropAspect; }
+        }
+        w = Math.round(w); h = Math.round(h);
+        crop.x = drag.mode.includes('w') ? anchorX - w : anchorX;
+        crop.y = drag.mode.includes('n') ? anchorY - h : anchorY;
+        crop.w = w; crop.h = h;
+        crop.x = clamp(crop.x, 0, work.width - w);
+        crop.y = clamp(crop.y, 0, work.height - h);
+      }
+      layoutCrop();
+    });
+    const endDrag = () => { drag = null; };
+    cropbox.addEventListener('pointerup', endDrag);
+    cropbox.addEventListener('pointercancel', endDrag);
+
+    $$('#p-crop [data-aspect]').forEach(b => b.addEventListener('click', () => {
+      $$('#p-crop [data-aspect]').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      cropAspect = b.dataset.aspect === 'free' ? null : parseFloat(b.dataset.aspect);
+      resetCropBox();
+    }));
+
+    $('#cropApply').addEventListener('click', () => {
+      if (!crop || crop.w < 4 || crop.h < 4) return;
+      snapshot();
+      const c = document.createElement('canvas');
+      c.width = crop.w; c.height = crop.h;
+      c.getContext('2d').drawImage(work, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+      work = c;
+      bumpLedger();
+      resetCropBox();
+      render();
+    });
+
+    // ---------- FILTERS ----------
+    function filterCss() {
+      const parts = [];
+      if (filt.invert) parts.push('invert(1)');
+      if (filt.grayscale) parts.push('grayscale(1)');
+      if (filt.sepia) parts.push('sepia(1)');
+      if (filt.bright !== 100) parts.push(`brightness(${filt.bright / 100})`);
+      if (filt.contrast !== 100) parts.push(`contrast(${filt.contrast / 100})`);
+      return parts.join(' ');
+    }
+    function previewFilters() { view.style.filter = filterCss(); }
+    function clearFilterPreview() {
+      filt.invert = filt.grayscale = filt.sepia = false;
+      filt.bright = filt.contrast = 100;
+      $('#fBright').value = 100;
+      $('#fContrast').value = 100;
+      $$('#p-filters [data-f]').forEach(b => b.classList.remove('sel'));
+      view.style.filter = '';
+    }
+    $$('#p-filters [data-f]').forEach(b => b.addEventListener('click', () => {
+      filt[b.dataset.f] = !filt[b.dataset.f];
+      b.classList.toggle('sel', filt[b.dataset.f]);
+      previewFilters();
+    }));
+    $('#fBright').addEventListener('input', (e) => { filt.bright = +e.target.value; previewFilters(); });
+    $('#fContrast').addEventListener('input', (e) => { filt.contrast = +e.target.value; previewFilters(); });
+
+    $('#filterApply').addEventListener('click', () => {
+      const css = filterCss();
+      if (!css) return;
+      snapshot();
+      // bake pixels in the same order as the CSS preview
+      const ctx = work.getContext('2d');
+      const id = ctx.getImageData(0, 0, work.width, work.height);
+      const d = id.data;
+      const b = filt.bright / 100, ct = filt.contrast / 100;
+      for (let i = 0; i < d.length; i += 4) {
+        let r = d[i], g = d[i + 1], bl = d[i + 2];
+        if (filt.invert) { r = 255 - r; g = 255 - g; bl = 255 - bl; }
+        if (filt.grayscale) { const y = 0.2126 * r + 0.7152 * g + 0.0722 * bl; r = g = bl = y; }
+        if (filt.sepia) {
+          const nr = 0.393 * r + 0.769 * g + 0.189 * bl;
+          const ng = 0.349 * r + 0.686 * g + 0.168 * bl;
+          const nb = 0.272 * r + 0.534 * g + 0.131 * bl;
+          r = nr; g = ng; bl = nb;
+        }
+        if (b !== 1) { r *= b; g *= b; bl *= b; }
+        if (ct !== 1) {
+          r = (r - 127.5) * ct + 127.5;
+          g = (g - 127.5) * ct + 127.5;
+          bl = (bl - 127.5) * ct + 127.5;
+        }
+        d[i] = clamp(r, 0, 255); d[i + 1] = clamp(g, 0, 255); d[i + 2] = clamp(bl, 0, 255);
+      }
+      ctx.putImageData(id, 0, 0);
+      clearFilterPreview();
+      bumpLedger();
+      render();
+    });
+
+    // ---------- RESIZE ----------
+    const rW = $('#rW'), rH = $('#rH');
+    let lockAspect = true;
+    function primeResizeInputs() {
+      rW.value = work.width;
+      rH.value = work.height;
+    }
+    $('#rLock').addEventListener('click', () => {
+      lockAspect = !lockAspect;
+      $('#rLock').textContent = lockAspect ? 'Locked' : 'Free';
+      $('#rLock').classList.toggle('sel', lockAspect);
+    });
+    rW.addEventListener('input', () => {
+      if (lockAspect && +rW.value > 0) rH.value = Math.max(1, Math.round(+rW.value * work.height / work.width));
+    });
+    rH.addEventListener('input', () => {
+      if (lockAspect && +rH.value > 0) rW.value = Math.max(1, Math.round(+rH.value * work.width / work.height));
+    });
+    $$('#p-resize [data-pct]').forEach(b => b.addEventListener('click', () => {
+      const p = +b.dataset.pct / 100;
+      rW.value = Math.max(1, Math.round(work.width * p));
+      rH.value = Math.max(1, Math.round(work.height * p));
+    }));
+    $('#resizeApply').addEventListener('click', () => {
+      const w = clamp(Math.round(+rW.value), 1, 8192);
+      const h = clamp(Math.round(+rH.value), 1, 8192);
+      if (!w || !h || (w === work.width && h === work.height)) return;
+      snapshot();
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(work, 0, 0, w, h);
+      work = c;
+      bumpLedger();
+      primeResizeInputs();
+      render();
+    });
+
+    // ---------- ROTATE / FLIP ----------
+    $$('#p-rotate [data-rot]').forEach(b => b.addEventListener('click', () => {
+      const kind = b.dataset.rot;
+      snapshot();
+      const w = work.width, h = work.height;
+      const c = document.createElement('canvas');
+      const swap = kind === 'cw' || kind === 'ccw';
+      c.width = swap ? h : w;
+      c.height = swap ? w : h;
+      const ctx = c.getContext('2d');
+      if (kind === 'cw') { ctx.translate(h, 0); ctx.rotate(Math.PI / 2); }
+      else if (kind === 'ccw') { ctx.translate(0, w); ctx.rotate(-Math.PI / 2); }
+      else if (kind === 'fh') { ctx.translate(w, 0); ctx.scale(-1, 1); }
+      else { ctx.translate(0, h); ctx.scale(1, -1); }
+      ctx.drawImage(work, 0, 0);
+      work = c;
+      bumpLedger();
+      render();
+    }));
+
+    // ---------- clicking the image (bucket / picker / bg remove) ----------
+    function imgCoords(e) {
+      const r = view.getBoundingClientRect();
+      return {
+        x: clamp(Math.floor((e.clientX - r.left) / r.width * work.width), 0, work.width - 1),
+        y: clamp(Math.floor((e.clientY - r.top) / r.height * work.height), 0, work.height - 1)
+      };
+    }
+    view.addEventListener('click', (e) => {
+      if (!work || justPanned) return;
+      if (!['bucket', 'picker', 'bgremove'].includes(activeTool)) return;
+      const { x, y } = imgCoords(e);
+      if (activeTool === 'bucket') doBucket(x, y);
+      else if (activeTool === 'picker') doPick(x, y);
+      else doBgRemove(x, y);
+    });
+
+    // ---------- ZOOM & PAN ----------
+    const clip = $('#clip');
+    function applyZoom() {
+      if (!work) return;
+      view.style.transform = zoom === 1 ? '' : `translate(${panX}px, ${panY}px) scale(${zoom})`;
+      view.classList.toggle('zoomed', zoom > 1);
+      updateDimsTag();
+      if (activeTool === 'crop') layoutCrop();
+    }
+    function resetZoom() {
+      zoom = 1; panX = 0; panY = 0;
+      applyZoom();
+    }
+    function clampPan() {
+      const fw = view.offsetWidth, fh = view.offsetHeight;
+      panX = clamp(panX, fw * (1 - zoom), 0);
+      panY = clamp(panY, fh * (1 - zoom), 0);
+    }
+    clip.addEventListener('wheel', (e) => {
+      if (!work) return;
+      e.preventDefault();
+      const cr = clip.getBoundingClientRect();
+      const cx = e.clientX - cr.left, cy = e.clientY - cr.top;
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      const nz = clamp(zoom * factor, 1, 12);
+      if (nz === zoom) return;
+      // keep the image point under the cursor fixed while scaling
+      panX = cx - (cx - panX) * (nz / zoom);
+      panY = cy - (cy - panY) * (nz / zoom);
+      zoom = nz;
+      clampPan();
+      applyZoom();
+    }, { passive: false });
+
+    let panDrag = null;
+    let justPanned = false;
+    view.addEventListener('pointerdown', (e) => {
+      if (!work || zoom <= 1) return;
+      view.setPointerCapture(e.pointerId);
+      panDrag = { x: e.clientX, y: e.clientY, px: panX, py: panY, moved: false };
+    });
+    view.addEventListener('pointermove', (e) => {
+      if (!panDrag) return;
+      const dx = e.clientX - panDrag.x, dy = e.clientY - panDrag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 4) panDrag.moved = true;
+      panX = panDrag.px + dx;
+      panY = panDrag.py + dy;
+      clampPan();
+      applyZoom();
+    });
+    const endPan = () => {
+      if (panDrag?.moved) {
+        justPanned = true; // swallow the click this drag produced
+        setTimeout(() => { justPanned = false; }, 0);
+      }
+      panDrag = null;
+    };
+    view.addEventListener('pointerup', endPan);
+    view.addEventListener('pointercancel', endPan);
+
+    // ---------- BUCKET (flood fill) ----------
+    function doBucket(x, y) {
+      snapshot();
+      const W = work.width, H = work.height;
+      const ctx = work.getContext('2d');
+      const id = ctx.getImageData(0, 0, W, H);
+      const d = id.data;
+      const i0 = (y * W + x) * 4;
+      const tr = d[i0], tg = d[i0 + 1], tb = d[i0 + 2];
+      const hex = $('#bColor').value;
+      const fr = parseInt(hex.slice(1, 3), 16), fg = parseInt(hex.slice(3, 5), 16), fb = parseInt(hex.slice(5, 7), 16);
+      const thr = +$('#bTol').value / 100 * 441.67;
+      const t2 = thr * thr;
+      const visited = new Uint8Array(W * H);
+      const stack = [y * W + x];
+      visited[y * W + x] = 1;
+      while (stack.length) {
+        const p = stack.pop();
+        const i = p * 4;
+        const dr = d[i] - tr, dg = d[i + 1] - tg, db = d[i + 2] - tb;
+        if (dr * dr + dg * dg + db * db > t2) continue;
+        d[i] = fr; d[i + 1] = fg; d[i + 2] = fb; d[i + 3] = 255;
+        const px = p % W;
+        if (px > 0 && !visited[p - 1]) { visited[p - 1] = 1; stack.push(p - 1); }
+        if (px < W - 1 && !visited[p + 1]) { visited[p + 1] = 1; stack.push(p + 1); }
+        if (p >= W && !visited[p - W]) { visited[p - W] = 1; stack.push(p - W); }
+        if (p < W * (H - 1) && !visited[p + W]) { visited[p + W] = 1; stack.push(p + W); }
+      }
+      ctx.putImageData(id, 0, 0);
+      bumpLedger();
+      render();
+    }
+
+    // ---------- COLOR PICKER ----------
+    function doPick(x, y) {
+      const px = work.getContext('2d').getImageData(x, y, 1, 1).data;
+      const hex = rgbHex(px[0], px[1], px[2]);
+      const at = picked.indexOf(hex);
+      if (at !== -1) picked.splice(at, 1);
+      picked.unshift(hex);
+      if (picked.length > 8) picked.pop();
+      $('#bColor').value = hex; // the tweezers hand it to the can opener
+      renderSwatches();
+      pickMsg(`plucked ${hex}`);
+    }
+    let msgTimer = null;
+    function pickMsg(text) {
+      $('#pickMsg').textContent = text;
+      clearTimeout(msgTimer);
+      msgTimer = setTimeout(() => {
+        $('#pickMsg').textContent = 'click the image to pluck a color — click a chip to copy it';
+      }, 1800);
+    }
+    function makeSwatch(hex) {
+      const b = document.createElement('button');
+      b.className = 'swatch';
+      b.style.background = hex;
+      b.title = hex;
+      b.addEventListener('click', () => {
+        try { navigator.clipboard.writeText(hex); pickMsg(`copied ${hex}`); }
+        catch (e) { pickMsg(hex); }
+      });
+      return b;
+    }
+    function renderSwatches() {
+      const row = $('#pickRow');
+      row.innerHTML = '';
+      picked.forEach(hex => row.appendChild(makeSwatch(hex)));
+      row.style.display = picked.length ? '' : 'none';
+    }
+    let autoPal = [];
+    function renderPalette() {
+      const W = work.width, H = work.height;
+      const d = work.getContext('2d').getImageData(0, 0, W, H).data;
+      const step = Math.max(1, Math.round(Math.sqrt(W * H / 24000)));
+      const m = new Map();
+      for (let y = 0; y < H; y += step) {
+        for (let x = 0; x < W; x += step) {
+          const i = (y * W + x) * 4;
+          if (d[i + 3] < 128) continue;
+          const k = ((d[i] >> 4) << 8) | ((d[i + 1] >> 4) << 4) | (d[i + 2] >> 4);
+          let e = m.get(k);
+          if (!e) { e = [0, 0, 0, 0]; m.set(k, e); }
+          e[0]++; e[1] += d[i]; e[2] += d[i + 1]; e[3] += d[i + 2];
+        }
+      }
+      const top = [...m.values()].sort((a, b) => b[0] - a[0]).slice(0, 6)
+        .map(e => rgbHex(e[1] / e[0], e[2] / e[0], e[3] / e[0]));
+      autoPal = top;
+      const row = $('#palRow');
+      row.innerHTML = '';
+      top.forEach(hex => row.appendChild(makeSwatch(hex)));
+      renderSwatches();
+    }
+
+    // palette card: your plucked colors as a downloadable sticker sheet
+    function rr(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+    function paletteColors() {
+      return picked.length ? [...picked] : autoPal;
+    }
+    $('#palJsonBtn').addEventListener('click', () => {
+      const colors = paletteColors();
+      if (!colors.length) return;
+      const payload = {
+        source: fileBase,
+        pluckedByHand: picked.length > 0,
+        colors: colors.map(hex => ({
+          hex,
+          rgb: [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16))
+        }))
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `${fileBase}-palette.json`);
+    });
+    $('#palBtn').addEventListener('click', () => {
+      const colors = paletteColors();
+      if (!colors.length) return;
+      const SW = 150, GAP = 24, PAD = 40, TOP = 56;
+      const c = document.createElement('canvas');
+      c.width = PAD * 2 + colors.length * SW + (colors.length - 1) * GAP;
+      c.height = 300;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff8ef';
+      ctx.fillRect(0, 0, c.width, c.height);
+      colors.forEach((hex, i) => {
+        const x = PAD + i * (SW + GAP);
+        rr(ctx, x + 6, TOP + 6, SW, 130, 16); ctx.fillStyle = '#201a17'; ctx.fill();
+        rr(ctx, x, TOP, SW, 130, 16);
+        ctx.fillStyle = hex; ctx.fill();
+        ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.strokeStyle = '#201a17'; ctx.stroke();
+        ctx.fillStyle = '#201a17';
+        ctx.font = '900 22px "Arial Black", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(hex.toUpperCase(), x + SW / 2, TOP + 172);
+      });
+      ctx.font = 'italic 18px Georgia, serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(32,26,23,.65)';
+      ctx.fillText(`plucked from ${fileBase}, by the tweezers`, PAD, c.height - 28);
+      c.toBlob(blob => {
+        if (blob) downloadBlob(blob, `${fileBase}-palette.png`);
+      }, 'image/png');
+    });
+
+    // ---------- BG REMOVE (color zap) ----------
+    function doBgRemove(x, y) {
+      snapshot();
+      const W = work.width, H = work.height;
+      const ctx = work.getContext('2d');
+      const id = ctx.getImageData(0, 0, W, H);
+      const d = id.data;
+      const i0 = (y * W + x) * 4;
+      const tr = d[i0], tg = d[i0 + 1], tb = d[i0 + 2];
+      const thr = +$('#gTol').value / 100 * 441.67;
+      const t2 = thr * thr;
+      const f2 = (thr * 1.35) * (thr * 1.35); // feather band
+      for (let i = 0; i < d.length; i += 4) {
+        const dr = d[i] - tr, dg = d[i + 1] - tg, db = d[i + 2] - tb;
+        const dist2 = dr * dr + dg * dg + db * db;
+        if (dist2 <= t2) d[i + 3] = 0;
+        else if (dist2 <= f2 && thr > 0) {
+          const t = (Math.sqrt(dist2) - thr) / (thr * 0.35);
+          d[i + 3] = Math.round(d[i + 3] * clamp(t, 0, 1));
+        }
+      }
+      ctx.putImageData(id, 0, 0);
+      bumpLedger();
+      render();
+    }
+
+    // ---------- EXPORT ----------
+    // some browsers politely refuse to encode certain formats; hide those pills
+    function detectEncoder(mime, el) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 1;
+      try {
+        c.toBlob((blob) => {
+          if (!blob || blob.type !== mime) el.style.display = 'none';
+        }, mime);
+      } catch (e) { el.style.display = 'none'; }
+    }
+    detectEncoder('image/webp', $('#webpOpt'));
+    detectEncoder('image/avif', $('#avifOpt'));
+
+    function opaqueCanvas() {
+      // no-alpha formats get composited onto white
+      const c = document.createElement('canvas');
+      c.width = work.width; c.height = work.height;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(work, 0, 0);
+      return c;
+    }
+    function buildBMP() {
+      const src = opaqueCanvas();
+      const W = src.width, H = src.height;
+      const d = src.getContext('2d').getImageData(0, 0, W, H).data;
+      const rowSize = (W * 3 + 3) & ~3;
+      const size = 54 + rowSize * H;
+      const buf = new ArrayBuffer(size);
+      const v = new DataView(buf);
+      v.setUint8(0, 0x42); v.setUint8(1, 0x4D);
+      v.setUint32(2, size, true);
+      v.setUint32(10, 54, true);
+      v.setUint32(14, 40, true);
+      v.setInt32(18, W, true);
+      v.setInt32(22, H, true);
+      v.setUint16(26, 1, true);
+      v.setUint16(28, 24, true);
+      v.setUint32(34, rowSize * H, true);
+      v.setInt32(38, 2835, true);
+      v.setInt32(42, 2835, true);
+      const u = new Uint8Array(buf);
+      for (let y = 0; y < H; y++) {
+        let o = 54 + (H - 1 - y) * rowSize;
+        for (let x = 0; x < W; x++) {
+          const i = (y * W + x) * 4;
+          u[o++] = d[i + 2]; u[o++] = d[i + 1]; u[o++] = d[i];
+        }
+      }
+      return new Blob([buf], { type: 'image/bmp' });
+    }
+    function buildICO(cb) {
+      const sizes = [16, 32, 48];
+      Promise.all(sizes.map(s => new Promise(res => {
+        const c = document.createElement('canvas');
+        c.width = c.height = s;
+        const ctx = c.getContext('2d');
+        ctx.imageSmoothingQuality = 'high';
+        const sc = Math.min(s / work.width, s / work.height);
+        const w = Math.max(1, Math.round(work.width * sc));
+        const h = Math.max(1, Math.round(work.height * sc));
+        ctx.drawImage(work, Math.round((s - w) / 2), Math.round((s - h) / 2), w, h);
+        c.toBlob(b => b.arrayBuffer().then(res), 'image/png');
+      }))).then(bufs => {
+        const n = bufs.length;
+        let off = 6 + 16 * n;
+        const head = new ArrayBuffer(6 + 16 * n);
+        const v = new DataView(head);
+        v.setUint16(2, 1, true);
+        v.setUint16(4, n, true);
+        bufs.forEach((b, i) => {
+          const e = 6 + i * 16;
+          const s = sizes[i];
+          v.setUint8(e, s === 256 ? 0 : s);
+          v.setUint8(e + 1, s === 256 ? 0 : s);
+          v.setUint16(e + 4, 1, true);
+          v.setUint16(e + 6, 32, true);
+          v.setUint32(e + 8, b.byteLength, true);
+          v.setUint32(e + 12, off, true);
+          off += b.byteLength;
+        });
+        cb(new Blob([head, ...bufs], { type: 'image/x-icon' }));
+      });
+    }
+    function makeBlob(cb) {
+      if (expFmt === 'image/bmp') return cb(buildBMP());
+      if (expFmt === 'image/x-icon') return buildICO(cb);
+      const src = expFmt === 'image/jpeg' ? opaqueCanvas() : work;
+      const q = expFmt === 'image/png' ? undefined : expQuality;
+      src.toBlob(cb, expFmt, q);
+    }
+    function fmtBytes(n) {
+      if (n >= 1048576) return (n / 1048576).toFixed(2) + ' MB';
+      if (n >= 1024) return Math.round(n / 1024) + ' KB';
+      return n + ' B';
+    }
+    let sizeTimer = null;
+    function updateSizeLine() {
+      if (!work) return;
+      const lossy = ['image/jpeg', 'image/webp', 'image/avif'].includes(expFmt);
+      $('#qualityWrap').style.display = lossy ? '' : 'none';
+      $('#extLabel').textContent = '.' + (EXT[expFmt] || 'png');
+      clearTimeout(sizeTimer);
+      sizeTimer = setTimeout(() => {
+        const token = ++sizeToken;
+        makeBlob((blob) => {
+          if (token !== sizeToken || !blob) return;
+          const dims = expFmt === 'image/x-icon' ? '16 + 32 + 48' : `${work.width} × ${work.height}`;
+          $('#sizeLine').textContent = `≈ ${fmtBytes(blob.size)} · ${dims}`;
+        });
+      }, 120);
+    }
+    $$('#p-export [data-fmt]').forEach(b => b.addEventListener('click', () => {
+      $$('#p-export [data-fmt]').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      expFmt = b.dataset.fmt;
+      updateSizeLine();
+    }));
+    $('#eQuality').addEventListener('input', (e) => {
+      expQuality = +e.target.value / 100;
+      updateSizeLine();
+    });
+    const EXT = {
+      'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp',
+      'image/avif': 'avif', 'image/bmp': 'bmp', 'image/x-icon': 'ico'
+    };
+    function saveName() {
+      const raw = $('#eName').value.trim().replace(/[\/\\:*?"<>|]/g, '');
+      return raw || `${fileBase}-cut`;
+    }
+    function downloadBlob(blob, filename) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      bumpLedger();
+    }
+    $('#downloadBtn').addEventListener('click', () => {
+      makeBlob((blob) => {
+        if (!blob) return;
+        downloadBlob(blob, `${saveName()}.${EXT[expFmt] || 'png'}`);
+      });
+    });
+    let copyTimer = null;
+    $('#copyBtn').addEventListener('click', () => {
+      const btn = $('#copyBtn');
+      const flash = (t) => {
+        btn.textContent = t;
+        clearTimeout(copyTimer);
+        copyTimer = setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
+      };
+      try {
+        // clipboard only takes png; promise form keeps Safari inside the user gesture
+        const item = new ClipboardItem({
+          'image/png': new Promise(res => work.toBlob(res, 'image/png'))
+        });
+        navigator.clipboard.write([item]).then(() => flash('Copied!'), () => flash('No Dice'));
+      } catch (e) { flash('No Dice'); }
+    });
+  </script>
+</body>
+</html>
