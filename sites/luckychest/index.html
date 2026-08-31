@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lucky Chest</title>
+  <meta name="description" content="Tap the chest. Sometimes it upgrades. Paperclips, a good stick, the other sock — collect them all in your binder.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/luckychest/">
+    <meta property="og:title" content="Lucky Chest">
+    <meta property="og:description" content="Tap the chest. Sometimes it upgrades. Paperclips, a good stick, the other sock — collect them all in your binder.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/luckychest.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lucky Chest">
+    <meta name="twitter:description" content="Tap the chest. Sometimes it upgrades. Paperclips, a good stick, the other sock — collect them all in your binder.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/luckychest.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --orange: #f47b28;
+      --pink: #ff7fa5;
+      --teal: #2fb0a3;
+      --gold: #f7c948;
+      --gray: #a89f93;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* ---------- tier-tinted world ---------- */
+    .bgwash {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: var(--paper);
+      transition: background .8s ease;
+    }
+    .bgwash.t2 { background: #d9e9f6; }
+    .bgwash.t3 { background: #e8dff4; }
+    .bgwash.t4 { background: #fbeec2; }
+    .bgwash.t5 {
+      background: linear-gradient(115deg, #f8d9d2, #fbe7c9, #fdf3c4, #e3edc7, #cfeae6, #d6e6f5, #e6def3, #fadbe6, #f8d9d2);
+      background-size: 400% 400%;
+      animation: bgshift 7s linear infinite;
+    }
+    @keyframes bgshift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .flash {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(circle at 50% 55%, var(--flash-c, var(--gold)) 0%, transparent 55%);
+    }
+
+    .app {
+      position: relative;
+      z-index: 2;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+    }
+
+    header {
+      display: flex;
+      justify-content: flex-end;
+      position: relative;
+      z-index: 9;
+    }
+    .chip {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: var(--ink);
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      transition: transform .12s, box-shadow .12s;
+      transform: rotate(1.5deg);
+    }
+    .chip:hover { transform: translate(-2px,-2px) rotate(1.5deg); box-shadow: 5px 5px 0 var(--ink); }
+    .chip:active { transform: translate(2px,2px) rotate(1.5deg); box-shadow: 1px 1px 0 var(--ink); }
+
+    /* ---------- stage ---------- */
+    .stage {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .stars { display: flex; gap: 9px; height: 40px; justify-content: center; }
+    .star { width: 36px; height: 36px; }
+    .star polygon { fill: var(--gold); stroke: var(--ink); stroke-width: 5; stroke-linejoin: round; }
+    .stars.t5 .star { animation: rainbowstar 1.4s linear infinite; }
+    @keyframes rainbowstar { to { filter: hue-rotate(360deg); } }
+
+    .chest-zone { position: relative; width: min(80vw, 440px); }
+    .glow {
+      position: absolute;
+      inset: -30%;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity .5s, background .5s;
+      pointer-events: none;
+    }
+    .glow.t2 { opacity: .6; background: radial-gradient(circle, var(--sky) 0%, transparent 62%); }
+    .glow.t3 { opacity: .65; background: radial-gradient(circle, var(--purple) 0%, transparent 62%); }
+    .glow.t4 { opacity: .75; background: radial-gradient(circle, var(--gold) 0%, transparent 62%); }
+    .glow.t5 {
+      opacity: .85;
+      background: conic-gradient(#f0563e, #f47b28, #f7c948, #b7ce3c, #2fb0a3, #5aa0db, #a98fd0, #ff7fa5, #f0563e);
+      filter: blur(26px);
+      animation: spin 3.2s linear infinite;
+    }
+    @keyframes spin { to { rotate: 360deg; } }
+
+    .chest-wrap { position: relative; cursor: pointer; }
+    .chest-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+    #lid {
+      transform-origin: 18px 96px;
+      transition: transform .5s cubic-bezier(.34,1.56,.64,1);
+    }
+    .chest-wrap.open #lid { transform: rotate(-78deg) translate(-8px, -12px); }
+    #beam, #mouthGlow { opacity: 0; transition: opacity .45s; }
+    .chest-wrap.open #beam { opacity: .5; }
+    .chest-wrap.open #mouthGlow { opacity: .9; }
+    .crack { opacity: 0; transition: opacity .2s; }
+    .crack.show { opacity: .85; }
+
+    /* golden variant: the 1% chest */
+    .chest-wrap.golden .wood { fill: var(--gold); }
+    .chest-wrap.golden .wood-dark { fill: #e0ae2f; }
+    .chest-wrap.golden .metal { fill: var(--cream); }
+
+    /* sparkles rising from an open chest */
+    .sparkle {
+      position: absolute;
+      width: 10px; height: 10px;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .chest-wrap.open .sparkle { animation: rise 1.6s ease-out infinite; }
+    .sparkle svg { display: block; width: 100%; height: 100%; }
+    .sparkle:nth-child(1) { left: 30%; top: 30%; animation-delay: 0s; }
+    .sparkle:nth-child(2) { left: 52%; top: 24%; animation-delay: .4s; }
+    .sparkle:nth-child(3) { left: 68%; top: 32%; animation-delay: .8s; }
+    .sparkle:nth-child(4) { left: 42%; top: 20%; animation-delay: 1.1s; }
+    @keyframes rise {
+      0% { opacity: 0; transform: translateY(6px) scale(.4) rotate(0); }
+      25% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-56px) scale(1.15) rotate(140deg); }
+    }
+
+    .pips { display: flex; gap: 7px; justify-content: center; }
+    .pip {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--ink);
+      background: rgba(32,26,23,.08);
+      box-shadow: 2px 2px 0 var(--ink);
+      transition: background .2s;
+    }
+    .pip.full { background: var(--gold); }
+    .pip.bonus { background: var(--pink); }
+
+    .hint {
+      font-style: italic;
+      font-size: 13px;
+      opacity: .7;
+      transition: opacity 1s;
+    }
+    .hint.off { opacity: 0; }
+
+    /* little deadpan verdicts on dud taps */
+    .dud {
+      position: absolute;
+      font-style: italic;
+      font-size: 14px;
+      color: var(--ink);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 5;
+      white-space: nowrap;
+    }
+
+    /* ---------- burst text ---------- */
+    .burst {
+      position: absolute;
+      top: 9%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(30px, 8vw, 58px);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gold);
+      -webkit-text-stroke: 2.5px var(--ink);
+      paint-order: stroke fill;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 8;
+      white-space: nowrap;
+    }
+
+    /* ---------- reveal: dim, rays, focus card, rack ---------- */
+    .dim {
+      position: absolute;
+      inset: -16px;
+      background: rgba(32, 26, 23, .55);
+      border-radius: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .45s;
+      z-index: 5;
+    }
+    .dim.on { opacity: 1; pointer-events: auto; }
+    .revcount {
+      position: absolute;
+      top: 5%;
+      width: 100%;
+      text-align: center;
+      font-style: italic;
+      font-size: 14px;
+      color: var(--cream);
+      opacity: .85;
+      pointer-events: none;
+      z-index: 7;
+    }
+    .focus {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 7;
+    }
+    .focus .card { width: clamp(180px, 48vw, 265px); }
+    .rays {
+      position: absolute;
+      width: min(92vw, 580px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: repeating-conic-gradient(var(--ray-c, #f7c948) 0deg 11deg, transparent 11deg 26deg);
+      -webkit-mask-image: radial-gradient(circle, black 0%, transparent 68%);
+      mask-image: radial-gradient(circle, black 0%, transparent 68%);
+      animation: spin 16s linear infinite;
+      opacity: 0;
+    }
+    .card-row {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 9%;
+      display: flex;
+      justify-content: center;
+      gap: clamp(6px, 1.4vw, 12px);
+      flex-wrap: wrap;
+      padding: 0 14px;
+      pointer-events: none;
+      z-index: 6;
+    }
+    .card-row .card { width: clamp(70px, 11vw, 106px); }
+    .card {
+      aspect-ratio: 5 / 7;
+      perspective: 1000px;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .cf {
+      position: relative;
+      width: 100%; height: 100%;
+      transform-style: preserve-3d;
+      transition: transform .55s cubic-bezier(.3, 1.4, .5, 1);
+    }
+    .card.slow .cf { transition-duration: 1.05s; }
+    .card.flipped .cf { transform: rotateY(180deg); }
+    .face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 5px 5px 0 var(--ink);
+      overflow: hidden;
+    }
+    .face.back {
+      background: repeating-linear-gradient(45deg, var(--coral) 0 14px, #d94833 14px 28px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .face.back .emblem {
+      width: 58%;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 50%;
+      box-shadow: 3px 3px 0 var(--ink);
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .face.back .emblem svg { width: 68%; display: block; }
+    .face.front {
+      transform: rotateY(180deg);
+      background: var(--cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .face.front .banner {
+      width: 100%;
+      padding: 5px 4px 4px;
+      border-bottom: 3px solid var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .face.front .banner .rname {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+    }
+    .ministars { display: flex; gap: 2px; justify-content: center; }
+    .ministars svg { width: 11px; height: 11px; }
+    .face.front .icon-wrap {
+      margin-top: 10px;
+      width: 56%;
+      aspect-ratio: 1;
+      background: var(--paper);
+      border: 2.5px solid var(--ink);
+      border-radius: 50%;
+      box-shadow: 3px 3px 0 var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .face.front .icon-wrap svg { width: 74%; display: block; }
+    .face.front .iname {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(10px, 1.8vw, 13.5px);
+      text-transform: uppercase;
+      line-height: 1.15;
+      padding: 8px 6px 2px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+    .face.front .qtypill {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 10px;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 2px 10px;
+      margin-bottom: 9px;
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    /* shine sweep on reveal */
+    .face.front::after {
+      content: '';
+      position: absolute;
+      inset: -20%;
+      background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.85) 50%, transparent 58%);
+      transform: translateX(-130%);
+      pointer-events: none;
+    }
+    .card.shined .face.front::after { animation: sweep .8s ease-out .25s; }
+    @keyframes sweep { to { transform: translateX(130%); } }
+
+    .r-common { background: var(--gray); color: var(--cream); }
+    .r-uncommon { background: var(--lime); }
+    .r-rare { background: var(--sky); }
+    .r-epic { background: var(--purple); }
+    .r-legendary { background: var(--gold); }
+    .card.epic .face.front { background: #f6effd; }
+    .card.legend .face.front { background: #fdf6dd; }
+    .card.legend { animation: legendfloat 2.2s ease-in-out infinite alternate; }
+    @keyframes legendfloat { from { transform: translateY(0); } to { transform: translateY(-7px); } }
+    .card.legend .face.front { box-shadow: 5px 5px 0 var(--ink); }
+    .card.legend.flipped .cf { filter: drop-shadow(0 0 18px var(--gold)); }
+
+    .takeall {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-1.5deg) scale(0);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 17px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      background: var(--gold);
+      color: var(--ink);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      padding: 13px 30px;
+      box-shadow: 4px 4px 0 var(--ink);
+      cursor: pointer;
+      z-index: 7;
+    }
+    .takeall:hover { box-shadow: 6px 6px 0 var(--ink); }
+
+    /* ---------- binder ---------- */
+    .binder {
+      position: fixed;
+      inset: 0;
+      background: rgba(32,26,23,.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 18px;
+    }
+    .binder.on { display: flex; }
+    .binder-card {
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 16px;
+      box-shadow: 7px 7px 0 var(--ink);
+      max-width: 640px;
+      width: 100%;
+      max-height: 86dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+    .binder-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .binder-title {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 17px;
+      text-transform: uppercase;
+    }
+    .binder-sub { font-style: italic; font-size: 12px; opacity: .7; }
+    .binder-grid {
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 10px;
+      padding: 4px;
+    }
+    .slot {
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 3px 3px 0 var(--ink);
+      background: var(--paper);
+      padding: 8px 4px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      position: relative;
+      min-height: 104px;
+    }
+    .slot .icon { width: 44px; height: 44px; }
+    .slot .icon svg { display: block; width: 100%; height: 100%; }
+    .slot .sname {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 8.5px;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .slot .rtag {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 8px;
+      text-transform: uppercase;
+      padding: 1px 7px;
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+    }
+    .slot .count {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 2px 2px 0 var(--ink);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 10px;
+      padding: 1px 7px;
+    }
+    .slot.locked .icon { filter: grayscale(1) contrast(0) opacity(.35); }
+    .slot.locked .sname { opacity: .35; }
+    .slot .mystery {
+      position: absolute;
+      top: 26px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 26px;
+      opacity: .3;
+    }
+
+    .ledger {
+      font-style: italic;
+      font-size: 11px;
+      opacity: .6;
+      text-align: center;
+      padding: 4px 0 2px;
+    }
+    #confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cf, #lid { transition-duration: .01s; }
+      .bgwash.t5, .glow.t5, .stars.t5 .star.lit, .card.legend, .sparkle { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bgwash" id="bgwash"></div>
+  <div class="flash" id="flash"></div>
+
+  <div class="app" id="app">
+    <header>
+      <button class="chip" id="binderBtn">Binder</button>
+    </header>
+
+    <div class="stage" id="stage">
+      <div class="burst" id="burst"></div>
+
+      <div class="stars" id="stars"></div>
+
+      <div class="chest-zone">
+        <div class="glow" id="glow"></div>
+        <div class="chest-wrap" id="chest">
+          <svg viewBox="0 0 240 205">
+            <!-- beam of holy loot light -->
+            <path id="beam" d="M66 96 L98 -42 L142 -42 L174 96 Z" fill="#f7c948"/>
+            <!-- feet -->
+            <rect x="30" y="182" width="26" height="14" rx="4" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3.5"/>
+            <rect x="184" y="182" width="26" height="14" rx="4" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3.5"/>
+            <!-- body -->
+            <g id="bodyG">
+              <rect x="22" y="96" width="196" height="92" rx="10" class="wood" fill="#f47b28" stroke="#201a17" stroke-width="4.5"/>
+              <!-- planks -->
+              <line x1="26" y1="126" x2="214" y2="126" stroke="#201a17" stroke-width="2.5" opacity=".22"/>
+              <line x1="26" y1="156" x2="214" y2="156" stroke="#201a17" stroke-width="2.5" opacity=".22"/>
+              <path d="M46 110 q10 4 20 0 M150 140 q12 5 24 0 M60 170 q10 4 20 0" fill="none" stroke="#201a17" stroke-width="2" opacity=".18"/>
+              <!-- straps -->
+              <rect x="48" y="94" width="20" height="96" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3.5"/>
+              <rect x="172" y="94" width="20" height="96" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3.5"/>
+              <circle cx="58" cy="110" r="2.6" fill="#201a17"/>
+              <circle cx="58" cy="172" r="2.6" fill="#201a17"/>
+              <circle cx="182" cy="110" r="2.6" fill="#201a17"/>
+              <circle cx="182" cy="172" r="2.6" fill="#201a17"/>
+              <!-- corner brackets -->
+              <path d="M22 116 v-10 a10 10 0 0 1 10 -10 h10 v10 h-8 a2 2 0 0 0 -2 2 v8 Z" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3"/>
+              <path d="M218 116 v-10 a10 10 0 0 0 -10 -10 h-10 v10 h8 a2 2 0 0 1 2 2 v8 Z" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3"/>
+              <path d="M22 168 v10 a10 10 0 0 0 10 10 h10 v-10 h-8 a2 2 0 0 1 -2 -2 v-8 Z" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3"/>
+              <path d="M218 168 v10 a10 10 0 0 1 -10 10 h-10 v-10 h8 a2 2 0 0 0 2 -2 v-8 Z" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3"/>
+              <!-- cracks -->
+              <path class="crack" id="crack1" d="M84 100 L94 122 L82 138" fill="none" stroke="#201a17" stroke-width="3.5" stroke-linecap="round"/>
+              <path class="crack" id="crack2" d="M156 102 L146 126 L160 146 L150 164" fill="none" stroke="#201a17" stroke-width="3.5" stroke-linecap="round"/>
+              <path class="crack" id="crack3" d="M112 118 L124 136 L110 154 L122 172" fill="none" stroke="#201a17" stroke-width="3.5" stroke-linecap="round"/>
+              <!-- lock plate on the body -->
+              <rect x="102" y="96" width="36" height="34" rx="7" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="4"/>
+              <circle cx="120" cy="108" r="5" fill="#201a17"/>
+              <path d="M120 108 L115 122 L125 122 Z" fill="#201a17"/>
+            </g>
+            <ellipse id="mouthGlow" cx="120" cy="96" rx="92" ry="14" fill="#f7c948"/>
+            <!-- lid -->
+            <g id="lid">
+              <path d="M22 96 Q22 34 120 34 Q218 34 218 96 Z" class="wood-dark" fill="#f0563e" stroke="#201a17" stroke-width="4.5"/>
+              <path d="M40 82 Q40 52 120 48 M200 82 Q200 52 120 48" fill="none" stroke="#201a17" stroke-width="2.5" opacity=".2"/>
+              <!-- lid straps -->
+              <path d="M48 96 Q50 52 74 42 L92 42 Q62 56 68 96 Z" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3.5"/>
+              <path d="M192 96 Q190 52 166 42 L148 42 Q178 56 172 96 Z" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="3.5"/>
+              <!-- rim band -->
+              <rect x="22" y="82" width="196" height="15" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="4"/>
+              <!-- hasp reaching down to the lock -->
+              <rect x="106" y="82" width="28" height="22" rx="6" class="metal" fill="#f7c948" stroke="#201a17" stroke-width="4"/>
+              <!-- sheen -->
+              <path d="M52 58 Q72 42 100 40 L112 40 Q80 48 64 66 Z" fill="#fff8ef" opacity=".35"/>
+            </g>
+          </svg>
+          <div class="sparkle"><svg viewBox="0 0 20 20"><polygon points="10,0 12,8 20,10 12,12 10,20 8,12 0,10 8,8" fill="#f7c948" stroke="#201a17" stroke-width="1.5"/></svg></div>
+          <div class="sparkle"><svg viewBox="0 0 20 20"><polygon points="10,0 12,8 20,10 12,12 10,20 8,12 0,10 8,8" fill="#fff8ef" stroke="#201a17" stroke-width="1.5"/></svg></div>
+          <div class="sparkle"><svg viewBox="0 0 20 20"><polygon points="10,0 12,8 20,10 12,12 10,20 8,12 0,10 8,8" fill="#f7c948" stroke="#201a17" stroke-width="1.5"/></svg></div>
+          <div class="sparkle"><svg viewBox="0 0 20 20"><polygon points="10,0 12,8 20,10 12,12 10,20 8,12 0,10 8,8" fill="#ff7fa5" stroke="#201a17" stroke-width="1.5"/></svg></div>
+        </div>
+      </div>
+
+      <div class="pips" id="pips"></div>
+      <div class="hint" id="hint">tap the chest — it might get luckier</div>
+
+      <div class="dim" id="dim"></div>
+      <div class="revcount" id="revCount"></div>
+      <div class="card-row" id="cardRow"></div>
+      <div class="focus" id="focus"></div>
+      <button class="takeall" id="takeAll">Take All</button>
+    </div>
+
+    <div class="ledger" id="ledger"></div>
+  </div>
+
+  <!-- binder overlay -->
+  <div class="binder" id="binder">
+    <div class="binder-card" id="binderCard">
+      <div class="binder-head">
+        <div>
+          <div class="binder-title">The Binder</div>
+          <div class="binder-sub" id="binderSub"></div>
+        </div>
+        <button class="chip" id="binderClose">Close</button>
+      </div>
+      <div class="binder-grid" id="binderGrid"></div>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <script type="module">
+    import { animate, stagger } from "https://cdn.jsdelivr.net/npm/motion@12.15.0/+esm";
+
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => [...document.querySelectorAll(s)];
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const SPRING = { type: 'spring', stiffness: 420, damping: 16 };
+    const dur = (d) => reduceMotion ? 0.01 : d;
+
+    // ---------- items ----------
+    const I = '#201a17';
+    function sv(inner) { return `<svg viewBox="0 0 48 48">${inner}</svg>`; }
+    const ITEMS = [
+      // commons
+      { id: 'paperclip', name: 'Paperclip', rarity: 'common', qty: [2, 5], icon: sv(`<path d="M16 34 V14 a6 6 0 0 1 12 0 v18 a4 4 0 0 1 -8 0 V16" fill="none" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/>`) },
+      { id: 'rubberband', name: 'Rubber Band', rarity: 'common', qty: [1, 3], icon: sv(`<ellipse cx="24" cy="24" rx="15" ry="10" fill="none" stroke="#f0563e" stroke-width="5" transform="rotate(-18 24 24)"/><ellipse cx="24" cy="24" rx="15" ry="10" fill="none" stroke="${I}" stroke-width="2" transform="rotate(-18 24 24)"/>`) },
+      { id: 'bottlecap', name: 'Bottle Cap', rarity: 'common', qty: [1, 4], icon: sv(`<circle cx="24" cy="24" r="13" fill="#5aa0db" stroke="${I}" stroke-width="3" stroke-dasharray="4 3"/><circle cx="24" cy="24" r="8" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'coupon', name: 'Expired Coupon', rarity: 'common', qty: [1, 2], icon: sv(`<rect x="7" y="15" width="34" height="18" rx="3" fill="#b7ce3c" stroke="${I}" stroke-width="3" stroke-dasharray="5 3"/><line x1="12" y1="22" x2="30" y2="22" stroke="${I}" stroke-width="2.5"/><line x1="12" y1="27" x2="24" y2="27" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'button', name: 'Loose Button', rarity: 'common', qty: [1, 3], icon: sv(`<circle cx="24" cy="24" r="12" fill="#a98fd0" stroke="${I}" stroke-width="3"/><circle cx="20" cy="21" r="1.8" fill="${I}"/><circle cx="28" cy="21" r="1.8" fill="${I}"/><circle cx="20" cy="28" r="1.8" fill="${I}"/><circle cx="28" cy="28" r="1.8" fill="${I}"/>`) },
+      { id: 'twisttie', name: 'Twist Tie', rarity: 'common', qty: [1, 4], icon: sv(`<path d="M14 36 Q22 28 18 20 Q15 13 24 10 Q33 8 34 16" fill="none" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/>`) },
+      { id: 'receipt', name: 'Very Long Receipt', rarity: 'common', qty: [1, 1], icon: sv(`<path d="M16 6 h16 v32 l-4 -3 l-4 3 l-4 -3 l-4 3 Z" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="20" y1="13" x2="28" y2="13" stroke="${I}" stroke-width="2"/><line x1="20" y1="18" x2="28" y2="18" stroke="${I}" stroke-width="2"/><line x1="20" y1="23" x2="26" y2="23" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'crumb', name: 'A Crumb', rarity: 'common', qty: [1, 1], icon: sv(`<path d="M22 20 L28 22 L30 28 L24 31 L19 27 Z" fill="#f47b28" stroke="${I}" stroke-width="3" stroke-linejoin="round"/>`) },
+      { id: 'dustbunny', name: 'Dust Bunny', rarity: 'common', qty: [1, 3], icon: sv(`<path d="M14 28 Q10 20 17 16 Q22 10 29 14 Q37 13 37 21 Q41 27 34 31 Q27 37 19 33 Q12 34 14 28 Z" fill="#a89f93" stroke="${I}" stroke-width="3"/><circle cx="21" cy="23" r="1.6" fill="${I}"/><circle cx="28" cy="23" r="1.6" fill="${I}"/>`) },
+      { id: 'deadpen', name: 'Pen (Deceased)', rarity: 'common', qty: [1, 2], icon: sv(`<rect x="20" y="10" width="8" height="22" rx="2" fill="#a89f93" stroke="${I}" stroke-width="3"/><path d="M20 32 L24 41 L28 32 Z" fill="#fff8ef" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><path d="M12 8 q4 -3 8 0" fill="none" stroke="${I}" stroke-width="2" opacity=".3"/>`) },
+      { id: 'soysauce', name: 'Soy Sauce Packet', rarity: 'common', qty: [1, 4], icon: sv(`<rect x="13" y="14" width="22" height="20" rx="4" fill="#f0563e" stroke="${I}" stroke-width="3" transform="rotate(-8 24 24)"/><line x1="13" y1="13" x2="34" y2="10" stroke="${I}" stroke-width="2.5"/><line x1="15" y1="37" x2="36" y2="34" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'chapstick', name: 'Old Chapstick', rarity: 'common', qty: [1, 1], icon: sv(`<rect x="19" y="16" width="10" height="24" rx="3" fill="#5aa0db" stroke="${I}" stroke-width="3"/><rect x="19" y="8" width="10" height="8" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'screw', name: 'Mystery Screw', rarity: 'common', qty: [1, 3], icon: sv(`<circle cx="24" cy="14" r="7" fill="#a89f93" stroke="${I}" stroke-width="3"/><line x1="19" y1="14" x2="29" y2="14" stroke="${I}" stroke-width="2.5"/><path d="M24 21 L24 38 M20 25 L28 27 M20 30 L28 32" stroke="${I}" stroke-width="3" stroke-linecap="round"/>`) },
+      { id: 'grocerylist', name: "Someone's List", rarity: 'common', qty: [1, 1], icon: sv(`<rect x="13" y="8" width="22" height="32" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="17" y1="15" x2="31" y2="15" stroke="${I}" stroke-width="2"/><line x1="17" y1="21" x2="29" y2="21" stroke="${I}" stroke-width="2"/><line x1="17" y1="27" x2="31" y2="27" stroke="#f0563e" stroke-width="2.5"/><line x1="17" y1="33" x2="27" y2="33" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'penny', name: 'One (1) Penny', rarity: 'common', qty: [1, 5], icon: sv(`<circle cx="24" cy="24" r="12" fill="#f47b28" stroke="${I}" stroke-width="3"/><text x="24" y="30" text-anchor="middle" font-family="Arial Black" font-size="15" fill="${I}">1</text>`) },
+      { id: 'hairtie', name: 'Hair Tie', rarity: 'common', qty: [1, 3], icon: sv(`<circle cx="24" cy="24" r="11" fill="none" stroke="#ff7fa5" stroke-width="6"/><circle cx="24" cy="24" r="11" fill="none" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'stickynote', name: 'Blank Sticky Note', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M12 12 h24 v18 l-6 6 h-18 Z" fill="#f7c948" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><path d="M36 30 l-6 0 l0 6" fill="none" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'breadclip', name: 'Bread Clip', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M14 12 h20 v24 h-20 v-9 l6 -3 l-6 -3 Z" fill="#fff8ef" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><circle cx="27" cy="24" r="4" fill="${I}" opacity=".2"/>`) },
+      { id: 'lint', name: 'Pocket Lint', rarity: 'common', qty: [1, 3], icon: sv(`<path d="M16 26 Q12 18 20 16 Q24 10 30 15 Q37 16 34 23 Q38 30 30 32 Q24 37 19 32 Q13 32 16 26 Z" fill="#a89f93" stroke="${I}" stroke-width="2.5" stroke-dasharray="3 2"/>`) },
+      { id: 'mustard', name: 'Mustard Packet', rarity: 'common', qty: [1, 3], icon: sv(`<rect x="13" y="14" width="22" height="20" rx="4" fill="#f7c948" stroke="${I}" stroke-width="3" transform="rotate(8 24 24)"/><line x1="12" y1="12" x2="33" y2="15" stroke="${I}" stroke-width="2.5"/><line x1="14" y1="36" x2="35" y2="39" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'toothpick', name: 'A Toothpick', rarity: 'common', qty: [1, 4], icon: sv(`<line x1="11" y1="37" x2="37" y2="11" stroke="#f7c948" stroke-width="4" stroke-linecap="round"/><line x1="11" y1="37" x2="37" y2="11" stroke="${I}" stroke-width="1.5" stroke-linecap="round"/>`) },
+      { id: 'cottonball', name: 'Cotton Ball', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M15 28 Q11 20 19 17 Q23 11 29 15 Q37 15 35 23 Q39 30 31 32 Q25 38 19 33 Q12 34 15 28 Z" fill="#fff8ef" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'golfpencil', name: 'Golf Pencil', rarity: 'common', qty: [1, 2], icon: sv(`<rect x="18" y="12" width="10" height="20" fill="#f7c948" stroke="${I}" stroke-width="3"/><polygon points="18,32 23,42 28,32" fill="#fff8ef" stroke="${I}" stroke-width="3"/><rect x="18" y="8" width="10" height="4" fill="#ff7fa5" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'rubberfoot', name: 'Rubber Foot (Of?)', rarity: 'common', qty: [1, 4], icon: sv(`<path d="M14 30 a10 10 0 0 1 20 0 Z" fill="${I}"/><rect x="12" y="30" width="24" height="4" rx="2" fill="#a89f93" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'wingnut', name: 'Wing Nut', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M18 24 Q8 14 14 28 Z M30 24 Q40 14 34 28 Z" fill="#a89f93" stroke="${I}" stroke-width="2.5"/><circle cx="24" cy="26" r="6" fill="#a89f93" stroke="${I}" stroke-width="3"/><circle cx="24" cy="26" r="2.5" fill="${I}"/>`) },
+      { id: 'washer', name: 'A Washer', rarity: 'common', qty: [2, 5], icon: sv(`<circle cx="24" cy="24" r="11" fill="#a89f93" stroke="${I}" stroke-width="3"/><circle cx="24" cy="24" r="4.5" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'ziptie', name: 'Zip Tie (Used)', rarity: 'common', qty: [1, 3], icon: sv(`<path d="M12 36 Q28 30 32 16" fill="none" stroke="#5aa0db" stroke-width="4" stroke-linecap="round"/><path d="M12 36 Q28 30 32 16" fill="none" stroke="${I}" stroke-width="1.5"/><rect x="28" y="8" width="9" height="9" rx="2" fill="#5aa0db" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'strawwrapper', name: 'Straw Wrapper', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M10 26 q4 -6 8 0 q4 6 8 0 q4 -6 8 0 q3 4 6 1" fill="none" stroke="${I}" stroke-width="3" stroke-linecap="round" opacity=".75"/>`) },
+      { id: 'fortune', name: 'Fortune (No Cookie)', rarity: 'common', qty: [1, 1], icon: sv(`<rect x="8" y="19" width="32" height="10" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/><line x1="12" y1="24" x2="30" y2="24" stroke="${I}" stroke-width="1.8"/><circle cx="35" cy="24" r="1.3" fill="${I}"/>`) },
+      { id: 'bandaid', name: 'Band-Aid (Sealed)', rarity: 'common', qty: [1, 3], icon: sv(`<rect x="8" y="19" width="32" height="11" rx="5.5" fill="#f7c948" stroke="${I}" stroke-width="3" transform="rotate(-20 24 24)"/><rect x="19" y="20" width="10" height="9" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="2" transform="rotate(-20 24 24)"/>`) },
+      { id: 'cottonswab', name: 'Cotton Swab', rarity: 'common', qty: [1, 3], icon: sv(`<line x1="14" y1="34" x2="34" y2="14" stroke="#fff8ef" stroke-width="3"/><line x1="14" y1="34" x2="34" y2="14" stroke="${I}" stroke-width="1.2"/><circle cx="13" cy="35" r="4" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/><circle cx="35" cy="13" r="4" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'pricetag', name: 'Price Tag (Blank)', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M10 26 L24 12 h12 v12 L22 38 Z" fill="#f7c948" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><circle cx="31" cy="17" r="2.5" fill="#fff8ef" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'cork', name: 'A Cork', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M17 12 h14 l3 24 h-20 Z" fill="#f47b28" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><line x1="20" y1="18" x2="28" y2="18" stroke="${I}" stroke-width="1.5" opacity=".4"/><line x1="19" y1="26" x2="29" y2="26" stroke="${I}" stroke-width="1.5" opacity=".4"/>`) },
+      { id: 'match', name: 'Spent Match', rarity: 'common', qty: [1, 3], icon: sv(`<line x1="24" y1="14" x2="24" y2="38" stroke="#f7c948" stroke-width="4"/><line x1="24" y1="14" x2="24" y2="38" stroke="${I}" stroke-width="1.5"/><ellipse cx="24" cy="11" rx="4" ry="5" fill="${I}"/>`) },
+      { id: 'paperfootball', name: 'Paper Football', rarity: 'common', qty: [1, 1], icon: sv(`<polygon points="12,34 36,34 24,14" fill="#fff8ef" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><line x1="18" y1="30" x2="30" y2="30" stroke="${I}" stroke-width="1.5" opacity=".4"/>`) },
+      { id: 'gum', name: 'Stick of Gum', rarity: 'common', qty: [1, 2], icon: sv(`<rect x="10" y="20" width="28" height="8" rx="2" fill="#a89f93" stroke="${I}" stroke-width="3"/><line x1="17" y1="20" x2="17" y2="28" stroke="${I}" stroke-width="1.5" opacity=".5"/><line x1="31" y1="20" x2="31" y2="28" stroke="${I}" stroke-width="1.5" opacity=".5"/>`) },
+      { id: 'crossword', name: 'Crossword (Half Done)', rarity: 'common', qty: [1, 1], icon: sv(`<rect x="12" y="12" width="24" height="24" fill="#fff8ef" stroke="${I}" stroke-width="3"/><path d="M12 20 h24 M12 28 h24 M20 12 v24 M28 12 v24" stroke="${I}" stroke-width="1.5"/><rect x="12" y="12" width="8" height="8" fill="${I}"/><rect x="28" y="28" width="8" height="8" fill="${I}"/>`) },
+      { id: 'napkin', name: 'Folded Napkin', rarity: 'common', qty: [1, 2], icon: sv(`<rect x="12" y="12" width="24" height="24" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="3"/><path d="M12 12 L36 36" stroke="${I}" stroke-width="1.5" opacity=".35"/>`) },
+      { id: 'puzzlesky', name: 'Puzzle Piece (Sky)', rarity: 'common', qty: [1, 1], icon: sv(`<path d="M12 16 h8 q-3 -8 4 -8 q7 0 4 8 h8 v8 q8 -3 8 4 q0 7 -8 4 v8 h-24 Z" fill="#5aa0db" stroke="${I}" stroke-width="3" stroke-linejoin="round"/>`) },
+      { id: 'wetwipe', name: 'Wet Wipe (Dry)', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M10 16 h28 v18 q-7 4 -14 0 q-7 -4 -14 0 Z" fill="#fff8ef" stroke="${I}" stroke-width="3"/><path d="M14 22 q5 3 10 0 q5 -3 10 0" fill="none" stroke="${I}" stroke-width="1.5" opacity=".4"/>`) },
+      { id: 'sugar', name: 'Sugar Packet', rarity: 'common', qty: [1, 4], icon: sv(`<rect x="12" y="16" width="24" height="16" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="12" y1="14" x2="36" y2="14" stroke="${I}" stroke-width="2"/><line x1="12" y1="34" x2="36" y2="34" stroke="${I}" stroke-width="2"/><text x="24" y="28" text-anchor="middle" font-family="Arial Black" font-size="10" fill="${I}">S</text>`) },
+      { id: 'dentistcard', name: 'Card From Dentist', rarity: 'common', qty: [1, 1], icon: sv(`<rect x="10" y="12" width="28" height="22" rx="3" fill="#ff7fa5" stroke="${I}" stroke-width="3"/><path d="M20 20 q4 -5 8 0 q0 5 -4 6 q-4 -1 -4 -6 Z" fill="#fff8ef" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'ticketstub', name: 'Ticket Stub', rarity: 'common', qty: [1, 2], icon: sv(`<path d="M10 16 h28 v6 a3 3 0 0 0 0 6 v6 h-28 v-6 a3 3 0 0 0 0 -6 Z" fill="#f0563e" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><line x1="30" y1="16" x2="30" y2="34" stroke="${I}" stroke-width="1.8" stroke-dasharray="3 2"/>`) },
+      { id: 'acorncap', name: 'Acorn Cap', rarity: 'common', qty: [1, 3], icon: sv(`<path d="M12 24 Q24 10 36 24 Z" fill="#f47b28" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><line x1="24" y1="12" x2="24" y2="8" stroke="${I}" stroke-width="2.5"/><line x1="14" y1="24" x2="34" y2="24" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'dryersheet', name: 'Dryer Sheet', rarity: 'common', qty: [1, 2], icon: sv(`<rect x="12" y="10" width="24" height="28" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="2.5" transform="rotate(8 24 24)"/><path d="M17 18 q5 2 10 0 M17 26 q5 2 10 0" stroke="${I}" stroke-width="1.5" fill="none" opacity=".35" transform="rotate(8 24 24)"/>`) },
+      // uncommons
+      { id: 'battery', name: 'AA Battery', rarity: 'uncommon', qty: [1, 2], icon: sv(`<rect x="17" y="12" width="14" height="28" rx="3" fill="#2fb0a3" stroke="${I}" stroke-width="3"/><rect x="21" y="8" width="6" height="4" fill="${I}"/><text x="24" y="30" text-anchor="middle" font-family="Arial Black" font-size="9" fill="#fff8ef">AA</text>`) },
+      { id: 'pen', name: 'Pen That Works', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="20" y="8" width="8" height="24" rx="2" fill="#5aa0db" stroke="${I}" stroke-width="3"/><path d="M20 32 L24 42 L28 32 Z" fill="#fff8ef" stroke="${I}" stroke-width="3" stroke-linejoin="round"/>`) },
+      { id: 'menu', name: 'Takeout Menu', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="12" y="8" width="24" height="32" rx="3" fill="#ff7fa5" stroke="${I}" stroke-width="3"/><circle cx="24" cy="18" r="4" fill="#fff8ef" stroke="${I}" stroke-width="2"/><line x1="17" y1="28" x2="31" y2="28" stroke="${I}" stroke-width="2"/><line x1="17" y1="33" x2="27" y2="33" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'key', name: 'Key (Unknown Door)', rarity: 'uncommon', qty: [1, 1], icon: sv(`<circle cx="16" cy="16" r="7" fill="none" stroke="${I}" stroke-width="3.5"/><path d="M21 21 L36 36 M30 30 L34 26 M33 33 L37 29" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/>`) },
+      { id: 'magnet', name: 'Fridge Magnet', rarity: 'uncommon', qty: [1, 2], icon: sv(`<rect x="12" y="12" width="24" height="24" rx="5" fill="#f7c948" stroke="${I}" stroke-width="3"/><text x="24" y="31" text-anchor="middle" font-family="Arial Black" font-size="16" fill="${I}">A</text>`) },
+      { id: 'rock', name: 'Nice Rock', rarity: 'uncommon', qty: [1, 1], icon: sv(`<path d="M13 30 Q11 20 20 15 Q30 10 36 18 Q40 26 33 32 Q22 38 13 30 Z" fill="#a89f93" stroke="${I}" stroke-width="3"/><path d="M20 22 Q24 19 29 22" fill="none" stroke="${I}" stroke-width="2" opacity=".5"/>`) },
+      { id: 'dice', name: 'A Single Die', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="12" y="12" width="24" height="24" rx="5" fill="#fff8ef" stroke="${I}" stroke-width="3"/><circle cx="18" cy="18" r="2.2" fill="${I}"/><circle cx="24" cy="24" r="2.2" fill="${I}"/><circle cx="30" cy="30" r="2.2" fill="${I}"/>`) },
+      { id: 'allenwrench', name: 'Allen Wrench (From?)', rarity: 'uncommon', qty: [1, 2], icon: sv(`<path d="M14 10 L14 34 L36 34" fill="none" stroke="#a89f93" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 10 L14 34 L36 34" fill="none" stroke="${I}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`) },
+      { id: 'keychain', name: 'Souvenir Keychain', rarity: 'uncommon', qty: [1, 1], icon: sv(`<circle cx="24" cy="12" r="6" fill="none" stroke="${I}" stroke-width="3.5"/><rect x="15" y="20" width="18" height="20" rx="4" fill="#2fb0a3" stroke="${I}" stroke-width="3"/><text x="24" y="34" text-anchor="middle" font-family="Arial Black" font-size="9" fill="#fff8ef">HI</text>`) },
+      { id: 'crayon', name: 'Half a Crayon', rarity: 'uncommon', qty: [1, 2], icon: sv(`<path d="M18 40 L24 12 L30 40 Z" fill="#f0563e" stroke="${I}" stroke-width="3" stroke-linejoin="round" transform="rotate(180 24 26)"/><path d="M18 12 l3 4 l3 -4 l3 4 l3 -4" fill="none" stroke="${I}" stroke-width="2.5" transform="translate(0 26)"/>`) },
+      { id: 'acecard', name: 'Ace (Slightly Bent)', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="14" y="8" width="20" height="30" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="3" transform="rotate(6 24 23)"/><text x="24" y="28" text-anchor="middle" font-family="Arial Black" font-size="14" fill="#f0563e" transform="rotate(6 24 23)">A</text>`) },
+      { id: 'measuringcup', name: 'Measuring Cup', rarity: 'uncommon', qty: [1, 1], icon: sv(`<path d="M14 14 L18 38 L34 38 L38 14 Z" fill="#5aa0db" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><line x1="19" y1="22" x2="25" y2="22" stroke="#fff8ef" stroke-width="2.5"/><line x1="20" y1="29" x2="26" y2="29" stroke="#fff8ef" stroke-width="2.5"/><path d="M14 16 Q6 18 12 24" fill="none" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'charger', name: 'Charger (For What?)', rarity: 'uncommon', qty: [1, 1], icon: sv(`<path d="M10 38 Q18 30 16 22 Q14 14 24 12 L30 12" fill="none" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/><rect x="30" y="8" width="10" height="9" rx="2" fill="#a89f93" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'marble', name: 'A Marble', rarity: 'uncommon', qty: [1, 3], icon: sv(`<circle cx="24" cy="24" r="12" fill="#fff8ef" stroke="${I}" stroke-width="3"/><path d="M15 22 Q24 14 33 24 Q26 30 15 22 Z" fill="#2fb0a3" stroke="${I}" stroke-width="2" opacity=".8"/>`) },
+      { id: 'chipclip', name: 'Chip Clip', rarity: 'uncommon', qty: [1, 2], icon: sv(`<rect x="10" y="17" width="28" height="7" rx="3" fill="#f0563e" stroke="${I}" stroke-width="3"/><rect x="10" y="26" width="28" height="7" rx="3" fill="#f0563e" stroke="${I}" stroke-width="3"/><circle cx="36" cy="25" r="3" fill="${I}"/>`) },
+      { id: 'carabiner', name: 'Carabiner (Not Rated)', rarity: 'uncommon', qty: [1, 1], icon: sv(`<path d="M18 10 Q34 10 34 24 Q34 38 20 38 Q12 38 12 28" fill="none" stroke="#5aa0db" stroke-width="6" stroke-linecap="round"/><path d="M18 10 Q34 10 34 24 Q34 38 20 38 Q12 38 12 28" fill="none" stroke="${I}" stroke-width="2"/><line x1="12" y1="28" x2="18" y2="12" stroke="#a89f93" stroke-width="4"/>`) },
+      { id: 'shoelace', name: 'One Shoelace', rarity: 'uncommon', qty: [1, 1], icon: sv(`<path d="M12 10 q10 8 0 16 q-6 8 6 12 q8 2 18 -2" fill="none" stroke="#fff8ef" stroke-width="4"/><path d="M12 10 q10 8 0 16 q-6 8 6 12 q8 2 18 -2" fill="none" stroke="${I}" stroke-width="1.5"/><rect x="34" y="33" width="8" height="5" rx="2" fill="#a89f93" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'eraser', name: 'Pink Eraser', rarity: 'uncommon', qty: [1, 1], icon: sv(`<polygon points="12,32 18,18 38,18 32,32" fill="#ff7fa5" stroke="${I}" stroke-width="3" stroke-linejoin="round"/>`) },
+      { id: 'highlighter', name: 'Highlighter (Faint)', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="16" y="8" width="14" height="20" rx="3" fill="#b7ce3c" stroke="${I}" stroke-width="3"/><polygon points="18,28 28,28 26,36 20,36" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/><line x1="12" y1="42" x2="34" y2="42" stroke="#b7ce3c" stroke-width="4" opacity=".6"/>`) },
+      { id: 'postcard', name: 'Postcard (Blank)', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="8" y="14" width="32" height="20" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="3"/><rect x="30" y="17" width="6" height="6" fill="#f0563e" stroke="${I}" stroke-width="2"/><line x1="24" y1="17" x2="24" y2="31" stroke="${I}" stroke-width="1.5" opacity=".4"/><line x1="12" y1="24" x2="20" y2="24" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'nailfile', name: 'Nail File', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="10" y="21" width="28" height="6" rx="3" fill="#ff7fa5" stroke="${I}" stroke-width="3" transform="rotate(-25 24 24)"/>`) },
+      { id: 'teabag', name: 'Tea Bag (Flavor?)', rarity: 'uncommon', qty: [1, 2], icon: sv(`<path d="M16 20 h16 v14 q-8 5 -16 0 Z" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="24" y1="20" x2="30" y2="8" stroke="${I}" stroke-width="2"/><rect x="28" y="4" width="8" height="6" rx="1" fill="#f7c948" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'bouncyball', name: 'Bouncy Ball', rarity: 'uncommon', qty: [1, 2], icon: sv(`<circle cx="24" cy="24" r="11" fill="#a98fd0" stroke="${I}" stroke-width="3"/><path d="M17 20 q7 -5 13 1" stroke="#fff8ef" stroke-width="2.5" fill="none"/><circle cx="20" cy="28" r="2" fill="#fff8ef"/>`) },
+      { id: 'golfball', name: 'Golf Ball (Found)', rarity: 'uncommon', qty: [1, 1], icon: sv(`<circle cx="24" cy="24" r="12" fill="#fff8ef" stroke="${I}" stroke-width="3"/><circle cx="20" cy="20" r="1.2" fill="${I}" opacity=".35"/><circle cx="27" cy="19" r="1.2" fill="${I}" opacity=".35"/><circle cx="23" cy="26" r="1.2" fill="${I}" opacity=".35"/><circle cx="29" cy="27" r="1.2" fill="${I}" opacity=".35"/><circle cx="18" cy="27" r="1.2" fill="${I}" opacity=".35"/>`) },
+      { id: 'guitarpick', name: 'Guitar Pick', rarity: 'uncommon', qty: [1, 2], icon: sv(`<path d="M14 14 Q24 8 34 14 Q34 26 24 38 Q14 26 14 14 Z" fill="#2fb0a3" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'domino', name: 'A Domino', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="16" y="8" width="16" height="32" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="16" y1="24" x2="32" y2="24" stroke="${I}" stroke-width="2"/><circle cx="24" cy="16" r="2" fill="${I}"/><circle cx="21" cy="32" r="1.8" fill="${I}"/><circle cx="27" cy="32" r="1.8" fill="${I}"/>`) },
+      { id: 'thimble', name: 'A Thimble', rarity: 'uncommon', qty: [1, 1], icon: sv(`<path d="M16 34 v-8 a8 8 0 0 1 16 0 v8 Z" fill="#a89f93" stroke="${I}" stroke-width="3"/><rect x="14" y="34" width="20" height="4" rx="2" fill="#a89f93" stroke="${I}" stroke-width="2"/><circle cx="21" cy="24" r="1" fill="${I}" opacity=".5"/><circle cx="27" cy="24" r="1" fill="${I}" opacity=".5"/><circle cx="24" cy="20" r="1" fill="${I}" opacity=".5"/>`) },
+      { id: 'spork', name: 'A Spork', rarity: 'uncommon', qty: [1, 1], icon: sv(`<line x1="24" y1="22" x2="24" y2="42" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/><path d="M17 8 q0 10 7 14 q7 -4 7 -14 Z" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="20" y1="8" x2="20" y2="13" stroke="${I}" stroke-width="2"/><line x1="24" y1="8" x2="24" y2="13" stroke="${I}" stroke-width="2"/><line x1="28" y1="8" x2="28" y2="13" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'velcro', name: 'Velcro Strip', rarity: 'uncommon', qty: [1, 2], icon: sv(`<rect x="10" y="13" width="28" height="8" rx="2" fill="#5aa0db" stroke="${I}" stroke-width="2.5"/><rect x="10" y="27" width="28" height="8" rx="2" fill="#a89f93" stroke="${I}" stroke-width="2.5"/><path d="M14 24 q2 -2 4 0 M20 24 q2 -2 4 0 M26 24 q2 -2 4 0" fill="none" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'commandhook', name: 'Command Hook', rarity: 'uncommon', qty: [1, 2], icon: sv(`<rect x="18" y="8" width="12" height="18" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="3"/><path d="M24 26 q0 9 -7 9" fill="none" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/>`) },
+      { id: 'jarlid', name: 'Jar Lid (No Jar)', rarity: 'uncommon', qty: [1, 1], icon: sv(`<circle cx="24" cy="24" r="13" fill="#f7c948" stroke="${I}" stroke-width="3"/><circle cx="24" cy="24" r="9" fill="none" stroke="${I}" stroke-width="2" opacity=".5"/>`) },
+      { id: 'chalk', name: 'One Chalk', rarity: 'uncommon', qty: [1, 2], icon: sv(`<rect x="19" y="10" width="10" height="28" rx="4" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="19" y1="16" x2="29" y2="16" stroke="${I}" stroke-width="1.5" opacity=".3"/>`) },
+      { id: 'bottleopener', name: 'Bottle Opener', rarity: 'uncommon', qty: [1, 1], icon: sv(`<rect x="20" y="20" width="8" height="20" rx="3" fill="#f0563e" stroke="${I}" stroke-width="3"/><path d="M16 8 h16 v12 h-5 v-6 h-6 v6 h-5 Z" fill="#a89f93" stroke="${I}" stroke-width="2.5" stroke-linejoin="round"/>`) },
+      { id: 'clothespin', name: 'Clothespin', rarity: 'uncommon', qty: [1, 3], icon: sv(`<path d="M20 8 h8 v22 l-4 10 l-4 -10 Z" fill="#f47b28" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><line x1="24" y1="8" x2="24" y2="30" stroke="${I}" stroke-width="2"/><circle cx="24" cy="20" r="3" fill="#a89f93" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'binderclip', name: 'Binder Clip', rarity: 'uncommon', qty: [1, 2], icon: sv(`<polygon points="14,32 34,32 30,16 18,16" fill="${I}"/><path d="M19 16 q5 -9 10 0" fill="none" stroke="#a89f93" stroke-width="3"/><rect x="13" y="32" width="22" height="4" rx="2" fill="${I}"/>`) },
+      // rares
+      { id: 'stick', name: 'A Good Stick', rarity: 'rare', qty: [1, 1], icon: sv(`<path d="M12 38 Q20 26 26 20 Q32 14 38 9" fill="none" stroke="#f47b28" stroke-width="5" stroke-linecap="round"/><path d="M12 38 Q20 26 26 20 Q32 14 38 9" fill="none" stroke="${I}" stroke-width="2" stroke-linecap="round"/><path d="M26 20 L33 22" stroke="${I}" stroke-width="3" stroke-linecap="round"/>`) },
+      { id: 'bubblewrap', name: 'Bubble Wrap (1 Left)', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="10" y="10" width="28" height="28" rx="4" fill="#fff8ef" stroke="${I}" stroke-width="3"/><circle cx="18" cy="18" r="3.5" fill="none" stroke="${I}" stroke-width="2" opacity=".3"/><circle cx="30" cy="18" r="3.5" fill="none" stroke="${I}" stroke-width="2" opacity=".3"/><circle cx="18" cy="30" r="3.5" fill="none" stroke="${I}" stroke-width="2" opacity=".3"/><circle cx="30" cy="30" r="3.5" fill="#5aa0db" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'candle', name: 'Birthday Candle', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="20" y="18" width="8" height="22" rx="2" fill="#ff7fa5" stroke="${I}" stroke-width="3"/><line x1="24" y1="18" x2="24" y2="13" stroke="${I}" stroke-width="2.5"/><path d="M24 5 Q29 10 24 14 Q19 10 24 5 Z" fill="#f7c948" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'snowglobe', name: 'Snow Globe', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="20" r="13" fill="#fff8ef" stroke="${I}" stroke-width="3"/><rect x="14" y="32" width="20" height="8" rx="3" fill="#f0563e" stroke="${I}" stroke-width="3"/><path d="M24 14 L28 25 L20 25 Z" fill="#2fb0a3" stroke="${I}" stroke-width="2"/><circle cx="18" cy="17" r="1.3" fill="${I}" opacity=".5"/><circle cx="30" cy="15" r="1.3" fill="${I}" opacity=".5"/><circle cx="29" cy="23" r="1.3" fill="${I}" opacity=".5"/>`) },
+      { id: 'deck', name: 'Deck of 51 Cards', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="12" y="12" width="18" height="26" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="3" transform="rotate(-8 21 25)"/><rect x="18" y="10" width="18" height="26" rx="3" fill="#f0563e" stroke="${I}" stroke-width="3" transform="rotate(6 27 23)"/>`) },
+      { id: 'yoyo', name: 'Yo-Yo', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="18" r="11" fill="#f0563e" stroke="${I}" stroke-width="3"/><circle cx="24" cy="18" r="4" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/><path d="M24 29 Q20 36 26 42" fill="none" stroke="${I}" stroke-width="2.5" stroke-linecap="round"/>`) },
+      { id: 'harmonica', name: 'Harmonica', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="8" y="17" width="32" height="14" rx="4" fill="#a89f93" stroke="${I}" stroke-width="3"/><line x1="14" y1="21" x2="14" y2="27" stroke="${I}" stroke-width="2"/><line x1="20" y1="21" x2="20" y2="27" stroke="${I}" stroke-width="2"/><line x1="26" y1="21" x2="26" y2="27" stroke="${I}" stroke-width="2"/><line x1="32" y1="21" x2="32" y2="27" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'rubberduck', name: 'Rubber Duck', rarity: 'rare', qty: [1, 1], icon: sv(`<path d="M12 30 Q10 22 17 21 Q18 13 25 14 Q31 14 31 21 L38 19 Q36 25 32 26 Q38 30 33 35 Q22 40 12 30 Z" fill="#f7c948" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><circle cx="24" cy="19" r="1.5" fill="${I}"/>`) },
+      { id: 'kazoo', name: 'Kazoo', rarity: 'rare', qty: [1, 1], icon: sv(`<path d="M8 22 L32 20 Q40 21 40 26 Q40 30 32 30 L8 27 Z" fill="#ff7fa5" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><circle cx="26" cy="19" r="3.5" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'compass', name: 'A Compass', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="24" r="13" fill="#fff8ef" stroke="${I}" stroke-width="3.5"/><path d="M24 14 L28 24 L24 34 L20 24 Z" fill="#f0563e" stroke="${I}" stroke-width="2"/><circle cx="24" cy="24" r="2" fill="${I}"/>`) },
+      { id: 'camera', name: 'Disposable Camera', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="8" y="14" width="32" height="22" rx="4" fill="#f7c948" stroke="${I}" stroke-width="3"/><circle cx="24" cy="25" r="7" fill="#fff8ef" stroke="${I}" stroke-width="3"/><rect x="12" y="17" width="6" height="4" rx="1" fill="#fff8ef" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'whoopee', name: 'Whoopee Cushion', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="26" cy="26" r="12" fill="#ff7fa5" stroke="${I}" stroke-width="3"/><path d="M14 22 L6 18 L8 26 Z" fill="#ff7fa5" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><path d="M22 22 Q26 20 30 22 M21 27 Q26 25 31 27" fill="none" stroke="${I}" stroke-width="2" opacity=".5"/>`) },
+      { id: 'slinky', name: 'A Slinky', rarity: 'rare', qty: [1, 1], icon: sv(`<ellipse cx="24" cy="14" rx="12" ry="4" fill="none" stroke="${I}" stroke-width="5"/><ellipse cx="24" cy="14" rx="12" ry="4" fill="none" stroke="#a98fd0" stroke-width="2.5"/><ellipse cx="24" cy="21" rx="12" ry="4" fill="none" stroke="${I}" stroke-width="5"/><ellipse cx="24" cy="21" rx="12" ry="4" fill="none" stroke="#a98fd0" stroke-width="2.5"/><ellipse cx="24" cy="28" rx="12" ry="4" fill="none" stroke="${I}" stroke-width="5"/><ellipse cx="24" cy="28" rx="12" ry="4" fill="none" stroke="#a98fd0" stroke-width="2.5"/><ellipse cx="24" cy="35" rx="12" ry="4" fill="none" stroke="${I}" stroke-width="5"/><ellipse cx="24" cy="35" rx="12" ry="4" fill="none" stroke="#a98fd0" stroke-width="2.5"/>`) },
+      { id: 'magic8', name: 'Magic 8 Ball', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="24" r="13" fill="${I}"/><circle cx="24" cy="20" r="5.5" fill="#fff8ef"/><text x="24" y="23.5" text-anchor="middle" font-family="Arial Black" font-size="9" fill="${I}">8</text>`) },
+      { id: 'fidgetspinner', name: 'Fidget Spinner (2019)', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="17" r="6" fill="#f0563e" stroke="${I}" stroke-width="3"/><circle cx="17" cy="29" r="6" fill="#5aa0db" stroke="${I}" stroke-width="3"/><circle cx="31" cy="29" r="6" fill="#b7ce3c" stroke="${I}" stroke-width="3"/><circle cx="24" cy="25" r="4" fill="#fff8ef" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'sillyputty', name: 'Silly Putty (Egg)', rarity: 'rare', qty: [1, 1], icon: sv(`<ellipse cx="24" cy="28" rx="12" ry="9" fill="#f0563e" stroke="${I}" stroke-width="3"/><ellipse cx="24" cy="22" rx="8" ry="6" fill="#ff7fa5" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'laserpointer', name: 'Laser Pointer', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="8" y="20" width="20" height="8" rx="4" fill="#a89f93" stroke="${I}" stroke-width="3"/><path d="M28 24 h6" stroke="#f0563e" stroke-width="2" stroke-dasharray="2 2"/><circle cx="38" cy="24" r="3" fill="#f0563e" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'pez', name: 'Pez (Headless)', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="18" y="14" width="12" height="26" rx="3" fill="#f0563e" stroke="${I}" stroke-width="3"/><rect x="17" y="6" width="14" height="7" rx="2" fill="#f7c948" stroke="${I}" stroke-width="2.5" transform="rotate(-18 24 10)"/>`) },
+      { id: 'hackysack', name: 'Hacky Sack', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="24" r="11" fill="#b7ce3c" stroke="${I}" stroke-width="3"/><path d="M13 24 q11 -8 22 0 M13 24 q11 8 22 0 M24 13 v22" fill="none" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'friendship', name: 'Friendship Bracelet', rarity: 'rare', qty: [1, 1], icon: sv(`<path d="M10 28 q14 -12 28 0" fill="none" stroke="#ff7fa5" stroke-width="5"/><path d="M10 28 q14 -12 28 0" fill="none" stroke="#5aa0db" stroke-width="5" stroke-dasharray="4 4"/><path d="M10 28 q14 -12 28 0" fill="none" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'glowstick', name: 'Glow Stick (Faint)', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="20" y="8" width="8" height="32" rx="4" fill="#b7ce3c" stroke="${I}" stroke-width="3"/><rect x="20" y="8" width="8" height="6" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="2"/><path d="M14 16 l-4 -4 M34 16 l4 -4 M12 28 h-5" stroke="#b7ce3c" stroke-width="2.5" stroke-linecap="round"/>`) },
+      { id: 'pog', name: 'A Single Pog', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="24" r="12" fill="#f7c948" stroke="${I}" stroke-width="3"/><polygon points="24,16 26,22 32,22 27,26 29,32 24,28 19,32 21,26 16,22 22,22" fill="#f0563e" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'moodring', name: 'Mood Ring (Confused)', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="28" r="9" fill="none" stroke="#f7c948" stroke-width="4"/><circle cx="24" cy="28" r="9" fill="none" stroke="${I}" stroke-width="1.5"/><ellipse cx="24" cy="15" rx="6" ry="5" fill="#2fb0a3" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'temptattoo', name: 'Temporary Tattoo', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="10" y="10" width="28" height="28" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/><polygon points="24,15 26.5,21.5 33,21.5 28,25.5 30,32 24,28 18,32 20,25.5 15,21.5 21.5,21.5" fill="#a98fd0" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'wingspin', name: 'Airline Wings Pin', rarity: 'rare', qty: [1, 1], icon: sv(`<path d="M19 24 Q6 18 10 28 Q14 30 19 26 Z M29 24 Q42 18 38 28 Q34 30 29 26 Z" fill="#f7c948" stroke="${I}" stroke-width="2.5"/><circle cx="24" cy="25" r="5" fill="#f7c948" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'keycard', name: 'Hotel Keycard', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="8" y="14" width="32" height="20" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="3"/><rect x="8" y="18" width="32" height="5" fill="${I}"/><rect x="12" y="27" width="10" height="4" fill="#a89f93"/>`) },
+      { id: 'waxlips', name: 'Wax Lips', rarity: 'rare', qty: [1, 1], icon: sv(`<path d="M10 24 Q16 14 24 20 Q32 14 38 24 Q32 36 24 32 Q16 36 10 24 Z" fill="#f0563e" stroke="${I}" stroke-width="3"/><path d="M12 24 h24" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'mixtape', name: 'Mixtape (Side B?)', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="8" y="12" width="32" height="24" rx="3" fill="#a89f93" stroke="${I}" stroke-width="3"/><circle cx="17" cy="26" r="4" fill="#fff8ef" stroke="${I}" stroke-width="2"/><circle cx="31" cy="26" r="4" fill="#fff8ef" stroke="${I}" stroke-width="2"/><line x1="21" y1="26" x2="27" y2="26" stroke="${I}" stroke-width="2"/><rect x="12" y="15" width="24" height="5" fill="#fff8ef" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'kaleidoscope', name: 'Kaleidoscope', rarity: 'rare', qty: [1, 1], icon: sv(`<rect x="6" y="18" width="28" height="12" rx="6" fill="#a98fd0" stroke="${I}" stroke-width="3"/><circle cx="37" cy="24" r="6" fill="#fff8ef" stroke="${I}" stroke-width="3"/><polygon points="37,20 40,26 34,26" fill="#2fb0a3" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'gyroscope', name: 'A Gyroscope', rarity: 'rare', qty: [1, 1], icon: sv(`<circle cx="24" cy="24" r="12" fill="none" stroke="${I}" stroke-width="3"/><ellipse cx="24" cy="24" rx="12" ry="5" fill="none" stroke="${I}" stroke-width="2"/><line x1="24" y1="8" x2="24" y2="40" stroke="${I}" stroke-width="2.5"/><circle cx="24" cy="24" r="3" fill="#f0563e" stroke="${I}" stroke-width="2"/>`) },
+      // epics
+      { id: 'remote', name: 'The TV Remote', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="16" y="6" width="16" height="36" rx="5" fill="${I}"/><circle cx="24" cy="14" r="3" fill="#f0563e" stroke="#fff8ef" stroke-width="1.5"/><circle cx="20" cy="23" r="2" fill="#fff8ef"/><circle cx="28" cy="23" r="2" fill="#fff8ef"/><circle cx="20" cy="30" r="2" fill="#fff8ef"/><circle cx="28" cy="30" r="2" fill="#fff8ef"/>`) },
+      { id: 'lavalamp', name: 'Lava Lamp', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M19 10 L29 10 L33 36 L15 36 Z" fill="#a98fd0" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><rect x="15" y="36" width="18" height="6" rx="2" fill="${I}"/><rect x="19" y="5" width="10" height="5" rx="2" fill="${I}"/><circle cx="23" cy="28" r="4" fill="#ff7fa5" stroke="${I}" stroke-width="2"/><circle cx="27" cy="17" r="3" fill="#ff7fa5" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'gnome', name: 'Garden Gnome', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M24 4 L34 22 L14 22 Z" fill="#f0563e" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><circle cx="24" cy="27" r="7" fill="#ff9d76" stroke="${I}" stroke-width="3"/><path d="M17 30 Q24 44 31 30 Q28 40 24 41 Q20 40 17 30 Z" fill="#fff8ef" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><circle cx="21.5" cy="26" r="1.4" fill="${I}"/><circle cx="26.5" cy="26" r="1.4" fill="${I}"/>`) },
+      { id: 'scissors', name: 'The Good Scissors', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M14 12 L30 32" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/><path d="M34 12 L18 32" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/><circle cx="15" cy="37" r="5" fill="none" stroke="#f0563e" stroke-width="4"/><circle cx="15" cy="37" r="5" fill="none" stroke="${I}" stroke-width="1.5"/><circle cx="33" cy="37" r="5" fill="none" stroke="#f0563e" stroke-width="4"/><circle cx="33" cy="37" r="5" fill="none" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'discoball', name: 'Disco Ball', rarity: 'epic', qty: [1, 1], icon: sv(`<line x1="24" y1="4" x2="24" y2="10" stroke="${I}" stroke-width="2.5"/><circle cx="24" cy="24" r="14" fill="#5aa0db" stroke="${I}" stroke-width="3"/><path d="M10 24 h28 M24 10 v28 M13 16 q11 6 22 0 M13 32 q11 -6 22 0" fill="none" stroke="${I}" stroke-width="1.8" opacity=".55"/>`) },
+      { id: 'labelmaker', name: 'The Label Maker', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="10" y="12" width="24" height="18" rx="4" fill="#2fb0a3" stroke="${I}" stroke-width="3"/><circle cx="17" cy="19" r="2" fill="#fff8ef"/><circle cx="24" cy="19" r="2" fill="#fff8ef"/><circle cx="31" cy="19" r="2" fill="#fff8ef"/><rect x="20" y="30" width="20" height="8" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/><line x1="24" y1="34" x2="36" y2="34" stroke="${I}" stroke-width="1.8"/>`) },
+      { id: 'metaldetector', name: 'Metal Detector', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M30 6 L18 32" stroke="${I}" stroke-width="3.5" stroke-linecap="round"/><rect x="28" y="4" width="8" height="6" rx="2" fill="#f0563e" stroke="${I}" stroke-width="2.5"/><ellipse cx="16" cy="37" rx="10" ry="5" fill="#a89f93" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'walkietalkie', name: 'One Walkie-Talkie', rarity: 'epic', qty: [1, 1], icon: sv(`<line x1="18" y1="10" x2="18" y2="4" stroke="${I}" stroke-width="3" stroke-linecap="round"/><rect x="13" y="10" width="18" height="30" rx="4" fill="#f0563e" stroke="${I}" stroke-width="3"/><line x1="17" y1="16" x2="27" y2="16" stroke="${I}" stroke-width="2"/><line x1="17" y1="20" x2="27" y2="20" stroke="${I}" stroke-width="2"/><circle cx="22" cy="30" r="3" fill="${I}"/>`) },
+      { id: 'scratchoff', name: 'Scratch-Off (Winner?)', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="8" y="12" width="32" height="24" rx="3" fill="#b7ce3c" stroke="${I}" stroke-width="3"/><rect x="13" y="18" width="14" height="12" rx="2" fill="#a89f93" stroke="${I}" stroke-width="2"/><path d="M15 24 q4 -4 10 0" fill="none" stroke="#fff8ef" stroke-width="3"/><text x="34" y="28" text-anchor="middle" font-family="Arial Black" font-size="11" fill="${I}">$</text>`) },
+      { id: 'fancypen', name: 'Pen From The Bank', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="20" y="6" width="8" height="26" rx="3" fill="${I}"/><polygon points="20,32 24,42 28,32" fill="#f7c948" stroke="${I}" stroke-width="2.5"/><line x1="30" y1="8" x2="30" y2="18" stroke="#f7c948" stroke-width="2.5"/>`) },
+      { id: 'karaoke', name: 'Karaoke Machine', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="8" y="16" width="22" height="24" rx="3" fill="#a98fd0" stroke="${I}" stroke-width="3"/><circle cx="19" cy="27" r="6" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/><rect x="34" y="14" width="5" height="14" rx="2.5" fill="#a89f93" stroke="${I}" stroke-width="2"/><circle cx="36.5" cy="10" r="4" fill="${I}"/>`) },
+      { id: 'bugzapper', name: 'The Bug Zapper', rarity: 'epic', qty: [1, 1], icon: sv(`<ellipse cx="24" cy="18" rx="11" ry="13" fill="none" stroke="${I}" stroke-width="3"/><path d="M15 12 h18 M13 18 h22 M15 24 h18" stroke="${I}" stroke-width="1.5"/><rect x="21" y="31" width="6" height="12" rx="3" fill="#f7c948" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'fondue', name: 'The Fondue Set', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M12 20 h24 l-3 12 a6 6 0 0 1 -6 5 h-6 a6 6 0 0 1 -6 -5 Z" fill="#f0563e" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><line x1="30" y1="6" x2="26" y2="18" stroke="${I}" stroke-width="2.5"/><line x1="16" y1="6" x2="20" y2="18" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'breadmachine', name: 'The Bread Machine', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="10" y="12" width="28" height="28" rx="4" fill="#fff8ef" stroke="${I}" stroke-width="3"/><rect x="16" y="18" width="16" height="12" rx="2" fill="#5aa0db" stroke="${I}" stroke-width="2.5"/><circle cx="24" cy="35" r="2" fill="${I}"/>`) },
+      { id: 'panini', name: 'The Panini Press', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M10 26 h28 v6 a4 4 0 0 1 -4 4 h-20 a4 4 0 0 1 -4 -4 Z" fill="#a89f93" stroke="${I}" stroke-width="3"/><path d="M12 26 l6 -12 h18 l-2 12" fill="#a89f93" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><circle cx="25" cy="11" r="2.5" fill="${I}"/>`) },
+      { id: 'rotaryphone', name: 'Rotary Phone (Works)', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M10 20 q14 -12 28 0 l-4 6 q-10 -8 -20 0 Z" fill="#f0563e" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><rect x="14" y="28" width="20" height="10" rx="3" fill="#f0563e" stroke="${I}" stroke-width="3"/><circle cx="24" cy="33" r="4" fill="#fff8ef" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'typewriter', name: 'Typewriter (E Sticks)', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="10" y="22" width="28" height="14" rx="3" fill="#2fb0a3" stroke="${I}" stroke-width="3"/><rect x="14" y="14" width="20" height="8" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/><rect x="18" y="10" width="12" height="3" fill="#a89f93"/><circle cx="16" cy="29" r="1.5" fill="${I}"/><circle cx="21" cy="29" r="1.5" fill="${I}"/><circle cx="26" cy="29" r="1.5" fill="${I}"/><circle cx="31" cy="29" r="1.5" fill="${I}"/>`) },
+      { id: 'theremin', name: 'A Theremin', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="8" y="24" width="24" height="12" rx="3" fill="#a98fd0" stroke="${I}" stroke-width="3"/><line x1="34" y1="24" x2="34" y2="8" stroke="${I}" stroke-width="3"/><circle cx="34" cy="7" r="2" fill="${I}"/><path d="M12 18 q3 -4 6 0 q3 4 6 0" fill="none" stroke="${I}" stroke-width="1.8" opacity=".5"/>`) },
+      { id: 'petrock', name: 'Pet Rock (Pedigreed)', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M13 30 Q11 20 20 15 Q30 10 36 18 Q40 26 33 32 Q22 38 13 30 Z" fill="#a89f93" stroke="${I}" stroke-width="3"/><circle cx="21" cy="22" r="2.5" fill="#fff8ef" stroke="${I}" stroke-width="1.5"/><circle cx="29" cy="22" r="2.5" fill="#fff8ef" stroke="${I}" stroke-width="1.5"/><circle cx="21.5" cy="22.5" r="1" fill="${I}"/><circle cx="29.5" cy="22.5" r="1" fill="${I}"/><path d="M20 12 l3 -4 l2 4 l2 -4 l3 4" fill="none" stroke="#f0563e" stroke-width="2.5" stroke-linejoin="round"/>`) },
+      { id: 'ashtray', name: 'Crystal Ashtray', rarity: 'epic', qty: [1, 1], icon: sv(`<ellipse cx="24" cy="28" rx="13" ry="7" fill="#5aa0db" stroke="${I}" stroke-width="3"/><ellipse cx="24" cy="25" rx="9" ry="4" fill="#fff8ef" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'boombox', name: 'The Boombox', rarity: 'epic', qty: [1, 1], icon: sv(`<path d="M14 16 q10 -8 20 0" fill="none" stroke="${I}" stroke-width="3"/><rect x="8" y="16" width="32" height="20" rx="3" fill="${I}"/><circle cx="16" cy="26" r="5" fill="#fff8ef" stroke="${I}" stroke-width="2"/><circle cx="32" cy="26" r="5" fill="#fff8ef" stroke="${I}" stroke-width="2"/><rect x="21" y="20" width="6" height="4" fill="#f0563e"/>`) },
+      { id: 'accordion', name: 'An Accordion', rarity: 'epic', qty: [1, 1], icon: sv(`<rect x="8" y="14" width="8" height="20" rx="2" fill="#f0563e" stroke="${I}" stroke-width="2.5"/><rect x="32" y="14" width="8" height="20" rx="2" fill="#f0563e" stroke="${I}" stroke-width="2.5"/><path d="M16 16 h16 M16 32 h16 M20 16 v16 M24 16 v16 M28 16 v16" stroke="${I}" stroke-width="1.5"/><circle cx="12" cy="20" r="1.2" fill="#fff8ef"/><circle cx="12" cy="25" r="1.2" fill="#fff8ef"/>`) },
+      // legendaries
+      { id: 'sock', name: 'The Other Sock', rarity: 'legendary', qty: [1, 1], icon: sv(`<path d="M18 6 L30 6 L30 24 Q30 34 22 36 Q12 38 10 30 Q9 24 16 22 L18 20 Z" fill="#5aa0db" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><rect x="17" y="5" width="14" height="6" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'lego', name: 'The Missing Piece', rarity: 'legendary', qty: [1, 1], icon: sv(`<rect x="12" y="20" width="24" height="16" rx="2" fill="#f0563e" stroke="${I}" stroke-width="3"/><rect x="15" y="14" width="8" height="6" rx="1.5" fill="#f0563e" stroke="${I}" stroke-width="3"/><rect x="27" y="14" width="8" height="6" rx="1.5" fill="#f0563e" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'warranty', name: 'Valid Warranty', rarity: 'legendary', qty: [1, 1], icon: sv(`<rect x="10" y="10" width="28" height="28" rx="3" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="15" y1="18" x2="33" y2="18" stroke="${I}" stroke-width="2"/><line x1="15" y1="23" x2="33" y2="23" stroke="${I}" stroke-width="2"/><circle cx="30" cy="32" r="5.5" fill="#f7c948" stroke="${I}" stroke-width="2.5"/><path d="M27.5 32 L29.5 34 L33 30" fill="none" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'junkdrawer', name: 'The Junk Drawer', rarity: 'legendary', qty: [1, 1], icon: sv(`<rect x="8" y="18" width="32" height="20" rx="3" fill="#f47b28" stroke="${I}" stroke-width="3"/><rect x="19" y="26" width="10" height="4" rx="2" fill="${I}"/><path d="M12 18 Q16 8 20 14 M24 18 Q26 10 31 13 M33 18 Q36 12 38 16" fill="none" stroke="${I}" stroke-width="2.5" stroke-linecap="round"/>`) },
+      { id: 'tupperlid', name: 'The Matching Lid', rarity: 'legendary', qty: [1, 1], icon: sv(`<rect x="8" y="14" width="32" height="20" rx="7" fill="#2fb0a3" stroke="${I}" stroke-width="3"/><rect x="14" y="19" width="20" height="10" rx="4" fill="none" stroke="${I}" stroke-width="2.5" opacity=".55"/>`) },
+      { id: 'recipe', name: 'The Family Recipe', rarity: 'legendary', qty: [1, 1], icon: sv(`<rect x="9" y="11" width="30" height="26" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="14" y1="18" x2="34" y2="18" stroke="${I}" stroke-width="2"/><line x1="14" y1="24" x2="34" y2="24" stroke="${I}" stroke-width="2"/><line x1="14" y1="30" x2="26" y2="30" stroke="${I}" stroke-width="2"/><path d="M33 29 q-3 -3 0 -5 q3 2 0 5 Z" fill="#f0563e" stroke="${I}" stroke-width="1.5" transform="scale(1.4) translate(-9 -8)"/>`) },
+      { id: 'remoteback', name: "The Remote's Back", rarity: 'legendary', qty: [1, 1], icon: sv(`<rect x="16" y="6" width="16" height="36" rx="5" fill="#a89f93" stroke="${I}" stroke-width="3"/><ellipse cx="24" cy="18" rx="4" ry="7" fill="none" stroke="${I}" stroke-width="2.5" opacity=".6"/><ellipse cx="24" cy="33" rx="4" ry="7" fill="none" stroke="${I}" stroke-width="2.5" opacity=".6"/>`) },
+      { id: 'earring', name: 'The Missing Earring', rarity: 'legendary', qty: [1, 1], icon: sv(`<circle cx="24" cy="14" r="6" fill="none" stroke="#f7c948" stroke-width="4"/><circle cx="24" cy="14" r="6" fill="none" stroke="${I}" stroke-width="1.5"/><path d="M24 20 q5 6 0 12" fill="none" stroke="#f7c948" stroke-width="3"/><path d="M24 20 q5 6 0 12" fill="none" stroke="${I}" stroke-width="1.2"/><polygon points="24,32 28,37 24,42 20,37" fill="#5aa0db" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'chopsticks', name: 'Matching Chopsticks', rarity: 'legendary', qty: [1, 1], icon: sv(`<line x1="16" y1="6" x2="22" y2="42" stroke="#f47b28" stroke-width="4" stroke-linecap="round"/><line x1="16" y1="6" x2="22" y2="42" stroke="${I}" stroke-width="1.5"/><line x1="31" y1="6" x2="28" y2="42" stroke="#f47b28" stroke-width="4" stroke-linecap="round"/><line x1="31" y1="6" x2="28" y2="42" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'pencap', name: 'The Pen Cap (Reunited)', rarity: 'legendary', qty: [1, 1], icon: sv(`<path d="M20 10 h8 v24 l-4 6 l-4 -6 Z" fill="#5aa0db" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><line x1="30" y1="12" x2="30" y2="26" stroke="${I}" stroke-width="2.5"/>`) },
+      { id: 'cornerpiece', name: 'The Corner Piece', rarity: 'legendary', qty: [1, 1], icon: sv(`<path d="M10 10 h24 v10 q8 -3 8 4 q0 7 -8 4 v10 h-10 q3 8 -4 8 q-7 0 -4 -8 h-6 Z" fill="#f7c948" stroke="${I}" stroke-width="3" stroke-linejoin="round"/>`) },
+      { id: 'goodchina', name: 'The Good China', rarity: 'legendary', qty: [1, 1], icon: sv(`<circle cx="24" cy="24" r="13" fill="#fff8ef" stroke="${I}" stroke-width="3"/><circle cx="24" cy="24" r="10.5" fill="none" stroke="#f7c948" stroke-width="1.5"/><circle cx="24" cy="24" r="7" fill="none" stroke="#5aa0db" stroke-width="2"/>`) },
+      { id: 'flashlight', name: 'Flashlight (Batteries In)', rarity: 'legendary', qty: [1, 1], icon: sv(`<rect x="6" y="20" width="18" height="8" rx="3" fill="#2fb0a3" stroke="${I}" stroke-width="3"/><path d="M24 17 l6 -3 v20 l-6 -3 Z" fill="#a89f93" stroke="${I}" stroke-width="3" stroke-linejoin="round"/><polygon points="30,14 43,9 43,39 30,34" fill="#f7c948" opacity=".8" stroke="${I}" stroke-width="2"/>`) },
+      { id: 'rightallen', name: 'The RIGHT Allen Wrench', rarity: 'legendary', qty: [1, 1], icon: sv(`<path d="M14 10 L14 34 L36 34" fill="none" stroke="#f7c948" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 10 L14 34 L36 34" fill="none" stroke="${I}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`) },
+      { id: 'returnreceipt', name: 'The Return Receipt', rarity: 'legendary', qty: [1, 1], icon: sv(`<path d="M16 6 h16 v32 l-4 -3 l-4 3 l-4 -3 l-4 3 Z" fill="#fff8ef" stroke="${I}" stroke-width="3"/><path d="M19 22 l4 5 l7 -10" fill="none" stroke="#b7ce3c" stroke-width="3.5" stroke-linecap="round"/>`) },
+      { id: 'buttontin', name: "Grandma's Button Tin", rarity: 'legendary', qty: [1, 1], icon: sv(`<path d="M11 16 v14 a13 5 0 0 0 26 0 v-14" fill="#a89f93" stroke="${I}" stroke-width="3"/><ellipse cx="24" cy="16" rx="13" ry="5" fill="#a89f93" stroke="${I}" stroke-width="3"/><circle cx="19" cy="28" r="2.5" fill="#f0563e" stroke="${I}" stroke-width="1.5"/><circle cx="27" cy="30" r="2.5" fill="#5aa0db" stroke="${I}" stroke-width="1.5"/>`) },
+      { id: 'fittingcharger', name: 'The Charger That Fits', rarity: 'legendary', qty: [1, 1], icon: sv(`<path d="M10 38 Q18 30 16 22 Q14 14 24 12 L30 12" fill="none" stroke="#f7c948" stroke-width="4" stroke-linecap="round"/><path d="M10 38 Q18 30 16 22 Q14 14 24 12 L30 12" fill="none" stroke="${I}" stroke-width="1.5" stroke-linecap="round"/><rect x="30" y="8" width="10" height="9" rx="2" fill="#f7c948" stroke="${I}" stroke-width="3"/>`) },
+      { id: 'manual', name: 'The Instruction Manual', rarity: 'legendary', qty: [1, 1], icon: sv(`<rect x="12" y="10" width="24" height="28" rx="2" fill="#fff8ef" stroke="${I}" stroke-width="3"/><line x1="16" y1="10" x2="16" y2="38" stroke="${I}" stroke-width="2"/><line x1="20" y1="18" x2="32" y2="18" stroke="${I}" stroke-width="1.8"/><line x1="20" y1="24" x2="32" y2="24" stroke="${I}" stroke-width="1.8"/><line x1="20" y1="30" x2="28" y2="30" stroke="${I}" stroke-width="1.8"/>`) },
+    ];
+    const RARITY = {
+      common:    { label: 'Common',    rank: 0, cls: 'r-common',    color: '#a89f93' },
+      uncommon:  { label: 'Uncommon',  rank: 1, cls: 'r-uncommon',  color: '#b7ce3c' },
+      rare:      { label: 'Rare',      rank: 2, cls: 'r-rare',      color: '#5aa0db' },
+      epic:      { label: 'Epic',      rank: 3, cls: 'r-epic',      color: '#a98fd0' },
+      legendary: { label: 'Legendary', rank: 4, cls: 'r-legendary', color: '#f7c948' },
+    };
+    const byId = Object.fromEntries(ITEMS.map(i => [i.id, i]));
+    const pool = (r) => ITEMS.filter(i => i.rarity === r);
+    function miniStars(n) {
+      let out = '<span class="ministars">';
+      for (let i = 0; i < n; i++) {
+        out += '<svg viewBox="0 0 40 40"><polygon points="20,3 25,15 38,16 28,25 31,38 20,31 9,38 12,25 2,16 15,15" fill="#201a17"/></svg>';
+      }
+      return out + '</span>';
+    }
+    const chestEmblem = `<svg viewBox="0 0 240 205"><path d="M22 96 Q22 34 120 34 Q218 34 218 96 Z" fill="#f0563e" stroke="#201a17" stroke-width="10"/><rect x="22" y="96" width="196" height="92" rx="10" fill="#f47b28" stroke="#201a17" stroke-width="10"/><rect x="102" y="82" width="36" height="40" rx="7" fill="#f7c948" stroke="#201a17" stroke-width="8"/></svg>`;
+
+    // ---------- persistence ----------
+    let binderData = {}, opened = 0, bestId = null;
+    try {
+      binderData = JSON.parse(localStorage.getItem('lc-binder') || '{}');
+      opened = parseInt(localStorage.getItem('lc-opened') || '0', 10) || 0;
+      bestId = localStorage.getItem('lc-best') || null;
+    } catch (e) {}
+    function persist() {
+      try {
+        localStorage.setItem('lc-binder', JSON.stringify(binderData));
+        localStorage.setItem('lc-opened', String(opened));
+        if (bestId) localStorage.setItem('lc-best', bestId);
+      } catch (e) {}
+    }
+    function renderLedger() {
+      const best = bestId && byId[bestId] ? ` · best pull: ${byId[bestId].name.toUpperCase()}` : '';
+      $('#ledger').textContent = opened > 0 ? `chests opened: ${opened.toLocaleString()}${best}` : '';
+    }
+    renderLedger();
+
+    // ---------- chest state ----------
+    const UP_ODDS = { 1: 0.35, 2: 0.25, 3: 0.12, 4: 0.04 };
+    const TIER_COLOR = { 1: '#a89f93', 2: '#5aa0db', 3: '#a98fd0', 4: '#f7c948', 5: '#f7c948' };
+    const UPGRADE_WORDS = { 2: 'UPGRADED!', 3: 'OOH, PURPLE!', 4: 'SO SHINY!', 5: '5 STARS!!' };
+    let tier = 1;
+    let tapsLeft = 3;
+    let bonusUsed = false;
+    let phase = 'idle';
+    let lastTap = 0;
+    let firstEver = true;
+    const chest = $('#chest');
+
+    // chests don't all start equal — no telling from the outside
+    const START_TIERS = [[1, .72], [2, .18], [3, .07], [4, .02]];
+    function rollStartTier() {
+      let r = Math.random() * .99;
+      for (const [t, w] of START_TIERS) {
+        r -= w;
+        if (r <= 0) return t;
+      }
+      return 4;
+    }
+    function spawnChest() {
+      bonusUsed = false;
+      phase = 'idle';
+      chest.classList.remove('open', 'golden');
+      // the 1% chest arrives already golden. it does not explain itself.
+      if (Math.random() < 0.01) {
+        tier = 5;
+        tapsLeft = 1;
+        chest.classList.add('golden');
+      } else {
+        tier = rollStartTier();
+        tapsLeft = Math.random() < 0.25 ? 4 : 3;
+      }
+      $$('.crack').forEach(c => c.classList.remove('show'));
+      renderTier(false);
+      renderPips();
+      animate(chest,
+        { y: [-innerHeight * 0.7, 0], rotate: [-8, 0] },
+        { type: 'spring', stiffness: 300, damping: 16, duration: dur(.7) });
+      if (tier === 5) setTimeout(() => burst('LUCKY!!', 'var(--gold)'), 550);
+    }
+    function renderTier(pop) {
+      // only earned stars exist — new ones pop in, the ceiling stays a mystery
+      const row = $('#stars');
+      while (row.children.length > tier) row.lastChild.remove();
+      while (row.children.length < tier) {
+        const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        s.setAttribute('class', 'star');
+        s.setAttribute('viewBox', '0 0 40 40');
+        s.innerHTML = '<polygon points="20,3 25,15 38,16 28,25 31,38 20,31 9,38 12,25 2,16 15,15"/>';
+        row.appendChild(s);
+        if (pop && !reduceMotion) animate(s, { scale: [0.2, 1.6, 1], rotate: [-40, 10, 0] }, SPRING);
+      }
+      row.classList.toggle('t5', tier === 5);
+      $('#glow').className = 'glow' + (tier >= 2 ? ` t${tier}` : '');
+      $('#bgwash').className = 'bgwash' + (tier >= 2 ? ` t${tier}` : '');
+      $('#beam').setAttribute('fill', TIER_COLOR[tier]);
+      $('#mouthGlow').setAttribute('fill', TIER_COLOR[tier]);
+    }
+    function renderPips() {
+      const row = $('#pips');
+      row.innerHTML = '';
+      for (let i = 0; i < tapsLeft; i++) {
+        const p = document.createElement('div');
+        p.className = 'pip full';
+        row.appendChild(p);
+      }
+    }
+
+    // ---------- tapping ----------
+    const DUDS = ['nothing.', 'hm.', 'nope.', 'still wood.', 'a rattle, maybe.', 'it resists.'];
+    chest.addEventListener('pointerdown', (e) => {
+      if (phase !== 'idle') return;
+      const now = performance.now();
+      if (now - lastTap < 240) return;
+      lastTap = now;
+      if (firstEver) { firstEver = false; $('#hint').classList.add('off'); }
+
+      animate(chest, { scaleX: [1, 1.1, 1], scaleY: [1, .82, 1] }, { duration: dur(.24) });
+
+      let upgraded = false;
+      if (tier < 5 && Math.random() < UP_ODDS[tier]) {
+        upgraded = true;
+        tier++;
+        renderTier(true);
+        burst(UPGRADE_WORDS[tier], TIER_COLOR[tier]);
+        flash(TIER_COLOR[tier]);
+        shake();
+        animate(chest, { scale: [1, 1.2, 1], rotate: [0, -4, 4, 0] }, { type: 'spring', stiffness: 500, damping: 11, duration: dur(.6) });
+        confettiBurst(tier >= 4 ? 110 : 50, tier === 5 ? 'rainbow' : TIER_COLOR[tier]);
+      }
+
+      tapsLeft--;
+      if (tapsLeft === 0 && !bonusUsed && tier < 5 && Math.random() < 0.15) {
+        bonusUsed = true;
+        tapsLeft = 1;
+        renderPips();
+        const p = $('#pips').lastChild;
+        if (p) {
+          p.classList.add('bonus');
+          animate(p, { scale: [0, 1.6, 1] }, SPRING);
+        }
+        burst('BONUS TAP!', 'var(--pink)');
+        return;
+      }
+      renderPips();
+
+      if (!upgraded && tapsLeft > 0) dud(e);
+
+      const cracks = $$('.crack');
+      const shown = cracks.filter(c => c.classList.contains('show')).length;
+      if (shown < cracks.length) cracks[shown].classList.add('show');
+
+      if (tapsLeft <= 0) openChest();
+    });
+
+    function dud(e) {
+      const d = document.createElement('div');
+      d.className = 'dud';
+      d.textContent = DUDS[Math.floor(Math.random() * DUDS.length)];
+      const stage = $('#stage').getBoundingClientRect();
+      d.style.left = (e.clientX - stage.left + 14) + 'px';
+      d.style.top = (e.clientY - stage.top - 10) + 'px';
+      $('#stage').appendChild(d);
+      animate(d, { opacity: [0, .75, 0], y: [0, -44] }, { duration: dur(1.1), ease: 'easeOut' })
+        .finished.then(() => d.remove());
+    }
+    function shake() {
+      if (reduceMotion) return;
+      animate($('#app'),
+        { x: [0, -8, 7, -5, 4, 0], y: [0, 4, -5, 3, -2, 0] },
+        { duration: .3 });
+    }
+    function flash(color) {
+      if (reduceMotion) return;
+      const f = $('#flash');
+      f.style.setProperty('--flash-c', color);
+      animate(f, { opacity: [0, .55, 0] }, { duration: .55 });
+    }
+    function burst(text, color) {
+      const b = $('#burst');
+      b.textContent = text;
+      b.style.color = color;
+      animate(b,
+        { opacity: [0, 1, 1, 0], scale: [.2, 1.3, 1, 1.05], rotate: [-9, 3, -2, 0] },
+        { duration: dur(1.1), ease: 'easeOut', times: [0, .18, .75, 1] });
+    }
+
+    // ---------- loot ----------
+    const TIER_CARDS = { 1: 2, 2: 3, 3: 3, 4: 4, 5: 5 };
+    const TIER_WEIGHTS = {
+      1: { common: 80, uncommon: 20 },
+      2: { common: 55, uncommon: 35, rare: 10 },
+      3: { common: 30, uncommon: 40, rare: 25, epic: 5 },
+      4: { uncommon: 30, rare: 40, epic: 25, legendary: 5 },
+      5: { rare: 35, epic: 40, legendary: 25 },
+    };
+    function weightedRarity(weights) {
+      const total = Object.values(weights).reduce((a, b) => a + b, 0);
+      let r = Math.random() * total;
+      for (const [k, w] of Object.entries(weights)) {
+        r -= w;
+        if (r <= 0) return k;
+      }
+      return Object.keys(weights)[0];
+    }
+    function genLoot() {
+      const n = TIER_CARDS[tier];
+      const weights = TIER_WEIGHTS[tier];
+      const loot = [];
+      for (let i = 0; i < n; i++) {
+        const rar = weightedRarity(weights);
+        const opts = pool(rar);
+        const item = opts[Math.floor(Math.random() * opts.length)];
+        const qty = item.qty[0] + Math.floor(Math.random() * (item.qty[1] - item.qty[0] + 1));
+        loot.push({ item, qty });
+      }
+      const maxRank = Math.max(...loot.map(l => RARITY[l.item.rarity].rank));
+      if (tier === 5 && maxRank < 4) {
+        const opts = pool('legendary');
+        loot[loot.length - 1] = { item: opts[Math.floor(Math.random() * opts.length)], qty: 1 };
+      } else if (tier === 4 && maxRank < 3) {
+        const opts = pool('epic');
+        loot[loot.length - 1] = { item: opts[Math.floor(Math.random() * opts.length)], qty: 1 };
+      }
+      loot.sort((a, b) => RARITY[a.item.rarity].rank - RARITY[b.item.rarity].rank);
+      return loot;
+    }
+
+    // ---------- opening sequence ----------
+    let currentLoot = [];
+    function openChest() {
+      phase = 'opening';
+      setTimeout(() => {
+        chest.classList.add('open');
+        shake();
+        flash(TIER_COLOR[tier]);
+        if (tier === 5) confettiBurst(180, 'rainbow');
+        else if (tier === 4) confettiBurst(120, TIER_COLOR[4]);
+        else confettiBurst(40, TIER_COLOR[tier]);
+        currentLoot = genLoot();
+        setTimeout(dealCards, 460);
+      }, 220);
+    }
+    function cardHtml(l) {
+      const rar = RARITY[l.item.rarity];
+      return `
+        <div class="cf">
+          <div class="face back"><div class="emblem">${chestEmblem}</div></div>
+          <div class="face front">
+            <div class="banner ${rar.cls}">
+              <span class="rname">${rar.label}</span>
+              ${miniStars(rar.rank + 1)}
+            </div>
+            <div class="icon-wrap">${l.item.icon}</div>
+            <div class="iname">${l.item.name}</div>
+            <div class="qtypill">${l.qty > 1 ? '×' + l.qty : '· 1 ·'}</div>
+          </div>
+        </div>`;
+    }
+
+    // a skippable pause — tapping anywhere hurries the ceremony along
+    let skipResolve = null;
+    function wait(ms) {
+      return new Promise(res => {
+        const done = () => { clearTimeout(t); skipResolve = null; res(); };
+        const t = setTimeout(done, ms);
+        skipResolve = done;
+      });
+    }
+    const hurry = () => { if (skipResolve) skipResolve(); };
+    $('#dim').addEventListener('pointerdown', hurry);
+
+    async function dealCards() {
+      $('#cardRow').innerHTML = '';
+      $('#dim').classList.add('on');
+      const chestRect = chest.getBoundingClientRect();
+      for (let i = 0; i < currentLoot.length; i++) {
+        await revealOne(currentLoot[i], i, chestRect);
+      }
+      $('#revCount').textContent = '';
+      $('#dim').classList.remove('on');
+      phase = 'done';
+      const btn = $('#takeAll');
+      btn.style.transform = 'translateX(-50%) rotate(-1.5deg)';
+      animate(btn, { scale: [0, 1.15, 1] }, SPRING);
+    }
+
+    async function revealOne(l, i, chestRect) {
+      const rar = RARITY[l.item.rarity];
+      $('#revCount').textContent = `card ${i + 1} of ${currentLoot.length}`;
+      const focus = $('#focus');
+      focus.innerHTML = `<div class="rays" style="--ray-c:${rar.color}"></div>`;
+      const rays = focus.querySelector('.rays');
+      const card = document.createElement('div');
+      card.className = 'card';
+      if (rar.rank === 4) card.classList.add('legend', 'slow');
+      if (rar.rank === 3) card.classList.add('epic');
+      card.innerHTML = cardHtml(l);
+      card.addEventListener('pointerdown', hurry);
+      focus.appendChild(card);
+      // spring out of the chest's mouth into the spotlight
+      const r = card.getBoundingClientRect();
+      const fromX = chestRect.left + chestRect.width / 2 - r.left - r.width / 2;
+      const fromY = chestRect.top + chestRect.height * 0.35 - r.top - r.height / 2;
+      animate(card,
+        { x: [fromX, 0], y: [fromY, 0], scale: [.1, 1], rotate: [(Math.random() - .5) * 40, 0] },
+        { type: 'spring', stiffness: 240, damping: 20, duration: dur(.65) });
+      animate(rays, { opacity: [0, 1] }, { duration: dur(.5), delay: dur(.2) });
+      await wait(600);
+      // suspense scales with what's hiding
+      if (rar.rank === 4) {
+        animate(card, { rotate: [0, -5, 5, -6, 6, -3, 3, 0] }, { duration: dur(1) });
+        await wait(1050);
+      } else if (rar.rank === 3) {
+        await wait(420);
+      } else {
+        await wait(200);
+      }
+      // the flip
+      card.classList.add('flipped', 'shined');
+      if (!reduceMotion) animate(card, { scale: [1, 1.14, 1] }, { duration: .45, delay: .2 });
+      if (rar.rank === 4) { shake(); flash('#f7c948'); confettiBurst(150, '#f7c948'); }
+      else if (rar.rank === 3) { flash('#a98fd0'); confettiBurst(70, '#a98fd0'); }
+      await wait(rar.rank >= 3 ? 1250 : 850);
+      // retire to the rack
+      animate(rays, { opacity: 0 }, { duration: dur(.3) });
+      const slot = document.createElement('div');
+      slot.className = 'card flipped' + (rar.rank === 4 ? ' legend' : rar.rank === 3 ? ' epic' : '');
+      slot.innerHTML = cardHtml(l);
+      slot.style.opacity = '0';
+      $('#cardRow').appendChild(slot);
+      const sr = slot.getBoundingClientRect();
+      const cr = card.getBoundingClientRect();
+      await animate(card, {
+        x: sr.left + sr.width / 2 - cr.left - cr.width / 2,
+        y: sr.top + sr.height / 2 - cr.top - cr.height / 2,
+        scale: sr.width / cr.width,
+      }, { duration: dur(.38), ease: [.45, 0, .3, 1] }).finished;
+      slot.style.opacity = '1';
+      focus.innerHTML = '';
+    }
+
+    $('#takeAll').addEventListener('click', () => {
+      if (phase !== 'done') return;
+      phase = 'claiming';
+      animate($('#takeAll'), { scale: 0 }, { duration: dur(.2) });
+      let bestRank = bestId && byId[bestId] ? RARITY[byId[bestId].rarity].rank : -1;
+      currentLoot.forEach(l => {
+        binderData[l.item.id] = (binderData[l.item.id] || 0) + l.qty;
+        if (RARITY[l.item.rarity].rank > bestRank) {
+          bestRank = RARITY[l.item.rarity].rank;
+          bestId = l.item.id;
+        }
+      });
+      opened++;
+      persist();
+      renderLedger();
+      const target = $('#binderBtn').getBoundingClientRect();
+      $$('#cardRow .card').forEach((card, i) => {
+        const r = card.getBoundingClientRect();
+        animate(card, {
+          x: target.left + target.width / 2 - r.left - r.width / 2,
+          y: target.top + target.height / 2 - r.top - r.height / 2,
+          scale: .08,
+          rotate: 25,
+          opacity: 0,
+        }, { duration: dur(.5), delay: dur(i * .05), ease: [.55, -0.2, .8, .6] });
+      });
+      animate($('#binderBtn'), { scale: [1, 1.25, 1], rotate: [1.5, -3, 1.5] }, { duration: dur(.5), delay: dur(.4) });
+      setTimeout(() => {
+        $('#cardRow').innerHTML = '';
+        spawnChest();
+      }, 650);
+    });
+
+    // ---------- binder ----------
+    function renderBinder() {
+      const grid = $('#binderGrid');
+      grid.innerHTML = '';
+      const order = [...ITEMS].sort((a, b) => RARITY[b.rarity].rank - RARITY[a.rarity].rank);
+      let got = 0;
+      order.forEach(item => {
+        const count = binderData[item.id] || 0;
+        if (count > 0) got++;
+        const slot = document.createElement('div');
+        slot.className = 'slot' + (count > 0 ? '' : ' locked');
+        slot.innerHTML = `
+          <div class="icon">${item.icon}</div>
+          ${count === 0 ? '<div class="mystery">?</div>' : ''}
+          <div class="sname">${count > 0 ? item.name : '???'}</div>
+          <span class="rtag ${RARITY[item.rarity].cls}">${RARITY[item.rarity].label}</span>
+          ${count > 0 ? `<div class="count">×${count}</div>` : ''}`;
+        grid.appendChild(slot);
+      });
+      $('#binderSub').textContent = `${got} of ${ITEMS.length} collected · duplicates are a lifestyle`;
+    }
+    $('#binderBtn').addEventListener('click', () => {
+      renderBinder();
+      $('#binder').classList.add('on');
+      animate($('#binderCard'), { scale: [.6, 1.04, 1] }, SPRING);
+    });
+    $('#binderClose').addEventListener('click', () => $('#binder').classList.remove('on'));
+    $('#binder').addEventListener('click', (e) => {
+      if (e.target === $('#binder')) $('#binder').classList.remove('on');
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') $('#binder').classList.remove('on');
+    });
+
+    // ---------- confetti (sleeps when idle) ----------
+    const cvs = $('#confetti');
+    const cctx = cvs.getContext('2d');
+    let parts = [];
+    let rafOn = false;
+    const RAINBOW = ['#f0563e', '#f47b28', '#f7c948', '#b7ce3c', '#2fb0a3', '#5aa0db', '#a98fd0', '#ff7fa5'];
+    function sizeConfetti() {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      cvs.width = innerWidth * dpr;
+      cvs.height = innerHeight * dpr;
+      cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    let rsz = null;
+    window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(sizeConfetti, 150); });
+    sizeConfetti();
+    function starPath(ctx, r) {
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const rad = i % 2 === 0 ? r : r * .45;
+        const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+        ctx[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(a) * rad, Math.sin(a) * rad);
+      }
+      ctx.closePath();
+    }
+    function confettiBurst(n, color) {
+      if (reduceMotion) return;
+      const zone = $('.chest-zone').getBoundingClientRect();
+      const cx = zone.left + zone.width / 2, cy = zone.top + zone.height / 2;
+      for (let i = 0; i < n && parts.length < 500; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const v = 3.5 + Math.random() * 8;
+        parts.push({
+          kind: Math.random() < .22 ? 'star' : 'rect',
+          x: cx, y: cy,
+          vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4.5,
+          w: 5 + Math.random() * 7, h: 3 + Math.random() * 4,
+          r: 4 + Math.random() * 4,
+          rot: Math.random() * Math.PI, vr: (Math.random() - .5) * .32,
+          life: 60 + Math.random() * 55,
+          color: color === 'rainbow' ? RAINBOW[i % RAINBOW.length] : color,
+        });
+      }
+      if (!rafOn) { rafOn = true; requestAnimationFrame(tick); }
+    }
+    function tick() {
+      cctx.clearRect(0, 0, innerWidth, innerHeight);
+      parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 20);
+      for (const p of parts) {
+        p.vy += 0.22;
+        p.x += p.vx; p.y += p.vy;
+        p.rot += p.vr;
+        p.life--;
+        cctx.save();
+        cctx.translate(p.x, p.y);
+        cctx.rotate(p.rot);
+        cctx.globalAlpha = Math.min(1, p.life / 30);
+        cctx.fillStyle = p.color;
+        cctx.lineWidth = 1.2;
+        cctx.strokeStyle = '#201a17';
+        if (p.kind === 'star') {
+          starPath(cctx, p.r);
+          cctx.fill();
+          cctx.stroke();
+        } else {
+          cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          cctx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        }
+        cctx.restore();
+      }
+      if (parts.length) requestAnimationFrame(tick);
+      else { rafOn = false; cctx.clearRect(0, 0, innerWidth, innerHeight); }
+    }
+
+    // ---------- go ----------
+    spawnChest();
+  </script>
+</body>
+</html>
