@@ -757,25 +757,36 @@
       return tot ? hit / tot : 0;
     }
 
+    function snapClear(s) {
+      foilCtx.save();
+      foilCtx.globalCompositeOperation = 'destination-out';
+      foilCtx.beginPath();
+      foilCtx.arc(s.x, s.y, s.r + 4, 0, Math.PI * 2);
+      foilCtx.fill();
+      foilCtx.restore();
+      ringFlash(s);
+    }
     function checkSpots() {
       if (!ticket || ticket.resolved) return;
       let all = true;
       ticket.spots.forEach(s => {
         if (!s.revealed) {
-          if (spotFraction(s) > 0.6) {
+          if (spotFraction(s) > 0.45) {
             s.revealed = true;
-            // snap: clear the whole spot
-            foilCtx.save();
-            foilCtx.globalCompositeOperation = 'destination-out';
-            foilCtx.beginPath();
-            foilCtx.arc(s.x, s.y, s.r + 4, 0, Math.PI * 2);
-            foilCtx.fill();
-            foilCtx.restore();
-            ringFlash(s);
+            snapClear(s);
           } else all = false;
         }
       });
       if (all) resolveTicket();
+    }
+    // forgiveness on lift: if every spot is clearly scratched-at, call it done
+    function finishIfClose() {
+      if (!ticket || ticket.resolved) return;
+      if (!ticket.spots.every(s => s.revealed || spotFraction(s) >= 0.3)) return;
+      ticket.spots.forEach(s => {
+        if (!s.revealed) { s.revealed = true; snapClear(s); }
+      });
+      resolveTicket();
     }
 
     wrap.addEventListener('pointerdown', e => {
@@ -785,6 +796,7 @@
       lastPt = null;
       initAudio();
       scratchStroke(toLogical(e));
+      checkSpots();
       dismissHint();
       wake();
     });
@@ -801,7 +813,7 @@
       scratchNoise(Math.min(1, dist / 40));
       checkSpots();
     });
-    const endScratch = () => { scratching = false; lastPt = null; scratchNoise(0); };
+    const endScratch = () => { scratching = false; lastPt = null; scratchNoise(0); finishIfClose(); };
     wrap.addEventListener('pointerup', endScratch);
     wrap.addEventListener('pointercancel', endScratch);
 
