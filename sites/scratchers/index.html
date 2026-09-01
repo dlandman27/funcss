@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scratchers</title>
+  <meta name="description" content="An endless supply of scratch-off tickets. The $1 ticket is always free. The rest is between you and the odds.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/scratchers/">
+    <meta property="og:title" content="Scratchers">
+    <meta property="og:description" content="An endless supply of scratch-off tickets. The $1 ticket is always free. The rest is between you and the odds.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/scratchers.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Scratchers">
+    <meta name="twitter:description" content="An endless supply of scratch-off tickets. The $1 ticket is always free. The rest is between you and the odds.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/scratchers.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --orange: #f47b28;
+      --pink: #ff7fa5;
+      --teal: #2fb0a3;
+      --gold: #f7c948;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: radial-gradient(circle at 50% 15%, #fff8ef 0%, #f2ede2 55%, #e6ddc9 100%);
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--ink);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 10px 46px;
+      min-height: 100%;
+    }
+    h1 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(30px, 7vw, 54px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--lime);
+      -webkit-text-stroke: 2px var(--ink);
+      paint-order: stroke fill;
+      text-shadow: 4px 4px 0 var(--ink);
+      transform: rotate(-2deg);
+      margin: 4px 0 2px;
+    }
+    #tagline { font-style: italic; font-size: 15px; opacity: 0.75; margin-bottom: 14px; }
+
+    /* dispenser: tier buttons */
+    #tiers { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
+    .tierBtn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      color: var(--ink);
+      line-height: 1.3;
+      text-align: center;
+      transform: rotate(-1deg);
+    }
+    .tierBtn small { display: block; font-family: Georgia, serif; font-style: italic; font-size: 11px; text-transform: none; letter-spacing: 0; }
+    .tierBtn:nth-child(2) { transform: rotate(1.5deg); }
+    .tierBtn:nth-child(4) { transform: rotate(2deg); }
+    .tierBtn.active { outline: 3px solid var(--gold); outline-offset: 1px; }
+    .tierBtn.broke { opacity: 0.55; cursor: not-allowed; }
+    .tierBtn:not(.broke):active { transform: translate(2px, 2px) !important; box-shadow: 1px 1px 0 var(--ink); }
+    #tier0 { background: var(--coral); color: var(--cream); }
+    #tier1 { background: var(--pink); }
+    #tier2 { background: var(--gold); }
+    #tier3 { background: #35302c; color: var(--cream); }
+
+    /* counter + ticket */
+    #counter { position: relative; width: min(480px, 96vw); }
+    #ticketWrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 44 / 31;
+      transform: rotate(-1.2deg);
+      filter: drop-shadow(6px 6px 0 var(--ink));
+      touch-action: none;
+      cursor: crosshair;
+    }
+    #ticketWrap canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+    }
+    #artCanvas { border: 3px solid var(--ink); }
+
+    /* stamp */
+    #stamp {
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%) rotate(-8deg);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: clamp(22px, 6vw, 38px);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 22px;
+      border: 4px solid;
+      border-radius: 10px;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      background: rgba(255, 248, 239, 0.82);
+    }
+    #stamp.win { color: #1c7a43; border-color: #1c7a43; }
+    #stamp.lose { color: var(--coral); border-color: var(--coral); }
+
+    /* discard pile */
+    #discards {
+      position: absolute;
+      left: -8px;
+      bottom: -22px;
+      width: 74px;
+      pointer-events: none;
+    }
+    .deadTicket {
+      position: absolute;
+      width: 64px;
+      height: 40px;
+      border: 2px solid var(--ink);
+      border-radius: 5px;
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+
+    /* status row */
+    #statusRow {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+    .chip {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 13px;
+      letter-spacing: 1px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      background: var(--gold);
+      color: var(--ink);
+    }
+    #bankChip { background: var(--lime); transform: rotate(-1deg); }
+    #albumBtn { background: var(--sky); transform: rotate(1deg); cursor: pointer; }
+    #albumBtn:active { transform: rotate(1deg) translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+    #stats {
+      font-style: italic;
+      font-size: 13.5px;
+      opacity: 0.75;
+      margin-top: 14px;
+      text-align: center;
+    }
+    #hint {
+      font-style: italic;
+      font-size: 14px;
+      opacity: 0.7;
+      margin-top: 8px;
+      transition: opacity 1.2s ease;
+      text-align: center;
+    }
+    #hint.gone { opacity: 0; }
+
+    /* album overlay */
+    #albumOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(24, 18, 15, 0.88);
+      display: none;
+      justify-content: center;
+      align-items: flex-start;
+      overflow-y: auto;
+      padding: 30px 14px 60px;
+      z-index: 40;
+    }
+    #albumOverlay.open { display: flex; }
+    #albumOverlay .inner { width: min(880px, 96vw); }
+    #albumOverlay h2 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      color: var(--cream);
+      -webkit-text-stroke: 1.5px var(--ink);
+      paint-order: stroke fill;
+      text-shadow: 3px 3px 0 var(--ink);
+      font-size: clamp(22px, 5vw, 34px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transform: rotate(-1deg);
+    }
+    #albumOverlay .sub { color: var(--paper); font-style: italic; opacity: 0.8; margin: 4px 0 18px; }
+    .tierHead {
+      font-family: 'Arial Black', Arial, sans-serif;
+      color: var(--gold);
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 2px;
+      margin: 18px 0 8px;
+      text-shadow: 2px 2px 0 var(--ink);
+    }
+    #albumGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .albumCard {
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 10px;
+    }
+    .albumCard .mini {
+      height: 64px;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .albumCard.unknown .mini { background: repeating-linear-gradient(45deg, #cfc6b4, #cfc6b4 6px, #c2b8a4 6px, #c2b8a4 12px); }
+    .albumCard.unknown .mini::after {
+      content: '?';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 26px;
+      color: var(--ink);
+      opacity: 0.5;
+    }
+    .albumCard .aname { font-family: 'Arial Black', Arial, sans-serif; font-size: 11.5px; text-transform: uppercase; line-height: 1.25; }
+    .albumCard .ameta { font-size: 11px; font-style: italic; opacity: 0.65; margin-top: 4px; }
+    .pip {
+      display: inline-block;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 8.5px;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1.5px solid var(--ink);
+      margin: 5px 4px 0 0;
+      background: #ddd5c4;
+      opacity: 0.45;
+    }
+    .pip.got { opacity: 1; }
+    .pip.won { background: var(--lime); }
+    .pip.mis { background: var(--purple); }
+    .closeX {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--coral);
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      color: var(--cream);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 41;
+    }
+
+    #sparkCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 30; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Scratchers</h1>
+  <div id="tagline">the well never runs dry.</div>
+
+  <div id="tiers"></div>
+
+  <div id="counter">
+    <div id="discards"></div>
+    <div id="ticketWrap">
+      <canvas id="artCanvas"></canvas>
+      <canvas id="foilCanvas"></canvas>
+      <div id="stamp"></div>
+    </div>
+  </div>
+
+  <div id="statusRow">
+    <span class="chip" id="bankChip">$0</span>
+    <button class="chip" id="albumBtn">ALBUM</button>
+  </div>
+  <div id="stats"></div>
+  <div id="hint">scratch with your finger. the first ticket is free. they are all free, technically.</div>
+
+  <div id="albumOverlay">
+    <button class="closeX" id="albumClose">&times;</button>
+    <div class="inner">
+      <h2>Ticket Album</h2>
+      <div class="sub" id="albumSub"></div>
+      <div id="albumBody"></div>
+    </div>
+  </div>
+
+  <canvas id="sparkCanvas"></canvas>
+
+  <script type="module">
+    import { animate, stagger } from "https://cdn.jsdelivr.net/npm/motion@12.15.0/+esm";
+
+    const INK = '#201a17', CREAM = '#fff8ef', PAPER = '#f2ede2', GOLD = '#f7c948',
+          CORAL = '#f0563e', SKY = '#5aa0db', LIME = '#b7ce3c', PURPLE = '#a98fd0',
+          ORANGE = '#f47b28', PINK = '#ff7fa5', TEAL = '#2fb0a3';
+    const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ---------- logical ticket space ----------
+    const TW = 440, TH = 310;
+    const PLAY = { x: 16, y: 84, w: TW - 32, h: 174 }; // foil-covered play area
+    const CELL = 6;
+    const GCOLS = Math.ceil(PLAY.w / CELL), GROWS = Math.ceil(PLAY.h / CELL);
+
+    // ---------- symbols (hand-drawn, sticker treatment, no emoji) ----------
+    function sticker(ctx, draw, color) {
+      ctx.save(); ctx.translate(1.5, 1.5); ctx.fillStyle = INK; draw(ctx); ctx.fill(); ctx.restore();
+      ctx.fillStyle = color; draw(ctx); ctx.fill();
+      ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.strokeStyle = INK; draw(ctx); ctx.stroke();
+    }
+    const SYMBOLS = {
+      seven: { color: CORAL, draw(c) { c.beginPath(); c.moveTo(-8, -10); c.lineTo(9, -10); c.lineTo(1, 11); c.lineTo(-5, 11); c.lineTo(2, -5); c.lineTo(-8, -5); c.closePath(); } },
+      cherry: { color: PINK, draw(c) { c.beginPath(); c.arc(-5, 4, 6.5, 0, Math.PI * 2); c.moveTo(12, 6); c.arc(6, 6, 6.5, 0, Math.PI * 2); c.moveTo(-5, -2); c.quadraticCurveTo(-1, -13, 7, -11); c.lineTo(7, -8); c.quadraticCurveTo(0, -10, -2, -1); c.closePath(); } },
+      horseshoe: { color: SKY, draw(c) { c.beginPath(); c.arc(0, -1, 10, Math.PI * 0.85, Math.PI * 2.15); c.arc(0, -1, 5, Math.PI * 2.15, Math.PI * 0.85, true); c.closePath(); } },
+      clover: { color: LIME, draw(c) { c.beginPath(); c.arc(-5, -4, 5.5, 0, Math.PI * 2); c.moveTo(10.5, -4); c.arc(5, -4, 5.5, 0, Math.PI * 2); c.moveTo(5.5, 5); c.arc(0, 5, 5.5, 0, Math.PI * 2); c.moveTo(1.5, 8); c.lineTo(3.5, 13); c.lineTo(-2.5, 13); c.closePath(); } },
+      bell: { color: GOLD, draw(c) { c.beginPath(); c.moveTo(0, -12); c.quadraticCurveTo(9, -10, 9, 2); c.lineTo(11, 7); c.lineTo(-11, 7); c.lineTo(-9, 2); c.quadraticCurveTo(-9, -10, 0, -12); c.moveTo(3, 9); c.arc(0, 9, 3, 0, Math.PI); c.closePath(); } },
+      diamond: { color: TEAL, draw(c) { c.beginPath(); c.moveTo(0, -11); c.lineTo(9, -3); c.lineTo(0, 12); c.lineTo(-9, -3); c.closePath(); } },
+      coin: { color: ORANGE, draw(c) { c.beginPath(); c.arc(0, 0, 10, 0, Math.PI * 2); c.moveTo(3, -4); c.lineTo(3, 4); c.lineTo(-3, 4); c.lineTo(-3, -4); c.closePath(); } },
+      star: { color: GOLD, draw(c) { c.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 5 : 11, a = -Math.PI / 2 + i * Math.PI / 5; c[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); } },
+      moon: { color: PURPLE, draw(c) { c.beginPath(); c.arc(0, 0, 10, Math.PI * 0.42, Math.PI * 1.58); c.arc(5, 0, 8, Math.PI * 1.5, Math.PI * 0.5, true); c.closePath(); } },
+      eye: { color: CREAM, draw(c) { c.beginPath(); c.moveTo(-11, 0); c.quadraticCurveTo(0, -10, 11, 0); c.quadraticCurveTo(0, 10, -11, 0); c.closePath(); c.moveTo(3.5, 0); c.arc(0, 0, 3.5, 0, Math.PI * 2); } },
+      skull: { color: PAPER, draw(c) { c.beginPath(); c.arc(0, -2, 9, Math.PI * 0.9, Math.PI * 2.1); c.lineTo(6, 9); c.lineTo(-6, 9); c.closePath(); c.moveTo(-1.5, 0); c.arc(-3.5, 0, 2.2, 0, Math.PI * 2); c.moveTo(5.5, 0); c.arc(3.5, 0, 2.2, 0, Math.PI * 2); } },
+      crown: { color: GOLD, draw(c) { c.beginPath(); c.moveTo(-11, 8); c.lineTo(-11, -4); c.lineTo(-5, 1); c.lineTo(0, -10); c.lineTo(5, 1); c.lineTo(11, -4); c.lineTo(11, 8); c.closePath(); } },
+    };
+
+    // ---------- tiers, prizes, designs ----------
+    // prizes: [amount, probability, symbol]
+    const TIERS = [
+      { name: 'Lucky 7s', cost: 0, spots: 6, cols: 3,
+        prizes: [[1, .10, 'cherry'], [2, .06, 'horseshoe'], [5, .04, 'clover'], [10, .015, 'bell'], [50, .005, 'seven']] },
+      { name: 'Cash Cow', cost: 5, spots: 8, cols: 4,
+        prizes: [[2, .12, 'cherry'], [5, .09, 'clover'], [10, .05, 'coin'], [25, .025, 'bell'], [100, .01, 'diamond'], [250, .005, 'seven']] },
+      { name: 'Gold Rush', cost: 20, spots: 9, cols: 3,
+        prizes: [[5, .12, 'horseshoe'], [20, .10, 'coin'], [50, .06, 'star'], [100, .025, 'bell'], [500, .01, 'diamond'], [1000, .005, 'seven']] },
+      { name: '———', cost: 100, spots: 9, cols: 3,
+        prizes: [[50, .12, 'moon'], [100, .08, 'skull'], [250, .04, 'eye'], [500, .02, 'star'], [2500, .008, 'diamond'], [10000, .002, 'seven']] },
+    ];
+    // near-miss pool per tier: the two priciest symbols
+    TIERS.forEach(t => { t.nearMiss = t.prizes.slice(-2).map(p => p[2]); });
+
+    const DESIGNS = [
+      { id: 'l7-classic', tier: 0, name: 'Lucky 7s Classic', bg: '#e8503a', pattern: 'rays', accent: GOLD },
+      { id: 'l7-mint',    tier: 0, name: 'Lucky 7s Mint',    bg: '#8fd0b2', pattern: 'stripes', accent: CORAL },
+      { id: 'l7-stars',   tier: 0, name: 'Sevens & Stars',   bg: '#3f6db0', pattern: 'stars', accent: CREAM },
+      { id: 'l7-cherry',  tier: 0, name: 'Cherry Pop',       bg: '#ff7fa5', pattern: 'dots', accent: CREAM },
+      { id: 'cc-cow',     tier: 1, name: 'Cash Cow',         bg: '#fff8ef', pattern: 'cow', accent: PINK },
+      { id: 'cc-bath',    tier: 1, name: 'Money Bath',       bg: '#5aa0db', pattern: 'dots', accent: GOLD },
+      { id: 'cc-piggy',   tier: 1, name: 'Piggy Bank Riot',  bg: '#f0a8bc', pattern: 'zigzag', accent: '#8a3050' },
+      { id: 'cc-dairy',   tier: 1, name: 'Double Dairy',     bg: '#b7ce3c', pattern: 'cow', accent: CREAM },
+      { id: 'gr-rush',    tier: 2, name: 'Gold Rush',        bg: '#f7c948', pattern: 'nuggets', accent: CORAL },
+      { id: 'gr-nugget',  tier: 2, name: 'Nugget Fever',     bg: '#f47b28', pattern: 'dots', accent: GOLD },
+      { id: 'gr-lode',    tier: 2, name: 'The Motherlode',   bg: '#a98fd0', pattern: 'zigzag', accent: GOLD },
+      { id: 'gr-dream',   tier: 2, name: "Prospector's Dream", bg: '#2fb0a3', pattern: 'rays', accent: GOLD },
+      { id: 'x-one',      tier: 3, name: '———', bg: '#26211d', pattern: 'none', accent: '#4a423b' },
+      { id: 'x-void',     tier: 3, name: 'VOID',              bg: '#1c1f2b', pattern: 'stars', accent: '#39405c' },
+      { id: 'x-last',     tier: 3, name: 'The Last Ticket',   bg: '#33222c', pattern: 'zigzag', accent: '#5c3a4d' },
+    ];
+    const GOLDEN = { id: 'golden', name: 'The Golden Ticket', bg: '#f7c948', pattern: 'rays', accent: '#fff2c0' };
+    const BLANK = { id: 'blank', name: 'The Blank Ticket', bg: '#fff8ef', pattern: 'none', accent: '#fff8ef' };
+
+    const FINE_PRINT = [
+      ['odds printed somewhere.', 'a product of the gas station.', 'do not eat the foil.'],
+      ['odds of winning: eventually.', 'past losses guarantee nothing.', 'keep scratching.'],
+      ['the house thanks you.', 'your persistence has been noted.', 'statistically, someone wins.'],
+      ['this ticket was free. remember that.', 'the well never runs dry. you might.', 'winner somewhere. not here, probably.'],
+    ];
+
+    // ---------- state ----------
+    const SAVE_KEY = 'scratchers-v1';
+    let state = { bank: 0, scratched: 0, wins: 0, net: 0, discards: 0, album: {} };
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) state = Object.assign(state, JSON.parse(raw));
+    } catch (e) {}
+    function save() {
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+    function albumRec(id) {
+      if (!state.album[id]) state.album[id] = { scratches: 0, wins: 0, misprint: false };
+      return state.album[id];
+    }
+
+    // ---------- dom ----------
+    const $ = id => document.getElementById(id);
+    const art = $('artCanvas'), artCtx = art.getContext('2d');
+    const foil = $('foilCanvas'), foilCtx = foil.getContext('2d');
+    const sparkCanvas = $('sparkCanvas'), sparkCtx = sparkCanvas.getContext('2d');
+    const wrap = $('ticketWrap'), stamp = $('stamp');
+    const DPR = Math.min(devicePixelRatio || 1, 2);
+
+    function sizeCanvases() {
+      [art, foil].forEach(c => {
+        c.width = TW * DPR; c.height = TH * DPR;
+        c.getContext('2d').setTransform(DPR, 0, 0, DPR, 0, 0);
+      });
+      sparkCanvas.width = innerWidth * DPR; sparkCanvas.height = innerHeight * DPR;
+      sparkCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      if (ticket) { drawArt(); drawFoilFull(); }
+    }
+    let resizeT;
+    addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(sizeCanvases, 150); });
+
+    // ---------- ticket generation ----------
+    let ticket = null;   // { tier, design, misprint, golden, blank, spots:[{x,y,r,sym,prize,revealed}], win, prize, resolved }
+    let grid = null;     // Uint8Array reveal mask
+
+    function rollOutcome(tier) {
+      const roll = Math.random();
+      let acc = 0;
+      for (const [amt, p, sym] of tier.prizes) {
+        acc += p;
+        if (roll < acc) return { win: true, prize: amt, sym };
+      }
+      return { win: false, prize: 0, sym: null };
+    }
+
+    function layoutSpots(tier) {
+      const cols = tier.cols, rows = Math.ceil(tier.spots / cols);
+      const r = Math.min(30, (PLAY.w / cols) * 0.32, (PLAY.h / rows) * 0.34);
+      const spots = [];
+      for (let i = 0; i < tier.spots; i++) {
+        const cx = PLAY.x + ((i % cols) + 0.5) * (PLAY.w / cols);
+        const cy = PLAY.y + (Math.floor(i / cols) + 0.5) * (PLAY.h / rows);
+        spots.push({ x: cx, y: cy, r, revealed: false, frac: 0 });
+      }
+      return spots;
+    }
+
+    function fillSymbols(tier, spots, outcome) {
+      const names = tier.prizes.map(p => p[2]);
+      const prizeOf = {};
+      tier.prizes.forEach(p => { prizeOf[p[2]] = p[0]; });
+      const counts = {};
+      const canUse = (s, cap) => (counts[s] || 0) < cap;
+      const idxs = spots.map((_, i) => i).sort(() => Math.random() - 0.5);
+      let toPlace = [];
+      if (outcome.win) {
+        toPlace = [outcome.sym, outcome.sym, outcome.sym];
+      } else if (Math.random() < 0.6) {
+        const nm = tier.nearMiss[Math.floor(Math.random() * tier.nearMiss.length)];
+        toPlace = [nm, nm];
+      }
+      toPlace.forEach((sym, i) => {
+        counts[sym] = (counts[sym] || 0) + 1;
+        spots[idxs[i]].sym = sym;
+      });
+      for (let i = toPlace.length; i < idxs.length; i++) {
+        let pick;
+        do {
+          pick = names[Math.floor(Math.random() * names.length)];
+        } while (!canUse(pick, outcome.win ? (pick === outcome.sym ? 3 : 2) : 2));
+        counts[pick] = (counts[pick] || 0) + 1;
+        spots[idxs[i]].sym = pick;
+      }
+      spots.forEach(s => { s.prize = prizeOf[s.sym]; });
+    }
+
+    function dealTicket(tierIdx) {
+      const tier = TIERS[tierIdx];
+      if (state.bank < tier.cost) return false;
+      state.bank -= tier.cost;
+      state.net -= tier.cost;
+
+      const goldenRoll = Math.random() < 1 / 500;
+      const blankRoll = !goldenRoll && Math.random() < 1 / 2000;
+      const spots = layoutSpots(tier);
+      let t;
+      if (goldenRoll) {
+        spots.forEach(s => { s.sym = 'crown'; s.prize = 777; });
+        t = { tier: tierIdx, design: GOLDEN, misprint: false, golden: true, blank: false,
+              spots: spots.slice(0, 3), win: true, prize: 777 };
+        t.spots.forEach((s, i) => { s.x = PLAY.x + (i + 0.5) * (PLAY.w / 3); s.y = PLAY.y + PLAY.h / 2; s.r = 34; });
+      } else if (blankRoll) {
+        spots.forEach(s => { s.sym = null; s.prize = 0; });
+        t = { tier: tierIdx, design: BLANK, misprint: false, golden: false, blank: true,
+              spots, win: false, prize: 0 };
+      } else {
+        const designs = DESIGNS.filter(d => d.tier === tierIdx);
+        const design = designs[Math.floor(Math.random() * designs.length)];
+        const outcome = rollOutcome(tier);
+        fillSymbols(tier, spots, outcome);
+        t = { tier: tierIdx, design, misprint: Math.random() < 0.02, golden: false, blank: false,
+              spots, win: outcome.win, prize: outcome.prize };
+      }
+      t.resolved = false;
+      ticket = t;
+      grid = new Uint8Array(GCOLS * GROWS);
+      stamp.style.display = 'none';
+      drawArt();
+      drawFoilFull();
+      updateChips();
+      save();
+      // slide in from the dispenser
+      if (!RM) {
+        animate(wrap, { x: [-innerWidth * 0.6, 0], rotate: [-9, -1.2] }, { type: 'spring', stiffness: 300, damping: 26 });
+      }
+      return true;
+    }
+
+    // ---------- drawing: ticket art ----------
+    function pattern(ctx, d) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = d.accent;
+      ctx.strokeStyle = d.accent;
+      if (d.pattern === 'stripes') {
+        for (let x = -TH; x < TW; x += 26) {
+          ctx.save(); ctx.translate(x, 0); ctx.rotate(0.5);
+          ctx.fillRect(0, -40, 10, TH + 80); ctx.restore();
+        }
+      } else if (d.pattern === 'dots') {
+        for (let y = 10; y < TH; y += 30)
+          for (let x = 10 + (y % 60 ? 15 : 0); x < TW; x += 30) {
+            ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+          }
+      } else if (d.pattern === 'rays') {
+        ctx.translate(TW / 2, TH * 0.32);
+        for (let i = 0; i < 14; i++) {
+          ctx.rotate(Math.PI / 7);
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(TW, 26); ctx.lineTo(TW, -26); ctx.closePath(); ctx.fill();
+        }
+      } else if (d.pattern === 'zigzag') {
+        ctx.lineWidth = 6;
+        for (let y = 16; y < TH; y += 34) {
+          ctx.beginPath();
+          for (let x = -10; x < TW + 20; x += 24) ctx.lineTo(x, y + (x / 24 % 2 ? 10 : -10));
+          ctx.stroke();
+        }
+      } else if (d.pattern === 'stars') {
+        for (let i = 0; i < 26; i++) {
+          const x = (i * 97) % TW, y = (i * 61) % TH, r = 3 + (i % 3) * 2;
+          ctx.beginPath();
+          for (let j = 0; j < 10; j++) {
+            const rr = j % 2 ? r * 0.45 : r, a = -Math.PI / 2 + j * Math.PI / 5;
+            ctx[j ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+          }
+          ctx.closePath(); ctx.fill();
+        }
+      } else if (d.pattern === 'cow') {
+        const blobs = [[40, 30, 22], [150, 55, 16], [300, 25, 20], [390, 60, 14], [80, 280, 18], [230, 290, 22], [370, 275, 15]];
+        blobs.forEach(([x, y, r]) => {
+          ctx.beginPath();
+          ctx.ellipse(x, y, r, r * 0.7, x % 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      } else if (d.pattern === 'nuggets') {
+        for (let i = 0; i < 18; i++) {
+          const x = (i * 131) % TW, y = (i * 83) % TH;
+          ctx.beginPath();
+          ctx.moveTo(x, y - 6); ctx.lineTo(x + 7, y - 2); ctx.lineTo(x + 5, y + 6); ctx.lineTo(x - 5, y + 5); ctx.lineTo(x - 7, y - 1);
+          ctx.closePath(); ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawArt() {
+      const t = ticket, d = t.design;
+      artCtx.save();
+      if (t.misprint) { artCtx.translate(TW, TH); artCtx.rotate(Math.PI); }
+      artCtx.fillStyle = d.bg;
+      artCtx.fillRect(0, 0, TW, TH);
+      pattern(artCtx, d);
+
+      const dark = t.tier === 3 && !t.golden && !t.blank;
+      // title
+      artCtx.font = "26px 'Arial Black', Arial";
+      artCtx.textAlign = 'left';
+      artCtx.textBaseline = 'alphabetic';
+      artCtx.lineWidth = 5;
+      artCtx.lineJoin = 'round';
+      artCtx.strokeStyle = INK;
+      artCtx.strokeText(d.name.toUpperCase(), 18, 44);
+      artCtx.fillStyle = t.blank ? '#e8e0d0' : (t.golden ? CREAM : (dark ? '#57504a' : CREAM));
+      artCtx.fillText(d.name.toUpperCase(), 18, 44);
+      // cost tag
+      const tier = TIERS[t.tier];
+      artCtx.font = "13px 'Arial Black', Arial";
+      artCtx.textAlign = 'right';
+      const tag = t.blank ? '' : (tier.cost === 0 ? 'FREE' : '$' + tier.cost);
+      artCtx.strokeText(tag, TW - 18, 36);
+      artCtx.fillStyle = GOLD;
+      artCtx.fillText(tag, TW - 18, 36);
+      // subtitle
+      artCtx.font = "italic 13px Georgia";
+      artCtx.textAlign = 'left';
+      artCtx.fillStyle = dark ? '#8d857d' : INK;
+      artCtx.globalAlpha = 0.75;
+      artCtx.fillText(t.golden ? 'oh.' : t.blank ? '' : 'match 3 symbols. win that amount.', 18, 66);
+      artCtx.globalAlpha = 1;
+
+      // play area panel
+      artCtx.fillStyle = dark ? '#17130f' : 'rgba(255,248,239,0.88)';
+      roundRect(artCtx, PLAY.x, PLAY.y, PLAY.w, PLAY.h, 10);
+      artCtx.fill();
+      artCtx.lineWidth = 2.5; artCtx.strokeStyle = INK;
+      roundRect(artCtx, PLAY.x, PLAY.y, PLAY.w, PLAY.h, 10);
+      artCtx.stroke();
+
+      // spots
+      t.spots.forEach(s => {
+        artCtx.fillStyle = dark ? '#241f1a' : CREAM;
+        artCtx.beginPath(); artCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); artCtx.fill();
+        artCtx.lineWidth = 2; artCtx.strokeStyle = INK; artCtx.stroke();
+        if (s.sym) {
+          const spec = SYMBOLS[s.sym];
+          artCtx.save();
+          artCtx.translate(s.x, s.y - s.r * 0.18);
+          const sc = s.r / 26;
+          artCtx.scale(sc, sc);
+          sticker(artCtx, spec.draw, spec.color);
+          artCtx.restore();
+          artCtx.font = "bold 12px 'Arial Black', Arial";
+          artCtx.textAlign = 'center';
+          artCtx.lineWidth = 3;
+          artCtx.strokeStyle = INK;
+          artCtx.strokeText('$' + s.prize, s.x, s.y + s.r * 0.62);
+          artCtx.fillStyle = CREAM;
+          artCtx.fillText('$' + s.prize, s.x, s.y + s.r * 0.62);
+        }
+      });
+
+      // fine print
+      const fpTier = state.net > -10 ? 0 : state.net > -50 ? 1 : state.net > -200 ? 2 : 3;
+      const lines = FINE_PRINT[fpTier];
+      artCtx.font = "italic 11px Georgia";
+      artCtx.textAlign = 'center';
+      artCtx.fillStyle = dark ? '#6b635b' : INK;
+      artCtx.globalAlpha = 0.6;
+      artCtx.fillText(t.blank ? '' : lines[state.scratched % lines.length], TW / 2, TH - 16);
+      artCtx.globalAlpha = 1;
+      artCtx.restore();
+    }
+
+    function drawFoilFull() {
+      foilCtx.clearRect(0, 0, TW, TH);
+      const g = foilCtx.createLinearGradient(PLAY.x, PLAY.y, PLAY.x + PLAY.w, PLAY.y + PLAY.h);
+      g.addColorStop(0, '#b9b3ab'); g.addColorStop(0.5, '#d7d2c9'); g.addColorStop(1, '#a8a29a');
+      foilCtx.fillStyle = g;
+      roundRect(foilCtx, PLAY.x, PLAY.y, PLAY.w, PLAY.h, 10);
+      foilCtx.fill();
+      foilCtx.lineWidth = 2.5; foilCtx.strokeStyle = INK;
+      roundRect(foilCtx, PLAY.x, PLAY.y, PLAY.w, PLAY.h, 10);
+      foilCtx.stroke();
+      // foil texture marks
+      foilCtx.fillStyle = 'rgba(255,255,255,0.4)';
+      for (let i = 0; i < 40; i++) {
+        const x = PLAY.x + ((i * 173) % PLAY.w), y = PLAY.y + ((i * 97) % PLAY.h);
+        foilCtx.fillRect(x, y, 8, 2);
+      }
+      foilCtx.font = "13px 'Arial Black', Arial";
+      foilCtx.textAlign = 'center';
+      foilCtx.fillStyle = 'rgba(32,26,23,0.35)';
+      for (let r = 0; r < 3; r++)
+        for (let cx = 0; cx < 4; cx++)
+          foilCtx.fillText('SCRATCH', PLAY.x + (cx + 0.5) * PLAY.w / 4, PLAY.y + (r + 0.5) * PLAY.h / 3);
+    }
+    function roundRect(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    // ---------- scratching ----------
+    const BRUSH = 15;
+    let scratching = false, lastPt = null;
+
+    function toLogical(e) {
+      const r = wrap.getBoundingClientRect();
+      return { x: (e.clientX - r.left) / r.width * TW, y: (e.clientY - r.top) / r.height * TH };
+    }
+    function scratchAt(p) {
+      foilCtx.save();
+      foilCtx.globalCompositeOperation = 'destination-out';
+      foilCtx.beginPath();
+      foilCtx.arc(p.x, p.y, BRUSH, 0, Math.PI * 2);
+      foilCtx.fill();
+      foilCtx.restore();
+      // mark grid
+      const c0 = Math.max(0, Math.floor((p.x - PLAY.x - BRUSH) / CELL)),
+            c1 = Math.min(GCOLS - 1, Math.floor((p.x - PLAY.x + BRUSH) / CELL)),
+            r0 = Math.max(0, Math.floor((p.y - PLAY.y - BRUSH) / CELL)),
+            r1 = Math.min(GROWS - 1, Math.floor((p.y - PLAY.y + BRUSH) / CELL));
+      for (let rr = r0; rr <= r1; rr++)
+        for (let cc = c0; cc <= c1; cc++) grid[rr * GCOLS + cc] = 1;
+      shavings(p);
+    }
+    function scratchStroke(p) {
+      if (lastPt) {
+        const d = Math.hypot(p.x - lastPt.x, p.y - lastPt.y);
+        const steps = Math.max(1, Math.floor(d / (BRUSH * 0.5)));
+        for (let i = 1; i <= steps; i++) {
+          scratchAt({ x: lastPt.x + (p.x - lastPt.x) * i / steps, y: lastPt.y + (p.y - lastPt.y) * i / steps });
+        }
+      } else scratchAt(p);
+      lastPt = p;
+    }
+
+    function spotFraction(s) {
+      let hit = 0, tot = 0;
+      const c0 = Math.max(0, Math.floor((s.x - s.r - PLAY.x) / CELL)),
+            c1 = Math.min(GCOLS - 1, Math.floor((s.x + s.r - PLAY.x) / CELL)),
+            r0 = Math.max(0, Math.floor((s.y - s.r - PLAY.y) / CELL)),
+            r1 = Math.min(GROWS - 1, Math.floor((s.y + s.r - PLAY.y) / CELL));
+      for (let rr = r0; rr <= r1; rr++)
+        for (let cc = c0; cc <= c1; cc++) {
+          const x = PLAY.x + cc * CELL + CELL / 2, y = PLAY.y + rr * CELL + CELL / 2;
+          if ((x - s.x) ** 2 + (y - s.y) ** 2 <= s.r * s.r) {
+            tot++;
+            if (grid[rr * GCOLS + cc]) hit++;
+          }
+        }
+      return tot ? hit / tot : 0;
+    }
+
+    function checkSpots() {
+      if (!ticket || ticket.resolved) return;
+      let all = true;
+      ticket.spots.forEach(s => {
+        if (!s.revealed) {
+          if (spotFraction(s) > 0.6) {
+            s.revealed = true;
+            // snap: clear the whole spot
+            foilCtx.save();
+            foilCtx.globalCompositeOperation = 'destination-out';
+            foilCtx.beginPath();
+            foilCtx.arc(s.x, s.y, s.r + 4, 0, Math.PI * 2);
+            foilCtx.fill();
+            foilCtx.restore();
+            ringFlash(s);
+          } else all = false;
+        }
+      });
+      if (all) resolveTicket();
+    }
+
+    wrap.addEventListener('pointerdown', e => {
+      if (!ticket || ticket.resolved) return;
+      wrap.setPointerCapture(e.pointerId);
+      scratching = true;
+      lastPt = null;
+      initAudio();
+      scratchStroke(toLogical(e));
+      dismissHint();
+      wake();
+    });
+    wrap.addEventListener('pointermove', e => {
+      if (!scratching || !ticket || ticket.resolved) return;
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      let dist = 0, prev = lastPt;
+      for (const ev of evs) {
+        const p = toLogical(ev);
+        if (prev) dist += Math.hypot(p.x - prev.x, p.y - prev.y);
+        prev = p;
+        scratchStroke(p);
+      }
+      scratchNoise(Math.min(1, dist / 40));
+      checkSpots();
+    });
+    const endScratch = () => { scratching = false; lastPt = null; scratchNoise(0); };
+    wrap.addEventListener('pointerup', endScratch);
+    wrap.addEventListener('pointercancel', endScratch);
+
+    // ---------- scratch audio (plain WebAudio — no library needed) ----------
+    let ac = null, noiseGain = null;
+    function initAudio() {
+      if (ac) return;
+      try {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        const len = ac.sampleRate * 1;
+        const buf = ac.createBuffer(1, len, ac.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+        const src = ac.createBufferSource();
+        src.buffer = buf; src.loop = true;
+        const filter = ac.createBiquadFilter();
+        filter.type = 'bandpass'; filter.frequency.value = 2400; filter.Q.value = 0.8;
+        noiseGain = ac.createGain(); noiseGain.gain.value = 0;
+        src.connect(filter); filter.connect(noiseGain); noiseGain.connect(ac.destination);
+        src.start();
+      } catch (e) { ac = null; }
+    }
+    function scratchNoise(level) {
+      if (!noiseGain) return;
+      noiseGain.gain.setTargetAtTime(level * 0.09, ac.currentTime, 0.03);
+    }
+
+    // ---------- resolution ----------
+    function resolveTicket() {
+      const t = ticket;
+      t.resolved = true;
+      state.scratched++;
+      const rec = albumRec(t.design.id);
+      rec.scratches++;
+      if (t.misprint) rec.misprint = true;
+
+      setTimeout(() => {
+        if (t.win) {
+          state.wins++;
+          rec.wins++;
+          state.bank += t.prize;
+          state.net += t.prize;
+          showStamp(t.golden ? 'WINNER $777' : 'WINNER $' + t.prize, 'win');
+          cashBurst(t.prize);
+          pulseBank();
+        } else {
+          showStamp(t.blank ? 'BLANK' : 'NOT A WINNER', 'lose');
+        }
+        save();
+        updateChips();
+        setTimeout(nextTicket, t.win ? 2100 : 1400);
+      }, 450);
+    }
+
+    function showStamp(text, cls) {
+      stamp.textContent = text;
+      stamp.className = cls;
+      stamp.style.display = 'block';
+      animate(stamp,
+        { scale: [2.6, 0.94, 1], opacity: [0, 1, 1] },
+        RM ? { duration: 0.01 } : { duration: 0.4, ease: 'easeOut' });
+      if (!RM && cls === 'lose') {
+        animate(wrap, { rotate: [-1.2, -2.2, -0.4, -1.2] }, { duration: 0.3 });
+      }
+    }
+
+    function nextTicket() {
+      const t = ticket;
+      state.discards++;
+      save();
+      renderDiscards();
+      const after = () => {
+        // stay on the same tier if affordable, else drop to free
+        const tierIdx = state.bank >= TIERS[currentTier].cost ? currentTier : 0;
+        currentTier = tierIdx;
+        renderTiers();
+        dealTicket(tierIdx);
+      };
+      if (RM) { after(); return; }
+      animate(wrap, { x: [0, innerWidth * 0.7], rotate: [-1.2, 14], opacity: [1, 0] }, { duration: 0.45, ease: 'easeIn' })
+        .then(() => {
+          wrap.style.opacity = 1;
+          after();
+        });
+    }
+
+    // ---------- sparks / cash burst / shavings ----------
+    const parts = [];
+    function shavings(p) {
+      if (RM || parts.length > 220) return;
+      if (Math.random() < 0.5) return;
+      const r = wrap.getBoundingClientRect();
+      parts.push({
+        kind: 'shaving',
+        x: r.left + p.x / TW * r.width,
+        y: r.top + p.y / TH * r.height,
+        vx: (Math.random() - 0.5) * 2,
+        vy: 1 + Math.random() * 2,
+        rot: Math.random() * Math.PI,
+        life: 1,
+      });
+      wake();
+    }
+    function cashBurst(prize) {
+      if (RM) return;
+      const r = wrap.getBoundingClientRect();
+      const n = Math.min(70, 14 + Math.floor(prize / 10));
+      for (let i = 0; i < n; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
+        const sp = 5 + Math.random() * 7;
+        parts.push({
+          kind: 'coin',
+          x: r.left + r.width / 2,
+          y: r.top + r.height / 2,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          rot: Math.random() * Math.PI,
+          life: 1,
+        });
+      }
+      wake();
+    }
+    function drawParts() {
+      sparkCtx.clearRect(0, 0, innerWidth, innerHeight);
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.x += p.vx; p.y += p.vy; p.vy += p.kind === 'coin' ? 0.3 : 0.15;
+        p.rot += 0.1; p.life -= p.kind === 'coin' ? 0.011 : 0.02;
+        if (p.life <= 0 || p.y > innerHeight + 20) { parts.splice(i, 1); continue; }
+        sparkCtx.save();
+        sparkCtx.translate(p.x, p.y);
+        sparkCtx.rotate(p.rot);
+        sparkCtx.globalAlpha = Math.min(1, p.life * 2);
+        if (p.kind === 'coin') {
+          sparkCtx.fillStyle = INK;
+          sparkCtx.beginPath(); sparkCtx.arc(1.5, 1.5, 7, 0, Math.PI * 2); sparkCtx.fill();
+          sparkCtx.fillStyle = GOLD;
+          sparkCtx.beginPath(); sparkCtx.arc(0, 0, 7, 0, Math.PI * 2); sparkCtx.fill();
+          sparkCtx.lineWidth = 1.5; sparkCtx.strokeStyle = INK; sparkCtx.stroke();
+        } else {
+          sparkCtx.fillStyle = '#c3bdb4';
+          sparkCtx.strokeStyle = INK;
+          sparkCtx.lineWidth = 1;
+          sparkCtx.fillRect(-4, -1.5, 8, 3);
+          sparkCtx.strokeRect(-4, -1.5, 8, 3);
+        }
+        sparkCtx.restore();
+      }
+    }
+    function ringFlash(s) {
+      if (RM) return;
+      const r = wrap.getBoundingClientRect();
+      parts.push({
+        kind: 'coin',
+        x: r.left + s.x / TW * r.width,
+        y: r.top + s.y / TH * r.height,
+        vx: 0, vy: -1.5, rot: 0, life: 0.5,
+      });
+      wake();
+    }
+
+    let rafId = null;
+    function wake() { if (rafId == null) rafId = requestAnimationFrame(loop); }
+    function loop() {
+      drawParts();
+      if (parts.length === 0) {
+        sparkCtx.clearRect(0, 0, innerWidth, innerHeight);
+        rafId = null;
+        return;
+      }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    // ---------- tiers ui ----------
+    let currentTier = 0;
+    const tiersEl = $('tiers');
+    function renderTiers() {
+      tiersEl.innerHTML = '';
+      TIERS.forEach((t, i) => {
+        const btn = document.createElement('button');
+        const affordable = state.bank >= t.cost;
+        btn.className = 'tierBtn' + (i === currentTier ? ' active' : '') + (affordable ? '' : ' broke');
+        btn.id = 'tier' + i;
+        btn.innerHTML = `${t.name}<small>${t.cost === 0 ? 'always free' : '$' + t.cost + ' a ticket'}</small>`;
+        btn.addEventListener('click', () => {
+          if (state.bank < t.cost) {
+            if (!RM) animate(btn, { x: [0, -4, 4, -2, 0] }, { duration: 0.3 });
+            return;
+          }
+          currentTier = i;
+          renderTiers();
+          dealTicket(i);
+        });
+        tiersEl.appendChild(btn);
+      });
+    }
+
+    // ---------- chips, stats, discards ----------
+    function updateChips() {
+      $('bankChip').textContent = '$' + state.bank;
+      const net = state.net;
+      const netStr = (net < 0 ? '−$' + Math.abs(net) : '+$' + net);
+      const kicker = net < 0 ? 'congratulations.' : net > 0 ? 'suspicious.' : 'break-even. rare.';
+      $('stats').textContent = `tickets scratched: ${state.scratched} · lifetime net: ${netStr}. ${kicker}`;
+    }
+    function pulseBank() {
+      if (RM) return;
+      animate($('bankChip'), { scale: [1, 1.25, 1], rotate: [-1, -4, -1] }, { duration: 0.45 });
+    }
+    function renderDiscards() {
+      const el = $('discards');
+      el.innerHTML = '';
+      const n = Math.min(12, Math.floor(Math.sqrt(state.discards)));
+      const colors = ['#e8503a', '#8fd0b2', '#3f6db0', '#f7c948', '#a98fd0', '#f0a8bc'];
+      for (let i = 0; i < n; i++) {
+        const d = document.createElement('div');
+        d.className = 'deadTicket';
+        d.style.background = colors[(i * 7 + state.discards) % colors.length];
+        d.style.bottom = i * 3 + 'px';
+        d.style.left = ((i * 13) % 10 - 5) + 'px';
+        d.style.transform = `rotate(${((i * 29) % 22) - 11}deg)`;
+        el.appendChild(d);
+      }
+    }
+
+    // ---------- album ----------
+    $('albumBtn').addEventListener('click', () => {
+      renderAlbum();
+      $('albumOverlay').classList.add('open');
+    });
+    $('albumClose').addEventListener('click', () => $('albumOverlay').classList.remove('open'));
+    $('albumOverlay').addEventListener('click', e => {
+      if (e.target === $('albumOverlay')) $('albumOverlay').classList.remove('open');
+    });
+
+    function albumCard(d, rec, extraLabel) {
+      const card = document.createElement('div');
+      const seen = rec && rec.scratches > 0;
+      card.className = 'albumCard' + (seen ? '' : ' unknown');
+      if (seen) {
+        card.innerHTML =
+          `<div class="mini" style="background:${d.bg}"></div>` +
+          `<div class="aname">${d.name}</div>` +
+          `<div class="ameta">scratched ×${rec.scratches}${extraLabel || ''}</div>` +
+          `<span class="pip got">SEEN</span>` +
+          `<span class="pip ${rec.wins > 0 ? 'won got' : ''}">WON</span>` +
+          `<span class="pip ${rec.misprint ? 'mis got' : ''}">MISPRINT</span>`;
+      } else {
+        card.innerHTML = `<div class="mini"></div><div class="aname">???</div><div class="ameta">${extraLabel || 'not yet scratched'}</div>`;
+      }
+      return card;
+    }
+
+    function renderAlbum() {
+      const body = $('albumBody');
+      body.innerHTML = '';
+      const tierNames = ['Lucky 7s — free', 'Cash Cow — $5', 'Gold Rush — $20', 'the $100 rack'];
+      let seenCount = 0, totalCount = 0;
+      const allCards = [];
+      TIERS.forEach((t, ti) => {
+        const head = document.createElement('div');
+        head.className = 'tierHead';
+        head.textContent = tierNames[ti];
+        body.appendChild(head);
+        const grid = document.createElement('div');
+        grid.id = '';
+        grid.className = '';
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(160px, 1fr))';
+        grid.style.gap = '12px';
+        DESIGNS.filter(d => d.tier === ti).forEach(d => {
+          totalCount++;
+          const rec = state.album[d.id];
+          if (rec && rec.scratches) seenCount++;
+          const card = albumCard(d, rec);
+          grid.appendChild(card);
+          allCards.push(card);
+        });
+        body.appendChild(grid);
+      });
+      // specials
+      const head = document.createElement('div');
+      head.className = 'tierHead';
+      head.textContent = 'specials';
+      body.appendChild(head);
+      const grid = document.createElement('div');
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(160px, 1fr))';
+      grid.style.gap = '12px';
+      [[GOLDEN, ', always a winner'], [BLANK, 'worth everything']].forEach(([d, label]) => {
+        totalCount++;
+        const rec = state.album[d.id];
+        if (rec && rec.scratches) seenCount++;
+        const card = albumCard(d, rec, rec && rec.scratches ? '' : label);
+        grid.appendChild(card);
+        allCards.push(card);
+      });
+      body.appendChild(grid);
+      $('albumSub').textContent = `${seenCount} of ${totalCount} designs scratched. the rack restocks itself.`;
+      if (!RM && allCards.length) {
+        animate(allCards, { opacity: [0, 1], y: [12, 0] }, { delay: stagger(0.015), duration: 0.25, ease: 'easeOut' });
+      }
+    }
+
+    // ---------- hint ----------
+    let hintGone = false;
+    function dismissHint() {
+      if (hintGone) return;
+      hintGone = true;
+      $('hint').classList.add('gone');
+    }
+    setTimeout(dismissHint, 12000);
+
+    // ---------- go ----------
+    sizeCanvases();
+    renderTiers();
+    renderDiscards();
+    dealTicket(0);
+  </script>
+</body>
+</html>
