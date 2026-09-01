@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shortwave</title>
+  <meta name="description" content="Tune a late-night shortwave radio and log the strange stations hiding in the static.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/shortwave/">
+    <meta property="og:title" content="Shortwave">
+    <meta property="og:description" content="Tune a late-night radio through the static. 72 stations are hiding out there — some only broadcast after dark.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/shortwave.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Shortwave">
+    <meta name="twitter:description" content="Tune a late-night radio through the static. 72 stations are hiding out there — some only broadcast after dark.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/shortwave.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --orange: #f47b28;
+      --pink: #ff7fa5;
+      --teal: #2fb0a3;
+      --gold: #f7c948;
+      --glow: #f7c948;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: radial-gradient(circle at 50% 20%, #fff8ef 0%, #f2ede2 60%, #e8e0d0 100%);
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--ink);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 12px 40px;
+      min-height: 100%;
+    }
+    body[data-antenna="3"] {
+      --glow: #2fb0a3;
+      background: radial-gradient(circle at 50% 20%, #efe6f7 0%, #ded4ea 60%, #cfc3e0 100%);
+    }
+
+    h1 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(28px, 7vw, 52px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--coral);
+      -webkit-text-stroke: 2px var(--ink);
+      paint-order: stroke fill;
+      text-shadow: 4px 4px 0 var(--ink);
+      transform: rotate(-2deg);
+      margin: 6px 0 2px;
+    }
+    #tagline {
+      font-style: italic;
+      font-size: 15px;
+      opacity: 0.75;
+      margin-bottom: 16px;
+    }
+
+    /* ---------- radio faceplate ---------- */
+    #radio {
+      width: min(720px, 96vw);
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      box-shadow: 7px 7px 0 var(--ink);
+      padding: 16px;
+      position: relative;
+    }
+    body[data-antenna="1"] #radio { background: #fdf3df; }
+    body[data-antenna="2"] #radio { background: #eef3e2; }
+    body[data-antenna="3"] #radio { background: #26202e; }
+    body[data-antenna="3"] #radio .plate-label { color: var(--cream); }
+
+    #dialWrap {
+      background: var(--ink);
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    #dial { display: block; width: 100%; height: 110px; touch-action: none; cursor: grab; }
+    #dial.dragging { cursor: grabbing; }
+
+    #midRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* meter */
+    #meterBox { text-align: center; }
+    #meter { display: block; }
+    .plate-label {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 4px;
+      color: var(--ink);
+    }
+
+    /* knob */
+    #knobBox { display: flex; align-items: center; gap: 10px; }
+    #knob {
+      width: clamp(110px, 22vw, 150px);
+      height: clamp(110px, 22vw, 150px);
+      border-radius: 50%;
+      background: var(--coral);
+      border: 3px solid var(--ink);
+      box-shadow: 5px 5px 0 var(--ink);
+      position: relative;
+      cursor: grab;
+      touch-action: none;
+      flex-shrink: 0;
+    }
+    #knob:active { cursor: grabbing; }
+    #knob .marker {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      width: 12px;
+      height: 30px;
+      margin-left: -6px;
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+    }
+    #knob .hub {
+      position: absolute;
+      inset: 34%;
+      border-radius: 50%;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+    }
+    .fineBtn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 16px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--sky);
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .fineBtn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+    /* band selector */
+    #bands { display: flex; flex-direction: column; gap: 8px; }
+    .bandBtn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 13px;
+      letter-spacing: 1px;
+      padding: 7px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      background: var(--paper);
+      cursor: pointer;
+      color: var(--ink);
+      position: relative;
+      transform: rotate(-1deg);
+      min-width: 86px;
+    }
+    .bandBtn:nth-child(2) { transform: rotate(1deg); }
+    .bandBtn:nth-child(4) { transform: rotate(2deg); }
+    .bandBtn.active { background: var(--gold); }
+    .bandBtn.sealed { background: #d8d0c0; color: transparent; }
+    .bandBtn.sealed::after {
+      content: 'SEALED';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      font-size: 10px;
+      letter-spacing: 2px;
+      background: repeating-linear-gradient(45deg, #d8d0c0, #d8d0c0 6px, #cfc6b4 6px, #cfc6b4 12px);
+      border-radius: 999px;
+    }
+
+    /* bottom row */
+    #bottomRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    #power {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 14px;
+      letter-spacing: 1px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      background: var(--lime);
+      cursor: pointer;
+      color: var(--ink);
+      transform: rotate(-2deg);
+    }
+    #power.on { background: var(--coral); color: var(--cream); -webkit-text-stroke: 0; }
+    #power:active { transform: rotate(-2deg) translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+    #statusChips { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .chip {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      background: var(--gold);
+      color: var(--ink);
+      cursor: pointer;
+    }
+    #antennaChip { background: var(--purple); transform: rotate(1deg); }
+    #logbookBtn { background: var(--sky); transform: rotate(-1deg); }
+    .chip:active { transform: translate(2px, 2px) !important; box-shadow: 0 0 0 var(--ink); }
+
+    #hint {
+      font-style: italic;
+      font-size: 14px;
+      opacity: 0.7;
+      margin-top: 16px;
+      transition: opacity 1.2s ease;
+      text-align: center;
+    }
+    #hint.gone { opacity: 0; }
+
+    /* ---------- overlays ---------- */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(24, 18, 15, 0.88);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      overflow-y: auto;
+      padding: 30px 14px 60px;
+      z-index: 40;
+    }
+    .overlay.open { display: flex; }
+    .overlay .inner { width: min(860px, 96vw); }
+    .overlay h2 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      color: var(--cream);
+      -webkit-text-stroke: 1.5px var(--ink);
+      paint-order: stroke fill;
+      text-shadow: 3px 3px 0 var(--ink);
+      font-size: clamp(22px, 5vw, 34px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transform: rotate(-1deg);
+      margin-bottom: 4px;
+    }
+    .overlay .sub { color: var(--paper); font-style: italic; opacity: 0.8; margin-bottom: 18px; }
+    .closeX {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--coral);
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      color: var(--cream);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 41;
+    }
+
+    .bandTabs { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+    .bandTab {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      background: var(--paper);
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--ink);
+      color: var(--ink);
+    }
+    .bandTab.active { background: var(--gold); }
+
+    #logGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 12px;
+    }
+    .logCard {
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 10px 12px;
+      min-height: 110px;
+    }
+    .logCard.mystery {
+      background: repeating-linear-gradient(0deg, #3a322c, #3a322c 2px, #2c2622 2px, #2c2622 4px);
+      color: var(--paper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 26px;
+      text-shadow: 2px 2px 0 var(--ink);
+    }
+    .logCard .name {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.25;
+      text-transform: uppercase;
+      margin: 6px 0 4px;
+    }
+    .logCard .freq { font-size: 12px; opacity: 0.7; }
+    .logCard .line { font-style: italic; font-size: 12.5px; margin-top: 6px; }
+    .logCard .meta { font-size: 10.5px; opacity: 0.55; margin-top: 6px; }
+    .rchip {
+      display: inline-block;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 2px 9px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      box-shadow: 1.5px 1.5px 0 var(--ink);
+      transform: rotate(-2deg);
+      color: var(--ink);
+    }
+
+    /* shop */
+    #shopGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .antCard {
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 14px;
+    }
+    .antCard.owned { background: #e5efd2; }
+    .antCard h3 { font-family: 'Arial Black', Arial, sans-serif; font-size: 15px; text-transform: uppercase; }
+    .antCard p { font-style: italic; font-size: 13px; margin: 8px 0; min-height: 52px; }
+    .buyBtn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 12px;
+      padding: 7px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      background: var(--gold);
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .buyBtn:disabled { background: #d8d0c0; cursor: default; opacity: 0.7; }
+    .buyBtn:not(:disabled):active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+    /* lock card popup */
+    #lockCard {
+      position: fixed;
+      left: 50%;
+      top: 42%;
+      transform: translate(-50%, -50%);
+      width: min(340px, 88vw);
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 16px;
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 18px;
+      z-index: 50;
+      display: none;
+      text-align: center;
+      cursor: pointer;
+    }
+    #lockCard .lc-name {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 18px;
+      text-transform: uppercase;
+      line-height: 1.2;
+      margin: 8px 0 4px;
+    }
+    #lockCard .lc-freq { font-size: 13px; opacity: 0.7; }
+    #lockCard .lc-line { font-style: italic; font-size: 14px; margin-top: 10px; }
+    #lockCard .lc-pts {
+      font-family: 'Arial Black', Arial, sans-serif;
+      display: inline-block;
+      margin-top: 12px;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 2px 2px 0 var(--ink);
+      padding: 5px 14px;
+      font-size: 13px;
+      transform: rotate(-2deg);
+    }
+
+    #sparkCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 45; }
+
+    @media (max-width: 560px) {
+      #midRow { justify-content: center; }
+      #bands { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body data-antenna="0">
+  <h1>Shortwave</h1>
+  <div id="tagline">73 was taken.</div>
+
+  <div id="radio">
+    <div id="dialWrap"><canvas id="dial"></canvas></div>
+
+    <div id="midRow">
+      <div id="meterBox">
+        <canvas id="meter" width="150" height="92"></canvas>
+        <div class="plate-label">Signal</div>
+      </div>
+
+      <div id="knobBox">
+        <button class="fineBtn" id="fineDown" aria-label="fine tune down">&minus;</button>
+        <div id="knob" role="slider" aria-label="tuning knob" tabindex="0">
+          <div class="marker"></div>
+          <div class="hub"></div>
+        </div>
+        <button class="fineBtn" id="fineUp" aria-label="fine tune up">+</button>
+      </div>
+
+      <div id="bands"></div>
+    </div>
+
+    <div id="bottomRow">
+      <button id="power">POWER</button>
+      <div id="statusChips">
+        <span class="chip" id="antennaChip">COAT HANGER</span>
+        <span class="chip" id="pointsChip">0 PTS</span>
+        <button class="chip" id="logbookBtn">LOGBOOK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="hint">flip the power on. turn the knob. something is out there.</div>
+
+  <!-- logbook -->
+  <div class="overlay" id="logOverlay">
+    <button class="closeX" data-close="logOverlay">&times;</button>
+    <div class="inner">
+      <h2>Signal Logbook</h2>
+      <div class="sub" id="logProgress"></div>
+      <div class="bandTabs" id="logTabs"></div>
+      <div id="logGrid"></div>
+    </div>
+  </div>
+
+  <!-- antenna shop -->
+  <div class="overlay" id="shopOverlay">
+    <button class="closeX" data-close="shopOverlay">&times;</button>
+    <div class="inner">
+      <h2>Antenna Dept.</h2>
+      <div class="sub">store policy: no refunds, no explanations.</div>
+      <div id="shopGrid"></div>
+    </div>
+  </div>
+
+  <div id="lockCard"></div>
+  <canvas id="sparkCanvas"></canvas>
+
+  <script type="module">
+    import { animate, stagger } from "https://cdn.jsdelivr.net/npm/motion@12.15.0/+esm";
+    import * as Tone from "https://cdn.jsdelivr.net/npm/tone@15.0.4/+esm";
+
+    const INK = '#201a17', CREAM = '#fff8ef', GOLD = '#f7c948', CORAL = '#f0563e';
+    const RARITY = {
+      c: { label: 'COMMON',    color: '#5aa0db', pts: 1,  air: 0.80 },
+      u: { label: 'UNCOMMON',  color: '#b7ce3c', pts: 3,  air: 0.45 },
+      r: { label: 'RARE',      color: '#a98fd0', pts: 8,  air: 0.15 },
+      l: { label: 'LEGENDARY', color: '#f7c948', pts: 25, air: 0.04 },
+    };
+    const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const SPR = RM ? { duration: 0.01 } : { type: 'spring', stiffness: 420, damping: 24 };
+
+    // ---------- deterministic rng ----------
+    function hash(str) {
+      let h = 1779033703 ^ str.length;
+      for (let i = 0; i < str.length; i++) {
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      return h >>> 0;
+    }
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    const todaySeed = hash(new Date().toDateString());
+
+    // ---------- bands & stations ----------
+    // type: music | morse | numbers | time | whale | murmur | drone | silence | countdown
+    const BANDS = [
+      { key: 'MW',  label: 'MW',  lo: 530, hi: 1700, unit: 'kHz', fmt: f => Math.round(f) },
+      { key: 'SW1', label: 'SW1', lo: 3.0, hi: 10.0, unit: 'MHz', fmt: f => f.toFixed(2) },
+      { key: 'SW2', label: 'SW2', lo: 10.0, hi: 22.0, unit: 'MHz', fmt: f => f.toFixed(2) },
+      { key: 'X',   label: '?',   lo: 0,   hi: 100,  unit: '',    fmt: f => '· ' + Math.round(f) + ' ·' },
+    ];
+    // [name, rarity, type, transcript, night?, params]
+    const DEFS = [
+      // ------- MW: 12c 6u 2r -------
+      ['AM 540 — The Farm Report', 'c', 'murmur', '…soybeans are steady. soybeans are always steady.'],
+      ['KBED — Easy Listening', 'c', 'music', '…you are listening to nothing in particular.', 0, { notes: ['C4','E4','G4','E4'], dur: 1.1 }],
+      ['Traffic on the 9s', 'c', 'murmur', '…no traffic. there is never any traffic.'],
+      ['The Sermon', 'c', 'murmur', '…and that, too, shall be fine.'],
+      ['KPOL — Polka Power', 'c', 'music', '…that was a polka. this is also a polka.', 0, { notes: ['C4','G3','E4','G3','F4','G3'], dur: 0.28 }],
+      ['Time & Temperature', 'c', 'time', '…at the tone: later than you think.'],
+      ['The Call-In Show', 'c', 'murmur', '…long-time listener, first-time caller.'],
+      ['AM GOLD', 'c', 'music', '…more gold after these messages.', 0, { notes: ['A3','C4','E4','C4','D4','C4'], dur: 0.55 }],
+      ['The Ball Game', 'c', 'murmur', '…swing and a miss. crowd unmoved.'],
+      ['Lost Pet Bulletin', 'c', 'murmur', "…answers to 'Chairman'. reward: gratitude."],
+      ['KORG — Organ Hour', 'c', 'drone', '…the organist has been playing since Tuesday.', 0, { freq: 110 }],
+      ['Swap Meet of the Air', 'c', 'murmur', '…one canoe, slightly haunted. will trade.'],
+      ['The Midnight Jazz', 'u', 'music', '…this one goes out to whoever is still up.', 1, { notes: ['D4','F4','A4','C5','A4','F4'], dur: 0.7 }],
+      ['Border Blaster X', 'u', 'music', '…broadcasting at one million watts, legally-ish.', 0, { notes: ['E4','E4','G4','B4','G4'], dur: 0.32 }],
+      ["The Insomniac's Call-In", 'u', 'murmur', '…caller, you are on the air. caller?', 1],
+      ['Civil Defense Test', 'u', 'drone', '…this is only a test. it is always only a test.', 0, { freq: 440, beep: true }],
+      ['The Yodel Hour', 'u', 'music', '…sixty consecutive minutes.', 0, { notes: ['C4','G4','C5','G4','E5','G4'], dur: 0.24 }],
+      ["Grandma's Kitchen", 'u', 'murmur', '…add butter until it stops asking.'],
+      ['KFOG — The Fog Update', 'r', 'murmur', '…the fog is expected to continue.', 1],
+      ['The Station That Plays One Song', 'r', 'music', '…again.', 0, { notes: ['G4','G4','A4','G4','C5','B4'], dur: 0.5 }],
+      // ------- SW1: 10c 6u 3r 1l -------
+      ['Radio Volcano', 'c', 'murmur', '…still dormant. thanks for asking.'],
+      ['The Shipping Forecast', 'c', 'murmur', '…rising slowly. good.'],
+      ['Pirate Radio Mermaid', 'c', 'music', '…all requests, no dedications.', 0, { notes: ['A4','C5','E5','C5'], dur: 0.42 }],
+      ['The Esperanto Hour', 'c', 'murmur', '…saluton? saluton.'],
+      ['Shortwave Sunday School', 'c', 'murmur', '…quiz next week. same as last week.'],
+      ['The Accordion Service', 'c', 'music', '…please rise.', 0, { notes: ['F3','A3','C4','A3'], dur: 0.62 }],
+      ['Utility Beacon K', 'c', 'drone', '…K. just K.', 0, { freq: 520, beep: true }],
+      ['The Tape Loop', 'c', 'music', '…this melody repeats every 45 seconds. forever.', 0, { notes: ['E4','D4','C4','D4'], dur: 0.9 }],
+      ['Radio Free Basement', 'c', 'murmur', '…tell no one about the basement.'],
+      ['The Harmonica Man', 'c', 'music', '…he knows one more.', 0, { notes: ['G4','B4','G4','D4'], dur: 0.5 }],
+      ['The Preacher of the Dunes', 'u', 'murmur', '…the sand hears everything.', 1],
+      ['Morse Practice Net', 'u', 'morse', '…MILK EGGS BREAD. copy?', 0, { msg: 'MILK EGGS BREAD' }],
+      ['The Interval Signal', 'u', 'music', '…three notes, then silence, then three notes.', 0, { notes: ['C5','E5','G5'], dur: 1.4 }],
+      ['Radio Tirana Ghost', 'u', 'music', '…this station closed in 1991.', 1, { notes: ['D4','A3','D4','F4'], dur: 0.8 }],
+      ['The Auctioneer', 'u', 'murmur', '…sold, to the static.'],
+      ["Weather for Sailors Who Aren't There", 'u', 'murmur', '…gale warning for nobody.', 1],
+      ['PAPERCUT — Numbers Station', 'r', 'numbers', '…7 4 9 2 0. repeated twice.', 1],
+      ['The Owl Net', 'r', 'morse', '…THE OWLS ARE FINE.', 1, { msg: 'THE OWLS ARE FINE' }],
+      ['The Backwards Waltz', 'r', 'music', '…three, two, one. three, two, one.', 1, { notes: ['B4','G4','D4','G4','B4','D5'], dur: 0.46 }],
+      ['The Lighthouse', 'l', 'drone', '…a light that sounds. or a sound that lights.', 1, { freq: 65, sweep: true }],
+      // ------- SW2: 8c 7u 4r 1l -------
+      ['Radio Meteor', 'c', 'murmur', '…tonight: rocks.'],
+      ["The Whistler's Club", 'c', 'music', '…members only. everyone is a member.', 0, { notes: ['E5','G5','E5','C5'], dur: 0.36 }],
+      ['Utility Beacon Y', 'c', 'drone', '…Y. why not.', 0, { freq: 610, beep: true }],
+      ['The Chess Broadcast', 'c', 'murmur', '…pawn to e4. applause.'],
+      ['The Glass Harmonica', 'c', 'music', '…do not adjust your teeth.', 0, { notes: ['C5','D5','F5','D5'], dur: 0.85 }],
+      ['Voice of the Valley', 'c', 'murmur', '…the valley says hello back.'],
+      ['The Metronome', 'c', 'time', '…keeping time for no one.'],
+      ['Radio Sputnik Revival', 'c', 'drone', '…beep. nostalgia. beep.', 0, { freq: 880, beep: true }],
+      ['The Ice Report', 'u', 'murmur', '…the ice is thinking about it.', 1],
+      ['Morse Poetry Slam', 'u', 'morse', '…ROSES ARE RED OVER.', 0, { msg: 'ROSES ARE RED OVER' }],
+      ['The Theremin Recital', 'u', 'whale', '…she practices at odd hours.', 0, { base: 400 }],
+      ['Radio Archipelago', 'u', 'music', '…island to island.', 0, { notes: ['A4','E4','A4','C5','B4'], dur: 0.5 }],
+      ['The Slow News', 'u', 'murmur', '…nothing happened today. details at midnight.'],
+      ['The Hum', 'u', 'drone', '…you have heard this before. somewhere.', 1, { freq: 50 }],
+      ['Numbers Lite', 'u', 'numbers', '…just the number 5, gently.', 0, { digits: '5' }],
+      ['VELVET — Numbers Station', 'r', 'numbers', '…group of five. group of five.', 1],
+      ['The Whale Channel', 'r', 'whale', '…she says hello.', 1, { base: 180 }],
+      ['The Auction of Names', 'r', 'murmur', '…do I hear yours?', 1],
+      ['The Unfinished Symphony', 'r', 'music', '…the orchestra will return. eventually.', 0, { notes: ['C4','E4','G4','B4','C5','G4','E4'], dur: 0.62 }],
+      ['YOUR SONG', 'l', 'music', '…you know this one.', 1, { yours: true }],
+      // ------- X: 4c 3u 3r 2l -------
+      ['Beacon ∅', 'c', 'drone', '…marking a location that does not exist.', 0, { freq: 330, beep: true }],
+      ['The Static Choir', 'c', 'murmur', '…they rehearse constantly.'],
+      ['Test Pattern (Audio)', 'c', 'drone', '…please stand by. forever.', 0, { freq: 1000 }],
+      ['The Slow Sweep', 'c', 'whale', '…something passing overhead.', 0, { base: 90 }],
+      ['The Mirror Net', 'u', 'morse', '…STOP REPEATING EVERYTHING I SAY.', 0, { msg: 'STOP REPEATING EVERYTHING I SAY' }],
+      ['Channel Grey', 'u', 'murmur', '…the color, not the name.', 1],
+      ['The Second Metronome', 'u', 'time', '…slightly behind the first one.'],
+      ['The Coordinates', 'r', 'numbers', '…they are your coordinates? unclear.', 1],
+      ['The Breathing', 'r', 'murmur', '…in. out. in.', 1],
+      ['Signal Garden', 'r', 'music', '…everything here was planted on purpose.', 1, { notes: ['D4','F#4','A4','D5','A4','F#4'], dur: 0.66 }],
+      ['THE SILENCE', 'l', 'silence', '…the loudest thing on the band.'],
+      ['THE COUNTDOWN', 'l', 'countdown', '…it has never reached zero.', 1],
+    ];
+    const BAND_SIZES = [20, 20, 20, 12];
+
+    const stations = [];
+    {
+      let d = 0;
+      BANDS.forEach((band, bi) => {
+        const n = BAND_SIZES[bi];
+        const slice = DEFS.slice(d, d + n).map((def, i) => ({
+          id: band.key + '-' + i,
+          band: bi,
+          name: def[0], rarity: def[1], type: def[2], line: def[3],
+          night: !!def[4], params: def[5] || {},
+        }));
+        d += n;
+        // deterministic spread positions with per-station jitter
+        slice.forEach((s, i) => {
+          const jit = (mulberry32(hash(s.id))() - 0.5) * 0.5;
+          s.f = (i + 0.5 + jit * 0.6) / n * 0.92 + 0.04;
+        });
+        // daily drift for rare + legendary
+        slice.forEach(s => {
+          if (s.rarity === 'r' || s.rarity === 'l') {
+            const rng = mulberry32(todaySeed ^ hash(s.id));
+            s.f = Math.min(0.97, Math.max(0.03, s.f + (rng() - 0.5) * 0.03));
+          }
+        });
+        stations.push(...slice);
+      });
+    }
+
+    // ---------- state ----------
+    const SAVE_KEY = 'shortwave-v1';
+    let state = { logged: {}, points: 0, antenna: 0, songSeed: Math.floor(Math.random() * 1e9), visits: 0 };
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) state = Object.assign(state, JSON.parse(raw));
+    } catch (e) {}
+    state.visits++;
+    function save() {
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+    save();
+
+    const ANTENNAS = [
+      { name: 'Coat Hanger', cost: 0,   blurb: 'It came with a shirt. It receives Medium Wave, reluctantly.' },
+      { name: 'Longwire',    cost: 12,  blurb: 'Forty feet of wire and one apology to the neighbor. Unlocks SW1.' },
+      { name: 'Dipole',      cost: 40,  blurb: 'Symmetrical. Dignified. Unlocks SW2 and widens your lock window.' },
+      { name: 'The Array',   cost: 120, blurb: 'The manual is in no known language. Unlocks the fourth band.' },
+    ];
+
+    // is the station broadcasting tonight?
+    const hourNow = new Date().getHours();
+    const isNight = hourNow >= 19 || hourNow < 6;
+    stations.forEach(s => {
+      const chance = RARITY[s.rarity].air * (s.rarity === 'l' && s.band === 3 ? 2 : 1);
+      s.onAir = Math.random() < chance && (!s.night || isNight);
+    });
+
+    // ---------- dom ----------
+    const $ = id => document.getElementById(id);
+    const dial = $('dial'), dialCtx = dial.getContext('2d');
+    const meter = $('meter'), meterCtx = meter.getContext('2d');
+    const sparkCanvas = $('sparkCanvas'), sparkCtx = sparkCanvas.getContext('2d');
+    const knob = $('knob');
+    const DPR = Math.min(devicePixelRatio || 1, 2);
+
+    let band = 0;
+    let freq = 0.5;           // normalized position in band
+    let knobAngle = 0;
+    let powered = false;
+    let signal = 0, meterVal = 0, meterShown = 0;
+    let lockTimer = 0, lockedNow = null;
+    let velocity = 0;
+
+    const AUDIBLE = 0.03;
+    const lockWin = () => state.antenna >= 2 ? 0.0075 : 0.005;
+
+    // ---------- canvas sizing ----------
+    function sizeCanvases() {
+      const w = dial.clientWidth, h = dial.clientHeight;
+      dial.width = w * DPR; dial.height = h * DPR;
+      dialCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      meter.width = 150 * DPR; meter.height = 92 * DPR;
+      meterCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      sparkCanvas.width = innerWidth * DPR; sparkCanvas.height = innerHeight * DPR;
+      sparkCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      drawDial(); drawMeter();
+    }
+    let resizeT;
+    addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(sizeCanvases, 150); });
+
+    // ---------- dial drawing ----------
+    function drawDial() {
+      const w = dial.clientWidth, h = dial.clientHeight;
+      dialCtx.clearRect(0, 0, w, h);
+      dialCtx.fillStyle = '#181310';
+      dialCtx.fillRect(0, 0, w, h);
+      if (!powered) {
+        dialCtx.fillStyle = 'rgba(255,248,239,0.12)';
+        dialCtx.font = "italic 14px Georgia";
+        dialCtx.textAlign = 'center';
+        dialCtx.fillText('— power off —', w / 2, h / 2 + 4);
+        return;
+      }
+      const b = BANDS[band];
+      // static shimmer
+      if (!RM) {
+        dialCtx.fillStyle = 'rgba(255,248,239,0.05)';
+        for (let i = 0; i < 26; i++) {
+          dialCtx.fillRect(Math.random() * w, Math.random() * h, 1.6, 1.6);
+        }
+      }
+      // glow near on-air stations (only within audible range of needle — no map cheating)
+      const near = nearestStation();
+      if (near && near.dist < AUDIBLE) {
+        const gx = near.st.f * w;
+        const strength = 1 - near.dist / AUDIBLE;
+        const grad = dialCtx.createRadialGradient(gx, h / 2, 4, gx, h / 2, 60);
+        const gc = getComputedStyle(document.body).getPropertyValue('--glow').trim() || GOLD;
+        grad.addColorStop(0, gc);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        dialCtx.globalAlpha = 0.55 * strength;
+        dialCtx.fillStyle = grad;
+        dialCtx.fillRect(gx - 60, 0, 120, h);
+        dialCtx.globalAlpha = 1;
+      }
+      // ticks + labels
+      dialCtx.strokeStyle = 'rgba(255,248,239,0.75)';
+      dialCtx.fillStyle = 'rgba(255,248,239,0.75)';
+      dialCtx.font = "10px 'Arial Black', Arial";
+      dialCtx.textAlign = 'center';
+      const ticks = 40;
+      for (let i = 0; i <= ticks; i++) {
+        const x = 8 + (i / ticks) * (w - 16);
+        const major = i % 5 === 0;
+        dialCtx.lineWidth = major ? 2 : 1;
+        dialCtx.beginPath();
+        dialCtx.moveTo(x, h - 8);
+        dialCtx.lineTo(x, h - (major ? 30 : 18));
+        dialCtx.stroke();
+        if (major && band !== 3) {
+          const fv = b.lo + (i / ticks) * (b.hi - b.lo);
+          dialCtx.fillText(String(b.fmt(fv)), x, h - 36);
+        }
+      }
+      if (band === 3) {
+        dialCtx.font = "italic 13px Georgia";
+        dialCtx.fillText('the markings have worn off', w / 2, h - 40);
+      }
+      // band name
+      dialCtx.font = "12px 'Arial Black', Arial";
+      dialCtx.textAlign = 'left';
+      dialCtx.fillStyle = GOLD;
+      dialCtx.fillText(b.label, 10, 18);
+      // logged notches
+      dialCtx.fillStyle = GOLD;
+      stations.filter(s => s.band === band && state.logged[s.id]).forEach(s => {
+        const x = 8 + s.f * (w - 16);
+        dialCtx.beginPath();
+        dialCtx.arc(x, 12, 3, 0, Math.PI * 2);
+        dialCtx.fill();
+        dialCtx.strokeStyle = INK; dialCtx.lineWidth = 1.5; dialCtx.stroke();
+      });
+      // needle (sticker treatment: ink shadow then color)
+      const nx = 8 + freq * (w - 16);
+      dialCtx.save();
+      dialCtx.translate(1.5, 1.5);
+      dialCtx.fillStyle = INK;
+      dialCtx.fillRect(nx - 2.5, 4, 5, h - 8);
+      dialCtx.restore();
+      dialCtx.fillStyle = CORAL;
+      dialCtx.fillRect(nx - 2.5, 4, 5, h - 8);
+      dialCtx.strokeStyle = INK; dialCtx.lineWidth = 1.5;
+      dialCtx.strokeRect(nx - 2.5, 4, 5, h - 8);
+      // lock progress ring at needle top
+      if (lockTimer > 0 && signal > 0) {
+        dialCtx.beginPath();
+        dialCtx.arc(nx, 14, 9, -Math.PI / 2, -Math.PI / 2 + (lockTimer / LOCK_MS) * Math.PI * 2);
+        dialCtx.strokeStyle = INK; dialCtx.lineWidth = 5; dialCtx.stroke();
+        dialCtx.beginPath();
+        dialCtx.arc(nx, 14, 9, -Math.PI / 2, -Math.PI / 2 + (lockTimer / LOCK_MS) * Math.PI * 2);
+        dialCtx.strokeStyle = GOLD; dialCtx.lineWidth = 3; dialCtx.stroke();
+      }
+    }
+
+    function drawMeter() {
+      const w = 150, h = 92;
+      meterCtx.clearRect(0, 0, w, h);
+      // face
+      meterCtx.fillStyle = CREAM;
+      meterCtx.strokeStyle = INK;
+      meterCtx.lineWidth = 2.5;
+      meterCtx.save(); meterCtx.translate(2, 2);
+      meterCtx.fillStyle = INK; roundRect(meterCtx, 2, 2, w - 8, h - 8, 10); meterCtx.fill();
+      meterCtx.restore();
+      meterCtx.fillStyle = CREAM;
+      roundRect(meterCtx, 2, 2, w - 8, h - 8, 10); meterCtx.fill(); meterCtx.stroke();
+      // arc scale
+      const cx = w / 2 - 2, cy = h - 16, r = 52;
+      for (let i = 0; i <= 10; i++) {
+        const a = Math.PI * (1 - i / 10 * 0.8 - 0.1);
+        meterCtx.strokeStyle = i >= 8 ? CORAL : INK;
+        meterCtx.lineWidth = 2;
+        meterCtx.beginPath();
+        meterCtx.moveTo(cx + Math.cos(a) * (r - 7), cy - Math.sin(a) * (r - 7));
+        meterCtx.lineTo(cx + Math.cos(a) * r, cy - Math.sin(a) * r);
+        meterCtx.stroke();
+      }
+      // needle with jitter
+      const jitter = powered && !RM ? (Math.random() - 0.5) * 0.02 : 0;
+      const v = Math.max(0, Math.min(1, meterShown + jitter));
+      const a = Math.PI * (1 - v * 0.8 - 0.1);
+      meterCtx.strokeStyle = CORAL;
+      meterCtx.lineWidth = 3.5;
+      meterCtx.lineCap = 'round';
+      meterCtx.beginPath();
+      meterCtx.moveTo(cx, cy);
+      meterCtx.lineTo(cx + Math.cos(a) * (r - 4), cy - Math.sin(a) * (r - 4));
+      meterCtx.stroke();
+      meterCtx.strokeStyle = INK; meterCtx.lineWidth = 1;
+      meterCtx.beginPath();
+      meterCtx.moveTo(cx, cy);
+      meterCtx.lineTo(cx + Math.cos(a) * (r - 4), cy - Math.sin(a) * (r - 4));
+      meterCtx.stroke();
+      // hub
+      meterCtx.fillStyle = GOLD;
+      meterCtx.beginPath(); meterCtx.arc(cx, cy, 6, 0, Math.PI * 2); meterCtx.fill();
+      meterCtx.strokeStyle = INK; meterCtx.lineWidth = 2; meterCtx.stroke();
+    }
+    function roundRect(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    // ---------- sparks (lock celebration) ----------
+    const sparks = [];
+    function burst(x, y, color) {
+      if (RM) return;
+      for (let i = 0; i < 26; i++) {
+        const a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 5;
+        sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2, life: 1, color });
+      }
+      wake();
+    }
+    function drawSparks() {
+      sparkCtx.clearRect(0, 0, innerWidth, innerHeight);
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const p = sparks[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.18; p.life -= 0.02;
+        if (p.life <= 0) { sparks.splice(i, 1); continue; }
+        sparkCtx.globalAlpha = p.life;
+        sparkCtx.fillStyle = p.color;
+        sparkCtx.strokeStyle = INK;
+        sparkCtx.lineWidth = 1.5;
+        sparkCtx.beginPath();
+        sparkCtx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        sparkCtx.fill(); sparkCtx.stroke();
+      }
+      sparkCtx.globalAlpha = 1;
+    }
+
+    // ---------- audio ----------
+    let audio = null;   // { staticNoise, staticGain, stationGain, filter }
+    let currentGen = null, currentGenId = null;
+
+    async function powerOn() {
+      await Tone.start();
+      if (!audio) {
+        const filter = new Tone.Filter({ frequency: 1400, type: 'bandpass', Q: 0.35 });
+        const limiter = new Tone.Limiter(-6);
+        filter.connect(limiter);
+        limiter.toDestination();
+        const staticGain = new Tone.Gain(0.16).connect(filter);
+        const staticNoise = new Tone.Noise('pink').connect(staticGain);
+        staticNoise.start();
+        const stationGain = new Tone.Gain(0).connect(filter);
+        audio = { staticNoise, staticGain, stationGain, filter };
+      } else {
+        audio.staticNoise.start();
+      }
+    }
+    function powerOff() {
+      if (audio) audio.staticNoise.stop();
+      stopGen();
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+    }
+    function stopGen() {
+      if (currentGen) { try { currentGen.stop(); } catch (e) {} currentGen = null; currentGenId = null; }
+    }
+
+    function speak(text, vol) {
+      if (!('speechSynthesis' in window) || !powered) return false;
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.75; u.pitch = 0.8; u.volume = Math.min(1, vol);
+      speechSynthesis.speak(u);
+      return true;
+    }
+
+    const MORSE = { A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..',' ':' ' };
+
+    // each generator: { stop() } — all output through audio.stationGain
+    function makeGenerator(st) {
+      const out = audio.stationGain;
+      const timers = [];
+      const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+      const every = (fn, ms) => timers.push(setInterval(fn, ms));
+      const nodes = [];
+
+      const mk = n => { nodes.push(n); return n; };
+      const cleanup = () => {
+        timers.forEach(t => { clearTimeout(t); clearInterval(t); });
+        nodes.forEach(n => { try { n.dispose(); } catch (e) {} });
+      };
+
+      switch (st.type) {
+        case 'music': {
+          const synth = mk(new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.02, release: 0.3 } }).connect(out));
+          let notes = st.params.notes, dur = st.params.dur || 0.5;
+          if (st.params.yours) {
+            const rng = mulberry32(state.songSeed);
+            const scale = ['C4','D4','E4','G4','A4','C5','D5','E5'];
+            notes = Array.from({ length: 8 }, () => scale[Math.floor(rng() * scale.length)]);
+            dur = 0.5;
+          }
+          let i = 0;
+          every(() => {
+            synth.triggerAttackRelease(notes[i % notes.length], dur * 0.85);
+            i++;
+          }, dur * 1000);
+          break;
+        }
+        case 'morse': {
+          const osc = mk(new Tone.Oscillator(600, 'sine'));
+          const gate = mk(new Tone.Gain(0).connect(out));
+          osc.connect(gate); osc.start();
+          const seq = [];
+          for (const ch of (st.params.msg || 'CQ')) {
+            const code = MORSE[ch] || '';
+            if (ch === ' ') { seq.push([0, 6]); continue; }
+            for (const sym of code) { seq.push([1, sym === '.' ? 1 : 3]); seq.push([0, 1]); }
+            seq.push([0, 2]);
+          }
+          seq.push([0, 12]);
+          const UNIT = 90;
+          let idx = 0;
+          const step = () => {
+            const [on, units] = seq[idx % seq.length];
+            gate.gain.rampTo(on ? 0.9 : 0, 0.01);
+            idx++;
+            later(step, units * UNIT);
+          };
+          step();
+          break;
+        }
+        case 'numbers': {
+          const synth = mk(new Tone.Synth({ oscillator: { type: 'sine' } }).connect(out));
+          const digits = st.params.digits || String(1e4 + Math.floor(Math.random() * 9e4));
+          const announce = () => {
+            if (signal > 0.5 && speak(digits.split('').join('. '), signal * 0.9)) return;
+            digits.split('').forEach((dg, i) => {
+              later(() => synth.triggerAttackRelease(220 + parseInt(dg, 10) * 55, 0.18), i * 320);
+            });
+          };
+          announce();
+          every(announce, 9000);
+          break;
+        }
+        case 'time': {
+          const tick = mk(new Tone.MembraneSynth({ pitchDecay: 0.008, octaves: 2 }).connect(out));
+          const chime = mk(new Tone.Synth({ oscillator: { type: 'sine' } }).connect(out));
+          let n = 0;
+          every(() => {
+            n++;
+            if (n % 10 === 0) chime.triggerAttackRelease('A5', 0.6);
+            else tick.triggerAttackRelease('C3', 0.05);
+          }, 1000);
+          break;
+        }
+        case 'whale': {
+          const osc = mk(new Tone.Oscillator(st.params.base || 180, 'sine').connect(out));
+          osc.start();
+          every(() => {
+            const target = (st.params.base || 180) * (0.6 + Math.random() * 1.4);
+            osc.frequency.rampTo(target, 1.6 + Math.random() * 1.5);
+          }, 2600);
+          break;
+        }
+        case 'murmur': {
+          const noise = mk(new Tone.Noise('pink'));
+          const lp = mk(new Tone.Filter(420, 'lowpass'));
+          const g = mk(new Tone.Gain(0.5).connect(out));
+          noise.connect(lp); lp.connect(g); noise.start();
+          const lfo = mk(new Tone.LFO(4.2, 0.1, 0.8).connect(g.gain));
+          lfo.start();
+          // phrase pauses — talk, breathe, talk
+          every(() => {
+            const talking = Math.random() > 0.3;
+            lfo.amplitude.rampTo(talking ? 1 : 0.08, 0.3);
+          }, 1700);
+          break;
+        }
+        case 'drone': {
+          const f = st.params.freq || 110;
+          const o1 = mk(new Tone.Oscillator(f, 'sine'));
+          const o2 = mk(new Tone.Oscillator(f * 1.007, 'sine'));
+          const g = mk(new Tone.Gain(0.4).connect(out));
+          o1.connect(g); o2.connect(g); o1.start(); o2.start();
+          if (st.params.beep) {
+            every(() => {
+              g.gain.rampTo(0.05, 0.05);
+              later(() => g.gain.rampTo(0.4, 0.05), 350);
+            }, 1400);
+          }
+          if (st.params.sweep) {
+            every(() => {
+              o1.frequency.rampTo(f * (1 + Math.random()), 3);
+              o2.frequency.rampTo(f * (1 + Math.random()) * 1.007, 3);
+            }, 3400);
+          }
+          break;
+        }
+        case 'countdown': {
+          const synth = mk(new Tone.Synth({ oscillator: { type: 'square' } }).connect(out));
+          let n = 40 + Math.floor(Math.random() * 60);
+          every(() => {
+            n--;
+            if (n <= 3) n = 17; // it has never reached zero
+            if (!(signal > 0.5 && speak(String(n), signal * 0.9))) {
+              synth.triggerAttackRelease(180 + n * 8, 0.15);
+            }
+          }, 2400);
+          break;
+        }
+        case 'silence':
+          // broadcasts nothing. the meter does the talking.
+          break;
+      }
+      return { stop: cleanup };
+    }
+
+    // ---------- tuning helpers ----------
+    function bandStations() {
+      return stations.filter(s => s.band === band);
+    }
+    function nearestStation() {
+      let best = null;
+      for (const s of bandStations()) {
+        if (!s.onAir) continue;
+        const dist = Math.abs(s.f - freq);
+        if (!best || dist < best.dist) best = { st: s, dist };
+      }
+      return best;
+    }
+
+    // ---------- lock ----------
+    const LOCK_MS = 1200;
+    function doLock(st) {
+      lockedNow = st.id;
+      const isNew = !state.logged[st.id];
+      const r = RARITY[st.rarity];
+      // needle snap
+      freq = st.f;
+      if (!RM) {
+        animate(knob, { scale: [1, 1.08, 1] }, { duration: 0.35 });
+      }
+      const rect = dial.getBoundingClientRect();
+      burst(rect.left + 8 + st.f * (rect.width - 16), rect.top + rect.height / 2, r.color);
+      if (isNew) {
+        state.logged[st.id] = new Date().toISOString();
+        state.points += r.pts;
+        save();
+        updateChips();
+        showLockCard(st, r.pts);
+      }
+    }
+
+    const lockCard = $('lockCard');
+    let lockCardT;
+    function showLockCard(st, pts) {
+      const b = BANDS[st.band];
+      const r = RARITY[st.rarity];
+      const fv = b.lo + st.f * (b.hi - b.lo);
+      lockCard.innerHTML =
+        `<span class="rchip" style="background:${r.color}">${r.label}</span>` +
+        `<div class="lc-name">${st.name}</div>` +
+        `<div class="lc-freq">${b.fmt(fv)} ${b.unit} · ${b.label === '?' ? 'band ?' : b.label}</div>` +
+        `<div class="lc-line">${st.line}</div>` +
+        `<div class="lc-pts">+${pts} PTS</div>`;
+      lockCard.style.display = 'block';
+      animate(lockCard, { scale: [0.2, 1.15, 1], rotate: [-6, 2, -1] }, RM ? { duration: 0.01 } : { duration: 0.45, ease: 'easeOut' });
+      clearTimeout(lockCardT);
+      lockCardT = setTimeout(hideLockCard, 4000);
+    }
+    function hideLockCard() {
+      clearTimeout(lockCardT);
+      animate(lockCard, { opacity: [1, 0] }, { duration: RM ? 0.01 : 0.5 }).then(() => {
+        lockCard.style.display = 'none';
+        lockCard.style.opacity = 1;
+      });
+    }
+    lockCard.addEventListener('click', hideLockCard);
+
+    // ---------- main loop ----------
+    let rafId = null, lastT = 0, idleFrames = 0;
+    function wake() {
+      if (rafId == null) { lastT = performance.now(); rafId = requestAnimationFrame(tick); }
+      idleFrames = 0;
+    }
+    function tick(t) {
+      const dt = Math.min(50, t - lastT);
+      lastT = t;
+      // knob inertia
+      if (Math.abs(velocity) > 0.00001 && !dragging) {
+        setFreq(freq + velocity * dt);
+        velocity *= 0.94;
+        if (Math.abs(velocity) <= 0.00001) velocity = 0;
+      }
+      // signal
+      const near = powered ? nearestStation() : null;
+      const targetSig = near && near.dist < AUDIBLE ? Math.max(0, 1 - near.dist / AUDIBLE) : 0;
+      signal += (targetSig - signal) * 0.25;
+      meterShown += (signal - meterShown) * 0.18;
+
+      if (powered && audio) {
+        const duck = near && near.st.type === 'silence' ? signal : signal * 0.85;
+        audio.staticGain.gain.rampTo(0.16 * (1 - duck), 0.08);
+        audio.stationGain.gain.rampTo(Math.pow(signal, 1.4) * 0.9, 0.08);
+        // swap generator when nearest audible station changes
+        const wantId = near && near.dist < AUDIBLE ? near.st.id : null;
+        if (wantId !== currentGenId) {
+          stopGen();
+          if ('speechSynthesis' in window) speechSynthesis.cancel();
+          if (wantId) { currentGen = makeGenerator(near.st); currentGenId = wantId; }
+        }
+      }
+
+      // lock logic
+      if (powered && near && near.dist < lockWin() && lockedNow !== near.st.id) {
+        lockTimer += dt;
+        if (lockTimer >= LOCK_MS) { lockTimer = 0; doLock(near.st); }
+      } else {
+        lockTimer = 0;
+        if (!near || near.dist > lockWin() * 2) lockedNow = null;
+      }
+
+      drawDial();
+      drawMeter();
+      drawSparks();
+
+      // sleep when nothing is happening
+      const busy = powered || sparks.length > 0 || Math.abs(velocity) > 0 || dragging;
+      if (!busy && ++idleFrames > 30) { rafId = null; return; }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    // ---------- input ----------
+    let dragging = false;
+    function setFreq(v) {
+      freq = Math.max(0, Math.min(1, v));
+      wake();
+    }
+    function nudge(df) {
+      velocity = 0;
+      setFreq(freq + df);
+      dismissHint();
+    }
+
+    // knob rotation drag
+    let lastAngle = null, lastMoveT = 0;
+    function pointAngle(e) {
+      const r = knob.getBoundingClientRect();
+      return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
+    }
+    knob.addEventListener('pointerdown', e => {
+      knob.setPointerCapture(e.pointerId);
+      dragging = true;
+      lastAngle = pointAngle(e);
+      velocity = 0;
+      dismissHint();
+      wake();
+    });
+    knob.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      for (const ev of evs) {
+        const a = pointAngle(ev);
+        let da = a - lastAngle;
+        if (da > Math.PI) da -= Math.PI * 2;
+        if (da < -Math.PI) da += Math.PI * 2;
+        lastAngle = a;
+        knobAngle += da;
+        const df = da / (Math.PI * 2) * 0.12; // one full turn = 12% of the band
+        setFreq(freq + df);
+        velocity = df / Math.max(1, performance.now() - lastMoveT) * 8;
+        lastMoveT = performance.now();
+      }
+      knob.style.transform = `rotate(${knobAngle}rad)`;
+    });
+    const endKnob = () => { dragging = false; };
+    knob.addEventListener('pointerup', endKnob);
+    knob.addEventListener('pointercancel', endKnob);
+
+    // drag on the dial strip directly
+    let dialDrag = false;
+    dial.addEventListener('pointerdown', e => {
+      dial.setPointerCapture(e.pointerId);
+      dialDrag = true; dragging = true;
+      dial.classList.add('dragging');
+      const r = dial.getBoundingClientRect();
+      setFreq((e.clientX - r.left - 8) / (r.width - 16));
+      velocity = 0;
+      dismissHint();
+    });
+    dial.addEventListener('pointermove', e => {
+      if (!dialDrag) return;
+      const r = dial.getBoundingClientRect();
+      setFreq((e.clientX - r.left - 8) / (r.width - 16));
+    });
+    const endDial = () => { dialDrag = false; dragging = false; dial.classList.remove('dragging'); };
+    dial.addEventListener('pointerup', endDial);
+    dial.addEventListener('pointercancel', endDial);
+
+    $('fineUp').addEventListener('click', () => nudge(0.0012));
+    $('fineDown').addEventListener('click', () => nudge(-0.0012));
+    addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') nudge(e.shiftKey ? 0.01 : 0.0012);
+      if (e.key === 'ArrowLeft') nudge(e.shiftKey ? -0.01 : -0.0012);
+    });
+
+    // ---------- power ----------
+    const powerBtn = $('power');
+    powerBtn.addEventListener('click', async () => {
+      powered = !powered;
+      powerBtn.classList.toggle('on', powered);
+      powerBtn.textContent = powered ? 'ON AIR' : 'POWER';
+      if (powered) { await powerOn(); dismissHint(); } else powerOff();
+      wake();
+    });
+
+    // ---------- bands ----------
+    const bandsEl = $('bands');
+    function renderBands() {
+      bandsEl.innerHTML = '';
+      BANDS.forEach((b, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'bandBtn' + (i === band ? ' active' : '') + (i > state.antenna ? ' sealed' : '');
+        btn.textContent = b.label;
+        btn.addEventListener('click', () => {
+          if (i > state.antenna) {
+            if (!RM) animate(btn, { rotate: [0, -4, 4, -2, 0] }, { duration: 0.3 });
+            openShop();
+            return;
+          }
+          band = i; freq = 0.5; velocity = 0; lockedNow = null;
+          stopGen();
+          renderBands(); wake();
+        });
+        bandsEl.appendChild(btn);
+      });
+    }
+
+    // ---------- chips ----------
+    function updateChips() {
+      $('pointsChip').textContent = state.points + ' PTS';
+      $('antennaChip').textContent = ANTENNAS[state.antenna].name.toUpperCase();
+      document.body.dataset.antenna = state.antenna;
+    }
+    $('antennaChip').addEventListener('click', openShop);
+
+    // ---------- logbook ----------
+    let logTab = 0;
+    $('logbookBtn').addEventListener('click', () => {
+      logTab = band;
+      renderLog();
+      $('logOverlay').classList.add('open');
+    });
+    function renderLog() {
+      const tabs = $('logTabs');
+      tabs.innerHTML = '';
+      BANDS.forEach((b, i) => {
+        const btn = document.createElement('button');
+        const all = stations.filter(s => s.band === i);
+        const got = all.filter(s => state.logged[s.id]).length;
+        btn.className = 'bandTab' + (i === logTab ? ' active' : '');
+        btn.textContent = `${b.label} ${got}/${all.length}`;
+        btn.addEventListener('click', () => { logTab = i; renderLog(); });
+        tabs.appendChild(btn);
+      });
+      const total = stations.length;
+      const logged = Object.keys(state.logged).filter(id => stations.some(s => s.id === id)).length;
+      $('logProgress').textContent = `${logged} of ${total} signals logged. the rest are still out there.`;
+
+      const grid = $('logGrid');
+      grid.innerHTML = '';
+      const cards = [];
+      stations.filter(s => s.band === logTab).sort((a, b) => a.f - b.f).forEach(s => {
+        const card = document.createElement('div');
+        const when = state.logged[s.id];
+        if (!when) {
+          card.className = 'logCard mystery';
+          card.textContent = '?';
+        } else {
+          const b = BANDS[s.band];
+          const r = RARITY[s.rarity];
+          const fv = b.lo + s.f * (b.hi - b.lo);
+          card.className = 'logCard';
+          card.innerHTML =
+            `<span class="rchip" style="background:${r.color}">${r.label}</span>` +
+            `<div class="name">${s.name}</div>` +
+            `<div class="freq">${b.fmt(fv)} ${b.unit}${s.night ? ' · after dark' : ''}</div>` +
+            `<div class="line">${s.line}</div>` +
+            `<div class="meta">first heard ${new Date(when).toLocaleDateString()}</div>`;
+        }
+        grid.appendChild(card);
+        cards.push(card);
+      });
+      if (!RM && cards.length) {
+        animate(cards, { opacity: [0, 1], y: [14, 0] }, { delay: stagger(0.02), duration: 0.3, ease: 'easeOut' });
+      }
+    }
+
+    // ---------- shop ----------
+    function openShop() {
+      renderShop();
+      $('shopOverlay').classList.add('open');
+    }
+    function renderShop() {
+      const grid = $('shopGrid');
+      grid.innerHTML = '';
+      ANTENNAS.forEach((a, i) => {
+        const card = document.createElement('div');
+        card.className = 'antCard' + (i <= state.antenna ? ' owned' : '');
+        const owned = i <= state.antenna;
+        const isNext = i === state.antenna + 1;
+        const canAfford = state.points >= a.cost;
+        card.innerHTML = `<h3>${a.name}</h3><p>${a.blurb}</p>`;
+        const btn = document.createElement('button');
+        btn.className = 'buyBtn';
+        if (owned) { btn.textContent = i === state.antenna ? 'INSTALLED' : 'RETIRED'; btn.disabled = true; }
+        else if (!isNext) { btn.textContent = 'LOCKED'; btn.disabled = true; }
+        else { btn.textContent = `${a.cost} PTS`; btn.disabled = !canAfford; }
+        if (isNext && canAfford) {
+          btn.addEventListener('click', () => buyAntenna(i));
+        }
+        card.appendChild(btn);
+        grid.appendChild(card);
+      });
+    }
+    function buyAntenna(i) {
+      state.points -= ANTENNAS[i].cost;
+      state.antenna = i;
+      save();
+      $('shopOverlay').classList.remove('open');
+      updateChips();
+      renderBands();
+      // the upgrade moment: radio thunks, new band plate tears off
+      const radio = $('radio');
+      if (!RM) {
+        animate(radio, { rotate: [0, -1.2, 1, 0], scale: [1, 1.02, 1] }, { duration: 0.5 });
+        const newBtn = bandsEl.children[i];
+        if (newBtn) animate(newBtn, { scale: [0.2, 1.2, 1], rotate: [-15, 5, 0] }, { duration: 0.5 });
+      }
+      const rect = radio.getBoundingClientRect();
+      burst(rect.left + rect.width / 2, rect.top + 40, GOLD);
+      wake();
+    }
+
+    // ---------- overlays close ----------
+    document.querySelectorAll('.closeX').forEach(btn => {
+      btn.addEventListener('click', () => $(btn.dataset.close).classList.remove('open'));
+    });
+    document.querySelectorAll('.overlay').forEach(ov => {
+      ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+    });
+
+    // ---------- hint ----------
+    let hintGone = false;
+    function dismissHint() {
+      if (hintGone) return;
+      hintGone = true;
+      $('hint').classList.add('gone');
+    }
+    setTimeout(dismissHint, 12000);
+
+    // ---------- go ----------
+    renderBands();
+    updateChips();
+    sizeCanvases();
+    wake();
+  </script>
+</body>
+</html>
