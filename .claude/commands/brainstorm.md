@@ -87,11 +87,10 @@ Examples: `/brainstorm`, `/brainstorm music`, `/brainstorm games`, `/brainstorm 
 
 ## Parked pitches (approved lane, not yet built)
 
-Compulsion-stack games pitched 2026-09-01; Dylan liked the batch, Shortwave built first.
-Check `sites/` before resurfacing one — and don't re-pitch a mechanic that's since shipped.
+Compulsion-stack games pitched 2026-09-01; Dylan liked both batches. Built so far:
+Shortwave, Scratchers. Check `sites/` before resurfacing one — and don't re-pitch a
+mechanic that's since shipped.
 
-- **Scratchers** (`scratchers`) — scratch foil off lotto tickets (canvas erase + shavings);
-  winnings buy higher-tier weirder tickets; album of winning designs.
 - **The Claw** (`theclaw`) — arcade claw over a matter-js plushie pile; agonizing lift,
   last-second drops; tokens buy grip upgrades, new machines with visible legendaries.
 - **Dig Site** (`digsite`) — chisel/brush an archaeology grid; finds crack if you chisel
@@ -100,3 +99,15 @@ Check `sites/` before resurfacing one — and don't re-pitch a mechanic that's s
   size tease; aquarium log of increasingly wrong fish; ponds change (night, ice, deep end).
 - **The Bazaar** (`thebazaar`) — haggle with a shady merchant over random daily stock;
   each lowball risks him walking away forever; reputation unlocks back-room merchants.
+- **Coin Pusher** (`coinpusher`) — matter-js coin pusher; time drops against the bar cycle;
+  coins teeter forever on the edge; prizes ride the pile; machine upgrades.
+- **Punchboard** (`punchboard`) — 1940s carnival punchboard; depleting odds, jackpot
+  guaranteed somewhere in the board so every miss makes the next punch hotter.
+- **Bone Rollers** (`bonerollers`) — shake-and-throw dice where the collection IS the
+  equipment: won dice (loaded, d13, cursed) change the odds of every future roll.
+- **Snail Derby** (`snailderby`) — bet on procedurally-raced snails with deadpan names;
+  cheering does nothing (except 2% of the time, undocumented); leagues unlock.
+- **The One-Armed Bandit** (`onearmedbandit`) — yank a spring lever, reels get momentum
+  from the yank; pays in fruit stickers for an album; completed pages re-theme the reels.
+- **Pachinko Falls** (`pachinkofalls`) — plunger-launched pachinko over matter-js pegs;
+  aiming is almost skill; a legendary pocket you can see but never quite reach.
