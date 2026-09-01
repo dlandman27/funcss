@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Small Can You Read?</title>
+    <meta name="description" content="A perfectly normal vision test — until the rows you squint at stop being letters and start being about you.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/eyechart/">
+    <meta property="og:title" content="Eye Chart">
+    <meta property="og:description" content="A perfectly normal vision test — until the rows you squint at stop being letters and start being about you.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/eyechart.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Eye Chart">
+    <meta name="twitter:description" content="A perfectly normal vision test — until the rows you squint at stop being letters and start being about you.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/eyechart.png">
+    <!-- rsotw:og:end -->
+    <meta name="keywords" content="eye chart, vision test, snellen chart, eye test, visual acuity">
+    <meta name="author" content="Random Sites On The Web">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='4' y='4' width='42' height='42' rx='10' fill='%23fff8ef' stroke='%23201a17' stroke-width='3'/><path d='M18 13h15v6h-9v3h8v6h-8v3h9v6H18z' fill='%23f0563e' stroke='%23201a17' stroke-width='2' stroke-linejoin='round'/></svg>">
+
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --gold: #f7c948;
+            --teal: #2fb0a3;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+        body {
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 28px 14px 120px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .overline {
+            display: inline-block;
+            background: var(--sky);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 4px 14px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            transform: rotate(-2deg);
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(34px, 8vw, 58px);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            transform: rotate(-1deg);
+            text-align: center;
+        }
+
+        .hint {
+            font-style: italic;
+            font-size: 15px;
+            opacity: 0.75;
+            margin: 10px 0 26px;
+            text-align: center;
+            transition: opacity 2s ease;
+        }
+        .hint.gone { opacity: 0; }
+
+        .chart-wrap {
+            position: relative;
+            width: min(660px, 94vw);
+        }
+
+        .chart {
+            background: var(--cream);
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--ink);
+            transform: rotate(-0.4deg);
+            padding: clamp(22px, 5vw, 44px) clamp(10px, 3vw, 30px);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: clamp(10px, 2.2vw, 18px);
+            transition: filter 0.25s ease;
+        }
+        .chart.lens1 { filter: blur(0.45px); }
+        .chart.lens2 { filter: blur(0.38px) contrast(1.03); }
+
+        .row {
+            display: grid;
+            grid-template-columns: 44px 1fr 24px;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 2px 4px;
+            transition: transform 0.15s ease;
+        }
+        .row:hover { transform: translateY(-1px); }
+        .row.claimed {
+            background: linear-gradient(transparent 15%, rgba(247, 201, 72, 0.55) 20%, rgba(247, 201, 72, 0.55) 85%, transparent 90%);
+        }
+
+        .acuity, .rownum {
+            font-size: 9px;
+            font-style: italic;
+            opacity: 0.55;
+            white-space: nowrap;
+        }
+        .acuity { text-align: left; }
+        .rownum { text-align: right; }
+
+        .letters {
+            font-family: 'Arial Black', Arial, sans-serif;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1.25;
+            letter-spacing: 0.5em;
+            text-indent: 0.5em; /* recenter: letter-spacing adds a trailing gap */
+        }
+        .row.words .letters {
+            letter-spacing: 0.14em;
+            text-indent: 0.14em;
+            word-spacing: 0.45em;
+        }
+
+        .row.pop .letters { animation: pop 0.35s ease; }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            45% { transform: scale(1.16); }
+            100% { transform: scale(1); }
+        }
+
+        #bigE {
+            display: inline-block;
+            cursor: pointer;
+            transform: rotate(var(--r, 0deg)) scaleX(var(--m, 1));
+            transition: transform 0.45s cubic-bezier(0.34, 1.8, 0.5, 1);
+        }
+
+        .stamp {
+            position: absolute;
+            top: -20px;
+            right: -10px;
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(7deg) scale(0);
+            padding: 10px 16px;
+            text-align: center;
+            pointer-events: none;
+            max-width: 62vw;
+        }
+        .stamp.on { animation: stampin 0.4s cubic-bezier(0.34, 1.6, 0.5, 1) forwards; }
+        @keyframes stampin {
+            0% { transform: rotate(7deg) scale(0.2); }
+            60% { transform: rotate(7deg) scale(1.12); }
+            100% { transform: rotate(7deg) scale(1); }
+        }
+        .stamp .score {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(20px, 5vw, 28px);
+            line-height: 1;
+        }
+        .stamp .verdict {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            margin-top: 4px;
+        }
+        .stamp .honor {
+            font-style: italic;
+            font-size: 9px;
+            opacity: 0.65;
+            margin-top: 3px;
+        }
+
+        .best {
+            font-style: italic;
+            font-size: 13px;
+            opacity: 0.7;
+            margin-top: 18px;
+            text-align: center;
+            min-height: 1.2em;
+        }
+
+        .plaque {
+            font-style: italic;
+            font-size: 12px;
+            opacity: 0.55;
+            margin-top: 34px;
+            text-align: center;
+            line-height: 1.7;
+        }
+
+        .pill {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(32, 26, 23, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 999px;
+            padding: 9px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--cream);
+            white-space: nowrap;
+            max-width: 96vw;
+        }
+        .pill .ask {
+            font-style: italic;
+            font-size: 13px;
+        }
+        .pill button {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 13px;
+            background: var(--cream);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--ink);
+            padding: 5px 13px;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+        }
+        .pill button:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+        .pill button:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+        .pill button.active { background: var(--teal); }
+        .pill .quip {
+            font-style: italic;
+            font-size: 13px;
+            opacity: 0.85;
+            min-width: 20px;
+        }
+
+        @media (max-width: 520px) {
+            .row { grid-template-columns: 34px 1fr 18px; }
+            .pill { gap: 7px; padding: 8px 12px; }
+            .pill .ask { font-size: 11px; }
+            .pill button { font-size: 11px; padding: 4px 10px; }
+            .pill .quip { font-size: 11px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+            .stamp.on { transform: rotate(7deg) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="overline">Dept. of Vision &middot; Free Exam</div>
+    <h1>Eye Chart</h1>
+    <p class="hint" id="hint">cover one eye. read down. tap the smallest line you can honestly read.</p>
+
+    <div class="chart-wrap">
+        <div class="chart" id="chart"></div>
+        <div class="stamp" id="stamp">
+            <div class="score" id="stampScore"></div>
+            <div class="verdict" id="stampVerdict"></div>
+            <div class="honor">(honor system)</div>
+        </div>
+    </div>
+
+    <p class="best" id="best"></p>
+
+    <p class="plaque">
+        SNELLEN &amp; SONS &middot; fine optotypes since 1862 &middot; walk-ins only<br>
+        results are legally binding nowhere
+    </p>
+
+    <div class="pill">
+        <span class="ask">which is better &mdash;</span>
+        <button id="lens1">1</button>
+        <button id="lens2">2</button>
+        <button id="lens0">neither</button>
+        <span class="quip" id="quip"></span>
+    </div>
+
+    <script>
+        const ROWS = [
+            { a: 200, t: 'E',                 fs: 'clamp(54px, 15vw, 92px)',   letters: true },
+            { a: 100, t: 'F P',               fs: 'clamp(38px, 10.5vw, 64px)', letters: true },
+            { a: 70,  t: 'T O Z',             fs: 'clamp(27px, 7.5vw, 46px)',  letters: true },
+            { a: 50,  t: 'L P E D',           fs: 'clamp(20px, 5.6vw, 34px)',  letters: true },
+            { a: 40,  t: 'P E C F D',         fs: 'clamp(15px, 4.2vw, 25px)',  letters: true },
+            { a: 30,  t: 'E D F C Z P',       fs: 'clamp(11.5px, 3.2vw, 19px)', letters: true },
+            { a: 25,  t: 'GOOD KEEP GOING',   fs: 'clamp(9px, 2.5vw, 14px)' },
+            { a: 20,  t: 'YOUR EYES ARE FINE THIS IS CURIOSITY NOW', fs: 'clamp(7px, 1.9vw, 10.5px)' },
+            { a: 15,  t: 'YOU LEANED IN DIDNT YOU',                  fs: 'clamp(5.4px, 1.5vw, 8px)' },
+            { a: 10,  t: 'IT IS RUDE TO READ THIS WELL',             fs: 'clamp(4px, 1.1vw, 6px)' },
+            { a: 5,   t: 'THE OPTOMETRIST IS PROUD AND SLIGHTLY AFRAID OF YOU', fs: 'clamp(3px, 0.8vw, 4.4px)' },
+            { a: 2,   t: 'BETWEEN US YOU CHECK YOUR PHONE TOO MUCH AND WE BOTH KNOW IT', fs: 'clamp(2.2px, 0.6vw, 3.2px)' },
+            { a: 1,   t: 'IF YOU CAN READ THIS YOU ARE EITHER A HAWK OR YOU ZOOMED IN CHEATER', fs: 'clamp(1.6px, 0.45vw, 2.4px)' },
+        ];
+
+        const VERDICTS = {
+            200: 'PLEASE SIT CLOSER',
+            100: 'FOUND THE BIG LETTERS',
+            70:  'ADEQUATE',
+            50:  'FINE. NORMAL. FINE.',
+            40:  'NEARLY DRIVING QUALITY',
+            30:  'DRIVING QUALITY',
+            25:  'SHOW-OFF IN TRAINING',
+            20:  'TEXTBOOK. BORING. PERFECT.',
+            15:  'CERTIFIED NOSY',
+            10:  'HONORARY HAWK',
+            5:   'PREDATOR-GRADE',
+            2:   'BIOLOGICALLY IMPLAUSIBLE',
+            1:   'ZOOM DETECTED',
+        };
+
+        // Undocumented rarities
+        if (Math.random() < 0.03) ROWS[4].t = 'P E E K E D';
+        const mirroredE = Math.random() < 0.04;
+
+        const chart = document.getElementById('chart');
+        const hint = document.getElementById('hint');
+        const stamp = document.getElementById('stamp');
+        const stampScore = document.getElementById('stampScore');
+        const stampVerdict = document.getElementById('stampVerdict');
+        const bestLine = document.getElementById('best');
+
+        ROWS.forEach((row, i) => {
+            const el = document.createElement('div');
+            el.className = 'row' + (row.letters ? '' : ' words');
+            el.innerHTML =
+                '<span class="acuity">20/' + row.a + '</span>' +
+                '<span class="letters" style="font-size:' + row.fs + '">' +
+                (i === 0 ? '<span id="bigE">E</span>' : row.t) +
+                '</span>' +
+                '<span class="rownum">' + (i + 1) + '</span>';
+            el.addEventListener('click', () => claim(el, row));
+            chart.appendChild(el);
+        });
+
+        // The tumbling E: every click turns it 90 degrees, like the real test
+        let eTurns = 0;
+        const bigE = document.getElementById('bigE');
+        if (mirroredE) bigE.style.setProperty('--m', '-1');
+        bigE.addEventListener('click', (e) => {
+            e.stopPropagation();
+            eTurns++;
+            bigE.style.setProperty('--r', (eTurns * 90) + 'deg');
+        });
+
+        function claim(el, row) {
+            hint.classList.add('gone');
+            document.querySelectorAll('.row.claimed').forEach(r => r.classList.remove('claimed'));
+            el.classList.add('claimed');
+            el.classList.remove('pop');
+            void el.offsetWidth;
+            el.classList.add('pop');
+
+            stampScore.textContent = '20/' + row.a;
+            stampVerdict.textContent = VERDICTS[row.a];
+            stamp.classList.remove('on');
+            void stamp.offsetWidth;
+            stamp.classList.add('on');
+
+            try {
+                const best = parseInt(localStorage.getItem('eyechart-best'), 10);
+                if (isNaN(best) || row.a < best) {
+                    localStorage.setItem('eyechart-best', row.a);
+                }
+            } catch (e) {}
+            showBest();
+        }
+
+        function showBest() {
+            try {
+                const best = parseInt(localStorage.getItem('eyechart-best'), 10);
+                if (!isNaN(best)) {
+                    bestLine.textContent = 'personal best: 20/' + best + ' — ' + VERDICTS[best].toLowerCase();
+                }
+            } catch (e) {}
+        }
+        showBest();
+
+        setTimeout(() => hint.classList.add('gone'), 14000);
+
+        // The phoropter. Both lenses are, of course, the same.
+        const QUIPS = [
+            'hm.',
+            'interesting.',
+            'one again, please.',
+            'or two.',
+            'take your time.',
+            'they look the same? they are.',
+            'be honest.',
+            'we can do this all day.',
+            'blinking is allowed.',
+        ];
+        const RARE_QUIP = 'you have beautiful corneas.';
+        const quipEl = document.getElementById('quip');
+        const lensButtons = {
+            lens1: document.getElementById('lens1'),
+            lens2: document.getElementById('lens2'),
+            lens0: document.getElementById('lens0'),
+        };
+        let lastQuip = -1;
+        let lensTries = 0;
+
+        function setLens(which) {
+            chart.classList.remove('lens1', 'lens2');
+            Object.values(lensButtons).forEach(b => b.classList.remove('active'));
+            lensButtons[which].classList.add('active');
+            if (which !== 'lens0') chart.classList.add(which);
+
+            lensTries++;
+            if (Math.random() < 0.03) {
+                quipEl.textContent = RARE_QUIP;
+            } else if (lensTries > 9) {
+                quipEl.textContent = 'sir this is a free exam.';
+            } else {
+                let q;
+                do { q = Math.floor(Math.random() * QUIPS.length); } while (q === lastQuip);
+                lastQuip = q;
+                quipEl.textContent = QUIPS[q];
+            }
+        }
+
+        lensButtons.lens1.addEventListener('click', () => setLens('lens1'));
+        lensButtons.lens2.addEventListener('click', () => setLens('lens2'));
+        lensButtons.lens0.addEventListener('click', () => setLens('lens0'));
+    </script>
+</body>
+</html>
