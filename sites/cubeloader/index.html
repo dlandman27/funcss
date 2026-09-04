@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cube Loader</title>
+  <meta name="description" content="An infinite boot animation. Roll the cube in any direction, forever. The console never arrives.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/cubeloader/">
+    <meta property="og:title" content="Cube Loader">
+    <meta property="og:description" content="An infinite boot animation. Roll the cube in any direction, forever. The console never arrives.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/cubeloader.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cube Loader">
+    <meta name="twitter:description" content="An infinite boot animation. Roll the cube in any direction, forever. The console never arrives.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/cubeloader.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --void: #0d0a14;
+      --gap: #0d0a14;
+      --cube-top: #c3aee6;
+      --cube-east: #a98fd0;
+      --cube-south: #8a6cb8;
+      --trail-top: #8b74b3;
+      --trail-east: #6f5896;
+      --trail-south: #5a4680;
+      --gold-top: #f7c948;
+      --gold-east: #dfa92f;
+      --gold-south: #c08e1d;
+      --plaque: #cfc4e8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--void);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    #viewport { position: fixed; inset: 0; overflow: hidden; }
+    #scene {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 0;
+      height: 0;
+      transform: rotateX(60deg) rotateZ(45deg);
+      transform-style: preserve-3d;
+    }
+    #pan {
+      position: absolute;
+      transform-style: preserve-3d;
+    }
+    .tile {
+      position: absolute;
+      border: 2px solid var(--gap);
+      will-change: transform, opacity;
+    }
+    .tile.t { background: var(--trail-top); }
+    .tile.e { background: var(--trail-east); }
+    .tile.s { background: var(--trail-south); }
+    .tile.t.gold { background: var(--gold-top); }
+    .tile.e.gold { background: var(--gold-east); }
+    .tile.s.gold { background: var(--gold-south); }
+    #cubePos { position: absolute; transform-style: preserve-3d; }
+    #cubeRoll {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+    .face {
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--gap);
+      backface-visibility: visible;
+    }
+    .face.top    { }
+    .face.north  { transform-origin: 50% 0%;   transform: rotateX(90deg); }
+    .face.south  { transform-origin: 50% 100%; transform: rotateX(-90deg); }
+    .face.east   { transform-origin: 100% 50%; transform: rotateY(90deg); }
+    .face.west   { transform-origin: 0% 50%;   transform: rotateY(-90deg); }
+    .face.bottom { transform: translateZ(0.5px); }
+
+    #counter {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      background: var(--cube-east);
+      color: #201a17;
+      border: 2px solid #201a17;
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 #3a2f55;
+      transform: rotate(-3deg);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(12px, 2.4vmin, 15px);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 7px 16px;
+      z-index: 10;
+    }
+    #plaque {
+      position: fixed;
+      left: 50%;
+      bottom: max(28px, env(safe-area-inset-bottom, 0px) + 20px);
+      transform: translateX(-50%);
+      color: var(--plaque);
+      font-style: italic;
+      font-size: clamp(14px, 2.8vmin, 17px);
+      text-align: center;
+      opacity: 0;
+      transition: opacity 900ms ease;
+      pointer-events: none;
+      z-index: 10;
+      padding: 0 24px;
+      text-wrap: balance;
+    }
+    #plaque.show { opacity: 1; }
+    #flash {
+      position: fixed;
+      inset: 0;
+      background: var(--cube-top);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <div id="scene">
+      <div id="pan">
+        <div id="cubePos">
+          <div id="cubeRoll">
+            <div class="face bottom"></div>
+            <div class="face north"></div>
+            <div class="face west"></div>
+            <div class="face east"></div>
+            <div class="face south"></div>
+            <div class="face top"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="counter">rolls: 0</div>
+  <div id="plaque"></div>
+  <div id="flash"></div>
+
+  <script>
+    const pan = document.getElementById('pan');
+    const cubePos = document.getElementById('cubePos');
+    const cubeRoll = document.getElementById('cubeRoll');
+    const counter = document.getElementById('counter');
+    const plaque = document.getElementById('plaque');
+    const flash = document.getElementById('flash');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ---------- storage ----------
+    function loadRolls() {
+      try { return parseInt(localStorage.getItem('cubeloader-rolls'), 10) || 0; }
+      catch { return 0; }
+    }
+    function saveRolls(n) {
+      try { localStorage.setItem('cubeloader-rolls', String(n)); } catch {}
+    }
+    let rolls = loadRolls();
+
+    // ---------- world ----------
+    // The cube rolls on the surface of a big invisible K-cell cube (cells 0..K-1
+    // on each axis). Rolling past an edge pivots 180 degrees around it onto the
+    // perpendicular face, exactly like the boot animation.
+    const K = 5;
+    let S = 0;
+    let pos = { x: 2, y: 2, z: K };      // cell the little cube occupies
+    let nrm = { x: 0, y: 0, z: 1 };      // outward normal of the face it rests on
+    const voxels = new Map();            // "x,y,z" -> { el, topEl, x, y, z }
+    const SURFACE_CELLS = 6 * K * K;
+
+    const inside = c =>
+      c.x >= 0 && c.x < K && c.y >= 0 && c.y < K && c.z >= 0 && c.z < K;
+    const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
+    const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+    const eq = (a, b) => a.x === b.x && a.y === b.y && a.z === b.z;
+    const nkey = v => v.x + ',' + v.y + ',' + v.z;
+
+    // base orientation per face normal: css rotation + local->world axis map
+    const BASES = {
+      '0,0,1':  { css: '',                 l2w: v => v },
+      '0,0,-1': { css: 'rotateX(180deg)',  l2w: v => ({ x: v.x, y: -v.y, z: -v.z }) },
+      '1,0,0':  { css: 'rotateY(90deg)',   l2w: v => ({ x: v.z, y: v.y, z: -v.x }) },
+      '-1,0,0': { css: 'rotateY(-90deg)',  l2w: v => ({ x: -v.z, y: v.y, z: v.x }) },
+      '0,1,0':  { css: 'rotateX(-90deg)',  l2w: v => ({ x: v.x, y: v.z, z: -v.y }) },
+      '0,-1,0': { css: 'rotateX(90deg)',   l2w: v => ({ x: v.x, y: -v.z, z: v.y }) }
+    };
+    const LOCALS = {
+      E: { x: 1, y: 0, z: 0 }, W: { x: -1, y: 0, z: 0 },
+      S: { x: 0, y: 1, z: 0 }, N: { x: 0, y: -1, z: 0 }
+    };
+    const EDGE_ROLLS = {
+      E: { origin: '100% 50%', axis: 'rotateY', sign: 1 },
+      W: { origin: '0% 50%',   axis: 'rotateY', sign: -1 },
+      S: { origin: '50% 100%', axis: 'rotateX', sign: -1 },
+      N: { origin: '50% 0%',   axis: 'rotateX', sign: 1 }
+    };
+
+    // find the local roll key whose world direction matches t on the current face
+    function localKeyFor(t) {
+      const base = BASES[nkey(nrm)];
+      for (const k in LOCALS) {
+        if (eq(base.l2w(LOCALS[k]), t)) return k;
+      }
+      return null;
+    }
+
+    // Each arrow is a fixed ORBIT around the big cube, not a screen direction.
+    // Holding one key circumnavigates forever: across the top, down the far
+    // wall, back along the underside, up the near wall, over the top again.
+    const cross = (a, b) => ({
+      x: a.y * b.z - a.z * b.y,
+      y: a.z * b.x - a.x * b.z,
+      z: a.x * b.y - a.y * b.x
+    });
+    const ARROWS = {
+      Right: { x: 1, y: 0, z: 0 }, Left: { x: -1, y: 0, z: 0 },
+      Down: { x: 0, y: 1, z: 0 }, Up: { x: 0, y: -1, z: 0 }
+    };
+    function dirFor(name) {
+      const d = ARROWS[name];
+      const w = cross({ x: 0, y: 0, z: 1 }, d); // the orbit's rotation axis
+      const t = cross(w, nrm);                  // travel tangent at this face
+      return (t.x || t.y || t.z) ? t : d;       // on the orbit's side walls, d itself is tangent
+    }
+
+    // ---------- layout ----------
+    function computeSize() {
+      S = Math.max(30, Math.min(72, Math.round(Math.min(innerWidth, innerHeight) / (K + 4.5))));
+    }
+    // A trail tile lies flat IN the face it was rolled on: stamped on a wall it
+    // faces outward like the wall, not upward. Nudged half a pixel into the big
+    // cube so the little cube never z-fights it.
+    function placeTile(t) {
+      t.el.style.width = t.el.style.height = S + 'px';
+      const { x, y, z, nx, ny, nz } = t;
+      if (nz) {
+        const plane = (nz === 1 ? z * S : (z + 1) * S) - nz * 0.5;
+        t.base = `translate3d(${x * S}px, ${y * S}px, ${plane}px)`;
+        t.el.style.transformOrigin = '50% 50%';
+      } else if (nx) {
+        const plane = (nx === 1 ? x * S : (x + 1) * S) - nx * 0.5;
+        t.base = `translate3d(${plane}px, ${y * S}px, ${z * S}px) rotateY(-90deg)`;
+        t.el.style.transformOrigin = '0% 50%';
+      } else {
+        const plane = (ny === 1 ? y * S : (y + 1) * S) - ny * 0.5;
+        t.base = `translate3d(${x * S}px, ${plane}px, ${z * S}px) rotateX(90deg)`;
+        t.el.style.transformOrigin = '50% 0%';
+      }
+      t.el.style.transform = t.base;
+    }
+    function placeCube() {
+      const base = BASES[nkey(nrm)];
+      // rotation happens about the element's base-plane center (S/2, S/2, 0);
+      // find where the body lands so we can pin it exactly onto its cell
+      const O = { x: S / 2, y: S / 2, z: 0 };
+      let min = { x: Infinity, y: Infinity, z: Infinity };
+      for (let i = 0; i < 8; i++) {
+        const c = { x: (i & 1) * S, y: ((i >> 1) & 1) * S, z: ((i >> 2) & 1) * S };
+        const p = add(base.l2w(sub(c, O)), O);
+        min.x = Math.min(min.x, p.x); min.y = Math.min(min.y, p.y); min.z = Math.min(min.z, p.z);
+      }
+      cubePos.style.width = cubePos.style.height = S + 'px';
+      cubePos.style.transform =
+        `translate3d(${pos.x * S - min.x}px, ${pos.y * S - min.y}px, ${pos.z * S - min.z}px) ${base.css}`;
+      cubeRoll.querySelector('.face.top').style.transform = `translateZ(${S}px)`;
+      shadeCube(base);
+    }
+    // light the cube in WORLD space: whichever face points at the sky is palest,
+    // no matter which plane the cube is rolling on
+    const FACE_NORMALS = {
+      top: { x: 0, y: 0, z: 1 }, bottom: { x: 0, y: 0, z: -1 },
+      north: { x: 0, y: -1, z: 0 }, south: { x: 0, y: 1, z: 0 },
+      east: { x: 1, y: 0, z: 0 }, west: { x: -1, y: 0, z: 0 }
+    };
+    // how each local roll permutes a local-frame vector (one 90-degree step)
+    const LROT = {
+      E: v => ({ x: v.z, y: v.y, z: -v.x }),
+      W: v => ({ x: -v.z, y: v.y, z: v.x }),
+      S: v => ({ x: v.x, y: v.z, z: -v.y }),
+      N: v => ({ x: v.x, y: -v.z, z: v.y })
+    };
+    const SHADE_TOP = '#c3aee6', SHADE_EAST = '#a98fd0', SHADE_SOUTH = '#8a6cb8';
+    function colorOf(wn) {
+      return wn.z === 1 ? SHADE_TOP : wn.x !== 0 ? SHADE_EAST : SHADE_SOUTH;
+    }
+    function shadeCube(base) {
+      for (const name in FACE_NORMALS) {
+        cubeRoll.querySelector('.face.' + name).style.background =
+          colorOf(base.l2w(FACE_NORMALS[name]));
+      }
+    }
+    function layoutAll() {
+      computeSize();
+      voxels.forEach(placeTile);
+      placeCube();
+      const c = (K * S) / 2;
+      pan.style.transform = `translate3d(${-c}px, ${-c}px, ${-c}px)`;
+    }
+    layoutAll();
+    let resizeT;
+    addEventListener('resize', () => {
+      clearTimeout(resizeT);
+      resizeT = setTimeout(layoutAll, 120);
+    });
+
+    // ---------- audio ----------
+    let actx = null;
+    function audio() {
+      if (!actx) {
+        try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; }
+      }
+      if (actx && actx.state === 'suspended') actx.resume();
+      return actx;
+    }
+    const freq = m => 440 * Math.pow(2, (m - 69) / 12);
+    // the boot jingle: the real 25-note run (stacked fourths), lifted from a MIDI
+    // transcription of the startup. Note 25 is the G#6 "ding".
+    const MELODY = [
+      52, 59, 64, 69, 74, 69, 73, 68, 63, 68, 66, 61, 56,
+      61, 62, 67, 72, 77, 82, 77, 72, 81, 76, 71, 80
+    ];
+    let melodyIdx = 0;
+
+    function mallet(ctx, midi, when, gain, decay) {
+      const f = freq(midi);
+      const o1 = ctx.createOscillator();
+      o1.type = 'triangle'; o1.frequency.value = f;
+      const g1 = ctx.createGain();
+      g1.gain.setValueAtTime(0, when);
+      g1.gain.linearRampToValueAtTime(gain, when + 0.006);
+      g1.gain.exponentialRampToValueAtTime(0.0001, when + decay);
+      o1.connect(g1).connect(ctx.destination);
+      const o2 = ctx.createOscillator();
+      o2.type = 'sine'; o2.frequency.value = f * 2;
+      const g2 = ctx.createGain();
+      g2.gain.setValueAtTime(0, when);
+      g2.gain.linearRampToValueAtTime(gain * 0.25, when + 0.004);
+      g2.gain.exponentialRampToValueAtTime(0.0001, when + decay * 0.55);
+      o2.connect(g2).connect(ctx.destination);
+      o1.start(when); o1.stop(when + decay + 0.05);
+      o2.start(when); o2.stop(when + decay + 0.05);
+    }
+    function thunk(ctx, when) {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(100, when);
+      o.frequency.exponentialRampToValueAtTime(52, when + 0.07);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.3, when);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + 0.1);
+      o.connect(g).connect(ctx.destination);
+      o.start(when); o.stop(when + 0.12);
+    }
+    function squeakVoice(ctx, midi, when) {
+      const o = ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.setValueAtTime(freq(midi + 24), when);
+      o.frequency.exponentialRampToValueAtTime(freq(midi + 19), when + 0.11);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.12, when);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + 0.14);
+      o.connect(g).connect(ctx.destination);
+      o.start(when); o.stop(when + 0.16);
+    }
+    function playChime(delay = 0) {
+      const ctx = audio();
+      if (!ctx) return;
+      const t = ctx.currentTime + delay;
+      // the soft resolving chord that follows the ding: E2, C3, C4, E4
+      [40, 48, 60, 64].forEach((m, i) => mallet(ctx, m, t + i * 0.02, 0.22, 1.8));
+    }
+    function playRollNote(squeak) {
+      const ctx = audio();
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const midi = MELODY[melodyIdx % MELODY.length];
+      melodyIdx++;
+      thunk(ctx, t);
+      if (squeak) squeakVoice(ctx, midi, t);
+      else mallet(ctx, midi, t, 0.4, 0.45);
+      const cycleDone = melodyIdx % MELODY.length === 0;
+      if (cycleDone && !squeak) {
+        // the ding lands with F#3 + G#3 ringing underneath, then the soft resolve
+        mallet(ctx, 54, t, 0.18, 1.2);
+        mallet(ctx, 56, t, 0.18, 1.2);
+        playChime(0.6);
+        if (!reduceMotion) {
+          flash.animate([{ opacity: 0 }, { opacity: 0.22, offset: 0.2 }, { opacity: 0 }],
+            { duration: 600, easing: 'ease-out', delay: 600 });
+        }
+      }
+    }
+
+    // ---------- plaque ----------
+    let plaqueT = null;
+    function showPlaque(text, holdMs = 3500) {
+      plaque.textContent = text;
+      plaque.classList.add('show');
+      clearTimeout(plaqueT);
+      plaqueT = setTimeout(() => plaque.classList.remove('show'), holdMs);
+    }
+    const MILESTONES = {
+      24: 'still no console attached.',
+      64: 'memory card in slot A: ignored.',
+      128: 'this is the loading screen. there is no game.',
+      512: 'the game was never coming.',
+      1024: 'you may stop at any time. the cube will not.'
+    };
+
+    // ---------- trail voxels ----------
+    let surfaceComplete = false;
+    function stampTile(c, n, gold) {
+      const k = nkey(c);
+      const existing = voxels.get(k);
+      if (existing) {
+        if (gold) existing.el.classList.add('gold');
+        return;
+      }
+      const el = document.createElement('div');
+      const axis = n.z ? 't' : n.x ? 'e' : 's';
+      el.className = 'tile ' + axis + (gold ? ' gold' : '');
+      const t = { el, x: c.x, y: c.y, z: c.z, nx: n.x, ny: n.y, nz: n.z, base: '' };
+      placeTile(t);
+      pan.insertBefore(el, cubePos);
+      voxels.set(k, t);
+      if (!reduceMotion) {
+        el.animate(
+          [
+            { transform: t.base + ' scale(0.4)' },
+            { transform: t.base + ' scale(1.08)', offset: 0.7 },
+            { transform: t.base + ' scale(1)' }
+          ],
+          { duration: 220, easing: 'ease-out' }
+        );
+      }
+      if (!surfaceComplete && voxels.size >= SURFACE_CELLS - 1) {
+        surfaceComplete = true;
+        playChime();
+        showPlaque('surface complete. console still not found.', 4500);
+      }
+    }
+    function eatTile(c) {
+      const k = nkey(c);
+      const t = voxels.get(k);
+      if (!t) return;
+      voxels.delete(k);
+      if (voxels.size < SURFACE_CELLS - 1) surfaceComplete = false;
+      t.el.animate(
+        [{ transform: t.base + ' scale(1)', opacity: 1 },
+         { transform: t.base + ' scale(0.2)', opacity: 0 }],
+        { duration: 140, easing: 'ease-in', fill: 'forwards' }
+      ).onfinish = () => t.el.remove();
+    }
+
+    // ---------- rolling ----------
+    const ROLL_MS = 185;
+    let rolling = false;
+    const queue = [];
+
+    function roll(t, isAuto, onDone) {
+      if (rolling) {
+        if (!isAuto && queue.length < 2) queue.push(t);
+        return;
+      }
+      const lk = localKeyFor(t);
+      if (!lk) return;
+      rolling = true;
+
+      const from = pos;
+      const fromNrm = nrm;
+      const flatNext = add(pos, t);
+      const wrap = !inside(sub(flatNext, nrm));
+      let newPos, newNrm, degs;
+      if (wrap) {
+        // pivot 180 degrees around the big cube's edge onto the next face
+        newPos = sub(flatNext, nrm);
+        newNrm = t;
+        degs = 180;
+      } else {
+        newPos = flatNext;
+        newNrm = nrm;
+        degs = 90;
+      }
+
+      eatTile(newPos); // rolling back into your trail absorbs it
+
+      const dur = wrap ? 320 : ROLL_MS;
+
+      // the light must travel with the tumble: fade each face toward the shade
+      // of the direction it will actually be pointing when the roll lands
+      const oldBase = BASES[nkey(nrm)];
+      const steps = degs / 90;
+      const colorAnims = [];
+      for (const name in FACE_NORMALS) {
+        let ln = FACE_NORMALS[name];
+        for (let i = 0; i < steps; i++) ln = LROT[lk](ln);
+        const cur = colorOf(oldBase.l2w(FACE_NORMALS[name]));
+        const target = colorOf(oldBase.l2w(ln));
+        if (cur === target) continue;
+        colorAnims.push(cubeRoll.querySelector('.face.' + name).animate(
+          [{ backgroundColor: cur }, { backgroundColor: target }],
+          { duration: dur, easing: 'linear', fill: 'forwards' }
+        ));
+      }
+
+      const e = EDGE_ROLLS[lk];
+      cubeRoll.style.transformOrigin = e.origin;
+      const anim = cubeRoll.animate(
+        [{ transform: `${e.axis}(0deg)` }, { transform: `${e.axis}(${e.sign * degs}deg)` }],
+        {
+          duration: dur,
+          easing: 'cubic-bezier(.45,.05,.65,1)',
+          fill: 'forwards'
+        }
+      );
+      anim.onfinish = () => {
+        anim.cancel();
+        cubeRoll.style.transformOrigin = '';
+        pos = newPos;
+        nrm = newNrm;
+        placeCube();
+        colorAnims.forEach(a => a.cancel());
+
+        const squeak = Math.random() < 0.02;
+        stampTile(from, fromNrm, squeak);
+        playRollNote(squeak);
+
+        if (!reduceMotion) {
+          cubeRoll.animate(
+            [{ transform: 'scale3d(1.05,1.05,0.92)' }, { transform: 'scale3d(1,1,1)' }],
+            { duration: 130, easing: 'ease-out' }
+          );
+        }
+
+        rolls++;
+        counter.textContent = 'rolls: ' + rolls.toLocaleString();
+        saveRolls(rolls);
+        if (MILESTONES[rolls]) showPlaque(MILESTONES[rolls]);
+
+        rolling = false;
+        if (onDone) { onDone(); return; }
+        if (queue.length) roll(queue.shift(), false);
+      };
+    }
+
+    // screen-space directions of each arrow's orbit on the top face — used only
+    // to classify swipes into one of the four orbits
+    const INTENTS = {
+      Right: [0.894, 0.447],
+      Down:  [-0.894, 0.447],
+      Left:  [-0.894, -0.447],
+      Up:    [0.894, -0.447]
+    };
+
+    // ---------- auto boot (idle attract mode) ----------
+    const BOOT_PATH = ['Left', 'Left', 'Left', 'Down', 'Down', 'Down',
+                       'Right', 'Right', 'Right', 'Up', 'Left'];
+    let idleT = null;
+    let booting = false;
+    let bootAborted = false;
+    let bootStepT = null;
+
+    function armIdle() {
+      clearTimeout(idleT);
+      idleT = setTimeout(startBoot, 10000);
+    }
+    function cancelBoot() {
+      if (!booting) return;
+      bootAborted = true;
+      clearTimeout(bootStepT);
+      booting = false;
+    }
+    function startBoot() {
+      if (rolling || booting) { armIdle(); return; }
+      booting = true;
+      bootAborted = false;
+      let i = 0;
+      const step = () => {
+        if (bootAborted) return;
+        if (i >= BOOT_PATH.length) {
+          booting = false;
+          playChime();
+          if (!reduceMotion) {
+            flash.animate([{ opacity: 0 }, { opacity: 0.35, offset: 0.15 }, { opacity: 0 }],
+              { duration: 700, easing: 'ease-out' });
+          }
+          showPlaque('console ready. no games inserted.', 4000);
+          armIdle();
+          return;
+        }
+        roll(dirFor(BOOT_PATH[i++]), true, () => { bootStepT = setTimeout(step, 55); });
+      };
+      step();
+    }
+
+    // ---------- input ----------
+    let hinted = false;
+    function userRoll(name) {
+      cancelBoot();
+      audio();
+      if (!hinted) { hinted = true; plaque.classList.remove('show'); }
+      roll(dirFor(name), false);
+      armIdle();
+    }
+
+    const KEYMAP = {
+      ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
+      w: 'Up', s: 'Down', a: 'Left', d: 'Right',
+      W: 'Up', S: 'Down', A: 'Left', D: 'Right'
+    };
+    addEventListener('keydown', ev => {
+      const name = KEYMAP[ev.key];
+      if (!name) return;
+      ev.preventDefault();
+      userRoll(name);
+    });
+
+    let px = 0, py = 0, tracking = false;
+    addEventListener('pointerdown', ev => {
+      px = ev.clientX; py = ev.clientY; tracking = true;
+    });
+    addEventListener('pointerup', ev => {
+      if (!tracking) return;
+      tracking = false;
+      const dx = ev.clientX - px, dy = ev.clientY - py;
+      const len = Math.hypot(dx, dy);
+      if (len < 24) return;
+      let best = null, bestDot = -Infinity;
+      for (const name in INTENTS) {
+        const [vx, vy] = INTENTS[name];
+        const dot = (dx * vx + dy * vy) / len;
+        if (dot > bestDot) { bestDot = dot; best = name; }
+      }
+      userRoll(best);
+    });
+
+    // ---------- start ----------
+    counter.textContent = 'rolls: ' + rolls.toLocaleString();
+    showPlaque('arrows or swipe. it goes all the way around.', 10000);
+    armIdle();
+  </script>
+</body>
+</html>
