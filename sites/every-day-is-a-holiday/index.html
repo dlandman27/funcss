@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Every Day Is A Holiday</title>
+    <meta name="description" content="A curated year-long calendar of real, mostly-invented novelty holidays — browse the whole year, or jump straight to today.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/every-day-is-a-holiday/">
+    <meta property="og:title" content="Every Day Is A Holiday">
+    <meta property="og:description" content="A curated year-long calendar of real, mostly-invented novelty holidays — browse the whole year, or jump straight to today.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/every-day-is-a-holiday.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Every Day Is A Holiday">
+    <meta name="twitter:description" content="A curated year-long calendar of real, mostly-invented novelty holidays — browse the whole year, or jump straight to today.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/every-day-is-a-holiday.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --orange: #f47b28;
+      --pink: #ff7fa5;
+      --teal: #2fb0a3;
+      --gold: #f7c948;
+    }
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background: var(--paper);
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--ink);
+      background-image: radial-gradient(circle, rgba(32, 26, 23, 0.06) 1.5px, transparent 1.5px);
+      background-size: 26px 26px;
+      background-attachment: fixed;
+      padding-bottom: 80px;
+    }
+
+    header {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 20px 10px;
+      text-align: center;
+    }
+
+    h1 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(24px, 6vmin, 40px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.1;
+      display: inline-block;
+      background: var(--gold);
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 10px 26px;
+      transform: rotate(-1.2deg);
+    }
+
+    header .sub {
+      margin-top: 18px;
+      font-style: italic;
+      font-size: 13.5px;
+      color: rgba(32, 26, 23, 0.6);
+      max-width: 46ch;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #today-btn {
+      margin-top: 16px;
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 8px 18px;
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      transform: rotate(1.5deg);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #today-btn:hover {
+      transform: rotate(1.5deg) translate(-2px, -2px);
+      box-shadow: 5px 5px 0 var(--ink);
+    }
+
+    #month-nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 14px 16px;
+      margin-top: 24px;
+      background: rgba(242, 237, 226, 0.9);
+      backdrop-filter: blur(6px);
+      border-bottom: 2px solid var(--ink);
+      scrollbar-width: thin;
+    }
+
+    .month-pill {
+      flex: 0 0 auto;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 7px 14px;
+      box-shadow: 2px 2px 0 var(--ink);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .month-pill:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+
+    main {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 30px 18px 0;
+    }
+
+    .month-banner {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(18px, 4vmin, 24px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink);
+      border: 3px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 5px 5px 0 var(--ink);
+      padding: 10px 20px;
+      margin: 44px 0 22px;
+      display: inline-block;
+      transform: rotate(-1deg);
+      scroll-margin-top: 70px;
+    }
+
+    .month-section:first-of-type .month-banner {
+      margin-top: 0;
+    }
+
+    .day-card {
+      position: relative;
+      display: flex;
+      gap: 16px;
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      scroll-margin-top: 70px;
+    }
+
+    .day-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+
+    .day-card.is-today {
+      outline: 3px solid var(--coral);
+      outline-offset: 2px;
+    }
+
+    .day-date {
+      flex: 0 0 auto;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: 2px 2px 0 var(--ink);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .day-date .num {
+      font-size: 20px;
+    }
+
+    .day-date .mon {
+      font-size: 10px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .day-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .holiday-entry {
+      margin-bottom: 10px;
+    }
+
+    .holiday-entry:last-child {
+      margin-bottom: 0;
+    }
+
+    .holiday-name {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+
+    .holiday-note {
+      font-size: 14px;
+      font-style: italic;
+      color: rgba(32, 26, 23, 0.65);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .today-tag {
+      position: absolute;
+      top: -12px;
+      right: -10px;
+      background: var(--coral);
+      color: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 11px;
+      padding: 3px 10px;
+      transform: rotate(6deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .day-card, .month-pill, #today-btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Every Day Is A Holiday</h1>
+    <p class="sub">A curated year of real, mostly-invented novelty holidays. Dates are contested across the internet; don't &commat;us.</p>
+    <button id="today-btn" type="button">jump to today</button>
+  </header>
+
+  <nav id="month-nav"></nav>
+
+  <main id="calendar"></main>
+
+  <script>
+    const MONTHS = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const PALETTE = ['coral', 'sky', 'lime', 'purple', 'gold', 'teal', 'orange', 'pink'];
+
+    const DATA = [
+      [1,1,[[`Polar Bear Plunge Day`,`For people who think a cold ocean is a personality trait.`]]],
+      [1,2,[[`Science Fiction Day`,`Read something where the future looks better than this one.`]]],
+      [1,3,[[`Fruitcake Toss Day`,`Repurposing the leftovers as a projectile.`]]],
+      [1,4,[[`Trivia Day`,`Knowing things nobody asked you to know.`]]],
+      [1,5,[[`Bird Day`,`Look up. There is one right there.`]]],
+      [1,6,[[`Cuddle Up Day`,`Sanctioned excuse to stay under the blanket.`]]],
+      [1,9,[[`Static Electricity Day`,`Winter's cheapest special effect.`]]],
+      [1,11,[[`Learn Your Name in Morse Code Day`,`A skill you will use exactly once, today.`]]],
+      [1,13,[[`Rubber Duckie Day`,`The bathtub's most reliable coworker.`]]],
+      [1,15,[[`Hat Day`,`Solve a bad hair day with a worse hat.`]]],
+      [1,16,[[`Nothing Day`,`The one day with an agenda of none.`]]],
+      [1,18,[[`Thesaurus Day`,`A day, occasion, event, happening, for synonyms.`]]],
+      [1,20,[[`Penguin Awareness Day`,`They already know. This is for you.`]]],
+      [1,21,[[`Squirrel Appreciation Day`,`For the tiny landlord of every backyard.`]]],
+      [1,23,[[`Handwriting Day`,`Prove you can still do it.`]]],
+      [1,24,[[`Compliment Day`,`Say the nice thing you were already thinking.`]]],
+      [1,26,[[`Spouse's Day`,`A reminder, not an excuse.`]]],
+      [1,27,[[`Chocolate Cake Day`,`No further justification required.`]]],
+      [1,29,[[`Puzzle Day`,`Missing piece not included.`]]],
+      [1,30,[[`Croissant Day`,`A pastry that folds better than most plans.`]]],
+      [1,31,[[`Backwards Day`,`.yad eht rof tuo gnicnalaB`]]],
+
+      [2,1,[[`Baked Alaska Day`,`Dessert that is also somehow a magic trick.`]]],
+      [2,2,[[`Groundhog Day`,`A rodent forecasts your next six weeks.`]]],
+      [2,4,[[`Thank a Mailman Day`,`They know your dog's name and your secrets.`]]],
+      [2,5,[[`Weatherperson's Day`,`They get it wrong in public. Daily. Respect.`]]],
+      [2,6,[[`Lame Duck Day`,`A day for the politically inconvenienced.`]]],
+      [2,7,[[`Send a Card to a Friend Day`,`Actual paper. Wild concept.`]]],
+      [2,9,[[`Toothache Day`,`A holiday nobody wanted to earn.`]]],
+      [2,10,[[`Umbrella Day`,`Bring it. It won't rain. It will rain.`]]],
+      [2,11,[[`Make a Friend Day`,`Networking, but with less LinkedIn.`]]],
+      [2,12,[[`Darwin Day`,`Celebrating whoever adapts to Mondays best.`]]],
+      [2,13,[[`World Radio Day`,`Someone is still talking into a microphone for you.`]]],
+      [2,17,[[`Random Acts of Kindness Day`,`Pay for the coffee. See what happens.`]]],
+      [2,18,[[`Battery Day`,`Running low since roughly last Tuesday.`]]],
+      [2,20,[[`Love Your Pet Day`,`As if you needed the reminder.`]]],
+      [2,22,[[`Be Humble Day`,`A hard one for main characters.`]]],
+      [2,26,[[`Tell a Fairy Tale Day`,`Beginning, middle, suspiciously happy end.`]]],
+      [2,27,[[`International Polar Bear Day`,`A very large reminder about very small ice.`]]],
+      [2,28,[[`Public Sleeping Day`,`Legally dubious, spiritually necessary.`]]],
+
+      [3,1,[[`World Compliment Day`,`Global edition of Jan 24. They liked it that much.`]]],
+      [3,2,[[`Old Stuff Day`,`Go find something you forgot you owned.`]]],
+      [3,3,[[`I Want You To Be Happy Day`,`Low effort, high sincerity.`]]],
+      [3,4,[[`March Forth Day`,`The only month that is also a command.`]]],
+      [3,8,[[`Proofreading Day`,`For catching the typo right after you hit send.`]]],
+      [3,9,[[`Panda Day`,`A bear that only eats one vegetable, and thrives.`]]],
+      [3,10,[[`Mario Day`,`MAR10. The pun does all the work.`]]],
+      [3,12,[[`Plant a Flower Day`,`Commit to watering it. Just this once.`]]],
+      [3,14,[[`Pi Day`,`3.14. Bring an actual pie or do not bother.`]]],
+      [3,15,[[`Everything You Think Is Wrong Day`,`A day, or possibly a permanent condition.`]]],
+      [3,17,[[`Submarine Day`,`Also known as a sandwich, depending who you ask.`]]],
+      [3,20,[[`World Storytelling Day`,`Everyone is a narrator today.`]]],
+      [3,21,[[`Common Courtesy Day`,`A holiday that should not need scheduling.`]]],
+      [3,22,[[`International Goof-Off Day`,`Institutionally sanctioned slacking.`]]],
+      [3,23,[[`Puppy Day`,`No further justification required, part two.`]]],
+      [3,25,[[`Waffle Day`,`Superior to pancakes and we do not debate this.`]]],
+      [3,26,[[`Make Your Own Holiday Day`,`The most meta entry on this list.`]]],
+      [3,31,[[`Bunsen Burner Day`,`A tiny flame, a large legacy.`]]],
+
+      [4,1,[[`April Fools' Day`,`The one day nothing you read is safe.`]]],
+      [4,4,[[`Tell a Lie Day`,`Timed suspiciously close to April Fools.`]]],
+      [4,5,[[`Read a Road Map Day`,`A skill your phone made obsolete and nostalgic.`]]],
+      [4,7,[[`No Housework Day`,`The chores will still be there tomorrow. Rest.`]]],
+      [4,10,[[`Siblings Day`,`They knew you before you had a personality.`]]],
+      [4,12,[[`Grilled Cheese Day`,`Butter side down is a crime.`]]],
+      [4,13,[[`Scrabble Day`,`QI is a word. Look it up.`]]],
+      [4,14,[[`International Moment of Laughter Day`,`Sixty seconds, mandatory, no reason required.`]]],
+      [4,17,[[`Haiku Poetry Day`,`Seventeen syllables. That is the whole assignment.`]]],
+      [4,18,[[`Columnist Day`,`For people paid to have opinions on schedule.`]]],
+      [4,20,[[`Look-Alike Day`,`Find your celebrity doppelganger and own it.`]]],
+      [4,22,[[`Jelly Bean Day`,`The candy that is secretly a personality test.`]]],
+      [4,23,[[`Take a Chance Day`,`Send the text. Ask the question.`]]],
+      [4,25,[[`DNA Day`,`The blueprint gets its own holiday.`]]],
+      [4,26,[[`Pretzel Day`,`Salt, twisted into a shape with commitment issues.`]]],
+      [4,29,[[`Zipper Day`,`Reliable until the exact moment it is not.`]]],
+      [4,30,[[`Honesty Day`,`Comes right after a whole month of April Fools.`]]],
+
+      [5,1,[[`Lei Day`,`Hawaii's flower-powered answer to a holiday.`]]],
+      [5,2,[[`World Tuna Day`,`A can's worth of quiet appreciation.`]]],
+      [5,4,[[`Star Wars Day`,`May the Fourth be with your inbox.`]]],
+      [5,5,[[`Cartoonists Day`,`Drawing jokes for a living, professionally underrated.`]]],
+      [5,6,[[`No Diet Day`,`A holiday everyone secretly observes every day.`]]],
+      [5,8,[[`No Socks Day`,`Freedom, mildly unhygienic.`]]],
+      [5,9,[[`Lost Sock Memorial Day`,`A moment of silence for the dryer's victims.`]]],
+      [5,11,[[`Eat What You Want Day`,`The rare holiday with zero rules.`]]],
+      [5,12,[[`Limerick Day`,`There once was a day set aside...`]]],
+      [5,13,[[`Frog Jumping Day`,`Inspired by a Mark Twain short story. Really.`]]],
+      [5,15,[[`Chocolate Chip Day`,`The cookie's non-negotiable ingredient gets its own day.`]]],
+      [5,17,[[`Pack Rat Day`,`A celebration of the drawer you are afraid to open.`]]],
+      [5,20,[[`Be a Millionaire Day`,`Aspirational. Purely aspirational.`]]],
+      [5,21,[[`Talk Like Yoda Day`,`Confusing, this holiday is.`]]],
+      [5,25,[[`Towel Day`,`Do not panic. Bring one anyway.`]]],
+      [5,28,[[`Hamburger Day`,`A sandwich that refused to be called a sandwich.`]]],
+      [5,31,[[`Macaroon Day`,`Not to be confused with its French cousin. Fight about it.`]]],
+
+      [6,1,[[`Say Something Nice Day`,`See Feb 17, but with less randomness.`]]],
+      [6,3,[[`Repeat Day`,`See June 3.`]]],
+      [6,4,[[`Hug Your Cat Day`,`Consent from the cat not guaranteed.`]]],
+      [6,7,[[`VCR Day`,`A machine your kids have never operated.`]]],
+      [6,8,[[`Best Friends Day`,`They already knew, but tell them anyway.`]]],
+      [6,9,[[`Donald Duck Day`,`A duck with anger issues and a sailor suit.`]]],
+      [6,10,[[`Iced Tea Day`,`Summer's default beverage, unopposed.`]]],
+      [6,11,[[`Corn on the Cob Day`,`Butter delivery system, cylindrical.`]]],
+      [6,12,[[`Red Rose Day`,`The flower that comes with strings attached.`]]],
+      [6,14,[[`Bourbon Day`,`Kentucky's answer to a holiday.`]]],
+      [6,15,[[`Nature Photography Day`,`Sixty photos of the same sunset, one keeper.`]]],
+      [6,16,[[`Bloomsday`,`One very long day in Dublin, immortalized by Joyce.`]]],
+      [6,17,[[`Eat Your Vegetables Day`,`A holiday your parents already invented.`]]],
+      [6,18,[[`International Picnic Day`,`Sandwiches, but outside, and therefore better.`]]],
+      [6,20,[[`World Juggling Day`,`Dropping things, but with technique.`]]],
+      [6,21,[[`International Yoga Day`,`The longest day, spent horizontal.`]]],
+      [6,23,[[`Typewriter Day`,`Loud, satisfying, extremely hard to backspace.`]]],
+      [6,27,[[`Sunglasses Day`,`For hiding how tired you actually are.`]]],
+      [6,28,[[`Tau Day`,`For the people who think Pi Day used the wrong number.`]]],
+      [6,29,[[`Camera Day`,`Before phones, this was a whole device.`]]],
+      [6,30,[[`Meteor Watch Day`,`Look up. This time it is on purpose.`]]],
+
+      [7,1,[[`International Joke Day`,`The one day bad puns are contractually protected.`]]],
+      [7,2,[[`World UFO Day`,`For people who saw something and will not elaborate.`]]],
+      [7,6,[[`World Kissing Day`,`Self-explanatory, allegedly international.`]]],
+      [7,7,[[`Tell the Truth Day`,`A rough follow-up to July's other holidays.`]]],
+      [7,8,[[`Video Games Day`,`A pause button for real life.`]]],
+      [7,10,[[`Teddy Bears' Picnic Day`,`A stuffed animal's only social event.`]]],
+      [7,11,[[`Cheer Up the Lonely Day`,`A text costs nothing and means everything.`]]],
+      [7,13,[[`Embrace Your Geekness Day`,`Extremely low bar. Congratulations.`]]],
+      [7,17,[[`World Emoji Day`,`A language with zero grammar and total chaos.`]]],
+      [7,18,[[`Caviar Day`,`Fish eggs, priced like jewelry.`]]],
+      [7,19,[[`Stick Out Your Tongue Day`,`Mature. Very mature.`]]],
+      [7,20,[[`Moon Day`,`The anniversary of humanity's best field trip.`]]],
+      [7,22,[[`Pi Approximation Day`,`For the 22/7 crowd who missed March.`]]],
+      [7,23,[[`Vanilla Ice Cream Day`,`The flavor everyone claims to be tired of, and is not.`]]],
+      [7,24,[[`Cousins Day`,`The family members you only see at weddings.`]]],
+      [7,28,[[`Milk Chocolate Day`,`The controversial middle child of the chocolate family.`]]],
+      [7,30,[[`International Day of Friendship`,`A United Nations-sanctioned group hug.`]]],
+
+      [8,1,[[`National Girlfriend Day`,`Balanced later by a boyfriend equivalent, allegedly.`]]],
+      [8,3,[[`Watermelon Day`,`98% water, 100% a personality at a picnic.`]]],
+      [8,6,[[`Fresh Breath Day`,`A gentle, unspoken hint of a holiday.`]]],
+      [8,7,[[`Lighthouse Day`,`A job description that is mostly staring at the sea.`]]],
+      [8,8,[[`Sneak Some Zucchini Onto a Porch Day`,`Gardeners solving overproduction with mild crime.`]]],
+      [8,9,[[`Book Lovers Day`,`A holiday that just describes a Tuesday.`]]],
+      [8,10,[[`Lazy Day`,`The one holiday that requires no participation to succeed.`]]],
+      [8,12,[[`Middle Child Day`,`Overlooked scheduling included.`]]],
+      [8,13,[[`Left Handers Day`,`The world's scissors remain unfair regardless.`]]],
+      [8,15,[[`Relaxation Day`,`A whole day, officially, to do less.`]]],
+      [8,16,[[`Tell a Joke Day`,`No refunds if it does not land.`]]],
+      [8,19,[[`World Photography Day`,`Commemorating the invention that ruined candid moments forever.`]]],
+      [8,21,[[`Spumoni Day`,`Italian ice cream with an identity crisis, in a good way.`]]],
+      [8,26,[[`Dog Day`,`As if dogs needed the validation.`]]],
+      [8,30,[[`Frankenstein Day`,`A monster's birthday, more or less.`]]],
+
+      [9,1,[[`No Rhyme or Reason Day`,`A holiday with no explanation, by design.`]]],
+      [9,6,[[`Read a Book Day`,`Pick one up. Any one.`]]],
+      [9,7,[[`Salami Day`,`A sandwich's most confident ingredient.`]]],
+      [9,8,[[`Pardon Day`,`A good day to let something go.`]]],
+      [9,9,[[`Teddy Bear Day`,`A second holiday for the same stuffed bear. It is fine.`]]],
+      [9,13,[[`Positive Thinking Day`,`Optimism, scheduled in advance.`]]],
+      [9,16,[[`Guacamole Day`,`Extra charge, non-negotiable.`]]],
+      [9,19,[[`International Talk Like a Pirate Day`,`Arr, the most committed bit on this list.`]]],
+      [9,21,[[`International Day of Peace`,`A United Nations ceasefire on general chaos.`]]],
+      [9,22,[[`Hobbit Day`,`Bilbo and Frodo share a birthday. Cake for two.`]]],
+      [9,24,[[`Punctuation Day`,`This entry takes itself, very seriously.`]]],
+      [9,25,[[`Comic Book Day`,`Panels, speech bubbles, mild existential dread.`]]],
+      [9,28,[[`Ask a Stupid Question Day`,`There are apparently no bad ones today.`]]],
+
+      [10,1,[[`International Coffee Day`,`The beverage responsible for most of civilization.`]]],
+      [10,4,[[`Taco Day`,`Tuesday's unofficial national dish, formalized.`]]],
+      [10,6,[[`Mad Hatter Day`,`10/6, from the hat that reads "In this style 10/6."`]]],
+      [10,9,[[`Curious Events Day`,`A holiday for things that happened for no reason.`]]],
+      [10,13,[[`Ada Lovelace Day`,`Celebrating the first person to see code coming.`]]],
+      [10,16,[[`Dictionary Day`,`A book that defines every other book.`]]],
+      [10,20,[[`International Sloth Day`,`A role model, frankly.`]]],
+      [10,23,[[`Mole Day`,`6:02 on 10/23, for the chemists among us.`]]],
+      [10,24,[[`United Nations Day`,`The world's largest group project, still ongoing.`]]],
+      [10,28,[[`International Animation Day`,`24 drawings a second, give or take.`]]],
+      [10,30,[[`Candy Corn Day`,`A candy that is 90% packaging by flavor.`]]],
+      [10,31,[[`Halloween`,`The one day being a stranger at the door is encouraged.`]]],
+
+      [11,1,[[`Author's Day`,`For everyone who has finished a first draft.`]]],
+      [11,3,[[`Sandwich Day`,`Honoring the Earl who invented lunch as we know it.`]]],
+      [11,5,[[`Guy Fawkes Night`,`Remember, remember, the fireworks and the plot.`]]],
+      [11,8,[[`Tongue Twister Day`,`She sells this holiday by the seashore.`]]],
+      [11,11,[[`Origami Day`,`A single sheet of paper's entire career.`]]],
+      [11,13,[[`World Kindness Day`,`See Feb 17 and June 1. It bears repeating.`]]],
+      [11,14,[[`Pickle Day`,`A cucumber's glow-up.`]]],
+      [11,16,[[`Fast Food Day`,`A drive-thru's proudest moment.`]]],
+      [11,19,[[`Use Less Stuff Day`,`The most reasonable holiday on this list.`]]],
+      [11,21,[[`World Hello Day`,`Say it to a stranger. See what happens.`]]],
+      [11,23,[[`Fibonacci Day`,`11/23, as in 1, 1, 2, 3.`]]],
+      [11,26,[[`Cake Day`,`A dessert that refuses to wait for a birthday.`]]],
+      [11,30,[[`Computer Security Day`,`Please, for once, update your password.`]]],
+
+      [12,1,[[`Eat a Red Apple Day`,`The fruit that started an entire origin story.`]]],
+      [12,4,[[`Wear Brown Shoes Day`,`A dress code with startlingly low stakes.`]]],
+      [12,6,[[`Put On Your Own Shoes Day`,`A toddler's first act of independence.`]]],
+      [12,7,[[`Letter Writing Day`,`A lost art, revived for twenty-four hours.`]]],
+      [12,8,[[`Pretend to Be a Time Traveler Day`,`Talk about the future like it already happened.`]]],
+      [12,9,[[`Christmas Card Day`,`The one piece of mail that is not a bill.`]]],
+      [12,10,[[`Human Rights Day`,`A holiday that should not be optional.`]]],
+      [12,12,[[`Gingerbread House Day`,`Edible architecture, structurally questionable.`]]],
+      [12,16,[[`Chocolate Covered Anything Day`,`A very permissive holiday.`]]],
+      [12,17,[[`Wright Brothers Day`,`Twelve seconds that changed everything.`]]],
+      [12,21,[[`Look on the Bright Side Day`,`The shortest day, spun optimistically.`]]],
+      [12,22,[[`Date Nut Bread Day`,`A loaf nobody asked for and everyone finishes.`]]],
+      [12,23,[[`Festivus`,`For the rest of us.`]]],
+      [12,24,[[`Eggnog Day`,`A drink that is mostly a dare.`]]],
+      [12,26,[[`Thank You Note Day`,`The bill comes due for all that gift-giving.`]]],
+      [12,28,[[`Card Playing Day`,`Fifty-two ways to end a friendship.`]]],
+      [12,31,[[`Make Up Your Mind Day`,`One day left to decide on the resolution.`]]],
+    ];
+
+    function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+    const nav = document.getElementById('month-nav');
+    const calendar = document.getElementById('calendar');
+    const todayBtn = document.getElementById('today-btn');
+
+    const now = new Date();
+    const todayMonth = now.getMonth() + 1;
+    const todayDay = now.getDate();
+    let todayCardEl = null;
+
+    for (let m = 1; m <= 12; m++) {
+      const pillBtn = document.createElement('button');
+      pillBtn.className = 'month-pill';
+      pillBtn.type = 'button';
+      pillBtn.textContent = MONTH_ABBR[m - 1];
+      pillBtn.addEventListener('click', () => {
+        const target = document.getElementById('month-' + m);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+      nav.appendChild(pillBtn);
+    }
+
+    let colorIndex = 0;
+    let currentMonth = null;
+    let sectionEl = null;
+
+    DATA.forEach(([m, d, holidays]) => {
+      if (m !== currentMonth) {
+        currentMonth = m;
+        sectionEl = document.createElement('section');
+        sectionEl.className = 'month-section';
+
+        const banner = document.createElement('div');
+        banner.className = 'month-banner';
+        banner.id = 'month-' + m;
+        banner.style.background = 'var(--' + PALETTE[colorIndex % PALETTE.length] + ')';
+        colorIndex++;
+        banner.textContent = MONTHS[m - 1];
+        sectionEl.appendChild(banner);
+
+        calendar.appendChild(sectionEl);
+      }
+
+      const isToday = m === todayMonth && d === todayDay;
+
+      const card = document.createElement('div');
+      card.className = 'day-card' + (isToday ? ' is-today' : '');
+
+      if (isToday) {
+        const tag = document.createElement('div');
+        tag.className = 'today-tag';
+        tag.textContent = 'TODAY';
+        card.appendChild(tag);
+        todayCardEl = card;
+      }
+
+      const dateEl = document.createElement('div');
+      dateEl.className = 'day-date';
+      dateEl.style.background = 'var(--' + PALETTE[(colorIndex - 1) % PALETTE.length] + ')';
+      dateEl.innerHTML = '<span class="num">' + d + '</span><span class="mon">' + MONTH_ABBR[m - 1] + '</span>';
+      card.appendChild(dateEl);
+
+      const body = document.createElement('div');
+      body.className = 'day-body';
+      holidays.forEach(([name, note]) => {
+        const entry = document.createElement('div');
+        entry.className = 'holiday-entry';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'holiday-name';
+        nameEl.textContent = name;
+        const noteEl = document.createElement('div');
+        noteEl.className = 'holiday-note';
+        noteEl.textContent = note;
+        entry.appendChild(nameEl);
+        entry.appendChild(noteEl);
+        body.appendChild(entry);
+      });
+      card.appendChild(body);
+
+      sectionEl.appendChild(card);
+    });
+
+    function jumpToToday() {
+      if (todayCardEl) {
+        todayCardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    todayBtn.addEventListener('click', jumpToToday);
+
+    if (todayCardEl) {
+      setTimeout(jumpToToday, 400);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wikipedia Roulette</title>
+    <meta name="description" content="One button. One real random Wikipedia article, opened in a new tab. That's the whole site.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/wikipedia-roulette/">
+    <meta property="og:title" content="Wikipedia Roulette">
+    <meta property="og:description" content="One button. One real random Wikipedia article, opened in a new tab. That's the whole site.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/wikipedia-roulette.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Wikipedia Roulette">
+    <meta name="twitter:description" content="One button. One real random Wikipedia article, opened in a new tab. That's the whole site.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/wikipedia-roulette.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --gold: #f7c948;
+    }
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--paper);
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--ink);
+    }
+
+    #stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image: radial-gradient(circle, rgba(32, 26, 23, 0.08) 1.5px, transparent 1.5px);
+      background-size: 26px 26px;
+      padding: 20px;
+    }
+
+    #glow {
+      position: absolute;
+      width: min(90vmin, 700px);
+      height: min(90vmin, 700px);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 248, 239, 0.9) 0%, rgba(255, 248, 239, 0) 68%);
+      pointer-events: none;
+    }
+
+    #card {
+      position: relative;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 8px 8px 0 var(--ink);
+      padding: 46px 44px 38px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      text-align: center;
+      transform: rotate(-1.2deg);
+      width: min(88vw, 460px);
+    }
+
+    #tag {
+      position: absolute;
+      top: -16px;
+      right: -16px;
+      background: var(--sky);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: clamp(10px, 2vmin, 12px);
+      padding: 5px 14px;
+      transform: rotate(7deg);
+      white-space: nowrap;
+    }
+
+    h1 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(24px, 6vmin, 34px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.1;
+    }
+
+    #tagline {
+      font-style: italic;
+      font-size: clamp(13px, 2.6vmin, 15px);
+      color: rgba(32, 26, 23, 0.65);
+      max-width: 34ch;
+    }
+
+    #spin-btn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(16px, 3.4vmin, 20px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink);
+      background: var(--lime);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      padding: 16px 40px;
+      box-shadow: 5px 5px 0 var(--ink);
+      cursor: pointer;
+      transform: rotate(-2deg);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #spin-btn:hover {
+      transform: rotate(-2deg) translate(-2px, -2px);
+      box-shadow: 7px 7px 0 var(--ink);
+    }
+
+    #spin-btn:active,
+    #spin-btn.pressed {
+      transform: rotate(-2deg) translate(3px, 3px);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+
+    #spin-btn:focus-visible {
+      outline: 3px solid var(--coral);
+      outline-offset: 3px;
+    }
+
+    #tally {
+      font-style: italic;
+      font-size: 13px;
+      color: rgba(32, 26, 23, 0.55);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #spin-btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="glow"></div>
+    <div id="card">
+      <div id="tag">100% real, 0% curated</div>
+      <h1>Wikipedia Roulette</h1>
+      <p id="tagline">One button. One random article, straight from Wikipedia. No idea what you'll get.</p>
+      <button id="spin-btn" type="button">Spin</button>
+      <div id="tally">articles opened: 0</div>
+    </div>
+  </div>
+
+  <script>
+    const spinBtn = document.getElementById('spin-btn');
+    const tallyEl = document.getElementById('tally');
+    const RANDOM_URL = 'https://en.wikipedia.org/wiki/Special:Random';
+
+    const LABELS = ['Spin', 'Again', 'Another', 'Once more', 'Go again', 'One more'];
+
+    let spins = 0;
+    try {
+      spins = parseInt(localStorage.getItem('wikiroulette-spins') || '0', 10) || 0;
+    } catch (e) {}
+
+    function renderTally() {
+      tallyEl.textContent = 'articles opened: ' + spins;
+    }
+    renderTally();
+
+    function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+    spinBtn.addEventListener('click', () => {
+      spins++;
+      try { localStorage.setItem('wikiroulette-spins', String(spins)); } catch (e) {}
+      renderTally();
+
+      spinBtn.classList.remove('pressed');
+      void spinBtn.offsetWidth;
+      spinBtn.classList.add('pressed');
+      setTimeout(() => spinBtn.classList.remove('pressed'), 200);
+
+      spinBtn.textContent = pick(LABELS);
+
+      window.open(RANDOM_URL, '_blank', 'noopener');
+    });
+  </script>
+</body>
+</html>

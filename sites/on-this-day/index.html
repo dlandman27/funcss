@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>On This Day</title>
+    <meta name="description" content="Pick your birthday and get a real historical event, birth, or death that actually happened on that calendar day.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/on-this-day/">
+    <meta property="og:title" content="On This Day">
+    <meta property="og:description" content="Pick your birthday and get a full real timeline of notable events, births, and deaths that happened on that calendar day.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/on-this-day.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="On This Day">
+    <meta name="twitter:description" content="Pick your birthday and get a full real timeline of notable events, births, and deaths that happened on that calendar day.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/on-this-day.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --gold: #f7c948;
+      --teal: #2fb0a3;
+    }
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background: var(--paper);
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--ink);
+      background-image: radial-gradient(circle, rgba(32, 26, 23, 0.06) 1.5px, transparent 1.5px);
+      background-size: 26px 26px;
+      background-attachment: fixed;
+    }
+
+    [hidden] { display: none !important; }
+
+    .screen-center {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      position: relative;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 8px 8px 0 var(--ink);
+      padding: 36px 34px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+      transform: rotate(-1.2deg);
+      width: min(88vw, 460px);
+    }
+
+    .card.pop {
+      animation: pop-in 420ms cubic-bezier(.2, .9, .25, 1.3);
+    }
+
+    @keyframes pop-in {
+      0% { transform: rotate(-1.2deg) scale(0.2); opacity: 0; }
+      60% { transform: rotate(-1.2deg) scale(1.1); opacity: 1; }
+      100% { transform: rotate(-1.2deg) scale(1); }
+    }
+
+    /* --- picker --- */
+
+    #picker-screen h1 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(20px, 4.6vmin, 30px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #picker-screen p {
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(32, 26, 23, 0.65);
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+
+    select {
+      flex: 1;
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: Georgia, serif;
+      font-size: 16px;
+      color: var(--ink);
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+    }
+
+    .sticker-btn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink);
+      background: var(--lime);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 12px 26px;
+      box-shadow: 4px 4px 0 var(--ink);
+      cursor: pointer;
+      transform: rotate(-2deg);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .sticker-btn:hover {
+      transform: rotate(-2deg) translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+
+    .sticker-btn:active {
+      transform: rotate(-2deg) translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+
+    /* --- loading --- */
+
+    #loading-screen p {
+      font-style: italic;
+      font-size: 15px;
+      color: rgba(32, 26, 23, 0.7);
+    }
+
+    .dots {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dots span {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--coral);
+      border: 2px solid var(--ink);
+      animation: bounce 1s ease-in-out infinite;
+    }
+
+    .dots span:nth-child(2) { animation-delay: 0.15s; background: var(--sky); }
+    .dots span:nth-child(3) { animation-delay: 0.3s; background: var(--gold); }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    /* --- timeline screen --- */
+
+    #timeline-screen {
+      min-height: 100vh;
+      padding: 44px 18px 100px;
+    }
+
+    #timeline-header {
+      max-width: 700px;
+      margin: 0 auto 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #day-title-wrap {
+      display: inline-block;
+      background: var(--gold);
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 10px 28px;
+      transform: rotate(-1.5deg);
+    }
+
+    #timeline-header h1 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(24px, 5.4vmin, 36px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+
+    #timeline-header .sub {
+      font-style: italic;
+      font-size: 13.5px;
+      color: rgba(32, 26, 23, 0.55);
+      margin-top: 2px;
+    }
+
+    #change-btn {
+      margin-top: 4px;
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 12.5px;
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 7px 16px;
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      transform: rotate(1.5deg);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #change-btn:hover {
+      transform: rotate(1.5deg) translate(-2px, -2px);
+      box-shadow: 5px 5px 0 var(--ink);
+    }
+
+    #timeline-divider {
+      max-width: 700px;
+      margin: 0 auto 40px;
+      height: 3px;
+      background: repeating-linear-gradient(
+        to right, var(--ink) 0 10px, transparent 10px 18px
+      );
+      opacity: 0.35;
+    }
+
+    #timeline {
+      position: relative;
+      max-width: 700px;
+      margin: 0 auto;
+      padding-left: 54px;
+    }
+
+    #timeline::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 3px;
+      background: var(--ink);
+      opacity: 0.85;
+    }
+
+    .t-item {
+      position: relative;
+      margin-bottom: 26px;
+      opacity: 0;
+      animation: item-in 400ms ease forwards;
+    }
+
+    @keyframes item-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .t-dot {
+      position: absolute;
+      left: -42px;
+      top: 10px;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+
+    .t-card {
+      background: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 15px 17px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .t-item:nth-child(odd) .t-card { transform: rotate(-0.6deg); }
+    .t-item:nth-child(even) .t-card { transform: rotate(0.6deg); }
+
+    .t-item:nth-child(odd) .t-card:hover {
+      transform: rotate(-0.6deg) translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+
+    .t-item:nth-child(even) .t-card:hover {
+      transform: rotate(0.6deg) translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+
+    .t-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .t-year {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--ink);
+      padding: 3px 11px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+
+    .t-type {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 11.5px;
+      color: var(--ink);
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      opacity: 0.85;
+    }
+
+    .t-text {
+      font-size: 15px;
+      line-height: 1.58;
+    }
+
+    .type-highlight .t-dot, .type-highlight .t-year { background: var(--gold); }
+    .type-event .t-dot, .type-event .t-year { background: var(--sky); }
+    .type-birth .t-dot, .type-birth .t-year { background: var(--lime); }
+    .type-death .t-dot, .type-death .t-year { background: var(--purple); }
+    .type-holiday .t-dot, .type-holiday .t-year { background: var(--teal); }
+
+    .type-highlight .t-type { background: rgba(247, 201, 72, 0.35); }
+    .type-event .t-type { background: rgba(90, 160, 219, 0.3); }
+    .type-birth .t-type { background: rgba(183, 206, 60, 0.3); }
+    .type-death .t-type { background: rgba(169, 143, 208, 0.3); }
+    .type-holiday .t-type { background: rgba(47, 176, 163, 0.3); }
+
+    #empty-msg {
+      max-width: 700px;
+      margin: 40px auto;
+      text-align: center;
+      font-style: italic;
+      color: rgba(32, 26, 23, 0.6);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card.pop { animation: none; }
+      .t-item { animation: none; opacity: 1; }
+      .dots span { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="picker-screen" class="screen-center">
+    <div class="card">
+      <h1>What's your birthday?</h1>
+      <p>We'll dig up a whole timeline of real things that happened on that day.</p>
+      <div class="field-row">
+        <select id="month-select"></select>
+        <select id="day-select"></select>
+      </div>
+      <button id="reveal-btn" class="sticker-btn" type="button">Reveal</button>
+    </div>
+  </div>
+
+  <div id="loading-screen" class="screen-center" hidden>
+    <div class="card">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <p id="loading-text">Consulting the archive&hellip;</p>
+    </div>
+  </div>
+
+  <div id="timeline-screen" hidden>
+    <div id="timeline-header">
+      <div id="day-title-wrap">
+        <h1 id="day-title">September 6</h1>
+      </div>
+      <div class="sub">a timeline of real things that happened on this day</div>
+      <button id="change-btn" type="button">different day</button>
+    </div>
+    <div id="timeline-divider"></div>
+    <div id="timeline"></div>
+    <div id="empty-msg" hidden>The archive came up empty for this day. Try another.</div>
+  </div>
+
+  <script>
+    const pickerScreen = document.getElementById('picker-screen');
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingText = document.getElementById('loading-text');
+    const timelineScreen = document.getElementById('timeline-screen');
+    const monthSelect = document.getElementById('month-select');
+    const daySelect = document.getElementById('day-select');
+    const revealBtn = document.getElementById('reveal-btn');
+    const changeBtn = document.getElementById('change-btn');
+    const dayTitle = document.getElementById('day-title');
+    const timelineEl = document.getElementById('timeline');
+    const emptyMsg = document.getElementById('empty-msg');
+
+    const MONTHS = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+
+    for (let m = 0; m < 12; m++) {
+      const opt = document.createElement('option');
+      opt.value = m + 1;
+      opt.textContent = MONTHS[m];
+      monthSelect.appendChild(opt);
+    }
+
+    function daysInMonth(month) {
+      return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+    }
+
+    function populateDays(month, keepDay) {
+      const prev = keepDay || parseInt(daySelect.value, 10) || 1;
+      daySelect.innerHTML = '';
+      const max = daysInMonth(month);
+      for (let d = 1; d <= max; d++) {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        daySelect.appendChild(opt);
+      }
+      daySelect.value = Math.min(prev, max);
+    }
+
+    let saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem('on-this-day-birthday') || 'null');
+    } catch (e) {}
+
+    const initialMonth = saved && saved.month ? saved.month : new Date().getMonth() + 1;
+    monthSelect.value = initialMonth;
+    populateDays(initialMonth, saved ? saved.day : new Date().getDate());
+
+    monthSelect.addEventListener('change', () => {
+      populateDays(parseInt(monthSelect.value, 10));
+    });
+
+    function shuffle(arr) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function sample(arr, n) {
+      return shuffle(arr).slice(0, n);
+    }
+
+    let requestToken = 0;
+
+    function showScreen(screen) {
+      [pickerScreen, loadingScreen, timelineScreen].forEach((s) => { s.hidden = s !== screen; });
+    }
+
+    async function loadDay(month, day) {
+      try {
+        localStorage.setItem('on-this-day-birthday', JSON.stringify({ month, day }));
+      } catch (e) {}
+
+      const myToken = ++requestToken;
+      const mm = String(month).padStart(2, '0');
+      const dd = String(day).padStart(2, '0');
+
+      loadingText.textContent = 'Consulting the archive for ' + MONTHS[month - 1] + ' ' + day + '…';
+      showScreen(loadingScreen);
+
+      let data;
+      try {
+        const res = await fetch('https://en.wikipedia.org/api/rest_v1/feed/onthisday/all/' + mm + '/' + dd);
+        if (!res.ok) throw new Error('bad response ' + res.status);
+        data = await res.json();
+      } catch (e) {
+        if (myToken !== requestToken) return;
+        renderTimeline(month, day, []);
+        return;
+      }
+      if (myToken !== requestToken) return;
+
+      const usedTitles = new Set();
+      const pool = [];
+
+      function titleOf(item) {
+        return item.pages && item.pages[0] ? item.pages[0].title : null;
+      }
+
+      function addAll(items, type, limit) {
+        const filtered = (items || []).filter((it) => {
+          const t = titleOf(it);
+          return !t || !usedTitles.has(t);
+        });
+        const picked = limit ? sample(filtered, limit) : filtered;
+        picked.forEach((it) => {
+          const t = titleOf(it);
+          if (t) usedTitles.add(t);
+          pool.push({ year: it.year, text: it.text, type });
+        });
+      }
+
+      addAll(data.holidays, 'holiday', 6);
+      addAll(data.selected, 'highlight', 16);
+      addAll(data.events, 'event', 9);
+      addAll(data.births, 'birth', 9);
+      addAll(data.deaths, 'death', 9);
+
+      pool.sort((a, b) => (a.year || 0) - (b.year || 0));
+
+      renderTimeline(month, day, pool);
+    }
+
+    function renderTimeline(month, day, items) {
+      dayTitle.textContent = MONTHS[month - 1] + ' ' + day;
+      timelineEl.innerHTML = '';
+
+      emptyMsg.hidden = items.length > 0;
+
+      items.forEach((item, i) => {
+        const el = document.createElement('div');
+        el.className = 't-item type-' + item.type;
+        el.style.animationDelay = Math.min(i * 35, 700) + 'ms';
+
+        const dot = document.createElement('div');
+        dot.className = 't-dot';
+        el.appendChild(dot);
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 't-card';
+
+        const meta = document.createElement('div');
+        meta.className = 't-meta';
+
+        const yearEl = document.createElement('span');
+        yearEl.className = 't-year';
+        yearEl.textContent = item.year ? String(item.year) : (item.type === 'holiday' ? 'observed' : 'undated');
+        meta.appendChild(yearEl);
+
+        const typeEl = document.createElement('span');
+        typeEl.className = 't-type';
+        typeEl.textContent = item.type === 'highlight' ? 'notable' : item.type;
+        meta.appendChild(typeEl);
+
+        cardEl.appendChild(meta);
+
+        const textEl = document.createElement('div');
+        textEl.className = 't-text';
+        textEl.textContent = item.text;
+        cardEl.appendChild(textEl);
+
+        el.appendChild(cardEl);
+        timelineEl.appendChild(el);
+      });
+
+      showScreen(timelineScreen);
+      window.scrollTo(0, 0);
+    }
+
+    revealBtn.addEventListener('click', () => {
+      loadDay(parseInt(monthSelect.value, 10), parseInt(daySelect.value, 10));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Enter' && !pickerScreen.hidden) {
+        e.preventDefault();
+        revealBtn.click();
+      }
+    });
+
+    changeBtn.addEventListener('click', () => {
+      showScreen(pickerScreen);
+    });
+  </script>
+</body>
+</html>

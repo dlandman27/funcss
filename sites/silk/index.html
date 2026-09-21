@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Silk</title>
+  <meta name="description" content="Move your cursor and watch silky ribbons of color flow and mirror around the screen. No instructions, no UI — just trace.">
+  <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/silk/">
+    <meta property="og:title" content="Silk">
+    <meta property="og:description" content="Move your cursor and watch silky ribbons of color flow and mirror around the screen. No instructions, no UI — just trace.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/silk.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Silk">
+    <meta name="twitter:description" content="Move your cursor and watch silky ribbons of color flow and mirror around the screen. No instructions, no UI — just trace.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/silk.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root { --bg: #06060a; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage { position: fixed; inset: 0; display: block; cursor: crosshair; }
+
+    .hint {
+      position: fixed;
+      bottom: 6%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.4);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.4s ease;
+      text-align: center;
+    }
+    .hint.hidden { opacity: 0; }
+
+    @media (max-width: 480px) {
+      .hint { font-size: 12px; bottom: 5%; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="hint" id="hint">trace the screen — it mirrors around you</div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var canvas = document.getElementById('stage');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('hint');
+
+    var BG_TRAIL = 'rgba(6, 6, 10, 0.09)';
+    var SYMMETRY = 6;
+    var STRAND_COUNT = 3;
+    var CHAIN_LEN = 11;
+    var BASE_WIDTH = 3.2;
+    var HUE_SPEED = 14;        // degrees per second, global drift
+    var HUE_STRAND_SPREAD = 70; // degree offset between strands
+    var IDLE_DELAY = 1200;     // ms of no input before autopilot kicks in
+    var MAX_SPEED_PX_S = 2200; // speed at which stroke opacity bottoms out
+
+    var width = 0, height = 0, dpr = 1;
+    var strands = [];
+    var lastMoveTime = -Infinity;
+    var pointerTarget = { x: 0, y: 0 };
+
+    function debounce(fn, ms) {
+      var t;
+      return function () {
+        clearTimeout(t);
+        var args = arguments;
+        t = setTimeout(function () { fn.apply(null, args); }, ms);
+      };
+    }
+
+    function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+    // Each strand's head chases the target with its own lag, and each
+    // subsequent point chases the one ahead of it — a lazy rope, not a
+    // rigid line. Different headLambda per strand is what makes the
+    // strands separate into distinct interweaving ribbons instead of
+    // tracing one thick line on top of itself.
+    function makeStrand(index) {
+      var points = [];
+      for (var i = 0; i < CHAIN_LEN; i++) {
+        points.push({ x: width / 2, y: height / 2 });
+      }
+      return {
+        points: points,
+        headLambda: 9 + index * 7,   // higher = snappier head follow
+        segLambda: 24 - index * 2,   // rope stiffness along the chain
+        headSpeed: 0
+      };
+    }
+
+    function buildField() {
+      strands = [];
+      for (var i = 0; i < STRAND_COUNT; i++) strands.push(makeStrand(i));
+      pointerTarget = { x: width / 2, y: height / 2 };
+    }
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (!strands.length) buildField();
+      ctx.fillStyle = BG_TRAIL;
+      ctx.globalAlpha = 1;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    // A slow wandering Lissajous path so the canvas is never a dead frame
+    // on load or after your cursor leaves — it just keeps drawing on its own.
+    function idleTarget(nowMs) {
+      var t = nowMs * 0.001;
+      var cx = width / 2, cy = height / 2;
+      var r = Math.min(width, height) * 0.24;
+      return {
+        x: cx + Math.sin(t * 0.35) * r + Math.sin(t * 0.91) * r * 0.4,
+        y: cy + Math.cos(t * 0.27) * r + Math.cos(t * 0.65) * r * 0.35
+      };
+    }
+
+    // Exponential (frame-rate independent) damping toward a target.
+    // See Freya Holmer's smoothing-with-exponential-decay note.
+    function damp(current, target, lambda, dtSec) {
+      return target + (current - target) * Math.exp(-lambda * dtSec);
+    }
+
+    function step(dtSec, nowMs) {
+      var idle = (nowMs - lastMoveTime) > IDLE_DELAY;
+      var target = idle ? idleTarget(nowMs) : pointerTarget;
+
+      for (var s = 0; s < strands.length; s++) {
+        var strand = strands[s];
+        var head = strand.points[0];
+        var prevX = head.x, prevY = head.y;
+        head.x = damp(head.x, target.x, strand.headLambda, dtSec);
+        head.y = damp(head.y, target.y, strand.headLambda, dtSec);
+        var moved = Math.hypot(head.x - prevX, head.y - prevY);
+        strand.headSpeed = dtSec > 0 ? moved / dtSec : 0;
+
+        for (var i = 1; i < strand.points.length; i++) {
+          var p = strand.points[i];
+          var prev = strand.points[i - 1];
+          p.x = damp(p.x, prev.x, strand.segLambda, dtSec);
+          p.y = damp(p.y, prev.y, strand.segLambda, dtSec);
+        }
+      }
+    }
+
+    function rotateAround(p, cx, cy, cosA, sinA) {
+      var dx = p.x - cx, dy = p.y - cy;
+      return { x: cx + dx * cosA - dy * sinA, y: cy + dx * sinA + dy * cosA };
+    }
+
+    function strokeSmoothPath(points, color, lineWidth, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.shadowColor = color;
+      ctx.shadowBlur = lineWidth * 2.2;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (var i = 1; i < points.length - 1; i++) {
+        var mx = (points[i].x + points[i + 1].x) / 2;
+        var my = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, mx, my);
+      }
+      var last = points[points.length - 1];
+      ctx.lineTo(last.x, last.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw(nowMs) {
+      ctx.fillStyle = BG_TRAIL;
+      ctx.globalAlpha = 1;
+      ctx.fillRect(0, 0, width, height);
+
+      var cx = width / 2, cy = height / 2;
+      var t = nowMs * 0.001;
+
+      for (var s = 0; s < strands.length; s++) {
+        var strand = strands[s];
+        var hue = (t * HUE_SPEED + s * HUE_STRAND_SPREAD) % 360;
+        var speedNorm = clamp(strand.headSpeed / MAX_SPEED_PX_S, 0, 1);
+        // Faster sweeps thin the ink out, like a real brush running dry —
+        // slow, careful tracing lays down the boldest silk.
+        var alpha = clamp(0.92 - speedNorm * 0.55, 0.32, 0.92);
+        var lineWidth = BASE_WIDTH * (0.7 + s * 0.16);
+        var color = 'hsl(' + hue + ', 85%, 62%)';
+
+        for (var k = 0; k < SYMMETRY; k++) {
+          var theta = k * (Math.PI * 2 / SYMMETRY);
+          var cosA = Math.cos(theta), sinA = Math.sin(theta);
+          var rotated = new Array(strand.points.length);
+          for (var i = 0; i < strand.points.length; i++) {
+            rotated[i] = rotateAround(strand.points[i], cx, cy, cosA, sinA);
+          }
+          strokeSmoothPath(rotated, color, lineWidth, alpha);
+        }
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    var lastTime = null;
+    function frame(now) {
+      if (lastTime === null) lastTime = now;
+      var dt = Math.min(now - lastTime, 48);
+      lastTime = now;
+
+      step(dt / 1000, now);
+      draw(now);
+
+      requestAnimationFrame(frame);
+    }
+
+    function setTarget(x, y) {
+      pointerTarget.x = x;
+      pointerTarget.y = y;
+      lastMoveTime = performance.now();
+      hint.classList.add('hidden');
+    }
+
+    canvas.addEventListener('pointermove', function (e) {
+      setTarget(e.clientX, e.clientY);
+    });
+    canvas.addEventListener('pointerdown', function (e) {
+      setTarget(e.clientX, e.clientY);
+    });
+
+    setTimeout(function () { hint.classList.add('hidden'); }, 7000);
+
+    window.addEventListener('resize', debounce(resize, 150));
+    resize();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>
