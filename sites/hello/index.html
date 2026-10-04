@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="It says hello. Click and it says hello in another language — then another, and another, from all over the world.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/hello/">
+    <meta property="og:title" content="Hello">
+    <meta property="og:description" content="It says hello. Click and it says hello in another language — then another, and another, from all over the world.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/hello.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Hello">
+    <meta name="twitter:description" content="It says hello. Click and it says hello in another language — then another, and another, from all over the world.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/hello.png">
+    <!-- rsotw:og:end -->
+    <title>Hello</title>
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html, body { height: 100%; margin: 0; }
+
+        body {
+            background: var(--paper);
+            /* faint paper grain */
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(32,26,23,.03) 0 1px, transparent 1px),
+                radial-gradient(circle at 70% 60%, rgba(32,26,23,.03) 0 1px, transparent 1px);
+            background-size: 22px 22px, 28px 28px;
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100dvh;
+            cursor: pointer;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            padding: 24px;
+        }
+
+        .stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(18px, 4vh, 40px);
+            text-align: center;
+            max-width: 94vw;
+        }
+
+        .greeting {
+            font-family: 'Arial Black', 'Arial Bold', Arial, system-ui, sans-serif;
+            font-weight: 900;
+            font-size: clamp(2.6rem, 13vw, 9rem);
+            line-height: 1;
+            margin: 0;
+            letter-spacing: -0.01em;
+            color: var(--coral);
+            -webkit-text-stroke: clamp(2px, 0.9vw, 6px) var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 6px 6px 0 var(--ink);
+            overflow-wrap: anywhere;
+            transform: rotate(-3deg);
+            will-change: transform, opacity;
+        }
+
+        .label {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: clamp(0.8rem, 2.6vw, 1.25rem);
+            color: var(--ink);
+            background: var(--gold);
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 0.5em 1.1em;
+            transform: rotate(3deg);
+            will-change: transform, opacity;
+        }
+
+        .counter {
+            position: fixed;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%);
+            font-style: italic;
+            font-size: clamp(0.8rem, 2.4vw, 1rem);
+            color: var(--ink);
+            opacity: 0.55;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .hint {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-style: italic;
+            font-size: clamp(0.85rem, 2.6vw, 1.05rem);
+            color: var(--ink);
+            opacity: 0.6;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+            white-space: nowrap;
+        }
+        .hint.gone { opacity: 0; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .greeting, .label { transition: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stage">
+        <h1 class="greeting" id="greeting" aria-live="polite">Hello</h1>
+        <div class="label" id="label">English</div>
+    </div>
+
+    <p class="hint" id="hint">click anywhere</p>
+    <p class="counter" id="counter"></p>
+
+    <script>
+        // Real-language greetings. Native script + language name (no repeats until
+        // you've seen them all). Order here doesn't matter — it's shuffled into a bag.
+        const GREETINGS = [
+            { t: 'Hello', l: 'English' },      { t: 'Hola', l: 'Spanish' },
+            { t: 'Bonjour', l: 'French' },     { t: 'Hallo', l: 'German' },
+            { t: 'Ciao', l: 'Italian' },       { t: 'Olá', l: 'Portuguese' },
+            { t: 'Hallo', l: 'Dutch' },        { t: 'Hej', l: 'Swedish' },
+            { t: 'Hei', l: 'Norwegian' },      { t: 'Hej', l: 'Danish' },
+            { t: 'Hei', l: 'Finnish' },        { t: 'Halló', l: 'Icelandic' },
+            { t: 'Cześć', l: 'Polish' },       { t: 'Ahoj', l: 'Czech' },
+            { t: 'Ahoj', l: 'Slovak' },        { t: 'Szia', l: 'Hungarian' },
+            { t: 'Salut', l: 'Romanian' },     { t: 'Привет', l: 'Russian' },
+            { t: 'Привіт', l: 'Ukrainian' },   { t: 'Здравей', l: 'Bulgarian' },
+            { t: 'Здраво', l: 'Serbian' },     { t: 'Bok', l: 'Croatian' },
+            { t: 'Γεια', l: 'Greek' },         { t: 'Merhaba', l: 'Turkish' },
+            { t: 'שלום', l: 'Hebrew' },        { t: 'مرحبا', l: 'Arabic' },
+            { t: 'سلام', l: 'Persian' },       { t: 'नमस्ते', l: 'Hindi' },
+            { t: 'নমস্কার', l: 'Bengali' },     { t: 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ', l: 'Punjabi' },
+            { t: 'வணக்கம்', l: 'Tamil' },       { t: 'నమస్కారం', l: 'Telugu' },
+            { t: 'สวัสดี', l: 'Thai' },         { t: 'Xin chào', l: 'Vietnamese' },
+            { t: 'Halo', l: 'Indonesian' },    { t: 'Kumusta', l: 'Filipino' },
+            { t: '你好', l: 'Mandarin' },       { t: 'こんにちは', l: 'Japanese' },
+            { t: '안녕하세요', l: 'Korean' },     { t: 'Сайн байна уу', l: 'Mongolian' },
+            { t: 'Jambo', l: 'Swahili' },      { t: 'Sawubona', l: 'Zulu' },
+            { t: 'Molo', l: 'Xhosa' },         { t: 'Hallo', l: 'Afrikaans' },
+            { t: 'ሰላም', l: 'Amharic' },        { t: 'Bawo', l: 'Yoruba' },
+            { t: 'Ndewo', l: 'Igbo' },         { t: 'Sannu', l: 'Hausa' },
+            { t: 'Aloha', l: 'Hawaiian' },     { t: 'Kia ora', l: 'Māori' },
+            { t: 'Talofa', l: 'Samoan' },      { t: 'Bula', l: 'Fijian' },
+            { t: 'Dia duit', l: 'Irish' },     { t: 'Halò', l: 'Scottish Gaelic' },
+            { t: 'Shwmae', l: 'Welsh' },       { t: 'Hola', l: 'Catalan' },
+            { t: 'Kaixo', l: 'Basque' },       { t: 'Ola', l: 'Galician' },
+            { t: 'Salve', l: 'Latin' },        { t: 'Saluton', l: 'Esperanto' },
+            { t: 'Përshëndetje', l: 'Albanian' }, { t: 'გამარჯობა', l: 'Georgian' },
+            { t: 'Բարեւ', l: 'Armenian' },     { t: 'Labas', l: 'Lithuanian' },
+            { t: 'Sveiki', l: 'Latvian' },     { t: 'Tere', l: 'Estonian' },
+            { t: 'Živjo', l: 'Slovenian' },    { t: 'नमस्ते', l: 'Nepali' },
+            { t: 'សួស្តី', l: 'Khmer' },        { t: 'ສະບາຍດີ', l: 'Lao' },
+            { t: 'မင်္ဂလာပါ', l: 'Burmese' },
+        ];
+
+        // Undocumented: ~4% of clicks land on a hello from somewhere that isn't
+        // quite on the map. Not counted. No hint it exists.
+        const RARE = [
+            { t: 'nuqneH', l: 'Klingon' },
+            { t: 'Mae govannen', l: 'Sindarin' },
+            { t: "M'athchomaroon", l: 'Dothraki' },
+            { t: 'Kaltxì', l: "Na'vi" },
+            { t: 'Ahoy!', l: 'Pirate' },
+        ];
+
+        const COLORS = ['--coral', '--sky', '--lime', '--purple', '--orange', '--pink', '--teal', '--gold'];
+
+        const greetingEl = document.getElementById('greeting');
+        const labelEl = document.getElementById('label');
+        const counterEl = document.getElementById('counter');
+        const hintEl = document.getElementById('hint');
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const rand = (n) => Math.floor(Math.random() * n);
+
+        // Persisted tally of real languages seen.
+        let seen = new Set(['English']);
+        try {
+            const saved = JSON.parse(localStorage.getItem('hello:seen') || '[]');
+            if (Array.isArray(saved)) saved.forEach((l) => seen.add(l));
+        } catch (e) {}
+
+        function saveSeen() {
+            try { localStorage.setItem('hello:seen', JSON.stringify([...seen])); } catch (e) {}
+        }
+
+        function renderCounter() {
+            counterEl.textContent = `languages seen: ${seen.size} / ${GREETINGS.length}`;
+        }
+
+        // Shuffled bag of real greetings — pop one per click, reshuffle when empty.
+        let bag = [];
+        function refillBag(exclude) {
+            bag = GREETINGS.filter((g) => g.l !== exclude);
+            for (let i = bag.length - 1; i > 0; i--) {
+                const j = rand(i + 1);
+                [bag[i], bag[j]] = [bag[j], bag[i]];
+            }
+        }
+        refillBag('English');
+
+        let lastColor = '--coral';
+        let hintDismissed = false;
+
+        function dismissHint() {
+            if (hintDismissed) return;
+            hintDismissed = true;
+            hintEl.classList.add('gone');
+        }
+
+        function pickColor() {
+            let c = lastColor;
+            while (c === lastColor && COLORS.length > 1) c = COLORS[rand(COLORS.length)];
+            lastColor = c;
+            return c;
+        }
+
+        function show(greet, countsAsSeen) {
+            greetingEl.textContent = greet.t;
+            labelEl.textContent = greet.l;
+
+            const color = pickColor();
+            greetingEl.style.color = `var(${color})`;
+
+            const gRot = (Math.random() * 7 - 3.5).toFixed(2);
+            const lRot = (Math.random() * 7 - 3.5).toFixed(2);
+
+            if (countsAsSeen && !seen.has(greet.l)) {
+                seen.add(greet.l);
+                saveSeen();
+                renderCounter();
+            }
+
+            if (reduceMotion) {
+                greetingEl.style.transform = `rotate(${gRot}deg)`;
+                labelEl.style.transform = `rotate(${lRot}deg)`;
+                return;
+            }
+
+            // THUNK in: overshoot and settle, crooked.
+            greetingEl.animate([
+                { transform: `scale(0.2) rotate(${gRot}deg)`, opacity: 0 },
+                { transform: `scale(1.15) rotate(${gRot}deg)`, opacity: 1, offset: 0.6 },
+                { transform: `scale(1) rotate(${gRot}deg)`, opacity: 1 },
+            ], { duration: 420, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'forwards' });
+
+            labelEl.animate([
+                { transform: `scale(0.4) rotate(${lRot}deg)`, opacity: 0 },
+                { transform: `scale(1.1) rotate(${lRot}deg)`, opacity: 1, offset: 0.65 },
+                { transform: `scale(1) rotate(${lRot}deg)`, opacity: 1 },
+            ], { duration: 460, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'forwards' });
+        }
+
+        function next() {
+            dismissHint();
+
+            // Rare pool: occasional, uncounted, undocumented.
+            if (Math.random() < 0.04) {
+                show(RARE[rand(RARE.length)], false);
+                return;
+            }
+
+            if (bag.length === 0) refillBag(labelEl.textContent);
+            show(bag.pop(), true);
+        }
+
+        // Click, tap, or space/enter — anywhere.
+        window.addEventListener('pointerdown', next);
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+                next();
+            }
+        });
+
+        renderCounter();
+        // Fade the hint after a while even if they never click.
+        setTimeout(dismissHint, 10000);
+    </script>
+</body>
+</html>
