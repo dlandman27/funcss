@@ -719,6 +719,121 @@
         }
         .ad-slot ins.adsbygoogle { display: block; min-height: 90px; }
 
+        /* ---- Liveness: online count, activity ticker, ghost cursors ---- */
+        .liveness {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin: 14px auto 0;
+            padding: 7px 15px;
+            background: var(--card, #fff8ef);
+            border: 2px solid var(--ink, #201a17);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink, #201a17);
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 0.92rem;
+            color: var(--ink, #201a17);
+            line-height: 1;
+            white-space: nowrap;
+            max-width: 92vw;
+        }
+        .liveness .live-dot {
+            width: 9px; height: 9px; border-radius: 50%;
+            background: #2fb0a3;
+            border: 1.5px solid var(--ink, #201a17);
+            animation: live-pulse 2.2s ease-out infinite;
+            flex: none;
+        }
+        @keyframes live-pulse {
+            0%   { box-shadow: 0 0 0 0 rgba(47,176,163,.6); }
+            70%  { box-shadow: 0 0 0 7px rgba(47,176,163,0); }
+            100% { box-shadow: 0 0 0 0 rgba(47,176,163,0); }
+        }
+        .liveness b { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; }
+        .liveness .sep { opacity: .3; }
+        .liveness .toys { font-variant-numeric: tabular-nums; }
+        .liveness .toys-wrap { display: none; }
+        .liveness.has-toys .toys-wrap { display: inline; }
+        @media (prefers-reduced-motion: reduce) { .liveness .live-dot { animation: none; } }
+
+        .activity-toast {
+            position: fixed;
+            left: 18px; bottom: 18px;
+            z-index: 9990;
+            max-width: min(320px, 72vw);
+            padding: 10px 14px;
+            background: var(--card, #fff8ef);
+            border: 2px solid var(--ink, #201a17);
+            border-radius: 12px;
+            box-shadow: 3px 3px 0 var(--ink, #201a17);
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 0.9rem;
+            color: var(--ink, #201a17);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .5s ease, transform .5s ease;
+            pointer-events: none;
+        }
+        .activity-toast.show { opacity: 1; transform: translateY(0); }
+        .activity-toast .who { font-style: italic; opacity: .65; }
+        @media (max-width: 640px) {
+            .activity-toast { left: 12px; bottom: 12px; font-size: .82rem; }
+        }
+
+        /* absolute (not fixed) so ghost cursors live on the page and scroll with it */
+        .ghost-layer { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; z-index: 35; overflow: hidden; }
+        .ghost {
+            position: absolute; top: 0; left: 0;
+            display: flex; align-items: flex-start; gap: 3px;
+            transform: translate(-100px, -100px);
+            will-change: transform;
+            opacity: 0; transition: opacity .4s ease;
+        }
+        .ghost.on { opacity: 1; }
+        .ghost img { width: 26px; height: 26px; display: block; }
+        .ghost .tag {
+            margin-top: 15px;
+            padding: 2px 8px;
+            border: 1.5px solid var(--ink, #201a17);
+            border-radius: 999px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 11px; font-weight: 900;
+            color: var(--ink, #201a17);
+            white-space: nowrap;
+            box-shadow: 2px 2px 0 rgba(32,26,23,.28);
+        }
+        .ghost.click img { animation: ghost-click .3s ease; }
+        @keyframes ghost-click { 50% { transform: scale(.8); } }
+
+        /* "your account" name chip (cosmetic — sells the social feel) */
+        .you-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            margin: 9px auto 0;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.86rem;
+            color: var(--ink, #201a17);
+            opacity: 0.7;
+            cursor: pointer;
+            background: none; border: none;
+            transition: opacity .2s ease;
+        }
+        .you-chip:hover { opacity: 1; }
+        .you-chip b { font-style: normal; font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; }
+        .you-chip i { font-size: 0.7em; opacity: .6; }
+        .you-input {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 0.9rem;
+            padding: 3px 9px;
+            border: 2px solid var(--ink, #201a17);
+            border-radius: 999px;
+            background: var(--card, #fff8ef);
+            color: var(--ink, #201a17);
+            box-shadow: 2px 2px 0 var(--ink, #201a17);
+            outline: none;
+            max-width: 200px;
+        }
+
         .category-title {
             margin: 48px 0 20px 0;
             color: var(--ink);
@@ -1811,6 +1926,17 @@
             </button>
         </div>
 
+        <div class="liveness-wrap" style="display:flex; flex-direction:column; align-items:center;">
+            <div class="liveness" id="liveness" aria-hidden="true">
+                <span class="live-dot"></span>
+                <span><b id="liveOnline">—</b> online</span>
+                <span class="toys-wrap"><span class="sep">·</span> <b class="toys" id="liveToys">0</b> toys opened</span>
+            </div>
+            <button class="you-chip" id="youChip" type="button" title="set your display name">
+                you’re online as <b id="youName">guest</b> <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
+        </div>
+
         <div class="loading">
             Finding something cool<div class="dots">
                 <span></span><span></span><span></span>
@@ -1822,6 +1948,10 @@
             <i class="fas fa-chevron-down"></i>
         </a>
     </div>
+
+    <!-- Liveness overlays (fake "busy site" signals — home page only) -->
+    <div class="ghost-layer" id="ghostLayer" aria-hidden="true"></div>
+    <div class="activity-toast" id="activityToast" aria-hidden="true"></div>
 
     <!-- ============================================================
          All Sites directory (merged in from the old sites/index.html)
@@ -2295,6 +2425,11 @@
                 .then(countsBySlug => {
                     if (!countsBySlug) return;
 
+                    // Real lifetime total → the liveness bar's honest anchor.
+                    const total = Object.values(countsBySlug)
+                        .reduce((a, b) => a + (Number(b) || 0), 0);
+                    if (window.__setLivenessToys) window.__setLivenessToys(total);
+
                     // Hottest rail: most-played sites (built before the sticker
                     // pass below, so its clones get play stickers too)
                     const hotCards = Array.from(siteCards)
@@ -2303,6 +2438,13 @@
                         .sort((a, b) => b.n - a.n)
                         .slice(0, 8)
                         .map(x => x.card);
+
+                    // Weight the activity ticker toward sites people actually play.
+                    if (window.__setLivenessHot) {
+                        window.__setLivenessHot(hotCards
+                            .map(c => (c.querySelector('h2') || {}).textContent)
+                            .filter(Boolean));
+                    }
 
                     // red chip on the originals first, so the rail clones carry it
                     hotCards.forEach(card => {
@@ -2620,6 +2762,245 @@
                 });
             }
             initAds();
+
+            // ---- Liveness: make the place feel busy (home page only) --------
+            // Fake-but-plausible social proof: a breathing "online" count, an
+            // activity ticker over real site names, and a few ghost cursors that
+            // read cards like real visitors. The "toys opened" number is REAL
+            // (summed from /api/counts) so the faked bits sit next to truth.
+            (function liveness() {
+                const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                const coarse = window.matchMedia('(pointer: coarse)').matches;
+                const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+                const bar = document.getElementById('liveness');
+                const onlineEl = document.getElementById('liveOnline');
+                const toysEl = document.getElementById('liveToys');
+                const toast = document.getElementById('activityToast');
+                const ghostLayer = document.getElementById('ghostLayer');
+
+                const cards = Array.from(document.querySelectorAll('.site-card'));
+                const names = cards.map((c) => (c.querySelector('h2') || {}).textContent).filter(Boolean);
+                if (!names.length) return;
+
+                // --- breathing "online" count (believable fake) ---
+                // Baseline rides a daily curve: busiest ~8pm, quietest ~8am.
+                function baseline() {
+                    const d = new Date();
+                    const h = d.getHours() + d.getMinutes() / 60;
+                    const curve = Math.cos(((h - 20) / 24) * Math.PI * 2); // +1 @20h, -1 @8h
+                    const lo = 11, hi = 94;
+                    return Math.round(lo + (hi - lo) * (curve * 0.5 + 0.5));
+                }
+                let online = Math.max(5, baseline() + (Math.floor(Math.random() * 7) - 3));
+                const renderOnline = () => { if (onlineEl) onlineEl.textContent = online; };
+                renderOnline();
+                let onlineTimer = setInterval(() => {
+                    const target = baseline();
+                    let next = online;
+                    if (online < target && Math.random() < 0.6) next += 1;
+                    else if (online > target && Math.random() < 0.6) next -= 1;
+                    if (Math.random() < 0.5) next += Math.random() < 0.5 ? 1 : -1; // jitter
+                    online = Math.max(5, next);
+                    renderOnline();
+                }, 4500 + Math.random() * 3000);
+
+                // --- real "toys opened" total, ticking up ---
+                let toysTimer = null;
+                window.__setLivenessToys = function (total) {
+                    if (!total || !toysEl || !bar) return;
+                    let shown = total;
+                    toysEl.textContent = shown.toLocaleString();
+                    bar.classList.add('has-toys');
+                    clearInterval(toysTimer);
+                    toysTimer = setInterval(() => {
+                        if (document.hidden) return;
+                        if (Math.random() < 0.7) {
+                            shown += 1 + Math.floor(Math.random() * 3);
+                            toysEl.textContent = shown.toLocaleString();
+                        }
+                    }, 2600 + Math.random() * 2400);
+                };
+
+                // --- activity ticker ---
+                const CITIES = ['Osaka', 'Berlin', 'São Paulo', 'Lagos', 'Toronto', 'Lyon', 'Seoul',
+                    'Austin', 'Manila', 'Oslo', 'Pune', 'Lima', 'Cairo', 'Melbourne', 'Hanoi', 'Porto'];
+                const city = () => CITIES[Math.floor(Math.random() * CITIES.length)];
+                let hot = [];
+                window.__setLivenessHot = function (list) { hot = (list || []).filter(Boolean); };
+                function pickSite() {
+                    if (hot.length && Math.random() < 0.6) return hot[Math.floor(Math.random() * hot.length)];
+                    return names[Math.floor(Math.random() * names.length)];
+                }
+                const LINES = [
+                    (s) => `someone just opened <b>${s}</b>`,
+                    (s) => `<span class="who">someone in ${esc(city())}</span> is playing <b>${s}</b>`,
+                    (s) => `<b>${s}</b> opened moments ago`,
+                    (s) => `${2 + Math.floor(Math.random() * 6)} people are in <b>${s}</b> right now`,
+                    (s) => `<span class="who">just now</span> — someone discovered <b>${s}</b>`,
+                ];
+                let toastTimer = null, toastHide = null;
+                function showToast() {
+                    if (!toast) return;
+                    const s = esc(pickSite());
+                    toast.innerHTML = LINES[Math.floor(Math.random() * LINES.length)](s);
+                    toast.classList.add('show');
+                    clearTimeout(toastHide);
+                    toastHide = setTimeout(() => toast.classList.remove('show'), 5200);
+                }
+                function scheduleToast() {
+                    clearTimeout(toastTimer);
+                    toastTimer = setTimeout(() => {
+                        if (!document.hidden) showToast();
+                        scheduleToast();
+                    }, 6000 + Math.random() * 6000);
+                }
+
+                // --- ghost cursors ---
+                const GNAMES = ['Maya', 'theo', 'Priya', 'guest_84', 'Luca', 'Sam', 'Noah', 'aria',
+                    'kenji', 'Zoe', 'mara', 'dev_22', 'Ivy', 'Omar', 'jun', 'Pix', 'Remy', 'tara', 'Max', 'nova'];
+                const GCOLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+                const gname = () => GNAMES[Math.floor(Math.random() * GNAMES.length)];
+                function arrowURL(color) {
+                    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24">' +
+                        '<path d="M3 2 L3 21 L8 16 L11.4 22.5 L14.3 21.2 L11 15 L18.5 15 Z" fill="' + color +
+                        '" stroke="#201a17" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+                    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+                }
+                const ghosts = [];
+                let raf = null, last = 0;
+                const docH = () => Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+                function sizeLayer() { if (ghostLayer) ghostLayer.style.height = docH() + 'px'; }
+                function pickTarget(g) {
+                    // document-space coords so cursors roam the whole page, not just the viewport
+                    const vis = cards.filter((c) => c.offsetParent !== null);
+                    if (vis.length && Math.random() < 0.85) {
+                        // usually hop to a nearby card (reads like browsing); sometimes jump far
+                        let pool = vis;
+                        if (Math.random() < 0.75) {
+                            pool = vis.map((c) => {
+                                const r = c.getBoundingClientRect();
+                                const cx = r.left + window.scrollX + r.width / 2;
+                                const cy = r.top + window.scrollY + r.height / 2;
+                                return { c, d: Math.hypot(cx - g.x, cy - g.y) };
+                            }).sort((a, b) => a.d - b.d).slice(0, 14).map((o) => o.c);
+                        }
+                        const r = pool[Math.floor(Math.random() * pool.length)].getBoundingClientRect();
+                        g.tx = r.left + window.scrollX + r.width * (0.25 + Math.random() * 0.5);
+                        g.ty = r.top + window.scrollY + r.height * (0.25 + Math.random() * 0.5);
+                        g.willClick = Math.random() < 0.4;
+                    } else {
+                        g.tx = 40 + Math.random() * (innerWidth - 80);
+                        g.ty = Math.random() * docH();
+                        g.willClick = false;
+                    }
+                    g.state = 'move';
+                }
+                function makeGhost(i) {
+                    const color = GCOLORS[i % GCOLORS.length];
+                    const el = document.createElement('div');
+                    el.className = 'ghost';
+                    const img = document.createElement('img');
+                    img.src = arrowURL(color); img.alt = '';
+                    const tag = document.createElement('span');
+                    tag.className = 'tag'; tag.textContent = gname(); tag.style.background = color;
+                    el.append(img, tag);
+                    ghostLayer.appendChild(el);
+                    const g = {
+                        el, tag, x: Math.random() * innerWidth, y: Math.random() * docH(),
+                        tx: 0, ty: 0, speed: 120 + Math.random() * 90, state: 'move', wait: 0, willClick: false,
+                    };
+                    pickTarget(g);
+                    requestAnimationFrame(() => el.classList.add('on'));
+                    return g;
+                }
+                function respawn(g) {
+                    g.el.classList.remove('on');
+                    setTimeout(() => {
+                        g.x = Math.random() * innerWidth;
+                        g.y = Math.random() * docH();
+                        g.tag.textContent = gname();
+                        pickTarget(g);
+                        g.el.classList.add('on');
+                    }, 450);
+                }
+                function tick(ts) {
+                    if (!last) last = ts;
+                    let dt = (ts - last) / 1000; last = ts;
+                    if (dt > 0.1) dt = 0.1;
+                    for (const g of ghosts) {
+                        if (g.state === 'move') {
+                            const dx = g.tx - g.x, dy = g.ty - g.y, dist = Math.hypot(dx, dy);
+                            const step = g.speed * dt;
+                            if (dist <= step || dist < 2) {
+                                g.x = g.tx; g.y = g.ty;
+                                if (g.willClick) { g.el.classList.add('click'); setTimeout(() => g.el.classList.remove('click'), 300); }
+                                g.state = 'wait'; g.wait = 0.8 + Math.random() * 2.3;
+                            } else { g.x += (dx / dist) * step; g.y += (dy / dist) * step; }
+                        } else {
+                            g.wait -= dt;
+                            if (g.wait <= 0) { if (Math.random() < 0.15) respawn(g); else pickTarget(g); }
+                        }
+                        g.el.style.transform = 'translate(' + g.x.toFixed(1) + 'px,' + g.y.toFixed(1) + 'px)';
+                    }
+                    raf = requestAnimationFrame(tick);
+                }
+                function startGhosts() {
+                    if (reduce || coarse || !ghostLayer || ghosts.length) return;
+                    sizeLayer();
+                    const n = 5 + Math.floor(Math.random() * 3);
+                    for (let i = 0; i < n; i++) ghosts.push(makeGhost(i));
+                    last = 0; raf = requestAnimationFrame(tick);
+                }
+                function resumeGhosts() {
+                    if (reduce || coarse || !ghosts.length || raf) return;
+                    last = 0; raf = requestAnimationFrame(tick);
+                }
+                function stopGhosts() { if (raf) cancelAnimationFrame(raf); raf = null; }
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) { stopGhosts(); clearTimeout(toastTimer); }
+                    else { resumeGhosts(); scheduleToast(); }
+                });
+                window.addEventListener('resize', () => { if (ghosts.length) sizeLayer(); });
+
+                // --- your (cosmetic) account name — does nothing, but feels like others see it ---
+                const youChip = document.getElementById('youChip');
+                const youNameEl = document.getElementById('youName');
+                const randGuest = () => 'guest_' + (100 + Math.floor(Math.random() * 900));
+                let myName = '';
+                try { myName = localStorage.getItem('rsotw:name') || ''; } catch (e) {}
+                if (!myName) { myName = randGuest(); try { localStorage.setItem('rsotw:name', myName); } catch (e) {} }
+                if (youNameEl) youNameEl.textContent = myName;
+                function editName() {
+                    if (!youChip) return;
+                    const saved = youChip.innerHTML;
+                    const input = document.createElement('input');
+                    input.type = 'text'; input.className = 'you-input';
+                    input.value = myName; input.maxLength = 24;
+                    youChip.textContent = '';
+                    youChip.appendChild(input);
+                    input.focus(); input.select();
+                    let done = false;
+                    const commit = () => {
+                        if (done) return; done = true;
+                        const v = input.value.trim().slice(0, 24);
+                        if (v) { myName = v; try { localStorage.setItem('rsotw:name', myName); } catch (e) {} }
+                        youChip.innerHTML = saved;
+                        const nn = document.getElementById('youName');
+                        if (nn) nn.textContent = myName;
+                    };
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+                        else if (e.key === 'Escape') { input.value = myName; input.blur(); }
+                    });
+                    input.addEventListener('blur', commit);
+                }
+                if (youChip) youChip.addEventListener('click', editName);
+
+                scheduleToast();
+                startGhosts();
+            })();
 
             // Floating back-to-top button visibility
             const backToTop = document.getElementById('backToTop');
