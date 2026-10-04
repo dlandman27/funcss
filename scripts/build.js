@@ -184,19 +184,40 @@ function renderCard(site, sectionTitle) {
   ].join('\n');
 }
 
+// A hidden-until-live AdSense slot. Activated client-side by initAds() once the
+// site is approved and every data-ad-slot ID is filled in (see home.html).
+function renderAdSlot(name) {
+  return [
+    '',
+    `            <!-- Ad: ${name} -->`,
+    `            <div class="ad-slot" data-ad-name="${name}">`,
+    '                <span class="ad-slot__label">Advertisement</span>',
+    '                <ins class="adsbygoogle" style="display:block"',
+    '                     data-ad-client="ca-pub-1505383837343849"',
+    '                     data-ad-slot=""',
+    '                     data-ad-format="auto"',
+    '                     data-full-width-responsive="true"></ins>',
+    '            </div>',
+  ].join('\n');
+}
+
+// Inline ad slots injected after these 0-based section indices (3rd and 5th).
+const AD_AFTER_SECTION = { 2: 'home-inline-1', 4: 'home-inline-2' };
+
 function renderSections(catalog) {
-  return catalog.sections.map((section) => {
+  return catalog.sections.map((section, i) => {
     const cards = catalog.sites
       .filter((s) => s.visible && s.section === section.key)
       .map((s) => renderCard(s, section.title))
       .join('\n');
-    return [
+    const block = [
       `            <!-- ${section.title} Section -->`,
       `            <h2 class="category-title ${section.key}">${escapeHtml(section.title)}</h2>`,
       '            <div class="site-grid">',
       cards,
       '            </div>',
     ].join('\n');
+    return AD_AFTER_SECTION[i] ? `${block}\n${renderAdSlot(AD_AFTER_SECTION[i])}` : block;
   }).join('\n\n');
 }
 

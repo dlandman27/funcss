@@ -3,7 +3,10 @@
 <html lang="en">
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
-    
+    <!-- Google AdSense: loader + ownership verification (ads gated behind ADS_LIVE below) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1505383837343849"
+         crossorigin="anonymous"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Discover random fun websites and mini-games. A curated collection of interactive experiences, games, tools and more.">
@@ -1845,6 +1848,25 @@
             line-height: 1.6;
         }
 
+        /* Ad slots — hidden until ADS_LIVE flips them on (see initAds) */
+        .ad-slot { display: none; }
+        .ad-slot.is-active {
+            display: block;
+            max-width: 1120px;
+            margin: 40px auto;
+            padding: 8px;
+            text-align: center;
+        }
+        .ad-slot__label {
+            display: block;
+            font: 600 11px/1 var(--font-display, sans-serif);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            opacity: .45;
+            margin-bottom: 8px;
+        }
+        .ad-slot ins.adsbygoogle { display: block; min-height: 90px; }
+
         .category-title {
             margin: 48px 0 20px 0;
             color: var(--ink);
@@ -3615,6 +3637,16 @@
                 </div>
             </div>
 
+            <!-- Ad: home-inline-1 -->
+            <div class="ad-slot" data-ad-name="home-inline-1">
+                <span class="ad-slot__label">Advertisement</span>
+                <ins class="adsbygoogle" style="display:block"
+                     data-ad-client="ca-pub-1505383837343849"
+                     data-ad-slot=""
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+            </div>
+
             <!-- Games Section -->
             <h2 class="category-title games">Games</h2>
             <div class="site-grid">
@@ -4052,6 +4084,16 @@
                 </div>
             </div>
 
+            <!-- Ad: home-inline-2 -->
+            <div class="ad-slot" data-ad-name="home-inline-2">
+                <span class="ad-slot__label">Advertisement</span>
+                <ins class="adsbygoogle" style="display:block"
+                     data-ad-client="ca-pub-1505383837343849"
+                     data-ad-slot=""
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+            </div>
+
             <!-- Mindfulness Section -->
             <h2 class="category-title mindfulness">Mindfulness</h2>
             <div class="site-grid">
@@ -4340,6 +4382,16 @@
                         <div class="category">Art</div>
                     </a>
                 </div>
+            </div>
+
+            <!-- Ad: bottom of the directory -->
+            <div class="ad-slot" data-ad-name="home-bottom">
+                <span class="ad-slot__label">Advertisement</span>
+                <ins class="adsbygoogle" style="display:block"
+                     data-ad-client="ca-pub-1505383837343849"
+                     data-ad-slot=""
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
             </div>
 
             <!-- Footer message -->
@@ -5086,12 +5138,15 @@
                 const activeCategories = Array.from(categoryFilters.querySelectorAll('input:checked'))
                     .map(input => input.value);
 
-                // rails don't participate in search/filter — hide them instead
+                // rails and ad slots don't participate in search/filter — hide them instead
+                const filtering = term !== '' || activeCategories.length < categories.size;
                 const featuredEl = document.getElementById('featured');
                 if (featuredEl) {
-                    const filtering = term !== '' || activeCategories.length < categories.size;
                     featuredEl.style.display = filtering ? 'none' : '';
                 }
+                document.querySelectorAll('.ad-slot.is-active').forEach(slot => {
+                    slot.style.display = filtering ? 'none' : '';
+                });
 
                 siteCards.forEach(card => {
                     const title = card.querySelector('h2').textContent.toLowerCase();
@@ -5172,6 +5227,23 @@
             searchInput.addEventListener('input', filterCards);
             categoryFilters.addEventListener('change', filterCards);
             sortSelect.addEventListener('change', sortCards);
+
+            // ---- Ads --------------------------------------------------------
+            // ADS_LIVE stays false until the site is AdSense-approved AND every
+            // .ad-slot has its data-ad-slot unit ID filled in. The loader script
+            // in <head> is enough for ownership verification + site review.
+            const ADSENSE_CLIENT = 'ca-pub-1505383837343849';
+            const ADS_LIVE = false;
+            function initAds() {
+                if (!ADSENSE_CLIENT || !ADS_LIVE) return; // slots stay hidden
+                document.querySelectorAll('.ad-slot').forEach(slot => {
+                    const ins = slot.querySelector('ins.adsbygoogle');
+                    if (!ins || !ins.getAttribute('data-ad-slot')) return; // no unit id yet
+                    slot.classList.add('is-active');
+                    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+                });
+            }
+            initAds();
 
             // Floating back-to-top button visibility
             const backToTop = document.getElementById('backToTop');
