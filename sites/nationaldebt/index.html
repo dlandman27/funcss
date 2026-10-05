@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spend the National Debt</title>
+  <meta name="description" content="You've been handed the entire US national debt as a shopping budget. Buy private jets, aircraft carriers, whole countries. Watch it barely make a dent — while the clock keeps ticking up.">
+  <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/nationaldebt/">
+    <meta property="og:title" content="Spend the National Debt">
+    <meta property="og:description" content="You've been handed the entire US national debt. Spend it on jets, islands, and aircraft carriers — the clock keeps ticking up faster than you can.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/nationaldebt.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Spend the National Debt">
+    <meta name="twitter:description" content="You've been handed the entire US national debt. Spend it on jets, islands, and aircraft carriers — the clock keeps ticking up faster than you can.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/nationaldebt.png">
+    <!-- rsotw:og:end -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='3' y='3' width='44' height='44' rx='8' fill='%23b7ce3c' stroke='%23201a17' stroke-width='3'/><text x='25' y='35' font-family='Arial Black,Arial' font-weight='900' font-size='30' text-anchor='middle' fill='%23201a17'>%24</text></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --purple: #a98fd0;
+      --orange: #f47b28;
+      --pink: #ff7fa5;
+      --teal: #2fb0a3;
+      --gold: #f7c948;
+      --gray: #a89f93;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background:
+        radial-gradient(circle at 15% -10%, rgba(183,206,60,.18), transparent 40%),
+        radial-gradient(circle at 90% 0%, rgba(90,160,219,.16), transparent 42%),
+        var(--paper);
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 100dvh;
+    }
+    .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+    /* ---------------- header / debt clock ---------------- */
+    .stickytop {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--paper);
+      padding-bottom: 10px;
+      box-shadow: 0 6px 0 rgba(32,26,23,.12);
+    }
+    .topbar {
+      background: var(--ink);
+      color: var(--cream);
+      border-bottom: 4px solid var(--ink);
+      box-shadow: 0 5px 0 rgba(32,26,23,.25);
+      padding: 12px clamp(10px, 3vw, 26px) 14px;
+    }
+    .masthead {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    .brand {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-size: clamp(.82rem, 2.4vw, 1.05rem);
+      line-height: 1;
+      color: var(--cream);
+    }
+    .brand .dim { color: var(--gold); }
+    .deadpan {
+      font-style: italic;
+      font-size: clamp(.64rem, 1.9vw, .8rem);
+      opacity: .7;
+    }
+    .clockwrap {
+      max-width: 1180px;
+      margin: 10px auto 0;
+      text-align: center;
+    }
+    .clocklabel {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: clamp(.55rem, 1.8vw, .72rem);
+      color: var(--gold);
+      margin-bottom: 2px;
+    }
+    .debtclock {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(1.5rem, 8.6vw, 4.1rem);
+      line-height: 1.02;
+      letter-spacing: -1px;
+      color: var(--cream);
+      white-space: nowrap;
+    }
+    .debtclock .cents { color: var(--coral); }
+    .clocknote {
+      font-style: italic;
+      opacity: .6;
+      font-size: clamp(.6rem, 1.9vw, .78rem);
+      margin-top: 3px;
+    }
+
+    /* ---------------- scoreboard ---------------- */
+    .scoreboard {
+      max-width: 1180px;
+      margin: 14px auto 0;
+      padding: 0 clamp(10px, 3vw, 26px);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(8px, 1.6vw, 16px);
+    }
+    .score {
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: clamp(8px, 1.6vw, 14px) clamp(6px, 1.4vw, 16px);
+      text-align: center;
+      position: relative;
+    }
+    .score:nth-child(1) { transform: rotate(-1deg); }
+    .score:nth-child(2) { transform: rotate(.6deg); }
+    .score:nth-child(3) { transform: rotate(-.5deg); }
+    .score .k {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: clamp(.52rem, 1.7vw, .72rem);
+      opacity: .72;
+    }
+    .score .v {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(.78rem, 3vw, 1.5rem);
+      line-height: 1.05;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .score.spent .v { color: var(--coral); }
+    .score.remaining .v { color: var(--teal); }
+    .score .sub {
+      font-style: italic;
+      font-size: clamp(.56rem, 1.7vw, .74rem);
+      opacity: .7;
+      margin-top: 2px;
+    }
+
+    /* progress "dent" bar */
+    .dentwrap {
+      max-width: 1180px;
+      margin: 12px auto 0;
+      padding: 0 clamp(10px, 3vw, 26px);
+    }
+    .dentbar {
+      height: 18px;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      overflow: hidden;
+      position: relative;
+    }
+    .dentfill {
+      height: 100%;
+      width: 0%;
+      min-width: 0;
+      background: repeating-linear-gradient(45deg, var(--coral) 0 12px, #d94833 12px 24px);
+      border-right: 2px solid var(--ink);
+      transition: width .35s cubic-bezier(.34,1.3,.64,1);
+    }
+    .dentcap {
+      text-align: center;
+      font-style: italic;
+      opacity: .65;
+      font-size: clamp(.6rem, 1.8vw, .76rem);
+      margin-top: 5px;
+    }
+
+    .hint {
+      max-width: 1180px;
+      margin: 10px auto 0;
+      padding: 0 clamp(10px, 3vw, 26px);
+      text-align: center;
+      font-style: italic;
+      font-size: clamp(.72rem, 2.1vw, .92rem);
+      opacity: .72;
+      transition: opacity 1.2s ease;
+    }
+    .hint.gone { opacity: 0; }
+
+    /* ---------------- item grid ---------------- */
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: clamp(14px, 3vw, 26px);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+      gap: clamp(10px, 1.8vw, 18px);
+    }
+    .item {
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 16px;
+      box-shadow: 5px 5px 0 var(--ink);
+      padding: 14px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      transition: box-shadow .12s, transform .12s;
+    }
+    .item.owned { box-shadow: 5px 5px 0 var(--ink), 0 0 0 3px var(--gold) inset; }
+    .item .ownedflag {
+      position: absolute;
+      top: -11px;
+      right: -9px;
+      background: var(--gold);
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 2px 2px 0 var(--ink);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: .68rem;
+      padding: 2px 9px;
+      transform: rotate(5deg);
+      display: none;
+    }
+    .item.owned .ownedflag { display: block; }
+
+    .tile {
+      width: clamp(74px, 20vw, 96px);
+      aspect-ratio: 1;
+      border-radius: 18px;
+      border: 3px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transform: rotate(-4deg);
+      flex: none;
+    }
+    .tile i, .tile svg { position: relative; z-index: 1; }
+    .tile i {
+      font-size: clamp(1.9rem, 6vw, 2.6rem);
+      color: var(--ink);
+      /* sticker ink: offset duplicate via text-shadow for a hard edge under fill */
+      line-height: 1;
+    }
+    .tile svg { width: 58%; height: 58%; display: block; }
+
+    .iname {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: clamp(.74rem, 2vw, .88rem);
+      line-height: 1.12;
+      margin-top: 10px;
+      min-height: 2.2em;
+      display: flex;
+      align-items: center;
+    }
+    .price {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(.78rem, 2.1vw, .95rem);
+      margin-top: 2px;
+    }
+    .flavor {
+      font-style: italic;
+      font-size: clamp(.6rem, 1.7vw, .72rem);
+      opacity: .62;
+      margin-top: 3px;
+      min-height: 2.2em;
+      line-height: 1.2;
+    }
+
+    .buyrow {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      margin-top: 11px;
+      width: 100%;
+      max-width: 240px;
+    }
+    .qbtn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 1.3rem;
+      line-height: 1;
+      width: 46px;
+      flex: none;
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 3px 3px 0 var(--ink);
+      background: var(--cream);
+      color: var(--ink);
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform .09s, box-shadow .09s, background .12s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qbtn.buy { background: var(--lime); }
+    .qbtn.sell { background: var(--paper); }
+    .qbtn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+    .qbtn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+    .qbtn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      box-shadow: 1px 1px 0 var(--ink);
+      transform: none;
+    }
+    .qcount {
+      flex: 1;
+      min-width: 0;
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 3px 3px 0 var(--ink);
+      background: var(--paper);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(.95rem, 3vw, 1.2rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+    .lineitem {
+      font-style: italic;
+      font-size: clamp(.62rem, 1.7vw, .76rem);
+      opacity: .78;
+      margin-top: 9px;
+      min-height: 1.2em;
+      visibility: hidden;
+    }
+    .item.owned .lineitem { visibility: visible; }
+
+    /* ---------------- receipt ---------------- */
+    .receiptbtn {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 40;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-size: .82rem;
+      background: var(--gold);
+      color: var(--ink);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 4px 4px 0 var(--ink);
+      padding: 11px 18px;
+      cursor: pointer;
+      transform: rotate(-2deg);
+      transition: transform .12s, box-shadow .12s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .receiptbtn:hover { transform: translate(-2px,-2px) rotate(-2deg); box-shadow: 6px 6px 0 var(--ink); }
+    .receiptbtn:active { transform: translate(2px,2px) rotate(-2deg); box-shadow: 1px 1px 0 var(--ink); }
+    .receiptbtn .rcount {
+      background: var(--coral);
+      color: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: .74rem;
+      min-width: 1.4em;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(32,26,23,.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal.on { display: flex; }
+    .receipt {
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 16px;
+      box-shadow: 7px 7px 0 var(--ink);
+      width: 100%;
+      max-width: 440px;
+      max-height: 86dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .receipt-head {
+      padding: 16px 18px 12px;
+      border-bottom: 3px dashed var(--ink);
+      text-align: center;
+    }
+    .receipt-head h2 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin: 0;
+      font-size: 1.15rem;
+    }
+    .receipt-head .sub { font-style: italic; opacity: .7; font-size: .8rem; margin-top: 3px; }
+    .receipt-rows {
+      overflow-y: auto;
+      padding: 8px 18px;
+      flex: 1;
+    }
+    .rrow {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px dotted rgba(32,26,23,.3);
+      font-size: .86rem;
+    }
+    .rrow .rl { flex: 1; }
+    .rrow .rl small { font-style: italic; opacity: .6; }
+    .rrow .rp {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .receipt-empty { text-align: center; font-style: italic; opacity: .6; padding: 24px 0; }
+    .receipt-foot {
+      border-top: 3px dashed var(--ink);
+      padding: 12px 18px 16px;
+    }
+    .receipt-total {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 1.05rem;
+    }
+    .receipt-total.small { font-size: .82rem; font-weight: 900; opacity: .85; margin-top: 4px; }
+    .receipt-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .btn {
+      flex: 1;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: .8rem;
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 10px;
+      cursor: pointer;
+      transition: transform .1s, box-shadow .1s;
+    }
+    .btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+    .btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+    .btn.close { background: var(--sky); color: var(--ink); }
+    .btn.clear { background: var(--paper); color: var(--ink); }
+
+    footer {
+      max-width: 1180px;
+      margin: 10px auto 90px;
+      padding: 0 clamp(10px, 3vw, 26px);
+      text-align: center;
+      font-style: italic;
+      opacity: .55;
+      font-size: clamp(.64rem, 1.8vw, .78rem);
+      line-height: 1.5;
+    }
+
+    /* buy flash on card */
+    @keyframes cardpop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+    .item.pop { animation: cardpop .32s ease; }
+
+    /* flying "−$" tag off the clock */
+    .flyer {
+      position: fixed;
+      z-index: 45;
+      pointer-events: none;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: var(--cream);
+      -webkit-text-stroke: 3px var(--ink);
+      paint-order: stroke fill;
+      white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .item.pop { animation: none; }
+      .dentfill { transition: none; }
+      .hint { transition: none; }
+      * { scroll-behavior: auto; }
+    }
+
+    @media (max-width: 480px) {
+      .score .k { letter-spacing: .3px; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="stickytop">
+  <div class="topbar">
+    <div class="masthead">
+      <div class="brand">Spend The <span class="dim">National Debt</span></div>
+      <div class="deadpan">Est. balance owed by the United States of America. Non-refundable.</div>
+    </div>
+    <div class="clockwrap">
+      <div class="clocklabel">Your Budget — The Outstanding Public Debt</div>
+      <div class="debtclock tnum" id="debtClock">$34,000,000,000,000<span class="cents">.00</span></div>
+      <div class="clocknote" id="clockNote">increasing by roughly $51,000 every second. you will not catch it.</div>
+    </div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score budget">
+      <div class="k">Budget</div>
+      <div class="v tnum" id="sbBudget">$34,000,000,000,000</div>
+      <div class="sub">spend it all. we dare you.</div>
+    </div>
+    <div class="score spent">
+      <div class="k">Spent</div>
+      <div class="v tnum" id="sbSpent">$0</div>
+      <div class="sub" id="sbSpentSub">a rounding error so far</div>
+    </div>
+    <div class="score remaining">
+      <div class="k">Remaining</div>
+      <div class="v tnum" id="sbRemaining">$34,000,000,000,000</div>
+      <div class="sub" id="sbPercent">0.0000% spent</div>
+    </div>
+  </div>
+  </div><!-- /stickytop -->
+
+  <div class="dentwrap">
+    <div class="dentbar"><div class="dentfill" id="dentFill"></div></div>
+    <div class="dentcap" id="dentCap">this bar measures the dent you've made. good luck seeing it.</div>
+  </div>
+
+  <div class="hint" id="hint">tap the + on anything. buy a coffee. buy an aircraft carrier. it won't matter.</div>
+
+  <main>
+    <div class="grid" id="grid"></div>
+    <footer>
+      Prices are approximate and for entertainment only. No actual aircraft carriers will be delivered.<br>
+      The debt figure ticks up on a timer; the real one is worse and does not pause when your tab is hidden.
+    </footer>
+  </main>
+
+  <button class="receiptbtn" id="receiptBtn" aria-label="Open receipt">
+    <i class="fa-solid fa-receipt"></i> Receipt <span class="rcount" id="rCount">0</span>
+  </button>
+
+  <div class="modal" id="modal">
+    <div class="receipt" role="dialog" aria-label="Your receipt">
+      <div class="receipt-head">
+        <h2>Itemized Receipt</h2>
+        <div class="sub">Cash or national credit accepted</div>
+      </div>
+      <div class="receipt-rows" id="receiptRows">
+        <div class="receipt-empty">Nothing purchased yet. The debt remains, as ever, undisturbed.</div>
+      </div>
+      <div class="receipt-foot">
+        <div class="receipt-total"><span>Total spent</span><span class="tnum" id="receiptTotal">$0</span></div>
+        <div class="receipt-total small"><span>Dent in the debt</span><span class="tnum" id="receiptDent">0.0000%</span></div>
+        <div class="receipt-actions">
+          <button class="btn clear" id="clearBtn">Sell it all back</button>
+          <button class="btn close" id="closeBtn">Keep spending</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var reduceMotion = false;
+    try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+    // ------------------------------------------------------------------
+    // The budget: the US national debt. A specific, believable figure.
+    // It ticks UP in real time so you can never actually spend it all.
+    // ------------------------------------------------------------------
+    var START_DEBT = 34000000000000;      // $34,000,000,000,000
+    var TICK_PER_SEC = 51000;             // ~ the going rate, give or take
+    var sessionStart = performance.now();
+
+    function currentDebt() {
+      var secs = (performance.now() - sessionStart) / 1000;
+      return START_DEBT + secs * TICK_PER_SEC;
+    }
+
+    // ------------------------------------------------------------------
+    // Items — escalate from trivial to national-scale absurd.
+    // icon: Font Awesome class, OR svg: inline hand-drawn sticker.
+    // ------------------------------------------------------------------
+    var ITEMS = [
+      { id:'coffee',  name:'Coffee',                 price:5,            icon:'fa-mug-hot',        color:'var(--orange)', flavor:'a small drip. black.' },
+      { id:'movie',   name:'Movie Ticket',           price:15,           icon:'fa-ticket',         color:'var(--coral)',  flavor:'matinee pricing, generously.' },
+      { id:'book',    name:'Hardcover Book',          price:30,           icon:'fa-book',           color:'var(--teal)',   flavor:'you will not read it.' },
+      { id:'game',    name:'Video Game',             price:60,           icon:'fa-gamepad',        color:'var(--purple)', flavor:'full price, no sale.' },
+      { id:'sneaker', name:'Sneakers',               price:120,          icon:'fa-shoe-prints',    color:'var(--pink)',   flavor:'the hyped colorway.' },
+      { id:'airpods', name:'AirPods',                price:250,          icon:'fa-headphones',     color:'var(--sky)',    flavor:'the ones you lose.' },
+      { id:'phone',   name:'iPhone',                 price:999,          icon:'fa-mobile-screen',  color:'var(--ink-chip)',color2:'var(--gray)', flavor:'the pro. obviously.' },
+      { id:'pc',      name:'Gaming PC',              price:3000,         icon:'fa-desktop',        color:'var(--lime)',   flavor:'runs the fans loud.' },
+      { id:'rolex',   name:'Rolex',                  price:12000,        icon:'fa-clock',          color:'var(--gold)',   flavor:'tells the same time.' },
+      { id:'loan',    name:'Pay Off a Student Loan', price:38000,        icon:'fa-graduation-cap', color:'var(--teal)',   flavor:'one whole person, freed.' },
+      { id:'tesla',   name:'Tesla Model 3',          price:42000,        icon:'fa-car-side',       color:'var(--coral)',  flavor:'before the delivery fee.' },
+      { id:'house',   name:'Average US House',       price:420000,       icon:'fa-house',          color:'var(--orange)', flavor:'national median, roughly.' },
+      { id:'ferrari', name:'Ferrari',                price:450000,       icon:'fa-car',            color:'var(--coral)',  flavor:'optional paint extra.' },
+      { id:'sbad',    name:'Super Bowl Ad (30s)',    price:7000000,      icon:'fa-tv',             color:'var(--purple)', flavor:'thirty seconds of fame.' },
+      { id:'jet',     name:'Private Jet',            price:65000000,     icon:'fa-plane',          color:'var(--sky)',    flavor:'commercial is for peasants.' },
+      { id:'mansion', name:'Mega-Mansion',           price:100000000,    icon:'fa-building-columns',color:'var(--cream)', color2:'var(--gray)', flavor:'with a moat, naturally.' },
+      { id:'island',  name:'Private Island',         price:150000000,    svg:'island',             color:'var(--teal)',   flavor:'escape the group chat.' },
+      { id:'b747',    name:'Boeing 747',             price:400000000,    icon:'fa-plane-up',       color:'var(--sky)',    flavor:'you, as an airline.' },
+      { id:'yacht',   name:'Mega-Yacht',             price:600000000,    icon:'fa-ship',           color:'var(--sky)',    flavor:'the little boat is for the big boat.' },
+      { id:'tower',   name:'Skyscraper',             price:1000000000,   icon:'fa-building',       color:'var(--gray)',   flavor:'put your name on top.' },
+      { id:'hosp',    name:'Build a Hospital',       price:1500000000,   icon:'fa-hospital',       color:'var(--cream)',  color2:'var(--coral)', flavor:'actually, this one helps.' },
+      { id:'bomber',  name:'Stealth Bomber',         price:2000000000,   icon:'fa-jet-fighter',    color:'var(--ink-chip)',color2:'var(--gray)', flavor:'radar sold separately.' },
+      { id:'nba',     name:'An NBA Team',            price:4000000000,   icon:'fa-basketball',     color:'var(--orange)', flavor:'owner\'s box included.' },
+      { id:'rocket',  name:'A Rocket to Orbit',      price:6500000000,   icon:'fa-rocket',         color:'var(--coral)',  flavor:'tax the stars.' },
+      { id:'carrier', name:'Aircraft Carrier',       price:13000000000,  svg:'carrier',            color:'var(--gray)',   flavor:'floating, mostly.' },
+      { id:'everyone',name:'Give Every American $100',price:33000000000, icon:'fa-hand-holding-dollar', color:'var(--lime)', flavor:'~330 million thank-yous.' },
+      { id:'nasa',    name:'Fund NASA for a Year',   price:25000000000,  svg:'planet',             color:'var(--sky)',    flavor:'one year of the cosmos.' },
+      { id:'hunger',  name:'End World Hunger (1 yr)', price:40000000000,  icon:'fa-wheat-awn',      color:'var(--gold)',   flavor:'the UN\'s estimate, honestly.' },
+      { id:'gdp',     name:"A Small Country's GDP",   price:60000000000,  icon:'fa-globe',          color:'var(--teal)',   flavor:'the whole economy. for sale.' },
+      { id:'railway', name:'A National High-Speed Rail', price:120000000000, icon:'fa-train',       color:'var(--purple)', flavor:'coast to coast, allegedly.' },
+      { id:'military',name:'A Year of the US Military', price:820000000000, icon:'fa-shield-halved', color:'var(--ink-chip)', color2:'var(--lime)', flavor:'the big one. one year.' },
+
+      { id:'gas',      name:'Tank of Gas',             price:60,           icon:'fa-gas-pump',        color:'var(--gray)',   flavor:'premium, because why not.' },
+      { id:'concert',  name:'Concert Ticket',          price:150,          icon:'fa-guitar',          color:'var(--pink)',   flavor:'nosebleeds, sold out.' },
+      { id:'camera',   name:'Camera Drone',            price:1200,         icon:'fa-camera',          color:'var(--sky)',    flavor:'crashed on day two.' },
+      { id:'handbag',  name:'Designer Handbag',        price:5000,         icon:'fa-bag-shopping',    color:'var(--coral)',  flavor:'it is, structurally, a bag.' },
+      { id:'ring',     name:'Engagement Ring',         price:10000,        icon:'fa-gem',             color:'var(--purple)', flavor:'three months salary, they said.' },
+      { id:'moto',     name:'Motorcycle',              price:18000,        icon:'fa-motorcycle',      color:'var(--orange)', flavor:'your mother worries.' },
+      { id:'wedding',  name:'A Wedding',               price:35000,        icon:'fa-heart',           color:'var(--pink)',   flavor:'the average one. somehow.' },
+      { id:'pickup',   name:'Pickup Truck',            price:55000,        icon:'fa-truck-pickup',    color:'var(--lime)',   flavor:'never hauls anything.' },
+      { id:'boat',     name:'A Modest Boat',           price:90000,        icon:'fa-sailboat',        color:'var(--sky)',    flavor:'a hole in the water.' },
+      { id:'college',  name:'Four Years of College',   price:240000,       icon:'fa-user-graduate',   color:'var(--teal)',   flavor:'tuition and ramen, all in.' },
+      { id:'rv',       name:'Luxury RV',               price:350000,       icon:'fa-caravan',         color:'var(--orange)', flavor:'retirement, on wheels.' },
+      { id:'lambo',    name:'Lamborghini',             price:500000,       icon:'fa-car-side',        color:'var(--gold)',   flavor:'the doors go up. obviously.' },
+      { id:'foodtruck',name:'A Food Truck Empire',     price:1500000,      icon:'fa-truck',           color:'var(--coral)',  flavor:'the tacos pay for themselves.' },
+      { id:'mcd',      name:"A McDonald's Franchise",  price:2200000,      icon:'fa-burger',          color:'var(--gold)',   flavor:'the fries alone.' },
+      { id:'bugatti',  name:'Bugatti',                 price:3500000,      icon:'fa-car',             color:'var(--ink-chip)',color2:'var(--gray)', flavor:'faster than you can drive.' },
+      { id:'heli',     name:'Helicopter',              price:4000000,      icon:'fa-helicopter',      color:'var(--sky)',    flavor:'beat the traffic. literally.' },
+      { id:'vineyard', name:'A Vineyard',              price:6000000,      icon:'fa-wine-bottle',     color:'var(--purple)', flavor:'you now have "notes".' },
+      { id:'castle',   name:'An Actual Castle',        price:28000000,     icon:'fa-chess-rook',      color:'var(--gray)',   flavor:'drafty. historic.' },
+      { id:'golf',     name:'A Golf Course',           price:30000000,     icon:'fa-golf-ball-tee',   color:'var(--lime)',   flavor:'18 holes, all yours.' },
+      { id:'newspaper',name:'A Newspaper',             price:250000000,    icon:'fa-newspaper',       color:'var(--cream)',  color2:'var(--gray)', flavor:'own the headlines.' },
+      { id:'ski',      name:'A Ski Resort',            price:300000000,    icon:'fa-person-skiing',   color:'var(--sky)',    flavor:'snow not guaranteed.' },
+      { id:'telescope',name:'A Space Telescope',       price:350000000,    icon:'fa-satellite',       color:'var(--sky)',    flavor:'see the beginning of time.' },
+      { id:'windfarm', name:'A Wind Farm',             price:450000000,    icon:'fa-fan',             color:'var(--lime)',   flavor:'smug and renewable.' },
+      { id:'super',    name:'A Supercomputer',         price:600000000,    icon:'fa-server',          color:'var(--ink-chip)',color2:'var(--lime)', flavor:"it still can't load twitter." },
+      { id:'f1',       name:'A Formula 1 Team',        price:1000000000,   icon:'fa-flag-checkered',  color:'var(--coral)',  flavor:'lights out, wallet away.' },
+      { id:'stadium',  name:'Build a Stadium',         price:1300000000,   icon:'fa-football',        color:'var(--orange)', flavor:'naming rights included.' },
+      { id:'trees',    name:'Plant a Billion Trees',   price:3000000000,   icon:'fa-tree',            color:'var(--lime)',   flavor:'the planet says thanks.' },
+      { id:'soccer',   name:'A Soccer Club',           price:5000000000,   icon:'fa-futbol',          color:'var(--teal)',   flavor:'promotion not guaranteed.' },
+      { id:'cruise',   name:'A Cruise Line',           price:8000000000,   icon:'fa-anchor',          color:'var(--sky)',    flavor:'the buffet never closes.' },
+      { id:'cure',     name:'Cure a Disease (research)',price:10000000000, icon:'fa-flask',           color:'var(--teal)',   flavor:'this one really helps.' },
+      { id:'airline',  name:'A Major Airline',         price:15000000000,  icon:'fa-plane-departure', color:'var(--sky)',    flavor:'delays included, free.' },
+      { id:'twitter',  name:'A Social Media Company',   price:44000000000,  icon:'fa-hashtag',         color:'var(--sky)',    flavor:'you will regret this.' },
+      { id:'carco',    name:'A Car Company',           price:50000000000,  icon:'fa-industry',        color:'var(--gray)',   flavor:'now you make the cars.' },
+      { id:'freecollege',name:'Free College, 1 yr (all US)',price:80000000000, icon:'fa-school',       color:'var(--teal)',   flavor:'everyone goes. on you.' },
+      { id:'mars',     name:'A Mars Colony (down payment)',price:200000000000, icon:'fa-user-astronaut', color:'var(--coral)', flavor:'one-way tickets available.' },
+      { id:'meddebt',  name:'Erase All US Medical Debt',price:220000000000, icon:'fa-notes-medical',   color:'var(--coral)',  flavor:'every hospital bill. gone.' },
+      { id:'grand',    name:'Give Every American $1,000',price:330000000000, icon:'fa-money-bill-wave', color:'var(--lime)',   flavor:'330 million high-fives.' },
+      { id:'tech',     name:'Buy a Trillion-Dollar Tech Giant', price:3000000000000, icon:'fa-microchip', color:'var(--ink-chip)', color2:'var(--sky)', flavor:'the whole company. the big one.' }
+    ];
+
+    // reorder strictly by ascending price so the escalation always reads
+    ITEMS.sort(function (a, b) { return a.price - b.price; });
+
+    // hand-drawn sticker SVGs where no good Font Awesome icon exists
+    var SVGS = {
+      island:
+        '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+        '<path d="M6 46h52" stroke="#201a17" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+        '<path d="M12 46c6-6 34-6 40 0z" fill="#f7c948" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M34 30c-8-4-14 2-14 2 6 0 10 6 10 6" fill="#2fb0a3" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M34 30c8-5 15 1 15 1-6 1-9 7-9 7" fill="#2fb0a3" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M33 30v11" stroke="#201a17" stroke-width="3.5" stroke-linecap="round"/>' +
+        '</svg>',
+      carrier:
+        '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+        '<path d="M8 40h48l-6 10H16z" fill="#a89f93" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/>' +
+        '<rect x="22" y="24" width="18" height="12" rx="2" fill="#fff8ef" stroke="#201a17" stroke-width="3"/>' +
+        '<path d="M42 26l9-4v6z" fill="#5aa0db" stroke="#201a17" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M14 40h36" stroke="#201a17" stroke-width="2" stroke-dasharray="3 4"/>' +
+        '</svg>',
+      planet:
+        '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+        '<circle cx="30" cy="30" r="15" fill="#5aa0db" stroke="#201a17" stroke-width="3"/>' +
+        '<path d="M30 30 Q24 24 30 20" fill="none" stroke="#201a17" stroke-width="2.5" opacity=".4"/>' +
+        '<ellipse cx="32" cy="32" rx="26" ry="8" fill="none" stroke="#201a17" stroke-width="3.5" transform="rotate(-20 32 32)"/>' +
+        '</svg>'
+    };
+
+    var TILE_COLORS = {
+      'var(--ink-chip)': '#cfe0f0'
+    };
+    function resolveColor(c) {
+      if (!c) return 'var(--sky)';
+      return TILE_COLORS[c] || c;
+    }
+
+    // ------------------------------------------------------------------
+    // state
+    // ------------------------------------------------------------------
+    var cart = {}; // id -> qty
+    var STORE_KEY = 'nationaldebt-cart-v1';
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+      if (saved && typeof saved === 'object') cart = saved;
+    } catch (e) { cart = {}; }
+
+    function saveCart() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(cart)); } catch (e) {}
+    }
+
+    function totalSpent() {
+      var s = 0;
+      for (var i = 0; i < ITEMS.length; i++) {
+        var q = cart[ITEMS[i].id] || 0;
+        s += q * ITEMS[i].price;
+      }
+      return s;
+    }
+    function cartCount() {
+      var n = 0;
+      for (var k in cart) if (cart.hasOwnProperty(k)) n += cart[k] || 0;
+      return n;
+    }
+
+    // ------------------------------------------------------------------
+    // formatting
+    // ------------------------------------------------------------------
+    function commas(n) {
+      // integer part only, grouped
+      return Math.floor(n).toLocaleString('en-US');
+    }
+    function money(n) { return '$' + commas(n); }
+
+    // compact label for huge numbers in tight spaces (keeps full in title)
+    function moneyShort(n) {
+      if (n >= 1e12) return '$' + (n / 1e12).toFixed(n % 1e12 === 0 ? 0 : 2).replace(/\.0+$/, '') + 'T';
+      if (n >= 1e9)  return '$' + (n / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+      if (n >= 1e6)  return '$' + (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+      return money(n);
+    }
+
+    // deadpan percent, lots of decimals so it looks pathetic
+    function pctSpent(spent, budget) {
+      var p = (spent / budget) * 100;
+      if (p === 0) return '0.0000% spent';
+      if (p < 0.0001) return p.toFixed(8).replace(/0+$/, '').replace(/\.$/, '.0') + '% spent';
+      if (p < 1) return p.toFixed(4) + '% spent';
+      return p.toFixed(2) + '% spent';
+    }
+
+    // ------------------------------------------------------------------
+    // build the grid
+    // ------------------------------------------------------------------
+    var grid = document.getElementById('grid');
+    var nodes = {}; // id -> { card, count, line, minus }
+
+    function tileMarkup(it) {
+      var bg = resolveColor(it.color);
+      var inner = it.svg ? SVGS[it.svg] : '<i class="fa-solid ' + it.icon + '"></i>';
+      return '<div class="tile" style="background:' + bg + '">' + inner + '</div>';
+    }
+
+    ITEMS.forEach(function (it) {
+      var card = document.createElement('div');
+      card.className = 'item';
+      card.innerHTML =
+        '<span class="ownedflag">OWNED</span>' +
+        tileMarkup(it) +
+        '<div class="iname">' + it.name + '</div>' +
+        '<div class="price tnum">' + money(it.price) + '</div>' +
+        '<div class="flavor">' + it.flavor + '</div>' +
+        '<div class="buyrow">' +
+          '<button class="qbtn sell" data-act="sell" aria-label="Sell one ' + it.name + '">&minus;</button>' +
+          '<div class="qcount tnum">0</div>' +
+          '<button class="qbtn buy" data-act="buy" aria-label="Buy one ' + it.name + '">+</button>' +
+        '</div>' +
+        '<div class="lineitem tnum"></div>';
+      grid.appendChild(card);
+
+      var minus = card.querySelector('[data-act="sell"]');
+      var plus = card.querySelector('[data-act="buy"]');
+      var countEl = card.querySelector('.qcount');
+      var lineEl = card.querySelector('.lineitem');
+
+      nodes[it.id] = { card: card, count: countEl, line: lineEl, minus: minus, plus: plus, tile: card.querySelector('.tile') };
+
+      plus.addEventListener('click', function () { change(it, +1, plus); });
+      minus.addEventListener('click', function () { change(it, -1, minus); });
+    });
+
+    // ------------------------------------------------------------------
+    // buy / sell
+    // ------------------------------------------------------------------
+    function change(it, delta, btnEl) {
+      dismissHint();
+      var budget = currentDebt();
+      var q = cart[it.id] || 0;
+
+      if (delta > 0) {
+        // guard: never let spending exceed the (growing) budget
+        if (totalSpent() + it.price > budget) return;
+        q += 1;
+        spawnFlyer(it, btnEl);
+        popCard(it);
+      } else {
+        if (q <= 0) return;
+        q -= 1;
+      }
+      if (q <= 0) { delete cart[it.id]; q = 0; }
+      else cart[it.id] = q;
+
+      saveCart();
+      renderItem(it);
+      renderScore();
+      if (modal.classList.contains('on')) renderReceipt();
+    }
+
+    function renderItem(it) {
+      var n = nodes[it.id];
+      var q = cart[it.id] || 0;
+      n.count.textContent = q.toLocaleString('en-US');
+      if (q > 0) {
+        n.card.classList.add('owned');
+        n.line.textContent = q.toLocaleString('en-US') + ' × ' + money(it.price) + ' = ' + money(q * it.price);
+      } else {
+        n.card.classList.remove('owned');
+        n.line.textContent = '';
+      }
+    }
+
+    function refreshAffordability() {
+      // disable + when the next unit can't be afforded (basically never, but honor the guard)
+      var budget = currentDebt();
+      var spent = totalSpent();
+      for (var i = 0; i < ITEMS.length; i++) {
+        var it = ITEMS[i];
+        var n = nodes[it.id];
+        n.plus.disabled = (spent + it.price > budget);
+        n.minus.disabled = !(cart[it.id] > 0);
+      }
+    }
+
+    function popCard(it) {
+      if (reduceMotion) return;
+      var el = nodes[it.id].card;
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+    }
+
+    // ------------------------------------------------------------------
+    // scoreboard + clock
+    // ------------------------------------------------------------------
+    var elClock = document.getElementById('debtClock');
+    var elNote = document.getElementById('clockNote');
+    var elBudget = document.getElementById('sbBudget');
+    var elSpent = document.getElementById('sbSpent');
+    var elSpentSub = document.getElementById('sbSpentSub');
+    var elRemaining = document.getElementById('sbRemaining');
+    var elPercent = document.getElementById('sbPercent');
+    var elDentFill = document.getElementById('dentFill');
+    var elDentCap = document.getElementById('dentCap');
+    var elRCount = document.getElementById('rCount');
+
+    var SPENT_SUBS = [
+      [0,              'a rounding error so far'],
+      [1,             'technically, you spent money'],
+      [1000000,       'a millionaire would notice'],
+      [1000000000,    'a billion. the debt did not flinch.'],
+      [100000000000,  'you could run a country. briefly.'],
+      [1000000000000, 'a trillion down. keep going.'],
+      [10000000000000,'genuinely impressive. still not enough.']
+    ];
+    function spentSub(s) {
+      var out = SPENT_SUBS[0][1];
+      for (var i = 0; i < SPENT_SUBS.length; i++) if (s >= SPENT_SUBS[i][0]) out = SPENT_SUBS[i][1];
+      return out;
+    }
+
+    function renderScore() {
+      var budget = currentDebt();
+      var spent = totalSpent();
+      var remaining = budget - spent;
+      if (remaining < 0) remaining = 0;
+
+      elBudget.textContent = moneyShort(budget);
+      elBudget.title = money(budget);
+      elSpent.textContent = spent === 0 ? '$0' : moneyShort(spent);
+      elSpent.title = money(spent);
+      elSpentSub.textContent = spentSub(spent);
+      elRemaining.textContent = moneyShort(remaining);
+      elRemaining.title = money(remaining);
+      elPercent.textContent = pctSpent(spent, budget);
+
+      var pct = (spent / budget) * 100;
+      // make the bar visible-ish without lying: floor a sliver once you've spent anything
+      var w = pct === 0 ? 0 : Math.max(0.6, Math.min(100, pct));
+      elDentFill.style.width = w + '%';
+      elDentCap.textContent = pct === 0
+        ? "this bar measures the dent you've made. good luck seeing it."
+        : (pct < 1
+            ? 'the dent, shown generously, so you can see it at all.'
+            : "look at that. an actual, visible dent.");
+
+      elRCount.textContent = cartCount().toLocaleString('en-US');
+      refreshAffordability();
+    }
+
+    // debt clock ticking (rAF; sleeps when tab hidden)
+    function renderClock() {
+      var d = currentDebt();
+      var intPart = Math.floor(d);
+      var cents = Math.floor((d - intPart) * 100);
+      elClock.innerHTML = '$' + intPart.toLocaleString('en-US') +
+        '<span class="cents">.' + (cents < 10 ? '0' + cents : cents) + '</span>';
+      // keep budget/remaining honest with the live clock
+      elBudget.textContent = moneyShort(d);
+      elBudget.title = money(d);
+      var remaining = d - totalSpent();
+      if (remaining < 0) remaining = 0;
+      elRemaining.textContent = moneyShort(remaining);
+      elRemaining.title = money(remaining);
+      elPercent.textContent = pctSpent(totalSpent(), d);
+    }
+
+    var clockRunning = false;
+    function clockLoop() {
+      if (document.hidden) { clockRunning = false; return; }
+      renderClock();
+      requestAnimationFrame(clockLoop);
+    }
+    function startClock() {
+      if (clockRunning) return;
+      clockRunning = true;
+      requestAnimationFrame(clockLoop);
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) startClock();
+    });
+
+    // ------------------------------------------------------------------
+    // flying "−$price" tag that peels off the + button toward the clock
+    // ------------------------------------------------------------------
+    function spawnFlyer(it, btnEl) {
+      if (reduceMotion || !btnEl) return;
+      var r = btnEl.getBoundingClientRect();
+      var clockR = elClock.getBoundingClientRect();
+      var f = document.createElement('div');
+      f.className = 'flyer';
+      f.textContent = '−' + moneyShort(it.price);
+      f.style.left = (r.left + r.width / 2) + 'px';
+      f.style.top = (r.top) + 'px';
+      f.style.transform = 'translate(-50%,-50%)';
+      document.body.appendChild(f);
+      var tx = clockR.left + clockR.width / 2;
+      var ty = clockR.top + clockR.height / 2;
+      try {
+        f.animate([
+          { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+          { offset: .2, transform: 'translate(-50%,-50%) scale(1.25)', opacity: 1 },
+          { transform: 'translate(' + (tx - (r.left + r.width/2)) + 'px,' + (ty - r.top) + 'px) scale(.4)', opacity: 0 }
+        ], { duration: 750, easing: 'cubic-bezier(.5,0,.6,1)' }).onfinish = function () { f.remove(); };
+      } catch (e) { f.remove(); }
+    }
+
+    // ------------------------------------------------------------------
+    // receipt modal
+    // ------------------------------------------------------------------
+    var modal = document.getElementById('modal');
+    var receiptBtn = document.getElementById('receiptBtn');
+    var receiptRows = document.getElementById('receiptRows');
+    var receiptTotal = document.getElementById('receiptTotal');
+    var receiptDent = document.getElementById('receiptDent');
+    var closeBtn = document.getElementById('closeBtn');
+    var clearBtn = document.getElementById('clearBtn');
+
+    function renderReceipt() {
+      var rows = '';
+      var any = false;
+      ITEMS.forEach(function (it) {
+        var q = cart[it.id] || 0;
+        if (q <= 0) return;
+        any = true;
+        rows += '<div class="rrow">' +
+          '<span class="rl">' + it.name + ' <small>' + q.toLocaleString('en-US') + ' × ' + money(it.price) + '</small></span>' +
+          '<span class="rp tnum">' + money(q * it.price) + '</span>' +
+        '</div>';
+      });
+      receiptRows.innerHTML = any ? rows : '<div class="receipt-empty">Nothing purchased yet. The debt remains, as ever, undisturbed.</div>';
+      var spent = totalSpent();
+      receiptTotal.textContent = money(spent);
+      receiptTotal.title = money(spent);
+      var p = (spent / currentDebt()) * 100;
+      receiptDent.textContent = spent === 0 ? '0.0000%'
+        : (p < 0.0001 ? p.toFixed(8).replace(/0+$/, '').replace(/\.$/, '.0') + '%'
+        : p < 1 ? p.toFixed(4) + '%' : p.toFixed(2) + '%');
+    }
+
+    function openModal() { renderReceipt(); modal.classList.add('on'); }
+    function closeModal() { modal.classList.remove('on'); }
+
+    receiptBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+    clearBtn.addEventListener('click', function () {
+      cart = {};
+      saveCart();
+      ITEMS.forEach(renderItem);
+      renderScore();
+      renderReceipt();
+    });
+
+    // ------------------------------------------------------------------
+    // hint (fades on first interaction or after 12s)
+    // ------------------------------------------------------------------
+    var hintEl = document.getElementById('hint');
+    var hintGone = false;
+    function dismissHint() {
+      if (hintGone) return;
+      hintGone = true;
+      hintEl.classList.add('gone');
+    }
+    setTimeout(dismissHint, 12000);
+
+    // ------------------------------------------------------------------
+    // init
+    // ------------------------------------------------------------------
+    ITEMS.forEach(renderItem);
+    renderScore();
+    renderClock();
+    startClock();
+    if (cartCount() > 0) dismissHint();
+  })();
+  </script>
+</body>
+</html>
