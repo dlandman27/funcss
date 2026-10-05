@@ -37,7 +37,7 @@
   "description": "A curated collection of tiny interactive websites, games, and toys.",
   "mainEntity": {
     "@type": "ItemList",
-    "numberOfItems": 190,
+    "numberOfItems": 192,
     "itemListElement": [
       {
         "@type": "ListItem",
@@ -1178,6 +1178,18 @@
         "position": 190,
         "url": "https://randomsitesontheweb.com/hello/",
         "name": "Hello"
+      },
+      {
+        "@type": "ListItem",
+        "position": 191,
+        "url": "https://randomsitesontheweb.com/etchasketch/",
+        "name": "Etch A Sketch"
+      },
+      {
+        "@type": "ListItem",
+        "position": 192,
+        "url": "https://randomsitesontheweb.com/clickerpen/",
+        "name": "Clicker Pen"
       }
     ]
   }
@@ -1958,35 +1970,6 @@
         }
         .ghost.click img { animation: ghost-click .3s ease; }
         @keyframes ghost-click { 50% { transform: scale(.8); } }
-
-        /* "your account" name chip (cosmetic — sells the social feel) */
-        .you-chip {
-            display: inline-flex; align-items: center; gap: 6px;
-            margin: 9px auto 0;
-            font-family: Georgia, 'Times New Roman', serif;
-            font-style: italic;
-            font-size: 0.86rem;
-            color: var(--ink, #201a17);
-            opacity: 0.7;
-            cursor: pointer;
-            background: none; border: none;
-            transition: opacity .2s ease;
-        }
-        .you-chip:hover { opacity: 1; }
-        .you-chip b { font-style: normal; font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; }
-        .you-chip i { font-size: 0.7em; opacity: .6; }
-        .you-input {
-            font-family: 'Arial Black', Arial, sans-serif;
-            font-size: 0.9rem;
-            padding: 3px 9px;
-            border: 2px solid var(--ink, #201a17);
-            border-radius: 999px;
-            background: var(--card, #fff8ef);
-            color: var(--ink, #201a17);
-            box-shadow: 2px 2px 0 var(--ink, #201a17);
-            outline: none;
-            max-width: 200px;
-        }
 
         .category-title {
             margin: 48px 0 20px 0;
@@ -3086,9 +3069,6 @@
                 <span><b id="liveOnline">—</b> online</span>
                 <span class="toys-wrap"><span class="sep">·</span> <b class="toys" id="liveToys">0</b> toys opened</span>
             </div>
-            <button class="you-chip" id="youChip" type="button" title="set your display name">
-                you’re online as <b id="youName">guest</b> <i class="fas fa-pen" aria-hidden="true"></i>
-            </button>
         </div>
 
         <div class="loading">
@@ -3616,6 +3596,20 @@
                     <a href="hello/">
                         <h2>Hello</h2>
                         <p>It says hello. Click and it says hello in another language — then another, and another, from all over the world.</p>
+                        <div class="category">Fun &amp; Interactive</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="fun" data-created="2026-10-04">
+                    <a href="etchasketch/">
+                        <h2>Etch A Sketch</h2>
+                        <p>Twist the knobs to drag one unbroken line across the silver screen — then shake it clean. Diagonals are a two-handed negotiation.</p>
+                        <div class="category">Fun &amp; Interactive</div>
+                    </a>
+                </div>
+                <div class="site-card" data-categories="fun" data-created="2026-10-04">
+                    <a href="clickerpen/">
+                        <h2>Clicker Pen</h2>
+                        <p>A retractable pen that clicks perfectly, forever. The counter never forgets. The warranty is void.</p>
                         <div class="category">Fun &amp; Interactive</div>
                     </a>
                 </div>
@@ -4722,6 +4716,8 @@
             '/scratchers/',
             '/cubeloader/',
             '/hello/',
+            '/etchasketch/',
+            '/clickerpen/',
         ];
 
         // Close modal when clicking outside of it
@@ -5601,40 +5597,6 @@
                     else { resumeGhosts(); scheduleToast(); }
                 });
                 window.addEventListener('resize', () => { if (ghosts.length) sizeLayer(); });
-
-                // --- your (cosmetic) account name — does nothing, but feels like others see it ---
-                const youChip = document.getElementById('youChip');
-                const youNameEl = document.getElementById('youName');
-                const randGuest = () => 'guest_' + (100 + Math.floor(Math.random() * 900));
-                let myName = '';
-                try { myName = localStorage.getItem('rsotw:name') || ''; } catch (e) {}
-                if (!myName) { myName = randGuest(); try { localStorage.setItem('rsotw:name', myName); } catch (e) {} }
-                if (youNameEl) youNameEl.textContent = myName;
-                function editName() {
-                    if (!youChip) return;
-                    const saved = youChip.innerHTML;
-                    const input = document.createElement('input');
-                    input.type = 'text'; input.className = 'you-input';
-                    input.value = myName; input.maxLength = 24;
-                    youChip.textContent = '';
-                    youChip.appendChild(input);
-                    input.focus(); input.select();
-                    let done = false;
-                    const commit = () => {
-                        if (done) return; done = true;
-                        const v = input.value.trim().slice(0, 24);
-                        if (v) { myName = v; try { localStorage.setItem('rsotw:name', myName); } catch (e) {} }
-                        youChip.innerHTML = saved;
-                        const nn = document.getElementById('youName');
-                        if (nn) nn.textContent = myName;
-                    };
-                    input.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-                        else if (e.key === 'Escape') { input.value = myName; input.blur(); }
-                    });
-                    input.addEventListener('blur', commit);
-                }
-                if (youChip) youChip.addEventListener('click', editName);
 
                 scheduleToast();
                 startGhosts();
