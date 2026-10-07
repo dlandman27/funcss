@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clicker Pen</title>
+  <meta name="description" content="A retractable click ballpoint pen, lovingly faked. Click the plunger: the tip extends, retracts, and clacks. The counter never forgets.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/clickerpen/">
+    <meta property="og:title" content="Clicker Pen">
+    <meta property="og:description" content="A retractable pen that clicks perfectly, forever. The counter never forgets. The warranty is void.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/clickerpen.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Clicker Pen">
+    <meta name="twitter:description" content="A retractable pen that clicks perfectly, forever. The counter never forgets. The warranty is void.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/clickerpen.png">
+    <!-- rsotw:og:end -->
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --gold: #f7c948;
+      --teal: #2fb0a3;
+      --barrel: #5aa0db;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(90,160,219,0.10), transparent 40%),
+        radial-gradient(circle at 82% 88%, rgba(240,86,62,0.08), transparent 42%);
+    }
+
+    .badge {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      color: var(--ink);
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 14px;
+      box-shadow: 3px 3px 0 var(--ink);
+      transform: rotate(-4deg);
+      z-index: 6;
+    }
+
+    /* ---- stage ---- */
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(18px, 4vh, 40px);
+      z-index: 2;
+    }
+
+    .pen-wrap {
+      position: relative;
+      width: min(160px, 40vw);
+      /* reserve room for the plunger travel + tip extension so nothing clips */
+      touch-action: none;
+    }
+    svg.pen { display: block; width: 100%; height: auto; overflow: visible; cursor: pointer; }
+    svg.pen:focus { outline: none; }
+    svg.pen:focus-visible .plunger-hit { stroke: var(--coral); stroke-width: 4; stroke-dasharray: 5 4; }
+
+    .stroke { stroke: var(--ink); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+    .stroke-thin { stroke: var(--ink); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+
+    /* the plunger group is animated via transform in JS */
+    #plungerGroup { transform-box: fill-box; }
+    #tipGroup { transition: none; }
+
+    /* ---- plaque ---- */
+    .plaque {
+      position: relative;
+      background: var(--cream);
+      color: var(--ink);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 4px 4px 0 rgba(32, 26, 23, 0.4);
+      padding: 12px 22px;
+      text-align: center;
+      max-width: min(90vw, 440px);
+      transform: rotate(-1deg);
+      z-index: 3;
+    }
+    .plaque .head {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+    .plaque .count {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(26px, 7vw, 40px);
+      line-height: 1;
+      letter-spacing: 0.5px;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+    .plaque .count.bump { animation: countBump 0.22s ease; }
+    @keyframes countBump {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.14); color: var(--coral); }
+      100% { transform: scale(1); }
+    }
+    .plaque .status {
+      font-style: italic;
+      font-size: 14px;
+      line-height: 1.4;
+      opacity: 0.78;
+      margin-top: 7px;
+      min-height: 1.2em;
+    }
+    .plaque .cps {
+      font-style: italic;
+      font-size: 12px;
+      opacity: 0;
+      margin-top: 4px;
+      transition: opacity 0.4s;
+      font-variant-numeric: tabular-nums;
+    }
+    .plaque .cps.on { opacity: 0.5; }
+
+    /* ---- hint ---- */
+    .hint {
+      position: fixed;
+      left: 50%;
+      top: clamp(14%, 20vh, 24%);
+      transform: translateX(-50%);
+      font-style: italic;
+      font-size: 16px;
+      opacity: 0.7;
+      transition: opacity 1.2s ease;
+      z-index: 4;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .hint.gone { opacity: 0; }
+
+    /* ---- milestone stamp ---- */
+    .stamp {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(-12deg) scale(0.2);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(20px, 6vw, 34px);
+      letter-spacing: 2px;
+      color: var(--coral);
+      -webkit-text-stroke: 2px var(--ink);
+      paint-order: stroke fill;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 7;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .stamp.show { animation: stampIn 0.45s cubic-bezier(.2,1.5,.4,1) forwards, stampOut 0.9s ease 1.6s forwards; }
+    @keyframes stampIn {
+      0% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(0.2); }
+      70% { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1.15); }
+      100% { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+    }
+    @keyframes stampOut {
+      to { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(1.1); }
+    }
+
+    /* ---- golden flash ---- */
+    .gold-flash {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 46%, rgba(247,201,72,0.55), transparent 55%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .gold-flash.pop { animation: goldPop 0.6s ease; }
+    @keyframes goldPop {
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* overlay canvas for the burst particles */
+    #fx {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .plaque .count.bump { animation: none; }
+      .stamp.show { animation: stampIn 0.01s forwards, stampOut 0.6s ease 1.6s forwards; }
+    }
+  </style>
+</head>
+<body>
+  <span class="badge">CLICKER PEN</span>
+
+  <canvas id="fx"></canvas>
+  <div class="gold-flash" id="goldFlash"></div>
+  <div class="stamp" id="stamp"></div>
+
+  <p class="hint" id="hint">click the top</p>
+
+  <div class="stage">
+    <div class="pen-wrap">
+      <!-- side-view ballpoint pen, drawn sticker-comic.
+           viewBox is tall; the pen sits in the middle with headroom for plunger travel. -->
+      <svg class="pen" id="pen" viewBox="0 0 120 480" role="button"
+           aria-label="Click the pen plunger" tabindex="0">
+        <!-- hard offset shadow of whole pen -->
+        <g transform="translate(5,5)" opacity="0.22">
+          <rect x="44" y="70" width="32" height="300" rx="4" fill="var(--ink)"/>
+          <polygon points="44,370 76,370 68,420 52,420" fill="var(--ink)"/>
+          <polygon points="52,420 68,420 60,452" fill="var(--ink)"/>
+        </g>
+
+        <!-- TIP (animated up/down; retracts into barrel) -->
+        <g id="tipGroup">
+          <!-- cone -->
+          <polygon points="44,366 76,366 68,418 52,418" fill="#cfc6b6" class="stroke"/>
+          <!-- metal nib -->
+          <polygon points="52,418 68,418 60,452" fill="#9aa0a6" class="stroke-thin"/>
+          <!-- ball -->
+          <circle cx="60" cy="452" r="4.5" fill="var(--ink)"/>
+        </g>
+
+        <!-- BARREL (covers the tip base so retraction reads as hiding inside) -->
+        <g id="barrelGroup">
+          <rect x="44" y="90" width="32" height="282" rx="5" fill="var(--barrel)" class="stroke"/>
+          <!-- grip ridges near the cone -->
+          <g stroke="var(--ink)" stroke-width="3" stroke-linecap="round" opacity="0.55">
+            <line x1="48" y1="330" x2="72" y2="330"/>
+            <line x1="48" y1="340" x2="72" y2="340"/>
+            <line x1="48" y1="350" x2="72" y2="350"/>
+          </g>
+          <!-- clip -->
+          <path d="M72 108 q14 2 14 20 v120 q0 8 -6 8 q-6 0 -6 -8 v-96"
+                fill="var(--cream)" class="stroke-thin"/>
+          <!-- a little label band -->
+          <rect x="44" y="150" width="32" height="40" fill="var(--cream)" stroke="var(--ink)" stroke-width="3"/>
+          <line x1="50" y1="164" x2="70" y2="164" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+          <line x1="50" y1="174" x2="66" y2="174" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+        </g>
+
+        <!-- cap collar at top of barrel -->
+        <rect x="42" y="78" width="36" height="16" rx="3" fill="#48413a" class="stroke"/>
+
+        <!-- PLUNGER (the click button) -->
+        <g id="plungerGroup">
+          <rect x="49" y="40" width="22" height="42" rx="4" fill="var(--coral)" class="stroke"/>
+          <!-- top cap highlight -->
+          <rect x="49" y="40" width="22" height="10" rx="4" fill="var(--cream)" stroke="var(--ink)" stroke-width="4"/>
+        </g>
+
+        <!-- generous invisible hit target over the plunger/top -->
+        <rect class="plunger-hit" id="hit" x="32" y="18" width="56" height="80" rx="10"
+              fill="transparent" />
+      </svg>
+    </div>
+
+    <div class="plaque">
+      <p class="head">LIFETIME SERVICE RECORD</p>
+      <p class="count" id="count">0</p>
+      <p class="status" id="status">factory sealed. tip retracted.</p>
+      <p class="cps" id="cps">0.0 clicks/sec</p>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var pen = document.getElementById('pen');
+    var hit = document.getElementById('hit');
+    var plunger = document.getElementById('plungerGroup');
+    var tip = document.getElementById('tipGroup');
+    var countEl = document.getElementById('count');
+    var statusEl = document.getElementById('status');
+    var cpsEl = document.getElementById('cps');
+    var hintEl = document.getElementById('hint');
+    var stampEl = document.getElementById('stamp');
+    var goldFlash = document.getElementById('goldFlash');
+
+    // ---------- state ----------
+    var LS_KEY = 'clickerpen-count';
+    var clicks = 0;
+    try { clicks = parseInt(localStorage.getItem(LS_KEY), 10) || 0; } catch (e) {}
+
+    var tipOut = false; // start retracted; alternates each click
+    var hinted = false;
+
+    function save() {
+      try { localStorage.setItem(LS_KEY, String(clicks)); } catch (e) {}
+    }
+
+    function fmt(n) { return n.toLocaleString('en-US'); }
+
+    // ---------- status / voice ----------
+    // deadpan status lines that evolve with the lifetime count.
+    function statusLine() {
+      var c = clicks;
+      var tipTxt = tipOut ? 'tip extended.' : 'tip retracted.';
+      if (c === 0) return 'factory sealed. tip retracted.';
+      var warranty;
+      if (c < 100) warranty = 'warranty: in effect';
+      else if (c < 500) warranty = 'warranty: expiring';
+      else if (c < 1000) warranty = 'warranty: void';
+      else if (c < 2500) warranty = 'the spring remembers';
+      else if (c < 5000) warranty = 'the spring is tired';
+      else if (c < 10000) warranty = 'the spring has seen things';
+      else if (c < 25000) warranty = 'this pen outlived its ink';
+      else if (c < 50000) warranty = 'the mechanism is now load-bearing';
+      else warranty = 'archival specimen. do not stop.';
+      return tipTxt + ' ' + warranty;
+    }
+
+    function setStatus() { statusEl.textContent = statusLine(); }
+
+    function renderCount(bump) {
+      countEl.textContent = fmt(clicks);
+      if (bump && !reduce) {
+        countEl.classList.remove('bump');
+        void countEl.offsetWidth;
+        countEl.classList.add('bump');
+      }
+    }
+
+    renderCount(false);
+    setStatus();
+
+    // ---------- audio ----------
+    var AC = null, master = null;
+    function ensureAudio() {
+      if (!AC) {
+        try {
+          var Ctor = window.AudioContext || window.webkitAudioContext;
+          if (!Ctor) return;
+          AC = new Ctor();
+          var comp = AC.createDynamicsCompressor();
+          comp.threshold.value = -12;
+          comp.ratio.value = 10;
+          comp.attack.value = 0.002;
+          comp.release.value = 0.08;
+          comp.connect(AC.destination);
+          master = AC.createGain();
+          master.gain.value = 0.9;
+          master.connect(comp);
+        } catch (e) { AC = null; }
+      }
+      if (AC && AC.state === 'suspended') AC.resume().catch(function () {});
+    }
+
+    // one crisp "tick": short filtered noise pop + a tight click body.
+    // pitch/level vary so rapid-fire never sounds canned.
+    function tick(baseFreq, level, wear) {
+      if (!AC) return;
+      var t = AC.currentTime;
+      var jitter = 0.92 + Math.random() * 0.16;
+
+      // --- noise transient (the plastic snap) ---
+      var dur = 0.018 + Math.random() * 0.006;
+      var n = Math.floor(AC.sampleRate * dur);
+      var buf = AC.createBuffer(1, n, AC.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < n; i++) {
+        // fast exponential decay for a tight tick
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.5);
+      }
+      var src = AC.createBufferSource();
+      src.buffer = buf;
+      var bp = AC.createBiquadFilter();
+      bp.type = 'bandpass';
+      // worn springs lose top end -> duller tick
+      bp.frequency.value = (baseFreq * jitter) * (1 - wear * 0.35);
+      bp.Q.value = 1.1 + Math.random() * 1.4;
+      var ng = AC.createGain();
+      ng.gain.setValueAtTime(level * (0.9 + Math.random() * 0.2), t);
+      ng.gain.exponentialRampToValueAtTime(0.0008, t + dur + 0.01);
+      src.connect(bp); bp.connect(ng); ng.connect(master);
+      src.start(t); src.stop(t + dur + 0.02);
+
+      // --- resonant body ping (gives it "clack" not "tss") ---
+      var o = AC.createOscillator();
+      o.type = 'triangle';
+      var f0 = (baseFreq * 1.6 * jitter) * (1 - wear * 0.3);
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(f0 * 0.6, t + 0.03);
+      var og = AC.createGain();
+      og.gain.setValueAtTime(level * 0.5, t);
+      og.gain.exponentialRampToValueAtTime(0.0008, t + 0.035 + wear * 0.02);
+      o.connect(og); og.connect(master);
+      o.start(t); o.stop(t + 0.07);
+    }
+
+    // golden milestone: a brighter two-note chime on top of the normal clack.
+    function goldChime() {
+      if (!AC) return;
+      var t = AC.currentTime;
+      [880, 1320].forEach(function (f, idx) {
+        var o = AC.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = f;
+        var g = AC.createGain();
+        var st = t + idx * 0.05;
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.18, st + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0008, st + 0.3);
+        o.connect(g); g.connect(master);
+        o.start(st); o.stop(st + 0.34);
+      });
+    }
+
+    // ---------- plunger spring animation (WAAPI) ----------
+    // depress on down, overshoot on release.
+    function springDown() {
+      if (reduce) { plunger.style.transform = 'translateY(0)'; return; }
+      plunger.animate(
+        [
+          { transform: 'translateY(0)' },
+          { transform: 'translateY(9px)' }
+        ],
+        { duration: 55, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }
+      );
+    }
+    function springUp() {
+      if (reduce) { plunger.style.transform = 'translateY(0)'; return; }
+      // satisfying overshoot + settle
+      plunger.animate(
+        [
+          { transform: 'translateY(9px)', offset: 0 },
+          { transform: 'translateY(-4px)', offset: 0.45 },
+          { transform: 'translateY(1.5px)', offset: 0.75 },
+          { transform: 'translateY(0)', offset: 1 }
+        ],
+        { duration: 260, easing: 'cubic-bezier(.3,1.4,.5,1)', fill: 'forwards' }
+      );
+    }
+
+    // tip extend/retract — slides out of / into the barrel, with a tiny spring.
+    var TIP_HIDE = 54; // px up = hidden inside barrel
+    function moveTip(out) {
+      var to = out ? 0 : -TIP_HIDE;
+      if (reduce) { tip.style.transform = 'translateY(' + to + 'px)'; return; }
+      var from = out ? -TIP_HIDE : 0;
+      tip.animate(
+        [
+          { transform: 'translateY(' + from + 'px)' },
+          { transform: 'translateY(' + (to + (out ? 3 : -3)) + 'px)', offset: 0.6 },
+          { transform: 'translateY(' + to + 'px)' }
+        ],
+        { duration: 220, easing: 'cubic-bezier(.3,1.3,.5,1)', fill: 'forwards' }
+      );
+      tip.style.transform = 'translateY(' + to + 'px)';
+    }
+    // init tip position (retracted) without animating
+    tip.style.transform = 'translateY(' + (-TIP_HIDE) + 'px)';
+
+    // ---------- particle burst (gold milestone) ----------
+    var fx = document.getElementById('fx');
+    var ctx = fx.getContext('2d');
+    var particles = [];
+    var dpr = 1, running = false, W = 0, H = 0;
+
+    function sizeCanvas() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth; H = window.innerHeight;
+      fx.width = Math.floor(W * dpr);
+      fx.height = Math.floor(H * dpr);
+      fx.style.width = W + 'px';
+      fx.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    sizeCanvas();
+    var rzT;
+    window.addEventListener('resize', function () {
+      clearTimeout(rzT);
+      rzT = setTimeout(function () {
+        sizeCanvas();
+        measurePlunger();
+      }, 120);
+    });
+
+    function burst() {
+      if (reduce) return;
+      var r = pen.getBoundingClientRect();
+      var cx = r.left + r.width / 2;
+      var cy = r.top + r.height * 0.12; // near the plunger
+      var N = 22;
+      for (var i = 0; i < N; i++) {
+        var a = (Math.PI * 2 * i) / N + Math.random() * 0.4;
+        var sp = 3.5 + Math.random() * 4.5;
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp - 2,
+          r: 3 + Math.random() * 3,
+          life: 1,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 0.3
+        });
+      }
+      if (particles.length > 200) particles.splice(0, particles.length - 200);
+      wake();
+    }
+
+    function wake() {
+      if (!running) { running = true; requestAnimationFrame(frame); }
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      var alive = 0;
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        if (p.life <= 0) continue;
+        p.vy += 0.22;      // gravity
+        p.vx *= 0.99;
+        p.x += p.vx; p.y += p.vy;
+        p.rot += p.vr;
+        p.life -= 0.018;
+        if (p.life <= 0) continue;
+        alive++;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+        // sticker treatment: ink outline under gold fill
+        ctx.beginPath();
+        ctx.rect(-p.r, -p.r, p.r * 2, p.r * 2);
+        ctx.fillStyle = '#f7c948';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#201a17';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (alive > 0) {
+        requestAnimationFrame(frame);
+      } else {
+        particles.length = 0;
+        ctx.clearRect(0, 0, W, H);
+        running = false; // sleep when idle
+      }
+    }
+
+    // ---------- milestone stamp ----------
+    function showStamp(text) {
+      stampEl.textContent = text;
+      stampEl.classList.remove('show');
+      void stampEl.offsetWidth;
+      stampEl.classList.add('show');
+    }
+
+    // ---------- clicks/sec meter ----------
+    var recent = []; // timestamps of recent clicks
+    var cpsTimer = null;
+    function updateCps() {
+      var now = performance.now();
+      while (recent.length && now - recent[0] > 1000) recent.shift();
+      var v = recent.length;
+      cpsEl.textContent = v + (v === 1 ? ' click/sec' : ' clicks/sec');
+      if (v > 0) { cpsEl.classList.add('on'); }
+      else { cpsEl.classList.remove('on'); if (cpsTimer) { clearInterval(cpsTimer); cpsTimer = null; } }
+    }
+    function trackCps() {
+      recent.push(performance.now());
+      cpsEl.classList.add('on');
+      updateCps();
+      if (!cpsTimer) cpsTimer = setInterval(updateCps, 200);
+    }
+
+    // ---------- the core verb ----------
+    function doClick() {
+      ensureAudio();
+
+      // fade hint on first click
+      if (!hinted) { hinted = true; hintEl.classList.add('gone'); }
+
+      clicks++;
+      tipOut = !tipOut;
+      save();
+
+      // wear factor for tone degradation (very gradual, capped)
+      var wear = Math.min(0.6, clicks / 40000);
+
+      var isGold = clicks % 100 === 0;
+
+      // spring: down then up (the two-part clack maps to the two ticks)
+      springDown();
+      // down-tick immediately
+      tick(2100, 0.5, wear);
+      // schedule the release + up-tick for a tight two-part clack
+      setTimeout(function () {
+        springUp();
+        tick(2600, 0.42, wear);
+      }, 48);
+
+      moveTip(tipOut);
+      renderCount(true);
+      setStatus();
+      trackCps();
+
+      if (navigator.vibrate) { try { navigator.vibrate(isGold ? [8, 30, 12] : 8); } catch (e) {} }
+
+      if (isGold) {
+        goldChime();
+        goldFlash.classList.remove('pop');
+        void goldFlash.offsetWidth;
+        goldFlash.classList.add('pop');
+        burst();
+        showStamp(fmt(clicks));
+      }
+    }
+
+    // ---------- input: pointer (rapid-fire safe) ----------
+    // fire on pointerdown for lowest latency; swallow the synthetic click.
+    hit.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      doClick();
+    });
+    // also allow clicking anywhere on the pen body top region via the svg itself
+    pen.addEventListener('pointerdown', function (e) {
+      // only if the plunger/collar area wasn't already hit (hit rect sits on top,
+      // so this covers taps that land just outside it on the pen head)
+      if (e.target === hit) return;
+      var r = pen.getBoundingClientRect();
+      // top ~22% of the pen counts as "the top"
+      if (e.clientY - r.top < r.height * 0.24) {
+        e.preventDefault();
+        doClick();
+      }
+    });
+    // prevent ghost clicks / text selection
+    pen.addEventListener('click', function (e) { e.preventDefault(); });
+    pen.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+    // ---------- input: spacebar (rapid-fire, no key-repeat lag) ----------
+    // use keydown with repeat allowed but de-fanged: treat held space as single,
+    // but allow genuine rapid taps. We honor OS key-repeat for satisfying hold-mash.
+    window.addEventListener('keydown', function (e) {
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        // ignore auto-repeat so holding space doesn't machine-gun unfairly;
+        // rapid distinct presses still each register.
+        if (e.repeat) return;
+        doClick();
+      } else if (e.code === 'Enter' && document.activeElement === pen) {
+        e.preventDefault();
+        doClick();
+      }
+    });
+
+    // ---------- plunger measure (kept for resize hook; layout is CSS-driven) ----------
+    function measurePlunger() { /* no-op: SVG scales intrinsically */ }
+
+    // fade hint after a while even without interaction
+    setTimeout(function () { if (!hinted) hintEl.classList.add('gone'); }, 12000);
+
+    // if there's a saved history, show the right tip state at rest.
+    // (we don't persist tip state; fresh load always starts retracted, which is
+    // the honest "capped" resting state.)
+  })();
+  </script>
+</body>
+</html>

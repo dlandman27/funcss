@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Etch A Sketch</title>
+  <meta name="description" content="A red tablet, a silver screen, two knobs. Twist the left one to go across, the right one to go up and down. The line never lifts. Shake to erase.">
+  <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/etchasketch/">
+    <meta property="og:title" content="Etch A Sketch">
+    <meta property="og:description" content="Twist the knobs to drag one unbroken line across the silver screen — then shake it clean. Diagonals are a two-handed negotiation.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/etchasketch.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Etch A Sketch">
+    <meta name="twitter:description" content="Twist the knobs to drag one unbroken line across the silver screen — then shake it clean. Diagonals are a two-handed negotiation.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/etchasketch.png">
+    <!-- rsotw:og:end -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='4' y='4' width='42' height='42' rx='7' fill='%23f0563e' stroke='%23201a17' stroke-width='3'/><rect x='11' y='10' width='28' height='20' rx='2' fill='%23c7cbce' stroke='%23201a17' stroke-width='2.5'/><circle cx='15' cy='40' r='4.5' fill='%23fff8ef' stroke='%23201a17' stroke-width='2.5'/><circle cx='35' cy='40' r='4.5' fill='%23fff8ef' stroke='%23201a17' stroke-width='2.5'/></svg>">
+  <style>
+    :root {
+      --ink: #201a17;
+      --paper: #f2ede2;
+      --cream: #fff8ef;
+      --coral: #f0563e;
+      --sky: #5aa0db;
+      --lime: #b7ce3c;
+      --gold: #f7c948;
+      --silver: #c3c7ca;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--paper);
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(90,160,219,0.10), transparent 40%),
+        radial-gradient(circle at 84% 86%, rgba(240,86,62,0.09), transparent 42%);
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+      min-height: 100%;
+      overflow-x: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .badge {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: var(--ink);
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 14px;
+      box-shadow: 3px 3px 0 var(--ink);
+      transform: rotate(-4deg);
+      z-index: 20;
+    }
+
+    .stage {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: clamp(18px, 3vh, 34px);
+      padding: clamp(60px, 9vh, 90px) 16px clamp(40px, 6vh, 64px);
+    }
+
+    /* ---------- the tablet ---------- */
+    .tablet {
+      position: relative;
+      width: min(92vw, 560px);
+      background: var(--coral);
+      border: 4px solid var(--ink);
+      border-radius: 26px;
+      box-shadow: 10px 10px 0 var(--ink);
+      padding: clamp(18px, 4vw, 30px) clamp(18px, 4vw, 30px) clamp(16px, 3.5vw, 26px);
+      transform: rotate(-0.6deg);
+      will-change: transform;
+    }
+    .tablet::after {
+      /* subtle molded highlight on the plastic */
+      content: '';
+      position: absolute;
+      inset: 8px 8px auto 8px;
+      height: 40%;
+      border-radius: 20px 20px 60% 60%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.14), transparent);
+      pointer-events: none;
+    }
+
+    .plaque {
+      position: absolute;
+      top: clamp(-13px, -2.4vw, -11px);
+      left: 50%;
+      transform: translateX(-50%) rotate(-1.2deg);
+      background: var(--cream);
+      color: var(--ink);
+      border: 2.5px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 4px 16px;
+      z-index: 6;
+      white-space: nowrap;
+    }
+    .plaque .mk {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: clamp(13px, 2.6vw, 17px);
+      letter-spacing: 1px;
+    }
+    .plaque .sub {
+      font-style: italic;
+      font-size: 10px;
+      opacity: 0.6;
+      text-align: center;
+      margin-top: -1px;
+    }
+
+    /* ---------- the screen ---------- */
+    .screen-wrap {
+      position: relative;
+      border: 4px solid var(--ink);
+      border-radius: 10px;
+      background: #b7bbbe;
+      box-shadow: inset 0 0 0 3px rgba(32,26,23,0.15), 4px 4px 0 rgba(32,26,23,0.35);
+      overflow: hidden;
+      aspect-ratio: 3 / 2;
+      margin-top: clamp(10px, 2vw, 16px);
+    }
+    #screen {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    .screen-sheen {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(125deg, rgba(255,255,255,0.22) 0%, transparent 32%, transparent 70%, rgba(32,26,23,0.07) 100%);
+      mix-blend-mode: screen;
+    }
+    .coat {
+      /* the silver powder re-coat sweep during erase */
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: linear-gradient(100deg, #d6d9db 0%, #c3c7ca 45%, #aeb2b5 100%);
+    }
+
+    /* ---------- knob deck ---------- */
+    .deck {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: clamp(14px, 3vw, 22px);
+      padding: 0 clamp(2px, 1vw, 10px);
+    }
+    .knob-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .knob {
+      position: relative;
+      width: clamp(66px, 15vw, 92px);
+      height: clamp(66px, 15vw, 92px);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 36% 32%, #fffdf8 0%, #f2ede2 36%, #d9d2c3 100%);
+      border: 4px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink);
+      cursor: grab;
+      touch-action: none;
+      will-change: transform;
+    }
+    .knob:active { cursor: grabbing; }
+    .knob.spun { box-shadow: 5px 5px 0 var(--ink); }
+    /* molded grip ridges around the rim */
+    .knob::before {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      border-radius: 50%;
+      background:
+        repeating-conic-gradient(from 0deg,
+          rgba(32,26,23,0.0) 0deg 7deg,
+          rgba(32,26,23,0.22) 7deg 10deg);
+    }
+    /* the pointer notch so rotation is visible */
+    .knob .notch {
+      position: absolute;
+      left: 50%;
+      top: 7px;
+      width: 6px;
+      height: 26%;
+      border-radius: 999px;
+      background: var(--ink);
+      transform: translateX(-50%);
+    }
+    .knob .cap {
+      position: absolute;
+      inset: 30%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 34%, #fffdf8, #e7e0d2);
+      border: 2.5px solid var(--ink);
+    }
+    .knob:focus-visible { outline: none; }
+    .knob:focus-visible::after {
+      content: '';
+      position: absolute;
+      inset: -9px;
+      border: 2.5px dashed var(--ink);
+      border-radius: 50%;
+      opacity: 0.8;
+    }
+    .knob-label {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--cream);
+      text-shadow: 1.5px 1.5px 0 var(--ink);
+    }
+
+    /* ---------- controls ---------- */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+    }
+    .btn {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--ink);
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 10px 18px;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    .btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+    .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+    .btn.shake { background: var(--sky); }
+    .btn.hang { background: var(--lime); }
+
+    .hint {
+      font-style: italic;
+      font-size: 15px;
+      opacity: 0.72;
+      transition: opacity 1.6s ease;
+      text-align: center;
+      max-width: 90vw;
+    }
+    .hint.gone { opacity: 0; }
+
+    .status {
+      font-style: italic;
+      font-size: 12.5px;
+      opacity: 0.55;
+      text-align: center;
+      min-height: 16px;
+    }
+
+    /* ---------- gallery wall ---------- */
+    .wall {
+      width: min(94vw, 760px);
+      margin-top: clamp(8px, 2vh, 20px);
+    }
+    .wall-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .wall-head h2 {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .wall-head .count { font-style: italic; font-size: 12px; opacity: 0.55; }
+    .wall-inner {
+      background: #e7ad7a;
+      background-image:
+        linear-gradient(90deg, rgba(32,26,23,0.05) 1px, transparent 1px),
+        linear-gradient(rgba(32,26,23,0.05) 1px, transparent 1px);
+      background-size: 26px 26px;
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 18px;
+      min-height: 120px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      align-items: center;
+    }
+    .wall-empty { font-style: italic; opacity: 0.6; font-size: 14px; text-align: center; }
+    .frame {
+      position: relative;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      border-radius: 6px;
+      box-shadow: 3px 3px 0 var(--ink);
+      padding: 7px 7px 4px;
+      width: clamp(118px, 30vw, 150px);
+      transform: rotate(var(--tilt, 0deg));
+      transition: transform 0.12s ease;
+    }
+    .frame:hover { transform: rotate(0deg) translateY(-2px); z-index: 2; }
+    .frame img {
+      display: block;
+      width: 100%;
+      border: 2px solid var(--ink);
+      border-radius: 3px;
+      image-rendering: auto;
+    }
+    .frame .cap {
+      font-style: italic;
+      font-size: 10.5px;
+      text-align: center;
+      padding-top: 4px;
+      opacity: 0.7;
+    }
+    .frame .toss {
+      position: absolute;
+      top: -9px;
+      right: -9px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--coral);
+      color: var(--cream);
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .frame:hover .toss { display: flex; }
+
+    @keyframes frameshake {
+      0%,100% { transform: rotate(-0.6deg) translate(0,0); }
+      10% { transform: rotate(-3deg) translate(-7px, 3px); }
+      20% { transform: rotate(3deg) translate(7px, -3px); }
+      30% { transform: rotate(-3.5deg) translate(-8px, 2px); }
+      40% { transform: rotate(3.5deg) translate(8px, -2px); }
+      50% { transform: rotate(-3deg) translate(-6px, 3px); }
+      60% { transform: rotate(3deg) translate(6px, -3px); }
+      70% { transform: rotate(-2deg) translate(-4px, 2px); }
+      80% { transform: rotate(2deg) translate(4px, -1px); }
+      90% { transform: rotate(-1deg) translate(-2px, 1px); }
+    }
+    .tablet.shaking { animation: frameshake 0.6s ease; }
+
+    @keyframes popin {
+      0% { transform: scale(0.2) rotate(var(--tilt, 0deg)); }
+      70% { transform: scale(1.14) rotate(var(--tilt, 0deg)); }
+      100% { transform: scale(1) rotate(var(--tilt, 0deg)); }
+    }
+    .frame.fresh { animation: popin 0.42s ease; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tablet.shaking { animation: none; }
+      .frame.fresh { animation: none; }
+      .frame, .btn { transition: none; }
+    }
+
+    .foot {
+      font-style: italic;
+      font-size: 11px;
+      opacity: 0.45;
+      text-align: center;
+      padding-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <span class="badge">ETCH A SKETCH</span>
+
+  <div class="stage">
+    <div class="tablet" id="tablet">
+      <div class="plaque">
+        <div class="mk">THE ALUMINUM SLATE</div>
+        <div class="sub">a drawing apparatus &middot; two dials, one line</div>
+      </div>
+
+      <div class="screen-wrap">
+        <canvas id="screen"></canvas>
+        <div class="screen-sheen"></div>
+        <div class="coat" id="coat"></div>
+      </div>
+
+      <div class="deck">
+        <div class="knob-slot">
+          <div class="knob" id="knobL" tabindex="0" role="slider"
+               aria-label="Left dial: moves the stylus left and right"
+               aria-valuemin="0" aria-valuemax="360" aria-valuenow="0">
+            <span class="notch"></span><span class="cap"></span>
+          </div>
+          <span class="knob-label">ACROSS</span>
+        </div>
+        <div class="knob-slot">
+          <div class="knob" id="knobR" tabindex="0" role="slider"
+               aria-label="Right dial: moves the stylus up and down"
+               aria-valuemin="0" aria-valuemax="360" aria-valuenow="0">
+            <span class="notch"></span><span class="cap"></span>
+          </div>
+          <span class="knob-label">UP / DOWN</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint" id="hint">twist the dials &mdash; left goes across, right goes up and down. the pen never lifts.</p>
+
+    <div class="controls">
+      <button class="btn shake" id="btnShake">Shake to erase</button>
+      <button class="btn hang" id="btnHang">Hang it up</button>
+    </div>
+    <p class="status" id="status">stylus parked, center screen.</p>
+
+    <div class="wall">
+      <div class="wall-head">
+        <h2>The Gallery Wall</h2>
+        <span class="count" id="wallCount"></span>
+      </div>
+      <div class="wall-inner" id="wall">
+        <p class="wall-empty" id="wallEmpty">Nothing hung yet. Etch something worthy, then hang it up.</p>
+      </div>
+    </div>
+
+    <p class="foot">No pen lifting permitted. Diagonals come out as stairs. This is correct.</p>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var INK = '#201a17';
+      var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var clamp = function (v, lo, hi) { return Math.min(hi, Math.max(lo, v)); };
+
+      var canvas = document.getElementById('screen');
+      var ctx = canvas.getContext('2d');
+      var wrap = canvas.parentElement;
+      var tablet = document.getElementById('tablet');
+      var coat = document.getElementById('coat');
+      var knobL = document.getElementById('knobL');
+      var knobR = document.getElementById('knobR');
+      var hint = document.getElementById('hint');
+      var statusEl = document.getElementById('status');
+      var btnShake = document.getElementById('btnShake');
+      var btnHang = document.getElementById('btnHang');
+      var wall = document.getElementById('wall');
+      var wallEmpty = document.getElementById('wallEmpty');
+      var wallCount = document.getElementById('wallCount');
+
+      // logical drawing size (independent of pixel density); the drawing
+      // lives in this coordinate space so resize can replay it crisply.
+      var W = 600, H = 400;
+      var dpr = 1;
+
+      // the silver powder base. a small amount of noise makes the darker
+      // scratch read as "powder scraped away".
+      var SILVER_A = '#c3c7ca';
+      var SILVER_B = '#b2b6b9';
+
+      // stylus position in logical space
+      var px = W / 2, py = H / 2;
+      // target position fed by the knobs; we ease toward it for smoothness
+      var tx = px, ty = py;
+
+      // knob rotation state (degrees). left knob -> x, right knob -> y.
+      var rotL = 0, rotR = 0;
+      // how much screen travel one full knob turn produces
+      var PX_PER_DEG = W / 360;   // a full turn sweeps the whole width
+      var PY_PER_DEG = H / 360;
+
+      var interacted = false;
+      var dirty = false;      // is there travel to apply / draw?
+      var running = false;    // rAF scheduled?
+      var erasing = false;
+
+      /* ---------- canvas sizing (dpr capped at 2, drawing preserved) ---------- */
+      function paintSilver(c, w, h) {
+        c.fillStyle = SILVER_A;
+        c.fillRect(0, 0, w, h);
+        // faint vignette + brushed streaks so it reads as aluminum powder
+        var g = c.createLinearGradient(0, 0, w, h);
+        g.addColorStop(0, 'rgba(255,255,255,0.10)');
+        g.addColorStop(0.5, 'rgba(0,0,0,0)');
+        g.addColorStop(1, 'rgba(32,26,23,0.06)');
+        c.fillStyle = g;
+        c.fillRect(0, 0, w, h);
+      }
+
+      function sizeCanvas(preserve) {
+        var rect = wrap.getBoundingClientRect();
+        if (rect.width < 2) return;
+        dpr = Math.min(2, window.devicePixelRatio || 1);
+
+        // snapshot current drawing (logical space) before we resize
+        var snap = null;
+        if (preserve && canvas.width) {
+          snap = document.createElement('canvas');
+          snap.width = canvas.width;
+          snap.height = canvas.height;
+          snap.getContext('2d').drawImage(canvas, 0, 0);
+        }
+
+        var cw = Math.round(rect.width * dpr);
+        var ch = Math.round(rect.height * dpr);
+        canvas.width = cw;
+        canvas.height = ch;
+
+        // logical space tracks displayed size (keeps 1 unit ~= 1 css px)
+        W = Math.max(200, Math.round(rect.width));
+        H = Math.max(133, Math.round(rect.height));
+        PX_PER_DEG = W / 360;
+        PY_PER_DEG = H / 360;
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+        paintSilver(ctx, rect.width, rect.height);
+        if (snap) {
+          // stretch the old drawing onto the new silver
+          ctx.drawImage(snap, 0, 0, snap.width, snap.height, 0, 0, rect.width, rect.height);
+        }
+        px = clamp(px, 2, W - 2); tx = clamp(tx, 2, W - 2);
+        py = clamp(py, 2, H - 2); ty = clamp(ty, 2, H - 2);
+      }
+
+      /* ---------- the line (never lifts) ---------- */
+      function drawSegment(x0, y0, x1, y1) {
+        // dark scratch: a soft wide groove under a crisp dark line, so it
+        // reads as powder scraped down to the gray glass.
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'rgba(110,116,120,0.55)';
+        ctx.lineWidth = 3.6;
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+        ctx.strokeStyle = 'rgba(42,46,50,0.92)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      }
+
+      /* ---------- the loop (sleeps when idle) ---------- */
+      function wake() {
+        if (!running) { running = true; requestAnimationFrame(tick); }
+      }
+
+      function tick() {
+        if (erasing) { running = false; return; }
+        // ease the live stylus toward the knob-driven target. easing is what
+        // makes a diagonal (both knobs at once) come out as a staircase when
+        // you move one knob at a time.
+        var ox = px, oy = py;
+        px += (tx - px) * 0.35;
+        py += (ty - py) * 0.35;
+        if (Math.abs(tx - px) < 0.15) px = tx;
+        if (Math.abs(ty - py) < 0.15) py = ty;
+
+        if (px !== ox || py !== oy) {
+          drawSegment(ox, oy, px, py);
+        }
+
+        var settled = (px === tx && py === ty);
+        if (!settled || dirty) {
+          dirty = false;
+          requestAnimationFrame(tick);
+        } else {
+          running = false;
+          updateStatus();
+        }
+      }
+
+      /* ---------- apply knob rotation to travel ---------- */
+      function applyLeft(deltaDeg) {
+        rotL += deltaDeg;
+        knobL.style.transform = 'rotate(' + rotL + 'deg)';
+        knobL.setAttribute('aria-valuenow', Math.round(((rotL % 360) + 360) % 360));
+        tx = clamp(tx + deltaDeg * PX_PER_DEG, 1, W - 1);
+        firstTouch(); wake();
+      }
+      function applyRight(deltaDeg) {
+        rotR += deltaDeg;
+        knobR.style.transform = 'rotate(' + rotR + 'deg)';
+        knobR.setAttribute('aria-valuenow', Math.round(((rotR % 360) + 360) % 360));
+        ty = clamp(ty + deltaDeg * PY_PER_DEG, 1, H - 1);
+        firstTouch(); wake();
+      }
+
+      function firstTouch() {
+        if (!interacted) { interacted = true; hint.classList.add('gone'); }
+      }
+
+      function updateStatus() {
+        if (erasing) return;
+        var xpct = Math.round((px / W) * 100);
+        var ypct = Math.round((py / H) * 100);
+        statusEl.textContent = 'stylus at ' + xpct + '% across, ' + ypct + '% down.';
+      }
+
+      /* ---------- angular drag on a knob ---------- */
+      function makeDraggable(el, apply) {
+        var dragging = false, lastAngle = 0, pid = null;
+        function angleOf(ev) {
+          var r = el.getBoundingClientRect();
+          return Math.atan2(ev.clientY - (r.top + r.height / 2),
+                            ev.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
+        }
+        el.addEventListener('pointerdown', function (ev) {
+          ev.preventDefault();
+          dragging = true; pid = ev.pointerId;
+          lastAngle = angleOf(ev);
+          el.setPointerCapture(pid);
+          el.classList.add('spun');
+        });
+        el.addEventListener('pointermove', function (ev) {
+          if (!dragging) return;
+          var a = angleOf(ev);
+          var d = a - lastAngle;
+          // normalize across the -180/180 seam
+          if (d > 180) d -= 360; else if (d < -180) d += 360;
+          lastAngle = a;
+          apply(d);
+        });
+        function end() {
+          if (!dragging) return;
+          dragging = false;
+          el.classList.remove('spun');
+          if (pid !== null) { try { el.releasePointerCapture(pid); } catch (e) {} pid = null; }
+        }
+        el.addEventListener('pointerup', end);
+        el.addEventListener('pointercancel', end);
+
+        // keyboard: focus the knob, arrows nudge it (and the matching axis)
+        el.addEventListener('keydown', function (ev) {
+          var step = ev.shiftKey ? 24 : 6;
+          var handled = true;
+          if (el === knobL) {
+            if (ev.key === 'ArrowRight') apply(step);
+            else if (ev.key === 'ArrowLeft') apply(-step);
+            else handled = false;
+          } else {
+            if (ev.key === 'ArrowDown') apply(step);
+            else if (ev.key === 'ArrowUp') apply(-step);
+            else handled = false;
+          }
+          if (handled) ev.preventDefault();
+        });
+      }
+      makeDraggable(knobL, applyLeft);
+      makeDraggable(knobR, applyRight);
+
+      /* ---------- global arrow keys (desktop, no focus needed) ---------- */
+      window.addEventListener('keydown', function (ev) {
+        if (ev.target === knobL || ev.target === knobR) return; // handled above
+        var tag = (ev.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'button') return;
+        var step = ev.shiftKey ? 24 : 6;
+        switch (ev.key) {
+          case 'ArrowLeft': applyLeft(-step); ev.preventDefault(); break;
+          case 'ArrowRight': applyLeft(step); ev.preventDefault(); break;
+          case 'ArrowUp': applyRight(-step); ev.preventDefault(); break;
+          case 'ArrowDown': applyRight(step); ev.preventDefault(); break;
+        }
+      });
+
+      /* ---------- erase (shake) ---------- */
+      function erase() {
+        if (erasing) return;
+        erasing = true;
+        running = false;
+        statusEl.textContent = 'shaking the powder back into place.';
+
+        if (navigator.vibrate) { try { navigator.vibrate([25, 40, 25]); } catch (e) {} }
+
+        if (!reduce) {
+          tablet.classList.remove('shaking');
+          void tablet.offsetWidth;
+          tablet.classList.add('shaking');
+        }
+
+        var finish = function () {
+          var rect = wrap.getBoundingClientRect();
+          paintSilver(ctx, rect.width, rect.height);
+          // recenter the stylus, like lifting and re-seating the toy
+          px = tx = W / 2; py = ty = H / 2;
+          erasing = false;
+          updateStatus();
+        };
+
+        if (reduce) {
+          finish();
+          return;
+        }
+
+        // sweep the powder re-coat across the screen, fade the drawing under it
+        var start = performance.now();
+        var DUR = 520;
+        coat.style.opacity = '0';
+        function sweep(now) {
+          var t = clamp((now - start) / DUR, 0, 1);
+          // fade the coat in over the first 60%, hold, then out
+          var o = t < 0.6 ? (t / 0.6) : (1 - (t - 0.6) / 0.4);
+          coat.style.opacity = String(clamp(o, 0, 1) * 0.96);
+          if (t >= 0.5 && !coat._cleared) {
+            coat._cleared = true;
+            finish();
+          }
+          if (t < 1) {
+            requestAnimationFrame(sweep);
+          } else {
+            coat.style.opacity = '0';
+            coat._cleared = false;
+          }
+        }
+        requestAnimationFrame(sweep);
+        tablet.addEventListener('animationend', function once() {
+          tablet.classList.remove('shaking');
+          tablet.removeEventListener('animationend', once);
+        });
+      }
+
+      btnShake.addEventListener('click', erase);
+
+      /* ---------- real device shake (devicemotion) ---------- */
+      var lastShake = 0, prevAcc = null;
+      function onMotion(ev) {
+        var a = ev.accelerationIncludingGravity || ev.acceleration;
+        if (!a) return;
+        if (prevAcc) {
+          var dx = Math.abs((a.x || 0) - prevAcc.x);
+          var dy = Math.abs((a.y || 0) - prevAcc.y);
+          var dz = Math.abs((a.z || 0) - prevAcc.z);
+          var jolt = dx + dy + dz;
+          var now = Date.now();
+          if (jolt > 32 && now - lastShake > 900) {
+            lastShake = now;
+            erase();
+          }
+        }
+        prevAcc = { x: a.x || 0, y: a.y || 0, z: a.z || 0 };
+      }
+      function armMotion() {
+        // iOS 13+ needs a permission gesture; attach after any interaction.
+        var DME = window.DeviceMotionEvent;
+        if (!DME) return;
+        if (typeof DME.requestPermission === 'function') {
+          // ask once, quietly, on the first erase-button tap
+          btnShake.addEventListener('click', function askOnce() {
+            btnShake.removeEventListener('click', askOnce);
+            DME.requestPermission().then(function (res) {
+              if (res === 'granted') window.addEventListener('devicemotion', onMotion);
+            }).catch(function () {});
+          });
+        } else {
+          window.addEventListener('devicemotion', onMotion);
+        }
+      }
+      armMotion();
+
+      /* ---------- gallery wall (localStorage) ---------- */
+      var KEY = 'etchasketch.wall.v1';
+      function loadWall() {
+        try {
+          var raw = localStorage.getItem(KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) { return []; }
+      }
+      function saveWall(items) {
+        try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) {}
+      }
+
+      var TILTS = ['-2.4deg', '1.8deg', '-1.2deg', '2.6deg', '-3deg', '1.1deg'];
+      function tiltFor(i) { return TILTS[i % TILTS.length]; }
+
+      function renderWall(freshId) {
+        var items = loadWall();
+        wall.querySelectorAll('.frame').forEach(function (n) { n.remove(); });
+        if (items.length === 0) {
+          wallEmpty.style.display = '';
+          wallCount.textContent = '';
+          return;
+        }
+        wallEmpty.style.display = 'none';
+        wallCount.textContent = '(' + items.length + ' hung)';
+        items.forEach(function (it, i) {
+          var fr = document.createElement('div');
+          fr.className = 'frame';
+          fr.style.setProperty('--tilt', tiltFor(i));
+          if (it.id === freshId) fr.classList.add('fresh');
+
+          var img = document.createElement('img');
+          img.src = it.src;
+          img.alt = 'A saved etch';
+          var cap = document.createElement('div');
+          cap.className = 'cap';
+          cap.textContent = it.title;
+          var toss = document.createElement('button');
+          toss.className = 'toss';
+          toss.setAttribute('aria-label', 'Take this one down');
+          toss.textContent = '×';
+          toss.addEventListener('click', function () {
+            var cur = loadWall().filter(function (x) { return x.id !== it.id; });
+            saveWall(cur);
+            renderWall();
+          });
+
+          fr.appendChild(img);
+          fr.appendChild(cap);
+          fr.appendChild(toss);
+          wall.appendChild(fr);
+        });
+      }
+
+      var CAPTIONS = [
+        'Untitled, powder on glass',
+        'Study in one unbroken line',
+        'Composition with stairs',
+        'The dials, obeyed',
+        'Attempt at a circle',
+        'Mostly a diagonal',
+        'Masterpiece (no. {n})',
+        'Evidence of effort'
+      ];
+
+      function hangItUp() {
+        var items = loadWall();
+        // snapshot the current screen as a small framed thumbnail
+        var TW = 220, TH = Math.round(TW * (H / W));
+        var thumb = document.createElement('canvas');
+        thumb.width = TW; thumb.height = TH;
+        var tc = thumb.getContext('2d');
+        tc.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, TW, TH);
+        var src;
+        try { src = thumb.toDataURL('image/webp', 0.8); }
+        catch (e) { src = thumb.toDataURL('image/png'); }
+        if (!src || src.indexOf('data:image') !== 0) {
+          src = thumb.toDataURL('image/png');
+        }
+
+        var n = items.length + 1;
+        var cap = CAPTIONS[Math.floor(Math.random() * CAPTIONS.length)].replace('{n}', n);
+        var id = 'e' + Date.now() + Math.floor(Math.random() * 1000);
+        items.push({ id: id, src: src, title: cap });
+        // cap the wall so localStorage stays reasonable
+        if (items.length > 18) items = items.slice(items.length - 18);
+        saveWall(items);
+        renderWall(id);
+        statusEl.textContent = 'hung on the wall: "' + cap + '".';
+        if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) {} }
+      }
+      btnHang.addEventListener('click', hangItUp);
+
+      /* ---------- resize (debounced, preserves drawing) ---------- */
+      var rzT;
+      window.addEventListener('resize', function () {
+        clearTimeout(rzT);
+        rzT = setTimeout(function () { sizeCanvas(true); }, 140);
+      });
+
+      // hint auto-fades even without interaction
+      setTimeout(function () { hint.classList.add('gone'); }, 11000);
+
+      /* ---------- boot ---------- */
+      sizeCanvas(false);
+      updateStatus();
+      renderWall();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spend Your Life</title>
+    <meta name="description" content="You have a budget. It is the rest of your life, measured in hours. Spend it however you like.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/spendyourlife/">
+    <meta property="og:title" content="Spend Your Life">
+    <meta property="og:description" content="Your budget isn't money — it's the hours you have left. Spend them on sleep, meetings, guitar, and falling in love, and watch the clock drain.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/spendyourlife.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Spend Your Life">
+    <meta name="twitter:description" content="Your budget isn't money — it's the hours you have left. Spend them on sleep, meetings, guitar, and falling in love, and watch the clock drain.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/spendyourlife.png">
+    <!-- rsotw:og:end -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><rect x='3' y='3' width='44' height='44' rx='8' fill='%23f7c948' stroke='%23201a17' stroke-width='3'/><path d='M25 11 a14 14 0 1 0 0.01 0 Z' fill='none' stroke='%23201a17' stroke-width='3'/><path d='M25 16 v9 l6 4' fill='none' stroke='%23201a17' stroke-width='3' stroke-linecap='round'/></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --coral: #f0563e;
+            --sky: #5aa0db;
+            --lime: #b7ce3c;
+            --purple: #a98fd0;
+            --orange: #f47b28;
+            --pink: #ff7fa5;
+            --teal: #2fb0a3;
+            --gold: #f7c948;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, 'Times New Roman', serif;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            /* faint paper grain */
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(32,26,23,0.015) 0, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(32,26,23,0.015) 0, transparent 40%);
+            min-height: 100vh;
+            padding: 0 0 80px;
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 0 clamp(14px, 4vw, 28px);
+        }
+
+        /* ---------- Header / balance ---------- */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background: var(--paper);
+            border-bottom: 2.5px solid var(--ink);
+            box-shadow: 0 4px 0 rgba(32,26,23,0.08);
+        }
+
+        .headbar {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: clamp(12px, 2.4vw, 18px) clamp(14px, 4vw, 28px) clamp(10px, 2vw, 14px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 4px;
+        }
+
+        .eyebrow {
+            font-style: italic;
+            font-size: clamp(12px, 2.6vw, 14px);
+            color: #6a635c;
+            letter-spacing: 0.5px;
+        }
+
+        .balance {
+            font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif;
+            font-weight: 900;
+            font-size: clamp(34px, 11vw, 76px);
+            line-height: 0.98;
+            letter-spacing: -1px;
+            font-variant-numeric: tabular-nums;
+            color: var(--ink);
+            -webkit-text-stroke: 1.5px var(--ink);
+            text-shadow: 3px 3px 0 var(--gold);
+            paint-order: stroke fill;
+            transition: text-shadow 0.25s ease, color 0.25s ease;
+        }
+
+        .balance.low { text-shadow: 3px 3px 0 var(--coral); }
+        .balance.zero { text-shadow: 3px 3px 0 #b9b2a8; color: #8a837a; -webkit-text-stroke-color: #8a837a; }
+
+        .balance .unit {
+            font-size: 0.34em;
+            letter-spacing: 1px;
+            -webkit-text-stroke: 0;
+            text-shadow: none;
+        }
+
+        .humane {
+            font-style: italic;
+            font-size: clamp(13px, 3vw, 17px);
+            color: #4a443e;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .humane b { font-style: normal; }
+
+        /* age setter */
+        .agebar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+            font-style: italic;
+            font-size: clamp(12px, 2.6vw, 14px);
+            color: #6a635c;
+        }
+
+        .agebar input {
+            width: 56px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 16px;
+            text-align: center;
+            padding: 3px 4px;
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            background: var(--cream);
+            color: var(--ink);
+            box-shadow: 2px 2px 0 var(--ink);
+            font-variant-numeric: tabular-nums;
+        }
+        .agebar input:focus { outline: none; box-shadow: 2px 2px 0 var(--sky); }
+
+        /* ---------- Hint ---------- */
+        .hint {
+            text-align: center;
+            font-style: italic;
+            color: #7a736b;
+            font-size: clamp(13px, 2.8vw, 15px);
+            margin: 20px auto 4px;
+            max-width: 560px;
+            transition: opacity 1.2s ease;
+            min-height: 1.4em;
+        }
+        .hint.gone { opacity: 0; pointer-events: none; }
+
+        /* ---------- Grid ---------- */
+        .grid {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+            gap: clamp(12px, 2.4vw, 18px);
+        }
+
+        .item {
+            background: var(--cream);
+            border: 2.5px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 4px 4px 0 var(--ink);
+            padding: 16px 14px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            transition: box-shadow 0.12s ease, transform 0.12s ease;
+        }
+        .item.owned {
+            box-shadow: 4px 4px 0 var(--ink), inset 0 0 0 2px rgba(247,201,72,0.0);
+        }
+        .item.active-glow { box-shadow: 5px 5px 0 var(--ink); transform: translate(-1px,-1px); }
+
+        .item.maxed::after {
+            content: "that's more time than you have left";
+            position: absolute;
+            left: 10px; right: 10px; bottom: 52px;
+            font-style: italic;
+            font-size: 11px;
+            color: var(--coral);
+            text-align: center;
+            background: var(--cream);
+            padding: 2px 0;
+        }
+
+        .ico {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            border: 2.5px solid var(--ink);
+            box-shadow: 2.5px 2.5px 0 var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--ink);
+            flex: 0 0 auto;
+        }
+        .ico svg { width: 30px; height: 30px; display: block; }
+
+        .item-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .item-name {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(14px, 2.6vw, 16px);
+            line-height: 1.15;
+            letter-spacing: -0.2px;
+        }
+
+        .item-cost {
+            font-style: italic;
+            font-size: 12.5px;
+            color: #6a635c;
+            margin-top: 3px;
+            font-variant-numeric: tabular-nums;
+        }
+        .item-cost.free { color: var(--teal); font-style: normal; font-family: 'Arial Black', Arial, sans-serif; }
+
+        .item-note {
+            font-style: italic;
+            font-size: 12px;
+            color: #8a837a;
+            line-height: 1.45;
+            margin-top: -2px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .qtybtn {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 auto;
+            border: 2.5px solid var(--ink);
+            border-radius: 10px;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 2.5px 2.5px 0 var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.1s ease;
+        }
+        .qtybtn.plus { background: var(--lime); }
+        .qtybtn.minus { background: var(--paper); }
+        .qtybtn:hover { transform: translate(-1.5px,-1.5px); box-shadow: 4px 4px 0 var(--ink); }
+        .qtybtn:active { transform: translate(2.5px,2.5px); box-shadow: 0 0 0 var(--ink); }
+        .qtybtn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: 2.5px 2.5px 0 var(--ink); }
+
+        .qty {
+            flex: 1 1 auto;
+            text-align: center;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 20px;
+            font-variant-numeric: tabular-nums;
+            color: var(--ink);
+            min-width: 0;
+        }
+        .qty .sub {
+            display: block;
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-weight: normal;
+            font-size: 11px;
+            color: #8a837a;
+            margin-top: 1px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* priceless items: no numeric control, a single stamp toggle */
+        .stampbtn {
+            width: 100%;
+            border: 2.5px solid var(--ink);
+            border-radius: 10px;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            padding: 10px;
+            cursor: pointer;
+            box-shadow: 2.5px 2.5px 0 var(--ink);
+            text-transform: uppercase;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.12s ease;
+        }
+        .stampbtn:hover { transform: translate(-1.5px,-1.5px); box-shadow: 4px 4px 0 var(--ink); }
+        .stampbtn:active { transform: translate(2.5px,2.5px); box-shadow: 0 0 0 var(--ink); }
+        .stampbtn.done { background: var(--teal); color: var(--cream); -webkit-text-stroke: 0.4px var(--ink); }
+
+        /* live ticker item */
+        .live .qty .sub { color: var(--coral); }
+
+        /* ---------- Summary ---------- */
+        .summary {
+            margin: 36px auto 0;
+            max-width: 680px;
+            background: var(--cream);
+            border: 2.5px solid var(--ink);
+            border-radius: 16px;
+            box-shadow: 5px 5px 0 var(--ink);
+            padding: clamp(20px, 4vw, 30px);
+        }
+
+        .summary h2 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(16px, 3.4vw, 20px);
+            margin: 0 0 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .summary .lede {
+            font-style: italic;
+            color: #6a635c;
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+
+        .summary-body {
+            font-style: italic;
+            font-size: clamp(15px, 3.4vw, 19px);
+            line-height: 1.75;
+            color: #352f29;
+        }
+        .summary-body .amt {
+            font-style: normal;
+            font-family: 'Arial Black', Arial, sans-serif;
+            color: var(--ink);
+            font-variant-numeric: tabular-nums;
+        }
+        .summary-body em { color: #8a837a; }
+
+        .summary-empty {
+            font-style: italic;
+            color: #8a837a;
+            font-size: 15px;
+        }
+
+        .share-row {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: 2.5px solid var(--ink);
+            border-radius: 999px;
+            background: var(--gold);
+            color: var(--ink);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.4px;
+            padding: 11px 18px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--ink);
+            text-transform: uppercase;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.08s ease, box-shadow 0.08s ease;
+        }
+        .btn.ghost { background: var(--paper); }
+        .btn:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--ink); }
+        .btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+
+        .footnote {
+            text-align: center;
+            font-style: italic;
+            color: #9a938a;
+            font-size: 12px;
+            margin: 30px auto 0;
+            max-width: 560px;
+            line-height: 1.6;
+        }
+
+        /* ---------- End overlay ---------- */
+        .end {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(20,16,14,0.82);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            opacity: 0;
+            transition: opacity 1.4s ease;
+        }
+        .end.show { display: flex; }
+        .end.vis { opacity: 1; }
+
+        .end-card {
+            background: var(--paper);
+            border: 2.5px solid var(--ink);
+            border-radius: 18px;
+            box-shadow: 8px 8px 0 var(--ink);
+            max-width: 480px;
+            width: 100%;
+            padding: clamp(26px, 6vw, 40px);
+            text-align: center;
+        }
+        .end-card .big {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(26px, 7vw, 40px);
+            text-transform: lowercase;
+            letter-spacing: -0.5px;
+            -webkit-text-stroke: 1px var(--ink);
+            text-shadow: 3px 3px 0 var(--coral);
+            paint-order: stroke fill;
+            margin-bottom: 14px;
+        }
+        .end-card p {
+            font-style: italic;
+            color: #4a443e;
+            font-size: clamp(14px, 3.4vw, 17px);
+            line-height: 1.7;
+            margin: 0 0 20px;
+        }
+
+        /* ---------- Share card (hidden render surface) ---------- */
+        #cardCanvas { display: none; }
+
+        /* share modal */
+        .modal {
+            position: fixed; inset: 0; z-index: 110;
+            background: rgba(20,16,14,0.8);
+            display: none; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .modal.show { display: flex; }
+        .modal-inner {
+            background: var(--paper);
+            border: 2.5px solid var(--ink);
+            border-radius: 16px;
+            box-shadow: 8px 8px 0 var(--ink);
+            max-width: 460px; width: 100%;
+            padding: 18px;
+            text-align: center;
+        }
+        .modal-inner img {
+            width: 100%; height: auto;
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            display: block;
+            margin-bottom: 14px;
+        }
+        .modal-inner .modal-hint {
+            font-style: italic; color: #6a635c; font-size: 12px; margin-bottom: 12px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; animation: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="headbar">
+        <div class="eyebrow">your remaining balance</div>
+        <div class="balance" id="balance" aria-live="polite">0<span class="unit"> hrs</span></div>
+        <div class="humane" id="humane">&nbsp;</div>
+        <div class="agebar">
+            <span>you are</span>
+            <input id="age" type="number" inputmode="numeric" min="0" max="119" value="25" aria-label="your age">
+            <span>years old. the estimate is 80. no refunds.</span>
+        </div>
+    </div>
+</header>
+
+<div class="wrap">
+    <div class="hint" id="hint"><i>spend it on anything. the numbers are real; the sleep will claim about a third no matter what you choose.</i></div>
+
+    <div class="grid" id="grid"></div>
+
+    <section class="summary" id="summaryWrap">
+        <h2>How you spent it</h2>
+        <div class="lede">a running account, kept honestly</div>
+        <div id="summaryBody"><div class="summary-empty">You haven't spent anything yet. That, too, is a choice.</div></div>
+        <div class="share-row">
+            <button class="btn" id="shareBtn">Keep a receipt</button>
+            <button class="btn ghost" id="resetBtn">Start over</button>
+        </div>
+    </section>
+
+    <p class="footnote">80 years is an estimate. So is everything. These hour costs are honest ballparks, not actuarial fact. Spend accordingly.</p>
+</div>
+
+<div class="end" id="end">
+    <div class="end-card">
+        <div class="big">your time is up.</div>
+        <p id="endText">You spent every hour you had left. However you spent it, it was yours.</p>
+        <button class="btn" id="endShare">Keep a receipt</button>
+        <button class="btn ghost" id="endReset">Start over</button>
+    </div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-inner">
+        <img id="cardImg" alt="Your life-spending receipt">
+        <div class="modal-hint">Long-press or right-click to save. Then go spend some of the real thing.</div>
+        <button class="btn ghost" id="modalClose">Close</button>
+    </div>
+</div>
+
+<canvas id="cardCanvas" width="1200" height="630"></canvas>
+
+<script>
+(function () {
+    "use strict";
+
+    const INK = '#201a17';
+    const HOUR = 1;
+    const H_PER_YEAR = 365.25 * 24; // 8766
+    const EXPECTANCY = 80;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ---- sticker SVG icons for things FA lacks a good fit for ----
+    const svgGrass = `<svg viewBox="0 0 24 24" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21c0-5 1.5-9 3-11"/><path d="M8 21c0-6 2-10 3.5-13"/><path d="M12 21c0-7 2.5-11 4-14"/><path d="M16 21c0-5 1.5-8 3-10"/><path d="M2 21h20"/></svg>`;
+    const svgGrieve = `<svg viewBox="0 0 24 24" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9-9c-1.6-3.6 1-7 4-6 1.8.6 2.8 2 3 3 .2-1 1.2-2.4 3-3 3-1 5.6 2.4 4 6-2 4.5-8 9-8 9z"/><path d="M12 10v6"/><circle cx="12" cy="18.5" r="0.3"/></svg>`;
+
+    // fa() returns a FontAwesome <i>, color-fill behind via the .ico tinted bg
+    function fa(name) { return `<i class="fa-solid fa-${name}"></i>`; }
+
+    // ---- the catalog of ways to spend a life ----
+    // cost in hours; step = how many hours one tap buys; kind: 'count' | 'stamp' | 'live'
+    const ITEMS = [
+        { id:'phone',    name:'Check your phone',        icon:fa('mobile-screen-button'), bg:'--sky',    cost:4/60,  step:1, unit:'tap', note:'about a hundred times a day, give or take.' },
+        { id:'scroll',   name:'Doomscroll before bed',   icon:fa('bed-pulse'),            bg:'--purple', cost:0.5,   step:1, unit:'night', note:'just five more minutes.' },
+        { id:'sleep',    name:"A full night's sleep",     icon:fa('bed'),                  bg:'--teal',   cost:8,     step:1, unit:'night', note:'sleep will quietly claim about a third of everything.' },
+        { id:'office',   name:'Rewatch The Office',      icon:fa('tv'),                   bg:'--gold',   cost:92,    step:1, unit:'run', note:'start to finish. again.' },
+        { id:'dmv',      name:'Wait at the DMV',         icon:fa('id-card'),              bg:'--orange', cost:3,     step:1, unit:'visit', note:'take a number.' },
+        { id:'commute',  name:'Commute',                 icon:fa('car-side'),             bg:'--coral',  cost:200,   step:1, unit:'year', note:"one year's worth of to-and-from." },
+        { id:'meetings', name:'Meetings that were emails',icon:fa('users'),              bg:'--pink',   cost:2000,  step:1, unit:'career', note:"a whole career of them." },
+        { id:'guitar',   name:'Learn guitar, properly',  icon:fa('guitar'),               bg:'--lime',   cost:1200,  step:1, unit:'skill', note:'until you are actually good.' },
+        { id:'language', name:'Learn a new language',    icon:fa('language'),             bg:'--sky',    cost:600,   step:1, unit:'tongue', note:'to conversational, not fluent.' },
+        { id:'books',    name:'Read 100 great books',    icon:fa('book-open'),            bg:'--orange', cost:500,   step:1, unit:'shelf', note:'the ones you keep meaning to.' },
+        { id:'marathon', name:'Run a marathon',          icon:fa('person-running'),       bg:'--coral',  cost:500,   step:1, unit:'race', note:'training and all 26.2 miles.' },
+        { id:'social',   name:'Scroll social media',     icon:fa('hashtag'),              bg:'--purple', cost:7300,  step:1, unit:'decade', note:'a decade at two hours a day.' },
+        { id:'cook',     name:'Cook every meal yourself',icon:fa('utensils'),             bg:'--lime',   cost:4400,  step:1, unit:'lifetime', note:'a lifetime of chopping onions.' },
+        { id:'mom',      name:'Call your mom',           icon:fa('phone'),                bg:'--pink',   cost:20/60, step:1, unit:'call', note:'worth it.' },
+        { id:'stare',    name:'Stare at this website',   icon:fa('hourglass-half'),       bg:'--gold',   kind:'live', note:'ticking up live, right now, as you read this.' },
+        { id:'love',     name:'Fall in love',            icon:fa('heart'),                bg:'--coral',  kind:'stamp', priceless:true, note:'free. priceless. the exchange rate is undefined.' },
+        { id:'grass',    name:'Touch grass',             icon:svgGrass,                   bg:'--teal',   kind:'stamp', free:true, note:'costs nothing. somehow the hardest to do.' },
+        { id:'grieve',   name:'Grieve',                  icon:svgGrieve,                  bg:'--purple', kind:'stamp', priceless:true, note:'you do not choose when. only whether.' },
+    ];
+
+    // ---- state ----
+    const state = { age: 25, qty: {}, stamp: {}, live: 0 };
+    ITEMS.forEach(it => { if (it.kind !== 'stamp' && it.kind !== 'live') state.qty[it.id] = 0; if (it.kind === 'stamp') state.stamp[it.id] = false; });
+
+    const LS_KEY = 'spendyourlife.v1';
+    function save() {
+        try { localStorage.setItem(LS_KEY, JSON.stringify({ age: state.age, qty: state.qty, stamp: state.stamp, live: Math.round(state.live) })); } catch (e) {}
+    }
+    function load() {
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            if (!raw) return;
+            const d = JSON.parse(raw);
+            if (typeof d.age === 'number') state.age = d.age;
+            if (d.qty) Object.keys(state.qty).forEach(k => { if (typeof d.qty[k] === 'number') state.qty[k] = d.qty[k]; });
+            if (d.stamp) Object.keys(state.stamp).forEach(k => { if (typeof d.stamp[k] === 'boolean') state.stamp[k] = d.stamp[k]; });
+            if (typeof d.live === 'number') state.live = d.live;
+        } catch (e) {}
+    }
+    load();
+
+    // ---- budget math ----
+    function totalHours() {
+        const remYears = Math.max(0, EXPECTANCY - state.age);
+        return remYears * H_PER_YEAR;
+    }
+    function spentHours() {
+        let s = state.live / 3600; // live seconds -> hours
+        ITEMS.forEach(it => {
+            if (it.kind === 'live' || it.kind === 'stamp') return;
+            if (it.free || it.priceless) return;
+            s += (state.qty[it.id] || 0) * it.cost;
+        });
+        return s;
+    }
+    function balance() { return Math.max(0, totalHours() - spentHours()); }
+
+    // ---- formatting ----
+    function commas(n) { return Math.round(n).toLocaleString('en-US'); }
+
+    function humaneDuration(hours) {
+        if (hours <= 0) return 'nothing. the account is empty.';
+        let totalDays = hours / 24;
+        let years = Math.floor(totalDays / 365.25);
+        let rem = totalDays - years * 365.25;
+        let months = Math.floor(rem / 30.4375);
+        let days = Math.floor(rem - months * 30.4375);
+        const parts = [];
+        if (years) parts.push(years + (years === 1 ? ' year' : ' years'));
+        if (months) parts.push(months + (months === 1 ? ' month' : ' months'));
+        if (days || parts.length === 0) parts.push(days + (days === 1 ? ' day' : ' days'));
+        return parts.join(', ') + ' left';
+    }
+
+    function humaneSpent(hours) {
+        // for summary lines: express a chunk of hours in the largest sensible unit
+        if (hours <= 0) return '';
+        if (hours < 1) {
+            const mins = Math.round(hours * 60);
+            return mins + (mins === 1 ? ' minute' : ' minutes');
+        }
+        if (hours < 48) {
+            const h = Math.round(hours);
+            return h + (h === 1 ? ' hour' : ' hours');
+        }
+        const days = hours / 24;
+        if (days < 60) {
+            const d = Math.round(days);
+            return d + (d === 1 ? ' day' : ' days');
+        }
+        const months = days / 30.4375;
+        if (months < 18) {
+            const m = Math.round(months);
+            return m + (m === 1 ? ' month' : ' months');
+        }
+        const years = days / 365.25;
+        const y = years < 10 ? Math.round(years * 10) / 10 : Math.round(years);
+        return y + (y === 1 ? ' year' : ' years');
+    }
+
+    // ---- render balance ----
+    const $balance = document.getElementById('balance');
+    const $humane = document.getElementById('humane');
+
+    function renderBalance() {
+        const bal = balance();
+        $balance.innerHTML = commas(bal) + '<span class="unit"> hrs</span>';
+        $balance.classList.toggle('low', bal > 0 && bal < totalHours() * 0.12);
+        $balance.classList.toggle('zero', bal <= 0);
+        $humane.innerHTML = humaneDuration(bal);
+
+        if (bal <= 0 && totalHours() > 0) triggerEnd(); else hideEnd();
+    }
+
+    // ---- capacity check: can we add `addHours` more? ----
+    function remaining() { return balance(); }
+
+    // ---- grid ----
+    const $grid = document.getElementById('grid');
+    const nodes = {}; // id -> { el, qtyEl, subEl, minus, plus, stampBtn }
+
+    function buildGrid() {
+        const frag = document.createDocumentFragment();
+        ITEMS.forEach(it => {
+            const el = document.createElement('div');
+            el.className = 'item';
+            el.dataset.id = it.id;
+
+            const bgColor = `var(${it.bg})`;
+            const costLabel = it.free ? 'free' : it.priceless ? 'priceless' : it.kind === 'live'
+                ? 'live' : prettyCost(it.cost);
+            const costClass = (it.free || it.priceless) ? 'item-cost free' : 'item-cost';
+
+            el.innerHTML = `
+                <div class="item-head">
+                    <div class="ico" style="background:${bgColor}">${it.icon}</div>
+                    <div>
+                        <div class="item-name">${it.name}</div>
+                        <div class="${costClass}">${costLabel}</div>
+                    </div>
+                </div>
+                <div class="item-note">${it.note}</div>
+                <div class="controls"></div>
+            `;
+
+            const controls = el.querySelector('.controls');
+            const rec = { el };
+
+            if (it.kind === 'stamp') {
+                const btn = document.createElement('button');
+                btn.className = 'stampbtn';
+                btn.type = 'button';
+                controls.appendChild(btn);
+                rec.stampBtn = btn;
+                btn.addEventListener('click', () => toggleStamp(it));
+            } else if (it.kind === 'live') {
+                el.classList.add('live');
+                const qtyWrap = document.createElement('div');
+                qtyWrap.className = 'qty';
+                qtyWrap.innerHTML = `<span class="num">0</span><span class="sub">0 hrs</span>`;
+                controls.appendChild(qtyWrap);
+                rec.qtyEl = qtyWrap.querySelector('.num');
+                rec.subEl = qtyWrap.querySelector('.sub');
+            } else {
+                const minus = mkBtn('minus', '−');
+                const qtyWrap = document.createElement('div');
+                qtyWrap.className = 'qty';
+                qtyWrap.innerHTML = `<span class="num">0</span><span class="sub">0 hrs</span>`;
+                const plus = mkBtn('plus', '+');
+                controls.append(minus, qtyWrap, plus);
+                rec.qtyEl = qtyWrap.querySelector('.num');
+                rec.subEl = qtyWrap.querySelector('.sub');
+                rec.minus = minus;
+                rec.plus = plus;
+                minus.addEventListener('click', () => changeQty(it, -it.step));
+                plus.addEventListener('click', () => changeQty(it, it.step));
+            }
+
+            nodes[it.id] = rec;
+            frag.appendChild(el);
+        });
+        $grid.appendChild(frag);
+    }
+
+    function mkBtn(cls, label) {
+        const b = document.createElement('button');
+        b.className = 'qtybtn ' + cls;
+        b.type = 'button';
+        b.textContent = label;
+        return b;
+    }
+
+    function prettyCost(hours) {
+        if (hours < 1) {
+            const mins = Math.round(hours * 60);
+            return mins + ' min each';
+        }
+        if (hours < 1000) return commas(hours) + ' hrs each';
+        return commas(hours) + ' hrs each';
+    }
+
+    // ---- interactions ----
+    function firstInteraction() {
+        const h = document.getElementById('hint');
+        if (h) h.classList.add('gone');
+    }
+
+    function changeQty(it, delta) {
+        firstInteraction();
+        let next = (state.qty[it.id] || 0) + delta;
+        if (next < 0) next = 0;
+
+        if (delta > 0) {
+            const addHours = delta * it.cost;
+            if (addHours > remaining() + 1e-9) {
+                // cap: can't afford
+                flashMaxed(it.id);
+                return;
+            }
+        }
+        state.qty[it.id] = next;
+        pulse(it.id);
+        renderItem(it);
+        renderBalance();
+        renderSummary();
+        save();
+    }
+
+    function toggleStamp(it) {
+        firstInteraction();
+        state.stamp[it.id] = !state.stamp[it.id];
+        pulse(it.id);
+        renderItem(it);
+        renderSummary();
+        save();
+    }
+
+    function flashMaxed(id) {
+        const rec = nodes[id];
+        if (!rec) return;
+        rec.el.classList.add('maxed');
+        setTimeout(() => rec.el.classList.remove('maxed'), 1800);
+    }
+
+    function pulse(id) {
+        if (reduce) return;
+        const rec = nodes[id];
+        if (!rec) return;
+        rec.el.classList.add('active-glow');
+        setTimeout(() => rec.el.classList.remove('active-glow'), 150);
+    }
+
+    function renderItem(it) {
+        const rec = nodes[it.id];
+        if (!rec) return;
+        if (it.kind === 'stamp') {
+            const on = state.stamp[it.id];
+            rec.stampBtn.textContent = on ? (it.id === 'grieve' ? 'carrying it' : 'yes') : (it.id === 'grieve' ? 'allow it' : (it.id === 'love' ? 'let yourself' : 'do it'));
+            rec.stampBtn.classList.toggle('done', on);
+            rec.el.classList.toggle('owned', on);
+            return;
+        }
+        if (it.kind === 'live') {
+            const secs = state.live;
+            const liveH = secs / 3600;
+            rec.qtyEl.textContent = fmtClock(secs);
+            rec.subEl.textContent = liveH < 1 ? Math.round(secs/60) + ' min' : commas(liveH) + ' hrs';
+            rec.el.classList.toggle('owned', secs > 0);
+            return;
+        }
+        const q = state.qty[it.id] || 0;
+        rec.qtyEl.textContent = commas(q);
+        const spentH = q * it.cost;
+        rec.subEl.textContent = spentH < 1 ? Math.round(spentH*60) + ' min' : commas(spentH) + ' hrs';
+        rec.el.classList.toggle('owned', q > 0);
+        // disable plus if can't afford one more
+        if (rec.plus) rec.plus.disabled = (it.step * it.cost) > remaining() + 1e-9;
+        if (rec.minus) rec.minus.disabled = q <= 0;
+    }
+
+    function fmtClock(secs) {
+        secs = Math.floor(secs);
+        const h = Math.floor(secs/3600);
+        const m = Math.floor((secs%3600)/60);
+        const s = secs % 60;
+        if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        return m + ':' + String(s).padStart(2,'0');
+    }
+
+    function renderAllItems() { ITEMS.forEach(renderItem); }
+
+    // ---- summary ----
+    const $summaryBody = document.getElementById('summaryBody');
+
+    function renderSummary() {
+        const lines = [];
+
+        // Sleep gets a special callout if present
+        ITEMS.forEach(it => {
+            if (it.kind === 'live' || it.kind === 'stamp') return;
+            const q = state.qty[it.id] || 0;
+            if (q <= 0) return;
+            const h = q * it.cost;
+            lines.push(summaryLine(it, q, h));
+        });
+
+        // live
+        if (state.live >= 60) {
+            lines.push(`<span class="amt">${humaneSpent(state.live/3600)}</span> staring at this website`);
+        }
+
+        // stamps
+        const stampLines = [];
+        if (state.stamp['love']) stampLines.push('You fell in love. The ledger has no column for it.');
+        if (state.stamp['grass']) stampLines.push('You touched grass. It cost you nothing and returned more than that.');
+        if (state.stamp['grieve']) stampLines.push('You grieved. There is no undoing it and no refund.');
+
+        if (lines.length === 0 && stampLines.length === 0) {
+            $summaryBody.innerHTML = `<div class="summary-empty">You haven't spent anything yet. That, too, is a choice.</div>`;
+            return;
+        }
+
+        let html = '';
+        if (lines.length) {
+            html += 'You have chosen to spend ' + joinHuman(lines) + '.';
+        }
+        if (stampLines.length) {
+            html += (html ? '<br><br>' : '') + '<em>' + stampLines.join(' ') + '</em>';
+        }
+        $summaryBody.innerHTML = '<div class="summary-body">' + html + '</div>';
+    }
+
+    function summaryLine(it, q, h) {
+        const amt = `<span class="amt">${humaneSpent(h)}</span>`;
+        switch (it.id) {
+            case 'phone':    return amt + ' glancing at your phone';
+            case 'scroll':   return amt + ' doomscrolling in the dark';
+            case 'sleep':    return amt + ' asleep';
+            case 'office':   return amt + ' rewatching The Office';
+            case 'dmv':      return amt + ' waiting at the DMV';
+            case 'commute':  return amt + ' in traffic';
+            case 'meetings': return amt + ' in meetings';
+            case 'guitar':   return amt + ' learning guitar';
+            case 'language': return amt + ' learning a language';
+            case 'books':    return amt + ' reading';
+            case 'marathon': return amt + ' training to run';
+            case 'social':   return amt + ' scrolling for the feed';
+            case 'cook':     return amt + ' cooking your own meals';
+            case 'mom':      return amt + ' on the phone with your mom';
+            default:         return amt + ' on ' + it.name.toLowerCase();
+        }
+    }
+
+    function joinHuman(arr) {
+        if (arr.length === 1) return arr[0];
+        if (arr.length === 2) return arr[0] + ', and ' + arr[1];
+        return arr.slice(0, -1).join(', ') + ', and ' + arr[arr.length - 1];
+    }
+
+    // ---- end state ----
+    const $end = document.getElementById('end');
+    let endShown = false;
+    function triggerEnd() {
+        if (endShown) return;
+        endShown = true;
+        $end.classList.add('show');
+        requestAnimationFrame(() => requestAnimationFrame(() => $end.classList.add('vis')));
+    }
+    function hideEnd() {
+        if (!endShown) return;
+        endShown = false;
+        $end.classList.remove('vis');
+        setTimeout(() => $end.classList.remove('show'), reduce ? 0 : 1400);
+    }
+
+    // ---- age input ----
+    const $age = document.getElementById('age');
+    $age.value = state.age;
+    function applyAge() {
+        let v = parseInt($age.value, 10);
+        if (isNaN(v)) return;
+        v = Math.max(0, Math.min(119, v));
+        state.age = v;
+        // if new budget is smaller than what's already spent, the balance just reads 0 (capped).
+        renderBalance();
+        renderSummary();
+        renderAllItems();
+        save();
+    }
+    $age.addEventListener('input', applyAge);
+    $age.addEventListener('change', () => { $age.value = state.age; });
+
+    // ---- reset ----
+    function doReset() {
+        ITEMS.forEach(it => { if (state.qty[it.id] !== undefined) state.qty[it.id] = 0; if (state.stamp[it.id] !== undefined) state.stamp[it.id] = false; });
+        state.live = 0;
+        endShown = false;
+        $end.classList.remove('vis','show');
+        renderAllItems();
+        renderBalance();
+        renderSummary();
+        save();
+    }
+    document.getElementById('resetBtn').addEventListener('click', doReset);
+    document.getElementById('endReset').addEventListener('click', doReset);
+
+    // ---- live ticker (sleeps when hidden) ----
+    let lastT = null;
+    let rafId = null;
+    function tick(ts) {
+        rafId = null;
+        if (lastT == null) lastT = ts;
+        const dt = (ts - lastT) / 1000;
+        lastT = ts;
+        if (dt > 0 && dt < 5) { // ignore big jumps (tab was backgrounded without visibility event)
+            // only spend if there's budget
+            if (remaining() > 0) {
+                state.live += dt;
+            }
+        }
+        renderItem(ITEMS.find(i => i.id === 'stare'));
+        // balance only re-renders occasionally to stay cheap; but live affects balance
+        liveFrames++;
+        if (liveFrames % 15 === 0) { renderBalance(); renderSummary(); save(); }
+        scheduleTick();
+    }
+    let liveFrames = 0;
+    function scheduleTick() {
+        if (document.hidden) return;         // sleep when tab hidden
+        if (rafId == null) rafId = requestAnimationFrame(tick);
+    }
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            lastT = null;
+            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+        } else {
+            lastT = null;
+            scheduleTick();
+        }
+    });
+
+    // ---- share card ----
+    const canvas = document.getElementById('cardCanvas');
+    const cctx = canvas.getContext('2d');
+
+    function buildShareCard() {
+        const W = 1200, H = 630;
+        const PAPER = '#f2ede2', CREAM = '#fff8ef', GOLD = '#f7c948';
+        cctx.clearRect(0,0,W,H);
+        cctx.fillStyle = PAPER; cctx.fillRect(0,0,W,H);
+        // border
+        cctx.strokeStyle = INK; cctx.lineWidth = 8;
+        cctx.strokeRect(20,20,W-40,H-40);
+
+        // title
+        cctx.fillStyle = INK;
+        cctx.font = '900 34px "Arial Black", Arial, sans-serif';
+        cctx.textBaseline = 'top';
+        cctx.fillText('SPEND YOUR LIFE', 60, 56);
+
+        // big balance
+        const bal = balance();
+        cctx.font = '900 92px "Arial Black", Arial, sans-serif';
+        const balStr = commas(bal) + ' hrs';
+        // shadow
+        cctx.fillStyle = (bal <= 0) ? '#b9b2a8' : GOLD;
+        cctx.fillText(balStr, 63, 107);
+        cctx.fillStyle = INK;
+        cctx.fillText(balStr, 60, 104);
+
+        cctx.font = 'italic 28px Georgia, serif';
+        cctx.fillStyle = '#4a443e';
+        cctx.fillText(bal <= 0 ? 'your time is up.' : humaneDuration(bal), 60, 210);
+
+        // divider
+        cctx.strokeStyle = INK; cctx.lineWidth = 3;
+        cctx.beginPath(); cctx.moveTo(60, 262); cctx.lineTo(W-60, 262); cctx.stroke();
+
+        // summary lines (plain text)
+        const plain = [];
+        ITEMS.forEach(it => {
+            if (it.kind === 'live' || it.kind === 'stamp') return;
+            const q = state.qty[it.id] || 0;
+            if (q <= 0) return;
+            plain.push(stripTags(summaryLine(it, q, q*it.cost)));
+        });
+        if (state.live >= 60) plain.push(humaneSpent(state.live/3600) + ' staring at this website');
+        if (state.stamp['love']) plain.push('fell in love (priceless)');
+        if (state.stamp['grass']) plain.push('touched grass (free)');
+        if (state.stamp['grieve']) plain.push('grieved');
+
+        cctx.font = 'italic 27px Georgia, serif';
+        cctx.fillStyle = '#352f29';
+        let y = 292;
+        const label = plain.length ? 'You chose to spend:' : 'You have not spent a thing. Yet.';
+        cctx.fillText(label, 60, y);
+        y += 44;
+        cctx.font = '26px Georgia, serif';
+        plain.slice(0, 7).forEach(line => {
+            cctx.fillStyle = INK;
+            cctx.fillText('•  ' + line, 72, y);
+            y += 38;
+        });
+        if (plain.length > 7) { cctx.fillStyle = '#8a837a'; cctx.font = 'italic 22px Georgia, serif'; cctx.fillText('…and more', 72, y); }
+
+        // footer
+        cctx.font = 'italic 22px Georgia, serif';
+        cctx.fillStyle = '#8a837a';
+        cctx.fillText('randomsitesontheweb.com/spendyourlife', 60, H - 70);
+
+        return canvas.toDataURL('image/png');
+    }
+
+    function stripTags(s) { return s.replace(/<[^>]*>/g, ''); }
+
+    const $modal = document.getElementById('modal');
+    const $cardImg = document.getElementById('cardImg');
+    function openShare() {
+        const url = buildShareCard();
+        $cardImg.src = url;
+        $modal.classList.add('show');
+    }
+    document.getElementById('shareBtn').addEventListener('click', openShare);
+    document.getElementById('endShare').addEventListener('click', openShare);
+    document.getElementById('modalClose').addEventListener('click', () => $modal.classList.remove('show'));
+    $modal.addEventListener('click', (e) => { if (e.target === $modal) $modal.classList.remove('show'); });
+
+    // ---- boot ----
+    buildGrid();
+    renderAllItems();
+    renderBalance();
+    renderSummary();
+    scheduleTick();
+
+    // fade hint after a while even without interaction
+    setTimeout(() => { const h = document.getElementById('hint'); if (h && !h.classList.contains('gone')) h.classList.add('gone'); }, 14000);
+
+})();
+</script>
+</body>
+</html>
