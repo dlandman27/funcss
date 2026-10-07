@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Wall</title>
+  <meta name="description" content="An infinite wall of QR codes. Drag to wander, tap any one, and it takes you somewhere real.">
+    <!-- rsotw:og:start -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/qr-wall/">
+    <meta property="og:title" content="QR Wall">
+    <meta property="og:description" content="An infinite wall of QR codes. Drag to wander, tap any one, and it takes you somewhere real.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/qr-wall.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="QR Wall">
+    <meta name="twitter:description" content="An infinite wall of QR codes. Drag to wander, tap any one, and it takes you somewhere real.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/qr-wall.png">
+    <!-- rsotw:og:end -->
+  <style>
+    * , *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f2ede2;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      cursor: grab;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(32,26,23,0.05), transparent 60%),
+        #f2ede2;
+    }
+    #stage.dragging { cursor: grabbing; }
+
+    #grid { position: absolute; inset: 0; }
+
+    .tile {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: transform;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      background: #fff8ef;
+      border: 1px solid #201a17;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: filter 0.15s ease, z-index 0s;
+      position: relative;
+      z-index: 1;
+    }
+    .tile:hover .card {
+      filter: brightness(1.08);
+      z-index: 2;
+    }
+    .tile.pressed .card { filter: brightness(0.9); }
+    .card.flash { filter: brightness(1.6); }
+    .card.secret {
+      border-color: #f7c948;
+      box-shadow: inset 0 0 0 2px #f7c948;
+    }
+
+    .card canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    #banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: clamp(14px, 3vh, 28px);
+      pointer-events: none;
+      z-index: 20;
+    }
+    #title {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: clamp(22px, 5vw, 38px);
+      color: #f0563e;
+      -webkit-text-stroke: 2px #201a17;
+      paint-order: stroke fill;
+      letter-spacing: 0.02em;
+      transform: rotate(-2deg);
+      text-shadow: 3px 3px 0 rgba(32,26,23,0.15);
+    }
+    #byline {
+      margin-top: 6px;
+      font-style: italic;
+      font-size: clamp(11px, 1.6vw, 14px);
+      color: #6b5f57;
+      opacity: 1;
+      transition: opacity 1.2s ease;
+      text-align: center;
+      padding: 0 20px;
+    }
+    #byline.hidden { opacity: 0; }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: italic;
+      color: #6b5f57;
+      font-size: 15px;
+      z-index: 30;
+      background: #f2ede2;
+      transition: opacity 0.5s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+
+    #toast {
+      position: fixed;
+      top: 10vh;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      font-style: italic;
+      font-size: 14px;
+      letter-spacing: 0.01em;
+      color: #201a17;
+      background: #fff8ef;
+      border: 2px solid #201a17;
+      box-shadow: 3px 3px 0 #201a17;
+      border-radius: 999px;
+      padding: 8px 20px;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 25;
+      white-space: nowrap;
+      max-width: 80vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #toast.show { animation: toastIn 1.3s ease forwards; }
+    @keyframes toastIn {
+      0%   { transform: translateX(-50%) scale(0.6); opacity: 0; }
+      15%  { transform: translateX(-50%) scale(1.05); opacity: 1; }
+      22%  { transform: translateX(-50%) scale(1); opacity: 1; }
+      78%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding-bottom: clamp(16px, 4vh, 30px);
+      z-index: 20;
+    }
+    .pill {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 13px;
+      color: #201a17;
+      background: rgba(255, 248, 239, 0.9);
+      border: 2px solid #201a17;
+      box-shadow: 3px 3px 0 #201a17;
+      border-radius: 999px;
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.4s ease;
+    }
+    .pill:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #201a17; }
+    .pill:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #201a17; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card, #byline, #toast, #loading { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="stage">
+    <div id="grid"></div>
+  </div>
+
+  <div id="banner">
+    <div id="title">THE QR WALL</div>
+    <div id="byline">every code on this wall leads somewhere real. we checked each one.</div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="controls">
+    <button class="pill" id="jumpBtn" type="button">teleport me</button>
+    <button class="pill" id="shareBtn" type="button">copy this spot</button>
+  </div>
+
+  <div id="loading">assembling the wall&hellip;</div>
+
+  <script type="module">
+    import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm";
+
+    const SITE_ORIGIN = 'https://randomsitesontheweb.com';
+
+    // Classic, stable corners of the wider web — mixed in alongside our own
+    // catalog so the wall isn't entirely self-referential.
+    const EXTERNAL = [
+      { name: 'The Useless Web',      url: 'https://theuselessweb.com/' },
+      { name: 'Radio Garden',         url: 'https://radio.garden/' },
+      { name: 'Windy',                url: 'https://www.windy.com/' },
+      { name: 'Zoomquilt',            url: 'https://zoomquilt.org/' },
+      { name: 'Pointer Pointer',      url: 'https://pointerpointer.com/' },
+      { name: 'Cat Bounce',           url: 'https://cat-bounce.com/' },
+      { name: 'Human Benchmark',      url: 'https://humanbenchmark.com/' },
+      { name: 'Pixel Thoughts',       url: 'https://pixelthoughts.co/' },
+      { name: 'Find the Invisible Cow', url: 'https://findtheinvisiblecow.com/' },
+      { name: 'Eel Slap',             url: 'https://eelslap.com/' },
+      { name: 'Is It Christmas?',     url: 'https://isitchristmas.com/' },
+      { name: 'Wikipedia Roulette',   url: 'https://en.wikipedia.org/wiki/Special:Random' },
+      { name: 'OMFGDogs',             url: 'https://omfgdogs.com/' },
+      { name: "Can't Not Tweet This", url: 'https://cant-not-tweet-this.com/' },
+      { name: 'Paper Toilet',         url: 'https://papertoilet.com/' },
+      { name: 'Bees Bees Bees',       url: 'https://beesbeesbees.com/' },
+      { name: 'Heeeeeeeey',           url: 'https://heeeeeeeey.com/' },
+      { name: 'Zombo.com',            url: 'https://zombo.com/' },
+      { name: 'Wolfram Alpha',        url: 'https://www.wolframalpha.com/' },
+      { name: 'NASA',                 url: 'https://www.nasa.gov/' },
+      { name: 'Internet Archive',     url: 'https://archive.org/' },
+      { name: 'Project Gutenberg',    url: 'https://www.gutenberg.org/' },
+      { name: 'Ventusky',             url: 'https://www.ventusky.com/' },
+      { name: 'SMBC Comics',          url: 'https://www.smbc-comics.com/' },
+      { name: 'xkcd',                 url: 'https://xkcd.com/' },
+      { name: 'The ASCII Art Archive', url: 'https://www.asciiart.eu/' },
+      { name: 'Is The Internet Down?', url: 'https://www.istheinternetdown.com/' },
+      { name: 'Random.org',           url: 'https://www.random.org/' },
+      { name: 'Poem Hunter',          url: 'https://www.poemhunter.com/' },
+      { name: 'Calm',                 url: 'https://www.calm.com/' },
+      { name: 'Sporcle',              url: 'https://www.sporcle.com/' },
+      { name: 'GeoGuessr',            url: 'https://www.geoguessr.com/' },
+      { name: 'Free Rice',            url: 'https://www.freerice.com/' },
+      { name: 'Space Jam (1996)',     url: 'https://www.spacejam.com/1996/' },
+      { name: 'WikiHow Roulette',     url: 'https://www.wikihow.com/Special:Randomizer' },
+      { name: 'neal.fun',             url: 'https://neal.fun/' },
+      { name: 'Bored Panda',          url: 'https://www.boredpanda.com/' },
+      { name: 'McMaster-Carr',        url: 'https://www.mcmaster.com/' },
+      { name: 'EarthCam',             url: 'https://www.earthcam.com/' },
+      { name: 'The New York Times',   url: 'https://www.nytimes.com/' },
+      { name: 'BBC',                  url: 'https://www.bbc.com/' },
+      { name: 'The Onion',            url: 'https://theonion.com/' },
+      { name: 'The New Yorker',       url: 'https://www.newyorker.com/' },
+      { name: 'Longreads',            url: 'https://longreads.com/' },
+      { name: 'Atlas Obscura',        url: 'https://www.atlasobscura.com/' },
+      { name: 'Encyclopædia Britannica', url: 'https://www.britannica.com/' },
+      { name: 'Khan Academy',         url: 'https://www.khanacademy.org/' },
+      { name: 'TED',                  url: 'https://www.ted.com/' },
+      { name: 'Quora',                url: 'https://www.quora.com/' },
+      { name: 'Stack Overflow',       url: 'https://stackoverflow.com/' },
+      { name: 'Duolingo',             url: 'https://www.duolingo.com/' },
+      { name: 'Coursera',             url: 'https://www.coursera.org/' },
+      { name: 'Speedtest',            url: 'https://www.speedtest.net/' },
+      { name: 'Can I Use',            url: 'https://caniuse.com/' },
+      { name: 'Regex101',             url: 'https://regex101.com/' },
+      { name: 'JSFiddle',             url: 'https://jsfiddle.net/' },
+      { name: 'CodePen',              url: 'https://codepen.io/' },
+      { name: 'Adobe Color',          url: 'https://color.adobe.com/' },
+      { name: 'Unsplash',             url: 'https://unsplash.com/' },
+      { name: 'What Is My IP',        url: 'https://www.whatismyip.com/' },
+      { name: 'Fast.com',             url: 'https://www.fast.com/' },
+      { name: 'Falling Falling',      url: 'https://fallingfalling.com/' },
+      { name: 'Deep Dream Generator', url: 'https://deepdreamgenerator.com/' },
+      { name: 'This Person Does Not Exist', url: 'https://thispersondoesnotexist.com/' },
+      { name: 'Picsum Photos',        url: 'https://picsum.photos/' },
+      { name: 'Fill Murray',          url: 'https://www.fillmurray.com/' },
+      { name: 'UI Faces',             url: 'https://uifaces.co/' },
+      { name: 'Space Weather Live',   url: 'https://spaceweatherlive.com/' },
+      { name: 'Stellarium Web',       url: 'https://stellarium-web.org/' },
+      { name: 'NASA Eyes',            url: 'https://eyes.nasa.gov/' },
+      { name: 'Earth (nullschool)',   url: 'https://earth.nullschool.net/' },
+      { name: 'OpenStreetMap',        url: 'https://www.openstreetmap.org/' },
+      { name: 'Mapillary',            url: 'https://www.mapillary.com/' },
+      { name: 'Flightradar24',        url: 'https://www.flightradar24.com/' },
+      { name: 'MarineTraffic',        url: 'https://www.marinetraffic.com/' },
+      { name: 'Submarine Cable Map',  url: 'https://www.submarinecablemap.com/' },
+      { name: 'Chess.com',            url: 'https://www.chess.com/' },
+      { name: 'Lichess',              url: 'https://lichess.org/' },
+      { name: '2048',                 url: 'https://play2048.co/' },
+      { name: 'Agar.io',              url: 'https://agar.io/' },
+      { name: 'Musicmap',             url: 'https://www.musicmap.info/' },
+      { name: 'Mixcloud',             url: 'https://www.mixcloud.com/' },
+      { name: 'Bandcamp',             url: 'https://www.bandcamp.com/' },
+      { name: 'Last.fm',              url: 'https://www.last.fm/' },
+      { name: 'Poetry Foundation',    url: 'https://www.poetryfoundation.org/' },
+      { name: 'LibriVox',             url: 'https://librivox.org/' },
+      { name: 'Standard Ebooks',      url: 'https://standardebooks.org/' },
+      { name: 'The Oatmeal',          url: 'https://theoatmeal.com/' },
+      { name: 'Cyanide & Happiness',  url: 'https://explosm.net/' },
+      { name: 'Questionable Content', url: 'https://www.questionablecontent.net/' },
+      { name: 'Typing.com',           url: 'https://www.typing.com/' },
+      { name: '10FastFingers',        url: 'https://10fastfingers.com/' },
+      { name: 'Canva',                url: 'https://www.canva.com/' },
+      { name: 'Figma',                url: 'https://www.figma.com/' },
+      { name: 'Miro',                 url: 'https://miro.com/' },
+      { name: 'Explore.org Live Cams', url: 'https://explore.org/' },
+      { name: 'History.com',          url: 'https://www.history.com/' },
+      { name: 'Our World in Data',    url: 'https://ourworldindata.org/' },
+      { name: 'Gapminder',            url: 'https://www.gapminder.org/' },
+      { name: 'WTF Happened In 1971', url: 'https://wtfhappenedin1971.com/' },
+      { name: 'Color Hex',            url: 'https://www.color-hex.com/' },
+      { name: 'Flat UI Colors',       url: 'https://flatuicolors.com/' },
+      { name: 'Lumosity',             url: 'https://www.lumosity.com/' },
+      { name: "NYT Wordle",           url: 'https://www.nytimes.com/games/wordle/index.html' },
+      { name: 'TV Tropes',            url: 'https://tvtropes.org/' },
+      { name: 'Damn Interesting',     url: 'https://www.damninteresting.com/' },
+      { name: 'Patatap',              url: 'https://www.patatap.com/' },
+      { name: "Reddit's r/place",     url: 'https://www.reddit.com/r/place/' },
+      { name: 'Worldometer',          url: 'https://www.worldometers.info/' },
+      { name: 'A Soft Murmur',        url: 'https://asoftmurmur.com/' },
+      { name: 'Rainy Mood',           url: 'https://rainymood.com/' },
+      { name: 'Albino Black Sheep',   url: 'https://www.albinoblacksheep.com/' },
+      { name: 'Newgrounds',           url: 'https://www.newgrounds.com/' },
+      { name: 'Homestar Runner',      url: 'https://www.homestarrunner.com/' },
+      { name: 'Tone Matrix',          url: 'https://tonematrix.audiotool.com/' },
+      { name: 'Reddit',               url: 'https://www.reddit.com/' },
+      { name: 'Imgur',                url: 'https://imgur.com/' },
+      { name: 'Giphy',                url: 'https://giphy.com/' },
+      { name: 'SoundCloud',           url: 'https://soundcloud.com/' },
+      { name: 'Twitch',               url: 'https://www.twitch.tv/' },
+      { name: 'Pinterest',            url: 'https://www.pinterest.com/' },
+      { name: 'Etsy',                 url: 'https://www.etsy.com/' },
+      { name: 'eBay',                 url: 'https://www.ebay.com/' },
+      { name: 'Craigslist',           url: 'https://www.craigslist.org/' },
+      { name: 'DuckDuckGo',           url: 'https://duckduckgo.com/' },
+      { name: 'Bing',                 url: 'https://www.bing.com/' },
+      { name: 'Yahoo',                url: 'https://www.yahoo.com/' },
+    ];
+
+    // A handful of famous, long-stable YouTube videos — because a wall of
+    // links should have a few you can actually watch.
+    const YOUTUBE = [
+      { name: 'YouTube: Rick Astley — Never Gonna Give You Up', url: 'https://youtu.be/dQw4w9WgXcQ' },
+      { name: 'YouTube: Charlie Bit My Finger',                 url: 'https://youtu.be/_OBlgSz8sSM' },
+      { name: 'YouTube: PSY — Gangnam Style',                   url: 'https://youtu.be/9bZkp7q19f0' },
+      { name: 'YouTube: Keyboard Cat',                          url: 'https://youtu.be/J---aiyznGQ' },
+      { name: 'YouTube: Baby Shark Dance',                      url: 'https://youtu.be/XqZsoesa55w' },
+      { name: 'YouTube: Luis Fonsi — Despacito',                url: 'https://youtu.be/kJQP7kiw5Fk' },
+      { name: 'YouTube: Backyard Squirrel Ninja Warrior Course', url: 'https://youtu.be/hFZFjoX2cGg' },
+      { name: 'YouTube: Me at the Zoo (the first video)',       url: 'https://youtu.be/jNQXAC9IVRw' },
+      { name: 'YouTube: Darude — Sandstorm',                    url: 'https://youtu.be/y6120QOlsfU' },
+      { name: 'YouTube: Queen — Bohemian Rhapsody',             url: 'https://youtu.be/fJ9rUzIMcZQ' },
+      { name: 'YouTube: Smash Mouth — All Star',                url: 'https://youtu.be/L_jWHffIx5E' },
+      { name: 'YouTube: Taylor Swift — Blank Space',            url: 'https://youtu.be/e-ORhEE9VVg' },
+      { name: 'YouTube: the other Rick Roll',                   url: 'https://youtu.be/eBGIQ7ZuuiU' },
+      { name: 'YouTube: Mark Ronson ft. Bruno Mars — Uptown Funk', url: 'https://youtu.be/OPf0YbXqDm0' },
+      { name: 'YouTube: the Llama Song',                        url: 'https://youtu.be/ZZ5LpwO-An4' },
+      { name: 'YouTube: Justin Bieber — Baby',                  url: 'https://youtu.be/kffacxfA7G4' },
+    ];
+
+    // Used only if /catalog.json can't be reached.
+    const FALLBACK_OWN = [
+      'bread', 'silk', 'cubeloader', 'scratchers', 'bubblewrap', 'dummyfactory',
+      'murmuration', 'rothkomachine', 'shortwave', 'wikipedia-roulette',
+    ].map(slug => ({ name: slug, url: `${SITE_ORIGIN}/${slug}/` }));
+
+    const SECRET = { name: 'Random Sites on the Web', url: `${SITE_ORIGIN}/` };
+
+    let OWN = FALLBACK_OWN;
+
+    // Weighted by category, not raw count — our own catalog is ~190 pages and
+    // would otherwise swamp the ~140 external picks just by outnumbering them.
+    // This keeps the wall feeling like "the web", not "this site again".
+    const CATEGORIES = [
+      { pool: () => OWN,      weight: 0.20 },
+      { pool: () => EXTERNAL, weight: 0.65 },
+      { pool: () => YOUTUBE,  weight: 0.15 },
+    ];
+
+    async function loadPool() {
+      try {
+        const res = await fetch('/catalog.json');
+        const data = await res.json();
+        const visible = data.sites.filter(s => s.visible);
+        if (visible.length) {
+          OWN = visible.map(s => ({ name: s.name, url: `${SITE_ORIGIN}/${s.slug}/` }));
+        }
+      } catch (e) { /* fall back silently */ }
+    }
+
+    (async function () {
+      await loadPool();
+      document.getElementById('loading').classList.add('hidden');
+      start();
+    })();
+
+    function start() {
+      const stage = document.getElementById('stage');
+      const grid = document.getElementById('grid');
+      const byline = document.getElementById('byline');
+      const toast = document.getElementById('toast');
+      const jumpBtn = document.getElementById('jumpBtn');
+      const shareBtn = document.getElementById('shareBtn');
+
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Picked fresh every time a tile is created — like Picsum's unseeded
+      // endpoint, not its /seed/ one: revisiting a spot can show something
+      // new, rather than always reproducing the same link.
+      function siteFor() {
+        if (Math.random() < 0.018) return { site: SECRET, secret: true };
+        let r = Math.random();
+        let pool = CATEGORIES[CATEGORIES.length - 1].pool();
+        for (const cat of CATEGORIES) {
+          if (r < cat.weight) { pool = cat.pool(); break; }
+          r -= cat.weight;
+        }
+        const idx = Math.floor(Math.random() * pool.length);
+        return { site: pool[idx], secret: false };
+      }
+
+      let W = 0, H = 0;
+      let tileBase = 180;
+      function computeTileBase() {
+        tileBase = Math.max(110, Math.min(220, Math.min(W, H) / 3.2));
+      }
+
+      let worldX = 0, worldY = 0;
+      let viewX = 0, viewY = 0;
+      let zoom = 1;
+      const MIN_ZOOM = 0.4, MAX_ZOOM = 2.2;
+
+      function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+      function tileScreenSize() { return tileBase * zoom; }
+
+      const tiles = new Map(); // "col,row" -> element
+      let lastRangeKey = null;
+
+      const qrDpr = Math.min(window.devicePixelRatio || 1, 2);
+      const qrPx = Math.round(220 * qrDpr);
+
+      function ensureTile(col, row) {
+        const key = col + ',' + row;
+        if (tiles.has(key)) return;
+
+        const { site, secret } = siteFor();
+
+        const el = document.createElement('div');
+        el.className = 'tile';
+        el.dataset.col = col;
+        el.dataset.row = row;
+
+        const card = document.createElement('div');
+        card.className = 'card' + (secret ? ' secret' : '');
+
+        const canvas = document.createElement('canvas');
+        card.appendChild(canvas);
+        el.appendChild(card);
+        el.dataset.url = site.url;
+        el.dataset.name = site.name;
+        grid.appendChild(el);
+        tiles.set(key, el);
+
+        QRCode.toCanvas(canvas, site.url, {
+          width: qrPx,
+          margin: 1,
+          color: { dark: '#201a17', light: '#fff8ef' },
+        }).then(() => {
+          // the library stamps its own inline width/height onto the canvas —
+          // override them so it scales with the card instead of staying a
+          // fixed pixel size while the tile zooms around it
+          canvas.style.width = '100%';
+          canvas.style.height = '100%';
+        }).catch(() => {});
+      }
+
+      function syncRange() {
+        const ts = tileScreenSize();
+        const halfW = (W / 2) / ts, halfH = (H / 2) / ts;
+        const colStart = Math.floor(viewX - halfW) - 1;
+        const colEnd = Math.ceil(viewX + halfW) + 1;
+        const rowStart = Math.floor(viewY - halfH) - 1;
+        const rowEnd = Math.ceil(viewY + halfH) + 1;
+
+        const key = colStart + '|' + colEnd + '|' + rowStart + '|' + rowEnd;
+        if (key === lastRangeKey) return;
+        lastRangeKey = key;
+
+        for (let c = colStart; c <= colEnd; c++) {
+          for (let r = rowStart; r <= rowEnd; r++) ensureTile(c, r);
+        }
+        const buf = 2;
+        tiles.forEach((el, k) => {
+          const c = +el.dataset.col, r = +el.dataset.row;
+          if (c < colStart - buf || c > colEnd + buf || r < rowStart - buf || r > rowEnd + buf) {
+            grid.removeChild(el);
+            tiles.delete(k);
+          }
+        });
+      }
+
+      function layout() {
+        const ts = tileScreenSize();
+        tiles.forEach((el) => {
+          const c = +el.dataset.col, r = +el.dataset.row;
+          const x = (c - viewX) * ts + W / 2;
+          const y = (r - viewY) * ts + H / 2;
+          el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+          el.style.width = ts + 'px';
+          el.style.height = ts + 'px';
+        });
+      }
+
+      function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        computeTileBase();
+        lastRangeKey = null;
+        syncRange();
+        layout();
+      }
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.remove('show');
+        void toast.offsetWidth;
+        toast.classList.add('show');
+      }
+
+      let bylineHidden = false;
+      function dismissByline() {
+        if (bylineHidden) return;
+        bylineHidden = true;
+        byline.classList.add('hidden');
+      }
+
+      function openTile(el) {
+        const card = el.querySelector('.card');
+        card.classList.add('flash');
+        setTimeout(() => card.classList.remove('flash'), 350);
+        showToast('opening: ' + el.dataset.name);
+        const url = el.dataset.url;
+        setTimeout(() => { window.open(url, '_blank', 'noopener,noreferrer'); }, 260);
+      }
+
+      // -------- input: drag to pan, wheel/pinch to zoom, tap a tile to go there --------
+      const pointers = new Map();
+      let primaryId = null;
+      let lastX = 0, lastY = 0;
+      let dragDist = 0;
+      let hitTile = null;
+      let prevPinchDist = null;
+      const TAP_MAX_DRAG = 6;
+
+      function pinchDistance() {
+        const pts = Array.from(pointers.values());
+        const dx = pts[0].x - pts[1].x, dy = pts[0].y - pts[1].y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      stage.addEventListener('pointerdown', (e) => {
+        stage.setPointerCapture(e.pointerId);
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 1) {
+          primaryId = e.pointerId;
+          lastX = e.clientX; lastY = e.clientY;
+          dragDist = 0;
+          hitTile = e.target && e.target.closest ? e.target.closest('.tile') : null;
+          if (hitTile) hitTile.classList.add('pressed');
+          stage.classList.add('dragging');
+        } else if (pointers.size === 2) {
+          stage.classList.remove('dragging');
+          prevPinchDist = pinchDistance();
+          if (hitTile) hitTile.classList.remove('pressed');
+          hitTile = null;
+        }
+        dismissByline();
+        wake();
+      });
+
+      stage.addEventListener('pointermove', (e) => {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pointers.size >= 2) {
+          const dist = pinchDistance();
+          if (prevPinchDist) zoom = clamp(zoom * (dist / prevPinchDist), MIN_ZOOM, MAX_ZOOM);
+          prevPinchDist = dist;
+        } else if (e.pointerId === primaryId) {
+          const dx = e.clientX - lastX, dy = e.clientY - lastY;
+          lastX = e.clientX; lastY = e.clientY;
+          dragDist += Math.abs(dx) + Math.abs(dy);
+          if (dragDist >= TAP_MAX_DRAG && hitTile) {
+            hitTile.classList.remove('pressed');
+            hitTile = null;
+          }
+          const s = 1 / tileScreenSize();
+          worldX -= dx * s;
+          worldY -= dy * s;
+        }
+      });
+
+      function release(e) {
+        if (e.pointerId === primaryId && pointers.size === 1 && dragDist < TAP_MAX_DRAG && hitTile) {
+          openTile(hitTile);
+        }
+        if (hitTile) hitTile.classList.remove('pressed');
+        hitTile = null;
+        pointers.delete(e.pointerId);
+        if (pointers.size < 2) prevPinchDist = null;
+        if (pointers.size === 1) {
+          primaryId = Array.from(pointers.keys())[0];
+          const p = pointers.get(primaryId);
+          lastX = p.x; lastY = p.y;
+          stage.classList.add('dragging');
+        } else if (pointers.size === 0) {
+          primaryId = null;
+          stage.classList.remove('dragging');
+        }
+      }
+      stage.addEventListener('pointerup', release);
+      stage.addEventListener('pointercancel', (e) => { if (hitTile) hitTile.classList.remove('pressed'); hitTile = null; release(e); });
+
+      stage.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        zoom = clamp(zoom * Math.exp(-e.deltaY * 0.0022), MIN_ZOOM, MAX_ZOOM);
+        dismissByline();
+        wake();
+      }, { passive: false });
+
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 200);
+      });
+
+      jumpBtn.addEventListener('click', () => {
+        dismissByline();
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 40 + Math.random() * 400;
+        worldX += Math.cos(angle) * dist;
+        worldY += Math.sin(angle) * dist;
+        zoom = 1;
+        showToast('teleporting…');
+        wake();
+      });
+
+      shareBtn.addEventListener('click', () => {
+        updateURL();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(location.href)
+            .then(() => showToast('link copied'))
+            .catch(() => showToast('could not copy'));
+        } else {
+          showToast('could not copy');
+        }
+      });
+
+      // -------- shareable permalink: position + zoom live in the URL --------
+      function updateURL() {
+        const params = new URLSearchParams();
+        params.set('x', worldX.toFixed(3));
+        params.set('y', worldY.toFixed(3));
+        params.set('z', zoom.toFixed(3));
+        history.replaceState(null, '', location.pathname + '?' + params.toString());
+      }
+
+      function loadFromURL() {
+        const params = new URLSearchParams(location.search);
+        if (params.has('x')) {
+          const px = parseFloat(params.get('x'));
+          if (!isNaN(px)) worldX = px;
+        }
+        if (params.has('y')) {
+          const py = parseFloat(params.get('y'));
+          if (!isNaN(py)) worldY = py;
+        }
+        if (params.has('z')) {
+          const pz = parseFloat(params.get('z'));
+          if (!isNaN(pz)) zoom = clamp(pz, MIN_ZOOM, MAX_ZOOM);
+        }
+        viewX = worldX; viewY = worldY;
+      }
+
+      let lastT = null;
+      let lastUrlUpdate = 0;
+      let looping = false;
+      function wake() {
+        if (looping) return;
+        looping = true;
+        lastT = null;
+        requestAnimationFrame(loop);
+      }
+      function loop(t) {
+        if (lastT === null) lastT = t;
+        const dt = t - lastT;
+        lastT = t;
+        let settled;
+        if (reduceMotion) {
+          viewX = worldX; viewY = worldY;
+          settled = true;
+        } else {
+          const k = 1 - Math.exp(-dt / 90);
+          viewX += (worldX - viewX) * k;
+          viewY += (worldY - viewY) * k;
+          settled = Math.abs(worldX - viewX) < 0.0008 && Math.abs(worldY - viewY) < 0.0008;
+        }
+        syncRange();
+        layout();
+        if (t - lastUrlUpdate > 900) {
+          lastUrlUpdate = t;
+          updateURL();
+        }
+        if (settled && pointers.size === 0) {
+          looping = false; // sleep until the next input wakes us
+          return;
+        }
+        requestAnimationFrame(loop);
+      }
+
+      loadFromURL();
+      resize();
+      wake();
+      setTimeout(dismissByline, 9000);
+    }
+  </script>
+</body>
+</html>
