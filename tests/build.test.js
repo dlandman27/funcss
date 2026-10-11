@@ -32,12 +32,15 @@ test('renderCard emits expected markup', () => {
   assert.match(html, /<div class="category">Educational<\/div>/);
 });
 
-test('renderSections groups by section, skips invisible, keeps order', () => {
+test('renderSections creates one alphabetical catalog and skips invisible sites', () => {
   const html = renderSections(CATALOG);
-  assert.match(html, /<h2 class="category-title educational">Educational<\/h2>/);
-  assert.match(html, /<h2 class="category-title fun">Fun &amp; Interactive<\/h2>/);
-  assert.ok(!html.includes('hidden-one'), 'invisible site must not render');
-  assert.ok(html.indexOf('educational') < html.indexOf('doodle'), 'section order preserved');
+  assert.ok(html.includes('aria-label="Jump to letter"'));
+  assert.ok(html.includes('id="letter-D"'));
+  assert.ok(html.includes('id="letter-P"'));
+  assert.ok(!html.includes('category-title'));
+  assert.ok(!html.includes('hidden-one'));
+  const names = [...html.matchAll(/<h2>(.*?)<\/h2>/g)].map(m => m[1]);
+  assert.deepEqual(names, [...names].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })));
 });
 
 test('renderCard uses available artwork with an accessible name and load-error fallback', () => {
@@ -112,7 +115,7 @@ test('generated homepage includes the new-site badge logic', () => {
   const html = generateHtml(template, clone(CATALOG));
   assert.ok(html.includes("badge.className = 'new-badge'"), 'homepage should render .new-badge elements');
   assert.ok(html.includes('data-created'), 'cards should carry data-created');
-  assert.ok(html.includes('value="newest"'), 'sort dropdown should offer Newest First');
+  assert.ok(html.includes('aria-label="Filter by category"'), 'catalog should offer a category filter');
   assert.ok(html.includes("buildRail('railNew'"), 'homepage should build the New rail');
   assert.ok(html.includes("buildRail('railHot'"), 'homepage should build the Hottest rail');
   assert.ok(html.includes("chip.className = 'hot-badge'"), 'homepage should render .hot-badge chips');

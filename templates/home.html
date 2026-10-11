@@ -4,6 +4,7 @@
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <script defer src="/globals/card-preview.js"></script>
+    <script defer src="/globals/catalog-letters.js"></script>
     <!-- Google AdSense: loader + ownership verification (ads gated behind ADS_LIVE below) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1505383837343849"
          crossorigin="anonymous"></script>
@@ -13,7 +14,7 @@
     <meta name="description" content="Discover random fun websites and mini-games. A curated collection of interactive experiences, games, tools and more.">
     <meta name="keywords" content="random websites, mini games, web toys, interactive experiences">
     <meta name="author" content="Random Sites">
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://randomsitesontheweb.com/">
@@ -44,7 +45,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Random Sites">
-    
+
     <style>
         * {
             box-sizing: border-box;
@@ -681,7 +682,7 @@
             box-shadow: 0 0 0 3px rgba(244, 123, 40, 0.4);
         }
 
-        .sites-header-inner #sortSelect {
+        .sites-header-inner #categorySelect {
             flex: 0 0 auto;
             padding: 10px 16px;
             border: 2px solid var(--ink);
@@ -837,6 +838,56 @@
         .development::after { background-color: var(--teal); }
         .mindfulness::after { background-color: var(--pink); }
         .art::after { background-color: var(--teal); }
+
+        .letter-section { scroll-margin-top: 86px; margin-bottom: 32px; }
+        .letter-heading {
+            max-width: 848px;
+            margin: 20px auto 0;
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            border-bottom: 2px solid rgba(32, 26, 23, 0.15);
+            text-align: left;
+        }
+        .letter-rail {
+            position: fixed;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 901;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100dvh - 100px);
+            overflow: auto;
+            padding: 5px;
+            border: 2px solid var(--ink);
+            border-radius: 18px;
+            background: var(--card);
+        }
+        .letter-rail a {
+            min-width: 24px;
+            min-height: 20px;
+            text-align: center;
+            font: 700 12px/20px var(--font-body);
+            color: var(--ink);
+            text-decoration: none;
+            border-radius: 6px;
+        }
+        .letter-rail a[aria-current="location"] { background: var(--orange); }
+        .letter-rail a:focus-visible { outline: 2px solid var(--ink); }
+        .letter-rail a[hidden], .letter-section[hidden] { display: none; }
+        @media (max-width: 700px) {
+            .letter-rail {
+                position: sticky;
+                top: 68px;
+                transform: none;
+                flex-direction: row;
+                margin: 0 0 20px;
+                max-height: none;
+                border-radius: 10px;
+            }
+            .letter-rail a { flex: 0 0 30px; line-height: 30px; }
+            .letter-section { scroll-margin-top: 130px; }
+        }
 
         .site-grid {
             display: grid;
@@ -2006,7 +2057,7 @@
             Hit the button for a random adventure, or browse all
             <span class="site-count">85</span> tiny interactive sites below.
         </p>
-        
+
         <div class="button-group">
             <button class="primary-button" id="surpriseBtn" title="hold me down to charge">
                 <i class="fas fa-dice"></i>
@@ -2053,13 +2104,15 @@
                     <i class="fas fa-magnifying-glass"></i>
                     <input type="text" id="search" placeholder="Search sites...">
                 </div>
-                <select id="sortSelect">
-                    <option value="default">Default Order</option>
-                    <option value="newest">Newest First</option>
-                    <option value="az">A-Z</option>
-                    <option value="za">Z-A</option>
-                    <option value="lza">L-Z then A-K</option>
-                    <option value="chaos">"I made this one up"</option>
+                <select id="categorySelect" aria-label="Filter by category">
+                    <option value="all">All categories</option>
+                    <option value="educational">Educational</option>
+                    <option value="fun">Fun &amp; Interactive</option>
+                    <option value="tools">Tools</option>
+                    <option value="games">Games</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="mindfulness">Mindfulness</option>
+                    <option value="art">Art</option>
                 </select>
             </div>
         </div>
@@ -2076,7 +2129,7 @@
         <div class="directory-inner">
             <!-- Featured rails (New / Hottest) — populated by JS from card data,
                  hidden automatically while searching or filtering -->
-            <div id="featured"></div>
+
 
 {{SECTIONS}}
 
@@ -2233,7 +2286,7 @@
                 // Calculate total weight
                 const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
                 let random = Math.random() * totalWeight;
-                
+
                 // Select folder based on weights
                 let selectedFolder;
                 for (const folder of folders) {
@@ -2243,11 +2296,11 @@
                         break;
                     }
                 }
-                
+
                 // Reduce weight of selected folder
                 weights[selectedFolder] *= 0.5; // Reduce by half each time
                 localStorage.setItem(`weight_${selectedFolder}`, weights[selectedFolder].toString());
-                
+
                 saveSiteVisit(selectedFolder);
                 if (typeof rsotwTrack === 'function') {
                     rsotwTrack('surprise_me', { item_id: selectedFolder.replace(/\//g, '') });
@@ -2275,7 +2328,7 @@
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     const title = doc.title || folder.replace(/\//g, '');
-                    
+
                     let visited = JSON.parse(localStorage.getItem('visitedSites') || '[]');
                     const newSite = {
                         title: title,
@@ -2283,7 +2336,7 @@
                         timestamp: Date.now(),
                         favorite: false
                     };
-                    
+
                     visited.unshift(newSite);
                     visited = visited.slice(0, 50);
                     localStorage.setItem('visitedSites', JSON.stringify(visited));
@@ -2299,7 +2352,7 @@
             visited.forEach(site => {
                 const entry = document.createElement('div');
                 entry.className = 'site-entry';
-                
+
                 const favBtn = document.createElement('button');
                 favBtn.className = `favorite-btn ${site.favorite ? 'active' : ''}`;
                 favBtn.innerHTML = '⭐';
@@ -2370,7 +2423,7 @@
             const siteCards = document.querySelectorAll('.site-card');
             const categoryPanel = document.getElementById('categoryPanel');
             const categoryFilters = document.getElementById('categoryFilters');
-            const sortSelect = document.getElementById('sortSelect');
+            const categorySelect = document.getElementById('categorySelect');
             const toggleCategories = document.getElementById('toggleCategories'); // may be null
 
             // The directory cards use folder-relative links (e.g. "pi/").
@@ -2752,8 +2805,9 @@
                     document.head.appendChild(s);
                 }
 
-                const activeCategories = Array.from(categoryFilters.querySelectorAll('input:checked'))
-                    .map(input => input.value);
+                const activeCategories = categorySelect.value === 'all'
+                    ? Array.from(categories)
+                    : [categorySelect.value];
 
                 // rails and ad slots don't participate in search/filter — hide them instead
                 const filtering = term !== '' || activeCategories.length < categories.size;
@@ -2791,45 +2845,6 @@
                 egg('balls', dropBalls);
             }
 
-            function sortCards() {
-                const grids = document.querySelectorAll('.site-grid');
-                const sortValue = sortSelect.value;
-                const customOrder = "THEBIGRYFOXJUMPSCKLVWDAN";
-
-                grids.forEach(grid => {
-                    const cards = Array.from(grid.children);
-                    cards.sort((a, b) => {
-                        const titleA = a.querySelector('h2').textContent.toUpperCase();
-                        const titleB = b.querySelector('h2').textContent.toUpperCase();
-
-                        if (sortValue === 'newest') {
-                            const dateA = a.dataset.created || '0000-00-00';
-                            const dateB = b.dataset.created || '0000-00-00';
-                            if (dateA !== dateB) return dateB.localeCompare(dateA);
-                            return titleA.localeCompare(titleB);
-                        } else if (sortValue === 'chaos') {
-                            const indexA = customOrder.indexOf(titleA.charAt(0));
-                            const indexB = customOrder.indexOf(titleB.charAt(0));
-                            if (indexA === -1 && indexB === -1) return titleA.localeCompare(titleB);
-                            if (indexA === -1) return 1;
-                            if (indexB === -1) return -1;
-                            return indexA - indexB;
-                        } else if (sortValue === 'az') {
-                            return titleA.localeCompare(titleB);
-                        } else if (sortValue === 'za') {
-                            return titleB.localeCompare(titleA);
-                        } else if (sortValue === 'lza') {
-                            const isAInLZ = titleA.charAt(0) >= 'L';
-                            const isBInLZ = titleB.charAt(0) >= 'L';
-                            if (isAInLZ !== isBInLZ) return isBInLZ ? 1 : -1;
-                            return titleA.localeCompare(titleB);
-                        }
-                        return 0;
-                    });
-                    cards.forEach(card => grid.appendChild(card));
-                });
-            }
-
             function initializeFilters() {
                 if (localStorage.getItem('greyscale') === 'true') document.body.classList.add('greyscale');
                 if (localStorage.getItem('invert') === 'true') document.body.classList.add('invert');
@@ -2843,7 +2858,7 @@
 
             searchInput.addEventListener('input', filterCards);
             categoryFilters.addEventListener('change', filterCards);
-            sortSelect.addEventListener('change', sortCards);
+            categorySelect.addEventListener('change', filterCards);
 
             // ---- Ads --------------------------------------------------------
             // ADS_LIVE stays false until the site is AdSense-approved AND every
@@ -6221,7 +6236,7 @@
 </html>
 
 
-<!-- 
+<!--
     HEY! Hey you! The guy (or gal) who decided to go "I'm a hacker", i'm gonna check the source code of this website.
     You thought I wouldn't notice? Well guess what. I did. And I'm watching you. 👀
 
@@ -6234,7 +6249,7 @@
 
     Clue 1: It's in the source code of this website.
     Clue 2: Refer to Clue 1.
-    Clue 3: On one of the pages of my website, in the source code you will find text that says 
+    Clue 3: On one of the pages of my website, in the source code you will find text that says
         "HEY! Hey you! The guy (or gal) who decided to go "I'm a hacker", i'm gonna check the source code of this website.
         You thought I wouldn't notice? Well guess what. I did. And I'm watching you. 👀
         You thought that this site was as simple as just a bunch of dumb, hilarious and downright brilliant websites? Well Well Well,
@@ -6242,11 +6257,11 @@
         So Tom you have found a super special easter egg in my website. You know what? I'm gonna give you a special prize.
         And you know where that prize is? It's in the source code of this website. So go on Tom. Go on and find it. I will give you some
         clues to help you out."
-        
-        - That is this, the text you just read. 
-        
+
+        - That is this, the text you just read.
+
         Sadly this is only the first step. Hopefully you find the prize, if not, well Tom,
         I guess you're not as good as you thought you were. 😂
-    
+
     Clue 4: Vqhsd Ld Z Rsnqx
 -->

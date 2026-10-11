@@ -213,20 +213,24 @@ function renderAdSlot(name) {
 const AD_AFTER_SECTION = { 2: 'home-inline-1', 4: 'home-inline-2' };
 
 function renderSections(catalog) {
-  return catalog.sections.map((section, i) => {
-    const cards = catalog.sites
-      .filter((s) => s.visible && s.section === section.key)
-      .map((s) => renderCard(s, section.title))
-      .join('\n');
-    const block = [
-      `            <!-- ${section.title} Section -->`,
-      `            <h2 class="category-title ${section.key}">${escapeHtml(section.title)}</h2>`,
-      '            <div class="site-grid">',
-      cards,
-      '            </div>',
-    ].join('\n');
-    return AD_AFTER_SECTION[i] ? `${block}\n${renderAdSlot(AD_AFTER_SECTION[i])}` : block;
-  }).join('\n\n');
+  const titles = Object.fromEntries(catalog.sections.map(s => [s.key, s.title]));
+  const groups = new Map();
+  catalog.sites.filter(s => s.visible)
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
+    .forEach(site => {
+      const first = site.name.charAt(0).toUpperCase();
+      const letter = /^[A-Z]$/.test(first) ? first : '#';
+      if (!groups.has(letter)) groups.set(letter, []);
+      groups.get(letter).push(site);
+    });
+  const letters = ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(letter => groups.has(letter));
+  const rail = `<nav class="letter-rail" aria-label="Jump to letter">${letters.map(letter =>
+    `<a href="#letter-${letter === '#' ? 'numbers' : letter}" data-letter="${letter}">${letter}</a>`).join('')}</nav>`;
+  return rail + letters.map(letter => {
+    const id = `letter-${letter === '#' ? 'numbers' : letter}`;
+    const cards = groups.get(letter).map(site => renderCard(site, titles[site.section])).join('\n');
+    return `<section class="letter-section" id="${id}" data-letter="${letter}" aria-labelledby="${id}-title"><h2 class="letter-heading" id="${id}-title">${letter}</h2><div class="site-grid">${cards}</div></section>`;
+  }).join('\n');
 }
 
 function renderFolders(catalog) {
