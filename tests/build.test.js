@@ -40,6 +40,31 @@ test('renderSections groups by section, skips invisible, keeps order', () => {
   assert.ok(html.indexOf('educational') < html.indexOf('doodle'), 'section order preserved');
 });
 
+test('renderCard uses available artwork with an accessible name and load-error fallback', () => {
+  const html = renderCard({ ...CATALOG.sites[0], slug: 'silk', name: 'Silk' }, 'Art');
+  assert.match(html, /site-card has-image/);
+  assert.match(html, /src="\/public\/site-images\/silk-square\.(jpg|png)"/);
+  assert.match(html, /alt="Silk"/);
+  assert.match(html, /loading="lazy"/);
+  assert.match(html, /decoding="async"/);
+  assert.match(html, /width="512" height="512"/);
+  assert.match(html, /classList\.remove\('has-image'\)/);
+});
+
+test('renderCard keeps the original card when artwork is missing', () => {
+  const html = renderCard({ ...CATALOG.sites[0], slug: 'missing-artwork-test-fixture' }, 'Educational');
+  assert.ok(!html.includes('site-image'));
+  assert.ok(!html.includes('has-image'));
+  assert.match(html, /<h2>Prefix &amp; Suffix<\/h2>/);
+  assert.match(html, /<p>Practice prefixes<\/p>/);
+});
+
+test('renderCard provides a separately labelled description button', () => {
+  const html = renderCard(CATALOG.sites[0], 'Educational');
+  assert.match(html, /<button type="button" class="card-preview-trigger" aria-label="About Prefix &amp; Suffix"/);
+  assert.ok(html.indexOf('card-preview-trigger') > html.indexOf('</a>'), 'description button must not navigate the site link');
+});
+
 test('renderFolders includes only random:true, catalog order, /slug/ format', () => {
   const body = renderFolders(CATALOG);
   assert.match(body, /'\/prefixsuffix\/',/);

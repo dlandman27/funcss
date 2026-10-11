@@ -173,13 +173,21 @@ function renderJsonLd(catalog) {
 }
 
 function renderCard(site, sectionTitle) {
+  const jpegPath = `/public/site-images/${site.slug}-square.jpg`;
+  const imagePath = fs.existsSync(path.join(ROOT, jpegPath))
+    ? jpegPath : `/public/site-images/${site.slug}-square.png`;
+  const hasImage = fs.existsSync(path.join(ROOT, imagePath));
   return [
-    `                <div class="site-card" data-categories="${site.section}" data-created="${site.created}">`,
+    `                <div class="site-card${hasImage ? ' has-image' : ''}" data-categories="${site.section}" data-created="${site.created}">`,
     `                    <a href="${site.slug}/">`,
+    ...(hasImage ? [`                        <img class="site-image" src="${imagePath}" alt="${escapeHtml(site.name)}" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">`] : []),
     `                        <h2>${escapeHtml(site.name)}</h2>`,
     `                        <p>${escapeHtml(site.description)}</p>`,
     `                        <div class="category">${escapeHtml(sectionTitle)}</div>`,
     '                    </a>',
+    `                    <button type="button" class="card-preview-trigger" aria-label="About ${escapeHtml(site.name)}" aria-haspopup="dialog">`,
+    '                        <span aria-hidden="true">i</span>',
+    '                    </button>',
     '                </div>',
   ].join('\n');
 }
