@@ -9,6 +9,18 @@
   const count = document.getElementById('catalogCount');
   const cards = [...document.querySelectorAll('.site-grid .site-card')];
   const searchBar = document.querySelector('.sites-header');
+  const empty = document.getElementById('catalogEmpty');
+  const ghostLayer = document.getElementById('ghostLayer');
+  const footer = document.querySelector('.site-footer');
+  const emptyMessage = document.getElementById('catalogEmptyMessage');
+  const search = document.getElementById('search');
+  const category = document.getElementById('categorySelect');
+  document.getElementById('clearCatalogFilters')?.addEventListener('click', () => {
+    search.value = '';
+    category.value = 'all';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    search.focus();
+  });
   let pending = false;
   let searchVisible = false;
   let searchAnimation;
@@ -120,12 +132,23 @@
     }
     const heroVisible = hero && hero.getBoundingClientRect().bottom > 0;
     rail.hidden = !visible.length || heroVisible;
-    setSearchVisible(!heroVisible);
+    const filtering = search.value.trim() !== '' || category.value !== 'all';
+    setSearchVisible(!heroVisible || filtering);
   }
 
   function updateMatches() {
+    const matching = cards.filter(card => !card.classList.contains('hidden')).length;
+    if (ghostLayer) ghostLayer.hidden = matching === 0;
+    if (footer) footer.hidden = matching === 0;
+    if (empty) {
+      empty.hidden = matching !== 0;
+      const term = search.value.trim();
+      const categoryLabel = category.value === 'all' ? '' : ` in ${category.selectedOptions[0].textContent}`;
+      emptyMessage.textContent = term
+        ? `No sites match “${term}”${categoryLabel}. Try another search or clear your filters.`
+        : `No sites found${categoryLabel}. Try another category or clear your filters.`;
+    }
     if (count) {
-      const matching = cards.filter(card => !card.classList.contains('hidden')).length;
       const label = matching === cards.length ? `${cards.length} sites` : `${matching} of ${cards.length} sites`;
       if (count.textContent !== label) count.textContent = label;
     }
@@ -158,6 +181,8 @@
       requestAnimationFrame(updatePosition);
     }
   }, { passive: true });
+  search.addEventListener('input', updateMatches);
+  category.addEventListener('change', updateMatches);
   window.addEventListener('resize', updatePosition);
   updateMatches();
 })();

@@ -845,6 +845,10 @@
         .mindfulness::after { background-color: var(--pink); }
         .art::after { background-color: var(--teal); }
 
+        .catalog-empty { max-width: 848px; min-height: calc(100svh - 160px); margin: 0 auto; padding: 64px 20px; text-align: center; }
+        .catalog-empty[hidden], .site-footer[hidden] { display: none; }
+        .catalog-empty h3 { font: 700 1.6rem/1.2 var(--font-display); margin-bottom: 12px; }
+        .catalog-empty p { margin-bottom: 20px; overflow-wrap: anywhere; }
         .catalog-heading {
             max-width: 848px;
             margin: 0 auto 12px;
@@ -2127,6 +2131,31 @@
             .hero-row { overflow-x: auto; }
             .hero-group[aria-hidden] { display: none; }
         }
+        .site-footer {
+            width: 100%;
+            margin: 40px 0 0;
+            padding: 48px max(24px, calc((100% - 848px) / 2)) 28px;
+            background: var(--sky);
+            border-top: 3px solid var(--ink);
+            border-radius: 32px 32px 0 0;
+        }
+        .site-footer .footer-invite .primary-button { background: var(--card); }
+        .site-footer .footer-bottom { padding-top: 24px; border-top: 2px solid rgba(32,26,23,.2); }
+        .footer-invite { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+        .footer-invite h2 { font: 700 clamp(1.8rem, 5vw, 2.6rem)/1.1 var(--font-display); margin: 0; }
+        .footer-invite .primary-button { width: auto; }
+        .footer-bottom { display: flex; align-items: center; gap: 24px; margin-top: 32px; }
+        .footer-bottom img { display: block; width: 110px; height: auto; }
+        .footer-bottom p { font-size: .85rem; color: rgba(32,26,23,.65); }
+        .footer-bottom p a { color: var(--ink); text-underline-offset: 3px; }
+        .footer-bottom .secret-door { margin: 0 0 0 auto; transform: scale(.75); transform-origin: right bottom; }
+        @media (max-width: 540px) {
+            .site-footer { margin: 32px 0 0; padding: 32px 24px 20px; border-radius: 24px 24px 0 0; }
+            .footer-invite { flex-direction: column; align-items: flex-start; }
+            .footer-bottom { gap: 14px; }
+            .footer-bottom img { width: 80px; }
+            .footer-bottom p { max-width: 110px; }
+        }
     </style>
 </head>
 <body>
@@ -2224,6 +2253,12 @@
                  hidden automatically while searching or filtering -->
 
 
+<div class="catalog-empty" id="catalogEmpty" hidden>
+                <h3>No sites found</h3>
+                <p id="catalogEmptyMessage"></p>
+                <button type="button" id="clearCatalogFilters">Clear filters</button>
+            </div>
+
 {{SECTIONS}}
 
             <!-- Ad: bottom of the directory -->
@@ -2237,15 +2272,6 @@
             </div>
 
             <!-- Footer message -->
-            <div style="text-align: center; margin: 40px 0 20px; padding: 20px; color: #2c3e50; font-style: italic;">
-                And more to come...
-            </div>
-
-            <!-- Nobody is told about the door. -->
-            <a class="secret-door" href="/404/" aria-label="A small door">
-                <span class="door-plaque">404</span>
-                <span class="door-frame"><span class="door-knob"></span></span>
-            </a>
         </div>
     </section>
 
@@ -2258,31 +2284,22 @@
         <a class="site-preview-visit" id="sitePreviewVisit">Visit site →</a>
     </dialog>
 
-    <!-- The basement. You scrolled too far. Find the light. -->
-    <section class="basement" id="basement">
-        <div class="basement-dark" aria-hidden="true"></div>
-        <div class="basement-cord"><span class="basement-bulb"></span></div>
-        <button class="basement-pull" id="basementPull" aria-label="Pull the light cord">
-            <span class="pull-string"></span>
-            <span class="pull-handle"></span>
-        </button>
-        <div class="basement-eyes" aria-hidden="true">
-            <span class="beye"><span></span><span></span></span>
-            <span class="beye"><span></span><span></span></span>
-            <span class="beye"><span></span><span></span></span>
-            <span class="beye"><span></span><span></span></span>
+    <footer class="site-footer">
+        <div class="footer-invite">
+            <h2>Still curious?</h2>
+            <button class="primary-button" onclick="document.getElementById('surpriseBtn').click()">
+                <i class="fas fa-dice" aria-hidden="true"></i> Surprise Me!
+            </button>
         </div>
-        <div class="basement-stuff">
-            <p class="basement-line">you weren't supposed to scroll this far.</p>
-            <div class="basement-boxes">
-                <button class="bbox" data-box="ideas"><span class="bbox-tape"></span>old ideas</button>
-                <button class="bbox" data-box="2019"><span class="bbox-tape"></span>2019</button>
-                <button class="bbox" data-box="forbidden"><span class="bbox-tape"></span>DO NOT OPEN</button>
-            </div>
-            <div class="basement-note" id="basementNote" hidden></div>
-            <a class="basement-link" href="/static/">the noise is coming from in here &rarr;</a>
+        <div class="footer-bottom">
+            <a href="#top" aria-label="Back to top"><img src="/logo.png" alt="Random Sites On the Web" width="140" loading="lazy" decoding="async"></a>
+            <p>Made by <a href="https://dylanlandman.com" target="_blank" rel="noopener">Dylan Landman</a></p>
+            <a class="secret-door" href="/404/" aria-label="A small door">
+                <span class="door-plaque">404</span>
+                <span class="door-frame"><span class="door-knob"></span></span>
+            </a>
         </div>
-    </section>
+    </footer>
 
     <button class="back-to-top" id="backToTop" aria-label="Back to top"
             onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">
