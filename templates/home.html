@@ -4,6 +4,7 @@
 <head>
     <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
     <script defer src="/globals/card-preview.js"></script>
+    <script defer src="/globals/hero-collage.js"></script>
     <script defer src="/globals/catalog-letters.js"></script>
     <!-- Google AdSense: loader + ownership verification (ads gated behind ADS_LIVE below) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1505383837343849"
@@ -628,22 +629,27 @@
         /* Sticky search + sort bar — sticks to the top once you scroll
            down into the directory */
         .sites-header {
+            visibility: hidden;
+            pointer-events: none;
             position: sticky;
-            top: 0;
+            top: 8px;
             z-index: 900;
-            background: rgba(245, 236, 214, 0.82);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-bottom: 2px solid rgba(32, 26, 23, 0.12);
-            padding: 10px 20px;
+            padding: 0 20px;
         }
 
+        .sites-header.is-visible { visibility: visible; pointer-events: auto; }
+
         .sites-header-inner {
-            max-width: 1120px;
+            max-width: 848px;
             margin: 0 auto;
+            padding: 8px;
             display: flex;
             align-items: center;
             gap: 12px;
+            background: var(--card);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
         }
 
         .search-wrap {
@@ -839,6 +845,26 @@
         .mindfulness::after { background-color: var(--pink); }
         .art::after { background-color: var(--teal); }
 
+        .catalog-heading {
+            max-width: 848px;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .catalog-heading h2 { margin: 0; font-family: var(--font-display); font-size: 1.4rem; line-height: 1.2; }
+        #catalogCount { font-size: 0.8rem; font-weight: 500; color: rgba(32, 26, 23, 0.6); white-space: nowrap; }
+        @media (max-width: 1000px) {
+            .catalog-heading, .letter-heading { width: min(100%, 572px); }
+        }
+        @media (max-width: 540px) {
+            .catalog-heading, .letter-heading { width: min(100%, 376px); }
+        }
+        @media (max-width: 320px) {
+            .catalog-heading, .letter-heading { width: 100%; }
+        }
+        .catalog-heading + .letter-rail + .letter-section .letter-heading { margin-top: 0; }
         .letter-section { scroll-margin-top: 86px; margin-bottom: 32px; }
         .letter-heading {
             max-width: 848px;
@@ -874,7 +900,7 @@
         }
         .letter-rail a[aria-current="location"] { background: var(--orange); }
         .letter-rail a:focus-visible { outline: 2px solid var(--ink); }
-        .letter-rail a[hidden], .letter-section[hidden] { display: none; }
+        .letter-rail[hidden], .letter-rail a[hidden], .letter-section[hidden] { display: none; }
         @media (max-width: 700px) {
             .letter-rail {
                 position: sticky;
@@ -1079,6 +1105,31 @@
             margin: 8px 0 12px;
             line-height: 1.5;
             font-size: 0.95em;
+        }
+
+        .site-card.has-image .card-copy {
+            position: absolute;
+            inset: 0;
+            padding: 14px;
+            background: rgba(255, 250, 237, 0.97);
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 160ms ease, transform 160ms ease;
+            pointer-events: none;
+            text-align: left;
+        }
+        .site-card.has-image .card-copy h2 { display: block; margin: 0 0 8px; font-size: 1rem; line-height: 1.15; }
+        .site-card.has-image .card-copy p { display: block; font-size: 0.8rem; line-height: 1.4; margin: 0; }
+        @media (hover: hover) and (pointer: fine) {
+            .site-card.has-image .card-preview-trigger { display: none; }
+            .site-card.has-image:hover .card-copy,
+            .site-card.has-image:focus-within .card-copy {
+                opacity: 1; transform: none; pointer-events: auto;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .site-card.has-image .card-copy { transition: none; }
         }
 
         /* Play-count sticker — slapped on the card's top-right corner */
@@ -2037,6 +2088,45 @@
             body.barrel-roll, body.disco .site-card,
             body.disco .primary-button, body.disco .logo-img { animation: none; }
         }
+
+        #top.container { max-width: none; min-height: 0; height: 550px; padding: 35px 20px 45px; isolation: isolate; overflow: hidden; }
+        .hero-center { position: relative; z-index: 2; width: 400px; max-width: 100%; padding: 24px; background: var(--card); border: var(--border); border-radius: 24px; box-shadow: 8px 8px 0 var(--ink); }
+        #top .logo-img { width: 210px; max-width: 70%; margin-bottom: 10px; }
+        #top h1 { font-size: 1.9rem; margin-bottom: 10px; padding: 0; }
+        #top .description { font-size: 0.85rem; margin-bottom: 18px; padding: 0; }
+        #top .site-count[hidden] { display: none; }
+        #top .button-group { flex-direction: row; justify-content: center; gap: 10px; }
+        #top .primary-button, #top .secondary-button { width: auto; padding: 11px 13px; font-size: 0.95rem; }
+        #top .scroll-hint { bottom: 8px; animation: none; }
+        #top .scroll-hint i { display: none; }
+        .hero-collage { position: absolute; inset: 40px 0; display: flex; flex-direction: column; justify-content: center; gap: 24px; transform: rotate(-5deg) scale(1.08); }
+        .hero-row { overflow: hidden; padding: 10px 0; }
+        .hero-track { display: flex; width: max-content; will-change: transform; animation: hero-drift var(--duration, 300s) linear infinite; }
+        .hero-row:nth-child(2) .hero-track { animation-direction: reverse; }
+        .hero-collage.is-paused .hero-track { animation-play-state: paused; }
+        .hero-group { display: flex; gap: 20px; padding-right: 20px; }
+        .hero-tile { display: block; width: 175px; height: 175px; flex: 0 0 auto; border: 3px solid var(--ink); border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); overflow: hidden; }
+        .hero-tile img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .hero-tile { user-select: none; }
+        .hero-tile img { pointer-events: none; }
+        @keyframes hero-drift { to { transform: translateX(-50%); } }
+        @media (max-width: 700px) {
+            #top.container { height: auto; padding: 70px 16px 35px; }
+            .hero-center { width: 360px; padding: 18px; }
+            #top .logo-img { width: 160px; }
+            #top h1 { font-size: 1.6rem; }
+            .hero-collage { position: relative; inset: auto; transform: none; order: 2; width: calc(100% + 32px); margin-top: 24px; gap: 8px; }
+            .hero-row { overflow-x: auto; scrollbar-width: none; }
+            .hero-track { animation: none; }
+            .hero-group[aria-hidden] { display: none; }
+            .hero-tile { width: 100px; height: 100px; }
+            .hero-group { gap: 12px; padding: 0 16px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .hero-track { animation: none; }
+            .hero-row { overflow-x: auto; }
+            .hero-group[aria-hidden] { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -2050,12 +2140,14 @@
     </a>
 
     <div class="container" id="top">
+        <div class="hero-collage" aria-hidden="true"></div>
+        <div class="hero-center">
         <img src="/logo.png" alt="Random Sites On the Web" class="logo-img">
 
-        <h1>Discover <span class="pop">Random</span> Corners of the Web</h1>
+        <h1>Small websites.<br>Endless distractions.</h1>
         <p class="description">
-            Hit the button for a random adventure, or browse all
-            <span class="site-count">85</span> tiny interactive sites below.
+            Find something unexpected.
+            <span class="site-count" hidden>194</span>
         </p>
 
         <div class="button-group">
@@ -2084,10 +2176,7 @@
             </div>
         </div>
 
-        <a href="#all-sites" class="scroll-hint">
-            <span>Browse all sites</span>
-            <i class="fas fa-chevron-down"></i>
-        </a>
+        </div>
     </div>
 
     <!-- Liveness overlays (fake "busy site" signals — home page only) -->
@@ -2127,6 +2216,10 @@
         </div>
 
         <div class="directory-inner">
+            <div class="catalog-heading">
+                <h2>The Catalog</h2>
+                <span id="catalogCount" role="status" aria-live="polite"></span>
+            </div>
             <!-- Featured rails (New / Hottest) — populated by JS from card data,
                  hidden automatically while searching or filtering -->
 
