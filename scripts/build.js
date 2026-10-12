@@ -187,6 +187,7 @@ function renderCard(site, sectionTitle) {
     `                        <div class="category">${escapeHtml(sectionTitle)}</div>`,
     '                        </div>',
     '                    </a>',
+    `                    <button type="button" class="card-share" aria-label="Share ${escapeHtml(site.name)}">Share</button>`,
     `                    <button type="button" class="card-preview-trigger" aria-label="About ${escapeHtml(site.name)}" aria-haspopup="dialog">`,
     '                        <span aria-hidden="true">i</span>',
     '                    </button>',
