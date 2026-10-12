@@ -2337,6 +2337,40 @@
             transform: rotate(-3deg) scale(1.08);
         }
 
+        .site-card.has-image .card-copy .plays {
+            display: inline-block;
+            position: static;
+            margin-top: 12px;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .site-card.has-image .hot-badge {
+            display: grid;
+            place-items: center;
+            top: 8px;
+            right: 8px;
+            left: auto;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 2px solid var(--ink);
+            border-radius: 50%;
+            background: #fff1cc;
+            color: #d54122;
+            font-size: 14px;
+            box-shadow: 2px 2px 0 var(--ink);
+            transform: none;
+            pointer-events: none;
+        }
+        .site-card.has-image .hot-badge .hot-label { display: none; }
+        .site-card.has-image .card-copy h2 { padding-right: 24px; }
+        @media (hover: none) {
+            .site-card.has-image .hot-badge { right: auto; left: 8px; }
+        }
+
         /* "★ NEW!" sticker — top-left, gold, for recently added sites */
         .site-card .new-badge {
             position: absolute;
@@ -6518,7 +6552,9 @@
                         if (!link || link.querySelector('.hot-badge')) return;
                         const chip = document.createElement('div');
                         chip.className = 'hot-badge';
-                        chip.innerHTML = '<i class="fas fa-fire" aria-hidden="true"></i> HOT';
+                        chip.innerHTML = '<i class="fas fa-fire" aria-hidden="true"></i><span class="hot-label"> HOT</span>';
+                        chip.setAttribute('aria-label', 'Hot site');
+                        chip.title = 'Hot site';
                         link.appendChild(chip);
                     });
 
@@ -6535,7 +6571,7 @@
                             ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
                             : n) + ' plays';
                         el.title = n + ' plays';
-                        link.appendChild(el);
+                        (link.querySelector('.card-copy') || link).appendChild(el);
                     });
                 })
                 .catch(() => {}); // local dev / API down → no counts, no errors
