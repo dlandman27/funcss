@@ -320,3 +320,18 @@ test('generated homepage includes the play-counts fetch', () => {
   assert.ok(html.includes("fetch('/api/counts')"), 'homepage should fetch /api/counts');
   assert.ok(html.includes("el.className = 'plays'"), 'homepage should render .plays elements');
 });
+
+test('generateLlmsTxt is Markdown with an H1, links, and only visible toys', () => {
+  const { generateLlmsTxt } = require('../scripts/build.js');
+  const txt = generateLlmsTxt(CATALOG);
+  assert.match(txt, /^# Random Sites On the Web\n/);
+  assert.match(txt, /\[[^\]]+\]\(https:\/\/randomsitesontheweb\.com\/prefixsuffix\/\)/);
+  assert.ok(!txt.includes('/hidden-one/'), 'invisible toys must be excluded');
+});
+
+test('versionGlobals fingerprints existing /globals/ assets only', () => {
+  const { versionGlobals } = require('../scripts/build.js');
+  const out = versionGlobals('<script src="/globals/global.js"></script><script src="/globals/nope.js"></script>');
+  assert.match(out, /\/globals\/global\.js\?v=[0-9a-f]{10}"/);
+  assert.ok(out.includes('"/globals/nope.js"'), 'missing files are left untouched');
+});

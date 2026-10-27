@@ -24,8 +24,10 @@ async function main() {
   let written = 0;
   for (const file of fs.readdirSync(ART_DIR)) {
     if (!/-square\.(jpg|png)$/.test(file)) continue;
-    const out = path.join(ART_DIR, file.replace(/\.(jpg|png)$/, '.webp'));
-    if (await toWebp(path.join(ART_DIR, file), out, 400)) written++;
+    const src = path.join(ART_DIR, file);
+    // 400px for 2x screens, 200px for 1x (paired via srcset in renderCard).
+    if (await toWebp(src, path.join(ART_DIR, file.replace(/\.(jpg|png)$/, '.webp')), 400)) written++;
+    if (await toWebp(src, path.join(ART_DIR, file.replace(/\.(jpg|png)$/, '-200.webp')), 200)) written++;
   }
   // Hero logo renders at 210px wide.
   if (await toWebp(path.join(ROOT, 'logo.png'), path.join(ROOT, 'logo.webp'), 420)) written++;

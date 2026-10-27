@@ -182,10 +182,14 @@ function renderCard(site, sectionTitle) {
     .map(ext => `/public/site-images/${site.slug}-square.${ext}`)
     .find(p => fs.existsSync(path.join(ROOT, p))) || `/public/site-images/${site.slug}-square.png`;
   const hasImage = fs.existsSync(path.join(ROOT, imagePath));
+  // Cards are at most 200px wide (full width only below 320px), so 1x screens get the 200px file.
+  const smallPath = imagePath.replace(/\.webp$/, '-200.webp');
+  const srcset = smallPath !== imagePath && fs.existsSync(path.join(ROOT, smallPath))
+    ? ` srcset="${smallPath} 200w, ${imagePath} 400w" sizes="(max-width: 320px) 100vw, 200px"` : '';
   return [
     `                <div class="site-card${hasImage ? ' has-image' : ''}" data-categories="${site.section}" data-created="${site.created}">`,
     `                    <a href="${site.slug}/">`,
-    ...(hasImage ? [`                        <img class="site-image" src="${imagePath}" alt="${escapeHtml(site.name)}" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">`] : []),
+    ...(hasImage ? [`                        <img class="site-image" src="${imagePath}"${srcset} alt="${escapeHtml(site.name)}" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">`] : []),
     '                        <div class="card-copy">',
     `                        <h2>${escapeHtml(site.name)}</h2>`,
     `                        <p>${escapeHtml(site.description)}</p>`,
@@ -297,14 +301,55 @@ function processToys(catalog) {
   return { ogUpdated, jsAdded, descAdded, missing };
 }
 
+// llms.txt (https://llmstxt.org): a Markdown map of the site for language models,
+// one section per category listing every visible toy with its description.
+function generateLlmsTxt(catalog) {
+  const visible = catalog.sites.filter((s) => s.visible);
+  const lines = [
+    '# Random Sites On the Web',
+    '',
+    `> A hand-made collection of ${visible.length} tiny, single-purpose interactive websites: games, toys, art, tools, and small experiments. Free to use, no accounts. Made by Dylan Landman.`,
+    '',
+    `- [Homepage and full catalog](${SITE_ORIGIN}/): browse every site, or press "Surprise Me!" to open a random one`,
+    `- [About](${toyUrl('about')}): what the site is and who makes it`,
+    `- [Privacy policy](${toyUrl('privacy')}): ads, analytics, and cookies`,
+  ];
+  for (const section of catalog.sections) {
+    const sites = visible
+      .filter((s) => s.section === section.key)
+      .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+    if (!sites.length) continue;
+    lines.push('', `## ${section.title}`, '');
+    for (const s of sites) {
+      lines.push(`- [${s.name.replace(/[[\]]/g, '')}](${toyUrl(s.slug)}): ${s.description.replace(/\s+/g, ' ').trim()}`);
+    }
+  }
+  return lines.join('\n') + '\n';
+}
+
+// Appends ?v=<content hash> to /globals/ assets referenced by the homepage so
+// vercel.json can cache those URLs as immutable; any edit changes the URL.
+function versionGlobals(html) {
+  const crypto = require('crypto');
+  return html.replace(/((?:https:\/\/randomsitesontheweb\.com)?\/globals\/([\w.-]+\.(?:js|css)))"/g, (match, url, file) => {
+    const fp = path.join(ROOT, 'globals', file);
+    if (!fs.existsSync(fp)) return match;
+    const hash = crypto.createHash('sha1').update(fs.readFileSync(fp)).digest('hex').slice(0, 10);
+    return `${url}?v=${hash}"`;
+  });
+}
+
 function build() {
   const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog.json'), 'utf8'));
   const template = fs.readFileSync(path.join(ROOT, 'templates', 'home.html'), 'utf8');
-  const html = generateHtml(template, catalog); // validates catalog
+  const html = versionGlobals(generateHtml(template, catalog)); // validates catalog
   fs.writeFileSync(path.join(ROOT, 'index.html'), html);
 
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), generateSitemap(catalog));
   fs.writeFileSync(path.join(ROOT, 'robots.txt'), generateRobots());
+  fs.writeFileSync(path.join(ROOT, 'llms.txt'), generateLlmsTxt(catalog));
+  // Vercel serves /404.html (with a 404 status) for paths that match no file.
+  fs.copyFileSync(path.join(ROOT, 'public', '404.html'), path.join(ROOT, '404.html'));
 
   const toys = processToys(catalog);
   const { generateOgImages } = require('./og-image');
@@ -321,7 +366,7 @@ function build() {
 module.exports = {
   escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, generateHtml,
   injectOgBlock, ogMetaBlock, ensureGlobalJs, ensureMetaDescription, toyUrl, ogImageUrl,
-  generateSitemap, generateRobots, renderJsonLd,
+  generateSitemap, generateRobots, renderJsonLd, generateLlmsTxt, versionGlobals,
 };
 
 if (require.main === module) build();
