@@ -46,7 +46,7 @@ test('renderSections creates one alphabetical catalog and skips invisible sites'
 test('renderCard uses available artwork with an accessible name and load-error fallback', () => {
   const html = renderCard({ ...CATALOG.sites[0], slug: 'silk', name: 'Silk' }, 'Art');
   assert.match(html, /site-card has-image/);
-  assert.match(html, /src="\/public\/site-images\/silk-square\.(jpg|png)"/);
+  assert.match(html, /src="\/public\/site-images\/silk-square\.(webp|jpg|png)"/);
   assert.match(html, /alt="Silk"/);
   assert.match(html, /loading="lazy"/);
   assert.match(html, /decoding="async"/);

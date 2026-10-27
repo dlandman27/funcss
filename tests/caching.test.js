@@ -9,7 +9,8 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-const rules = config.headers || [];
+// The catch-all rule only carries security headers; caching rules are the rest.
+const rules = (config.headers || []).filter((r) => r.source !== '/(.*)');
 
 const cacheControl = (rule) =>
   ((rule.headers || []).find((h) => h.key === 'Cache-Control') || {}).value || '';

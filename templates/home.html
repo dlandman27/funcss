@@ -37,7 +37,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Icons are decorative, so Font Awesome loads without blocking first paint -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -2188,14 +2191,17 @@
         .footer-invite .primary-button { width: auto; }
         .footer-bottom { display: flex; align-items: center; gap: 24px; margin-top: 32px; }
         .footer-bottom img { display: block; width: 110px; height: auto; }
-        .footer-bottom p { font-size: .85rem; color: rgba(32,26,23,.65); }
+        .footer-bottom p { font-size: .85rem; color: rgba(32,26,23,.85); }
         .footer-bottom p a { color: var(--ink); text-underline-offset: 3px; }
+        .footer-links { display: flex; gap: 16px; font-size: .85rem; font-weight: 700; }
+        .footer-links a { color: var(--ink); text-underline-offset: 3px; }
         .footer-bottom .secret-door { margin: 0 0 0 auto; transform: scale(.75); transform-origin: right bottom; }
         @media (max-width: 540px) {
             .site-footer { margin: 32px 0 0; padding: 32px 24px 20px; border-radius: 24px 24px 0 0; }
             .footer-invite { flex-direction: column; align-items: flex-start; }
-            .footer-bottom { gap: 14px; }
+            .footer-bottom { gap: 14px; flex-wrap: wrap; }
             .footer-bottom img { width: 80px; }
+            .footer-links { order: 3; width: 100%; }
             .footer-bottom p { max-width: 110px; }
         }
     </style>
@@ -2203,17 +2209,18 @@
 <body>
     <!-- Made by: pinned sticker, top of screen -->
     <a class="made-by" href="https://dylanlandman.com" target="_blank" rel="noopener">
-        <img src="/dylan.png" alt="Pixel-art portrait of Dylan Landman" class="made-by-avatar">
+        <img src="/dylan.png" alt="Pixel-art portrait of Dylan Landman" class="made-by-avatar" width="128" height="128">
         <span class="made-by-text">
             <span class="made-by-label">Made by</span>
             <span class="made-by-name">Dylan Landman</span>
         </span>
     </a>
 
+    <main>
     <div class="container" id="top">
         <div class="hero-collage" aria-hidden="true"></div>
         <div class="hero-center">
-        <img src="/logo.png" alt="Random Sites On the Web" class="logo-img">
+        <img src="/logo.webp" alt="Random Sites On the Web" class="logo-img" width="420" height="280" fetchpriority="high">
 
         <h1>Small websites.<br>Endless distractions.</h1>
         <p class="description">
@@ -2316,6 +2323,7 @@
             <!-- Footer message -->
         </div>
     </section>
+    </main>
 
     <dialog class="site-preview" id="sitePreview" aria-labelledby="sitePreviewTitle" aria-describedby="sitePreviewDescription">
         <form method="dialog">
@@ -2336,8 +2344,13 @@
             </button>
         </div>
         <div class="footer-bottom">
-            <a href="#top" aria-label="Back to top"><img src="/logo.png" alt="Random Sites On the Web" width="140" loading="lazy" decoding="async"></a>
+            <a href="#top" aria-label="Back to top"><img src="/logo.webp" alt="Random Sites On the Web" width="140" height="93" loading="lazy" decoding="async"></a>
             <p>Made by <a href="https://dylanlandman.com" target="_blank" rel="noopener">Dylan Landman</a></p>
+            <nav class="footer-links" aria-label="Site information">
+                <a href="/about/">About</a>
+                <a href="/privacy/">Privacy</a>
+                <a href="https://dylanlandman.com" target="_blank" rel="noopener">Contact</a>
+            </nav>
             <a class="secret-door" href="/404/" aria-label="A small door">
                 <span class="door-plaque">404</span>
                 <span class="door-frame"><span class="door-knob"></span></span>
@@ -5068,9 +5081,6 @@
             document.addEventListener('dblclick', clearFilters);
         })();
     </script>
-
-    <!-- Add QR Code library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <!-- Click splat: comic burst wherever you click, to match the sticker logo -->
     <script>

@@ -131,12 +131,16 @@ function injectOgBlock(html, site) {
   return html;
 }
 
-// sitemap.xml for all visible toys + the home page, using clean canonical URLs.
+// Static info pages (sites/<slug>/index.html, not in the catalog) linked from the footer.
+const INFO_PAGES = ['about', 'privacy'];
+
+// sitemap.xml for all visible toys + the home and info pages, using clean canonical URLs.
 function generateSitemap(catalog) {
   const visible = catalog.sites.filter((s) => s.visible);
   const dates = visible.map((s) => s.created).filter(Boolean).sort();
   const homeLast = dates[dates.length - 1] || '';
   const entries = [{ loc: `${SITE_ORIGIN}/`, lastmod: homeLast }];
+  for (const slug of INFO_PAGES) entries.push({ loc: toyUrl(slug) });
   for (const s of visible) entries.push({ loc: toyUrl(s.slug), lastmod: s.created });
   const body = entries.map((e) => {
     const last = e.lastmod ? `\n    <lastmod>${e.lastmod}</lastmod>` : '';
@@ -173,9 +177,10 @@ function renderJsonLd(catalog) {
 }
 
 function renderCard(site, sectionTitle) {
-  const jpegPath = `/public/site-images/${site.slug}-square.jpg`;
-  const imagePath = fs.existsSync(path.join(ROOT, jpegPath))
-    ? jpegPath : `/public/site-images/${site.slug}-square.png`;
+  // Prefer the 400px WebP from scripts/optimize-images.js over the 512px original.
+  const imagePath = ['webp', 'jpg', 'png']
+    .map(ext => `/public/site-images/${site.slug}-square.${ext}`)
+    .find(p => fs.existsSync(path.join(ROOT, p))) || `/public/site-images/${site.slug}-square.png`;
   const hasImage = fs.existsSync(path.join(ROOT, imagePath));
   return [
     `                <div class="site-card${hasImage ? ' has-image' : ''}" data-categories="${site.section}" data-created="${site.created}">`,
@@ -308,7 +313,7 @@ function build() {
   const visible = catalog.sites.filter((s) => s.visible).length;
   const pool = catalog.sites.filter((s) => s.random).length;
   console.log(`index.html built: ${visible} visible / ${catalog.sites.length} total sites, ${pool} in random pool`);
-  console.log(`sitemap.xml + robots.txt written (${visible + 1} urls)`);
+  console.log(`sitemap.xml + robots.txt written (${visible + 1 + INFO_PAGES.length} urls)`);
   console.log(`toys: +global.js ${toys.jsAdded}, +meta description ${toys.descAdded}, OG into ${toys.ogUpdated}${toys.missing ? `, ${toys.missing} missing` : ''}`);
   console.log(`OG images written: ${img.count} card(s) -> ${path.relative(ROOT, img.outDir)}/`);
 }

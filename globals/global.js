@@ -1,15 +1,20 @@
 (function() {
-    var script = document.createElement('script');
-    script.async = true;
-    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-ZHEXFVEQT1';
-    document.head.appendChild(script);
+    // Load GA after the page finishes loading so it never competes with first paint.
+    function loadAnalytics() {
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-ZHEXFVEQT1';
+        document.head.appendChild(script);
 
-    script.onload = function() {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-ZHEXFVEQT1');
-    };
+        script.onload = function() {
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-ZHEXFVEQT1');
+        };
+    }
+    if (document.readyState === 'complete') loadAnalytics();
+    else window.addEventListener('load', loadAnalytics, { once: true });
 })();
 
 

@@ -1215,7 +1215,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Icons are decorative, so Font Awesome loads without blocking first paint -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -3366,14 +3369,17 @@
         .footer-invite .primary-button { width: auto; }
         .footer-bottom { display: flex; align-items: center; gap: 24px; margin-top: 32px; }
         .footer-bottom img { display: block; width: 110px; height: auto; }
-        .footer-bottom p { font-size: .85rem; color: rgba(32,26,23,.65); }
+        .footer-bottom p { font-size: .85rem; color: rgba(32,26,23,.85); }
         .footer-bottom p a { color: var(--ink); text-underline-offset: 3px; }
+        .footer-links { display: flex; gap: 16px; font-size: .85rem; font-weight: 700; }
+        .footer-links a { color: var(--ink); text-underline-offset: 3px; }
         .footer-bottom .secret-door { margin: 0 0 0 auto; transform: scale(.75); transform-origin: right bottom; }
         @media (max-width: 540px) {
             .site-footer { margin: 32px 0 0; padding: 32px 24px 20px; border-radius: 24px 24px 0 0; }
             .footer-invite { flex-direction: column; align-items: flex-start; }
-            .footer-bottom { gap: 14px; }
+            .footer-bottom { gap: 14px; flex-wrap: wrap; }
             .footer-bottom img { width: 80px; }
+            .footer-links { order: 3; width: 100%; }
             .footer-bottom p { max-width: 110px; }
         }
     </style>
@@ -3381,17 +3387,18 @@
 <body>
     <!-- Made by: pinned sticker, top of screen -->
     <a class="made-by" href="https://dylanlandman.com" target="_blank" rel="noopener">
-        <img src="/dylan.png" alt="Pixel-art portrait of Dylan Landman" class="made-by-avatar">
+        <img src="/dylan.png" alt="Pixel-art portrait of Dylan Landman" class="made-by-avatar" width="128" height="128">
         <span class="made-by-text">
             <span class="made-by-label">Made by</span>
             <span class="made-by-name">Dylan Landman</span>
         </span>
     </a>
 
+    <main>
     <div class="container" id="top">
         <div class="hero-collage" aria-hidden="true"></div>
         <div class="hero-center">
-        <img src="/logo.png" alt="Random Sites On the Web" class="logo-img">
+        <img src="/logo.webp" alt="Random Sites On the Web" class="logo-img" width="420" height="280" fetchpriority="high">
 
         <h1>Small websites.<br>Endless distractions.</h1>
         <p class="description">
@@ -3481,7 +3488,7 @@
 
 <nav class="letter-rail" aria-label="Jump to letter"><a href="#letter-numbers" data-letter="#">#</a><a href="#letter-A" data-letter="A">A</a><a href="#letter-B" data-letter="B">B</a><a href="#letter-C" data-letter="C">C</a><a href="#letter-D" data-letter="D">D</a><a href="#letter-E" data-letter="E">E</a><a href="#letter-F" data-letter="F">F</a><a href="#letter-G" data-letter="G">G</a><a href="#letter-H" data-letter="H">H</a><a href="#letter-I" data-letter="I">I</a><a href="#letter-K" data-letter="K">K</a><a href="#letter-L" data-letter="L">L</a><a href="#letter-M" data-letter="M">M</a><a href="#letter-N" data-letter="N">N</a><a href="#letter-O" data-letter="O">O</a><a href="#letter-P" data-letter="P">P</a><a href="#letter-Q" data-letter="Q">Q</a><a href="#letter-R" data-letter="R">R</a><a href="#letter-S" data-letter="S">S</a><a href="#letter-T" data-letter="T">T</a><a href="#letter-U" data-letter="U">U</a><a href="#letter-V" data-letter="V">V</a><a href="#letter-W" data-letter="W">W</a><a href="#letter-Y" data-letter="Y">Y</a></nav><section class="letter-section" id="letter-numbers" data-letter="#" aria-labelledby="letter-numbers-title"><h2 class="letter-heading" id="letter-numbers-title">#</h2><div class="site-grid">                <div class="site-card has-image" data-categories="fun" data-created="2026-07-16">
                     <a href="thousandballs/">
-                        <img class="site-image" src="/public/site-images/thousandballs-square.jpg" alt="2,500 Balls" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/thousandballs-square.webp" alt="2,500 Balls" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>2,500 Balls</h2>
                         <p>Exactly two thousand five hundred bouncing balls. Count them if you don't believe us.</p>
@@ -3495,7 +3502,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2025-02-25">
                     <a href="snake/">
-                        <img class="site-image" src="/public/site-images/snake-square.jpg" alt="3D Snake" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/snake-square.webp" alt="3D Snake" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>3D Snake</h2>
                         <p>Play a 3D version of the classic snake game with improved graphics and physics</p>
@@ -3509,7 +3516,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-09-21">
                     <a href="5oclock/">
-                        <img class="site-image" src="/public/site-images/5oclock-square.jpg" alt="5 O'Clock Somewhere" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/5oclock-square.webp" alt="5 O'Clock Somewhere" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>5 O'Clock Somewhere</h2>
                         <p>It is always, provably, 5 o'clock somewhere. Here's exactly where.</p>
@@ -3523,7 +3530,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-28">
                     <a href="triangle/">
-                        <img class="site-image" src="/public/site-images/triangle-square.jpg" alt="89 Degree Triangle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/triangle-square.webp" alt="89 Degree Triangle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>89 Degree Triangle</h2>
                         <p>A triangle with an 89 degree angle. Extend the edge and watch one degree ruin everything.</p>
@@ -3537,7 +3544,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-A" data-letter="A" aria-labelledby="letter-A-title"><h2 class="letter-heading" id="letter-A-title">A</h2><div class="site-grid">                <div class="site-card has-image" data-categories="tools" data-created="2024-12-21">
                     <a href="metadata/">
-                        <img class="site-image" src="/public/site-images/metadata-square.jpg" alt="About My Device" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/metadata-square.webp" alt="About My Device" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>About My Device</h2>
                         <p>Your device's annual inspection: examined line by line, remarks included, verdict stamped.</p>
@@ -3551,7 +3558,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-14">
                     <a href="anaglyph/">
-                        <img class="site-image" src="/public/site-images/anaglyph-square.jpg" alt="Anaglyph" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/anaglyph-square.webp" alt="Anaglyph" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Anaglyph</h2>
                         <p>A field of shapes rendered in true color-split 3D. Drag sideways for red/cyan, up and down for green/magenta. Glasses recommended, not provided.</p>
@@ -3565,7 +3572,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2026-08-11">
                     <a href="asciicam/">
-                        <img class="site-image" src="/public/site-images/asciicam-square.jpg" alt="ASCII Cam" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/asciicam-square.webp" alt="ASCII Cam" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>ASCII Cam</h2>
                         <p>Your camera, rendered live as colored ASCII. Nothing leaves the page.</p>
@@ -3579,7 +3586,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-11">
                     <a href="asciiearth/">
-                        <img class="site-image" src="/public/site-images/asciiearth-square.jpg" alt="ASCII Earth" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/asciiearth-square.webp" alt="ASCII Earth" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>ASCII Earth</h2>
                         <p>The whole planet, rendered live in twelve characters. Drag to spin it, let go and it keeps turning — night side and all.</p>
@@ -3593,7 +3600,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-01-05">
                     <a href="asciikeyboard/">
-                        <img class="site-image" src="/public/site-images/asciikeyboard-square.jpg" alt="ASCII Key Tester" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/asciikeyboard-square.webp" alt="ASCII Key Tester" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>ASCII Key Tester</h2>
                         <p>Press any key — its character code gets inspected and the keycap joins the pile</p>
@@ -3607,7 +3614,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-B" data-letter="B" aria-labelledby="letter-B-title"><h2 class="letter-heading" id="letter-B-title">B</h2><div class="site-grid">                <div class="site-card has-image" data-categories="games" data-created="2024-12-24">
                     <a href="balancethestick/">
-                        <img class="site-image" src="/public/site-images/balancethestick-square.jpg" alt="Balance the Stick" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/balancethestick-square.webp" alt="Balance the Stick" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Balance the Stick</h2>
                         <p>A stick, a cart, and your one job: keep it upright. The wind disagrees.</p>
@@ -3621,7 +3628,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-17">
                     <a href="binary-sudoku/">
-                        <img class="site-image" src="/public/site-images/binary-sudoku-square.jpg" alt="Binary Sudoku" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/binary-sudoku-square.webp" alt="Binary Sudoku" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Binary Sudoku</h2>
                         <p>Sudoku with only 0s and 1s. The hardest mode is a 2×2 grid. You will win.</p>
@@ -3635,7 +3642,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2024-12-30">
                     <a href="binaryticker/">
-                        <img class="site-image" src="/public/site-images/binaryticker-square.jpg" alt="Binary Ticker" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/binaryticker-square.webp" alt="Binary Ticker" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Binary Ticker</h2>
                         <p>An odometer counting in decimal, binary, octal and hex — the bits are yours to flip</p>
@@ -3649,7 +3656,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-16">
                     <a href="board-game-generator/">
-                        <img class="site-image" src="/public/site-images/board-game-generator-square.jpg" alt="Board Game Generator" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/board-game-generator-square.webp" alt="Board Game Generator" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Board Game Generator</h2>
                         <p>Generate unique Mario Party-style boards with forks, teleporters, traps, and chaos spaces</p>
@@ -3663,7 +3670,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2024-12-23">
                     <a href="brainrotengine/">
-                        <img class="site-image" src="/public/site-images/brainrotengine-square.jpg" alt="Brain Rot Engine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/brainrotengine-square.webp" alt="Brain Rot Engine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Brain Rot Engine</h2>
                         <p>Configure your rot — how many balls, whether they multiply — then let it run.</p>
@@ -3677,7 +3684,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-09-06">
                     <a href="bread/">
-                        <img class="site-image" src="/public/site-images/bread-square.jpg" alt="Bread" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/bread-square.webp" alt="Bread" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Bread</h2>
                         <p>A random photo of bread. That's it. Click for another.</p>
@@ -3691,7 +3698,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="mindfulness" data-created="2024-12-23">
                     <a href="breathe/">
-                        <img class="site-image" src="/public/site-images/breathe-square.jpg" alt="Breathe" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/breathe-square.webp" alt="Breathe" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Breathe</h2>
                         <p>A circle that breathes. Match it — box, 4-7-8, or resonant pace</p>
@@ -3705,7 +3712,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-19">
                     <a href="bubblewrap/">
-                        <img class="site-image" src="/public/site-images/bubblewrap-square.jpg" alt="Bubble Wrap" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/bubblewrap-square.webp" alt="Bubble Wrap" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Bubble Wrap</h2>
                         <p>An infinite sheet of bubble wrap. You know what to do.</p>
@@ -3719,7 +3726,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-C" data-letter="C" aria-labelledby="letter-C-title"><h2 class="letter-heading" id="letter-C-title">C</h2><div class="site-grid">                <div class="site-card has-image" data-categories="fun" data-created="2026-07-17">
                     <a href="camouflage/">
-                        <img class="site-image" src="/public/site-images/camouflage-square.jpg" alt="Camouflage" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/camouflage-square.webp" alt="Camouflage" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Camouflage</h2>
                         <p>A white page with white text. It's in there somewhere.</p>
@@ -3733,7 +3740,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-19">
                     <a href="canttouchme/">
-                        <img class="site-image" src="/public/site-images/canttouchme-square.jpg" alt="Can't Touch Me" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/canttouchme-square.webp" alt="Can't Touch Me" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Can't Touch Me</h2>
                         <p>A button you cannot press. Go ahead, try.</p>
@@ -3747,7 +3754,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-07-17">
                     <a href="chaosgame/">
-                        <img class="site-image" src="/public/site-images/chaosgame-square.jpg" alt="Chaos Game" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/chaosgame-square.webp" alt="Chaos Game" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Chaos Game</h2>
                         <p>Place three dots and watch pure randomness draw a perfect fractal</p>
@@ -3761,7 +3768,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-02-26">
                     <a href="charactercounter/">
-                        <img class="site-image" src="/public/site-images/charactercounter-square.jpg" alt="Character Counter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/charactercounter-square.webp" alt="Character Counter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Character Counter</h2>
                         <p>Paste anything. The bureau counts it, files a report, and bills someone else's time.</p>
@@ -3775,7 +3782,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-22">
                     <a href="chatgptwithanattitude/">
-                        <img class="site-image" src="/public/site-images/chatgptwithanattitude-square.jpg" alt="ChatGPT With An Attitude" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/chatgptwithanattitude-square.webp" alt="ChatGPT With An Attitude" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>ChatGPT With An Attitude</h2>
                         <p>Chat with a sassy AI assistant</p>
@@ -3789,7 +3796,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-01-24">
                     <a href="checkboxgrid/">
-                        <img class="site-image" src="/public/site-images/checkboxgrid-square.jpg" alt="Checkbox Grid" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/checkboxgrid-square.webp" alt="Checkbox Grid" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Checkbox Grid</h2>
                         <p>Interactive grid of checkboxes</p>
@@ -3803,7 +3810,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2025-10-03">
                     <a href="chess-art/">
-                        <img class="site-image" src="/public/site-images/chess-art-square.jpg" alt="Chess Art Generator" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/chess-art-square.webp" alt="Chess Art Generator" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Chess Art Generator</h2>
                         <p>Six chess pieces wander an infinite board, only ever making legal moves, leaving colored trails behind them. Tap to drop your own.</p>
@@ -3817,7 +3824,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-28">
                     <a href="chicanery/">
-                        <img class="site-image" src="/public/site-images/chicanery-square.jpg" alt="Chicanery" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/chicanery-square.webp" alt="Chicanery" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Chicanery</h2>
                         <p>I AM NOT CRAZY!</p>
@@ -3831,7 +3838,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-17">
                     <a href="christmaseve/">
-                        <img class="site-image" src="/public/site-images/christmaseve-square.jpg" alt="Christmas Eve Eve Eve..." loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/christmaseve-square.webp" alt="Christmas Eve Eve Eve..." loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Christmas Eve Eve Eve...</h2>
                         <p>HOW MANY DAYS UNTIL CHRISTMAS AHHH</p>
@@ -3845,7 +3852,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-14">
                     <a href="chromatic/">
-                        <img class="site-image" src="/public/site-images/chromatic-square.jpg" alt="Chromatic" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/chromatic-square.webp" alt="Chromatic" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Chromatic</h2>
                         <p>Drag to paint. Red, green, and blue each chase your cursor at their own speed, splitting into a glitchy fringe and re-fusing to white when you hold still.</p>
@@ -3859,7 +3866,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-16">
                     <a href="clap-o-meter/">
-                        <img class="site-image" src="/public/site-images/clap-o-meter-square.jpg" alt="Clap-o-Meter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/clap-o-meter-square.webp" alt="Clap-o-Meter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Clap-o-Meter</h2>
                         <p>Ten seconds. Clap anywhere, as fast as you can. Ring the bell and the meter will remember.</p>
@@ -3873,7 +3880,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-10-04">
                     <a href="clickerpen/">
-                        <img class="site-image" src="/public/site-images/clickerpen-square.jpg" alt="Clicker Pen" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/clickerpen-square.webp" alt="Clicker Pen" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Clicker Pen</h2>
                         <p>A retractable pen that clicks perfectly, forever. The counter never forgets. The warranty is void.</p>
@@ -3887,7 +3894,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-07-17">
                     <a href="coastline/">
-                        <img class="site-image" src="/public/site-images/coastline-square.jpg" alt="Coastline" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/coastline-square.webp" alt="Coastline" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Coastline</h2>
                         <p>How long is the coast? Depends how hard you look.</p>
@@ -3901,7 +3908,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-11">
                     <a href="colorcollage/">
-                        <img class="site-image" src="/public/site-images/colorcollage-square.jpg" alt="Color Collage" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/colorcollage-square.webp" alt="Color Collage" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Color Collage</h2>
                         <p>A giant grid of color, edge to edge. Click anywhere and the whole grid ripples into that color's neighborhood.</p>
@@ -3915,7 +3922,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2024-12-20">
                     <a href="colorle/">
-                        <img class="site-image" src="/public/site-images/colorle-square.jpg" alt="Colorle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/colorle-square.webp" alt="Colorle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Colorle</h2>
                         <p>One color a day, six tries to mix it. The department rounds generously.</p>
@@ -3929,7 +3936,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-19">
                     <a href="comicmoves/">
-                        <img class="site-image" src="/public/site-images/comicmoves-square.jpg" alt="Comic Move Attacks" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/comicmoves-square.webp" alt="Comic Move Attacks" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Comic Move Attacks</h2>
                         <p>Click anywhere to unleash epic comic book action effects!</p>
@@ -3943,7 +3950,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-03-27">
                     <a href="confession/">
-                        <img class="site-image" src="/public/site-images/confession-square.jpg" alt="Confession" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/confession-square.webp" alt="Confession" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Confession</h2>
                         <p>Type something anonymously. It disappears. No one reads it. Maybe that's the point.</p>
@@ -3957,7 +3964,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-20">
                     <a href="coolloaders/">
-                        <img class="site-image" src="/public/site-images/coolloaders-square.jpg" alt="Cool (and Uncool) Loaders" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/coolloaders-square.webp" alt="Cool (and Uncool) Loaders" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Cool (and Uncool) Loaders</h2>
                         <p>48 loading animations, loading nothing. Stamp each one COOL or UNCOOL — someone has to.</p>
@@ -3971,7 +3978,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-31">
                     <a href="copter/">
-                        <img class="site-image" src="/public/site-images/copter-square.jpg" alt="Copter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/copter-square.webp" alt="Copter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Copter</h2>
                         <p>Hold to fly, release to fall. Thread your little helicopter through a narrowing cave for as long as you can. One button, endlessly hard.</p>
@@ -3985,7 +3992,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-19">
                     <a href="countasecond/">
-                        <img class="site-image" src="/public/site-images/countasecond-square.jpg" alt="Count a Second" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/countasecond-square.webp" alt="Count a Second" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Count a Second</h2>
                         <p>Count the seconds in your head. Find out how wrong your internal clock is.</p>
@@ -3999,7 +4006,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2025-01-24">
                     <a href="marble-race/">
-                        <img class="site-image" src="/public/site-images/marble-race-square.jpg" alt="Country Marble Race" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/marble-race-square.webp" alt="Country Marble Race" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Country Marble Race</h2>
                         <p>Flag marbles, six neon gauntlets, one country eliminated per round. Place your loyalties.</p>
@@ -4013,7 +4020,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2024-12-22">
                     <a href="csstest/">
-                        <img class="site-image" src="/public/site-images/csstest-square.jpg" alt="CSS Test" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/csstest-square.webp" alt="CSS Test" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>CSS Test</h2>
                         <p>Test and experiment with different CSS styles and effects</p>
@@ -4027,7 +4034,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-09-03">
                     <a href="cubeloader/">
-                        <img class="site-image" src="/public/site-images/cubeloader-square.jpg" alt="Cube Loader" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/cubeloader-square.webp" alt="Cube Loader" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Cube Loader</h2>
                         <p>An infinite boot animation. Roll the cube in any direction, forever. The console never arrives.</p>
@@ -4041,7 +4048,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-08-05">
                     <a href="cymatics/">
-                        <img class="site-image" src="/public/site-images/cymatics-square.jpg" alt="Cymatics" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/cymatics-square.webp" alt="Cymatics" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Cymatics</h2>
                         <p>Sand on a vibrating plate always finds the same lines. Change the note and watch it decide again.</p>
@@ -4055,7 +4062,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-D" data-letter="D" aria-labelledby="letter-D-title"><h2 class="letter-heading" id="letter-D-title">D</h2><div class="site-grid">                <div class="site-card has-image" data-categories="mindfulness" data-created="2024-12-31">
                     <a href="affirmations/">
-                        <img class="site-image" src="/public/site-images/affirmations-square.jpg" alt="Daily Affirmations" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/affirmations-square.webp" alt="Daily Affirmations" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Daily Affirmations</h2>
                         <p>Take a number at the municipal office of morale — affirmations, notarized</p>
@@ -4069,7 +4076,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-20">
                     <a href="deadweight/">
-                        <img class="site-image" src="/public/site-images/deadweight-square.jpg" alt="Dead Weight" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/deadweight-square.webp" alt="Dead Weight" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Dead Weight</h2>
                         <p>Your cursor gained weight. It lags, sags, and falls when you stop moving — and the magnets you plant yank it right off course.</p>
@@ -4083,7 +4090,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-08-03">
                     <a href="digitsofnow/">
-                        <img class="site-image" src="/public/site-images/digitsofnow-square.jpg" alt="Digits of Now" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/digitsofnow-square.webp" alt="Digits of Now" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Digits of Now</h2>
                         <p>The number of seconds since January 1st, 1970, ticking live — with a running note on whatever happens to be true about it.</p>
@@ -4097,7 +4104,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-01">
                     <a href="do-you-like-me/">
-                        <img class="site-image" src="/public/site-images/do-you-like-me-square.jpg" alt="Do You Like Me?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/do-you-like-me-square.webp" alt="Do You Like Me?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Do You Like Me?</h2>
                         <p>A fun interactive yes/no question with a twist</p>
@@ -4111,7 +4118,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-21">
                     <a href="dontpressthebutton/">
-                        <img class="site-image" src="/public/site-images/dontpressthebutton-square.jpg" alt="Don't Press The Button" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/dontpressthebutton-square.webp" alt="Don't Press The Button" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Don't Press The Button</h2>
                         <p>A button, a form on file, and a department that keeps minutes. Do not press it.</p>
@@ -4125,7 +4132,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-03-27">
                     <a href="doomscroll/">
-                        <img class="site-image" src="/public/site-images/doomscroll-square.jpg" alt="Doomscroll" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/doomscroll-square.webp" alt="Doomscroll" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Doomscroll</h2>
                         <p>An infinite feed of increasingly absurd headlines. You can't stop scrolling.</p>
@@ -4139,7 +4146,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-10">
                     <a href="dotfield/">
-                        <img class="site-image" src="/public/site-images/dotfield-square.jpg" alt="Dot Field" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/dotfield-square.webp" alt="Dot Field" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Dot Field</h2>
                         <p>A grid of dots that grows and glows wherever you hover, then slowly settles back down.</p>
@@ -4153,7 +4160,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-01-24">
                     <a href="drips/">
-                        <img class="site-image" src="/public/site-images/drips-square.jpg" alt="Drips" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/drips-square.webp" alt="Drips" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Drips</h2>
                         <p>A quiet pool of real water. Drag a finger through it.</p>
@@ -4167,7 +4174,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-09-21">
                     <a href="duplicate/">
-                        <img class="site-image" src="/public/site-images/duplicate-square.jpg" alt="Duplicate" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/duplicate-square.webp" alt="Duplicate" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Duplicate</h2>
                         <p>Watch text exponentially duplicate from 1 'a' to infinity</p>
@@ -4181,7 +4188,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2024-12-19">
                     <a href="dvd/">
-                        <img class="site-image" src="/public/site-images/dvd-square.jpg" alt="DVD Bounce" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/dvd-square.webp" alt="DVD Bounce" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>DVD Bounce</h2>
                         <p>Watch the DVD logo bounce around the screen</p>
@@ -4195,7 +4202,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-E" data-letter="E" aria-labelledby="letter-E-title"><h2 class="letter-heading" id="letter-E-title">E</h2><div class="site-grid">                <div class="site-card has-image" data-categories="fun" data-created="2026-10-04">
                     <a href="etchasketch/">
-                        <img class="site-image" src="/public/site-images/etchasketch-square.jpg" alt="Etch A Sketch" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/etchasketch-square.webp" alt="Etch A Sketch" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Etch A Sketch</h2>
                         <p>Twist the knobs to drag one unbroken line across the silver screen — then shake it clean. Diagonals are a two-handed negotiation.</p>
@@ -4209,7 +4216,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-09-06">
                     <a href="every-day-is-a-holiday/">
-                        <img class="site-image" src="/public/site-images/every-day-is-a-holiday-square.jpg" alt="Every Day Is A Holiday" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/every-day-is-a-holiday-square.webp" alt="Every Day Is A Holiday" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Every Day Is A Holiday</h2>
                         <p>A curated year-long calendar of real, mostly-invented novelty holidays — browse the whole year, or jump straight to today.</p>
@@ -4223,7 +4230,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-09-01">
                     <a href="eyechart/">
-                        <img class="site-image" src="/public/site-images/eyechart-square.jpg" alt="Eye Chart" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/eyechart-square.webp" alt="Eye Chart" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Eye Chart</h2>
                         <p>A perfectly normal vision test — until the rows you squint at stop being letters and start being about you.</p>
@@ -4237,7 +4244,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-17">
                     <a href="eyesonme/">
-                        <img class="site-image" src="/public/site-images/eyesonme-square.jpg" alt="Eyes on Me" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/eyesonme-square.webp" alt="Eyes on Me" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Eyes on Me</h2>
                         <p>Use your imagination on this one!</p>
@@ -4251,7 +4258,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-F" data-letter="F" aria-labelledby="letter-F-title"><h2 class="letter-heading" id="letter-F-title">F</h2><div class="site-grid">                <div class="site-card has-image" data-categories="games" data-created="2025-06-26">
                     <a href="fairdie/">
-                        <img class="site-image" src="/public/site-images/fairdie-square.jpg" alt="Fair Die" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/fairdie-square.webp" alt="Fair Die" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Fair Die</h2>
                         <p>A certified fair die. The calibration panel is for maintenance purposes only.</p>
@@ -4265,7 +4272,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-01-10">
                     <a href="fallingkeys/">
-                        <img class="site-image" src="/public/site-images/fallingkeys-square.jpg" alt="Falling Keys" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/fallingkeys-square.webp" alt="Falling Keys" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Falling Keys</h2>
                         <p>Type and the keys fall off an invisible keyboard, bounce, and pile up</p>
@@ -4279,7 +4286,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-07-17">
                     <a href="fireflies/">
-                        <img class="site-image" src="/public/site-images/fireflies-square.jpg" alt="Fireflies" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/fireflies-square.webp" alt="Fireflies" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Fireflies</h2>
                         <p>A meadow of fireflies slowly finds one shared rhythm. Click to scatter it.</p>
@@ -4293,7 +4300,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2026-08-10">
                     <a href="flag-maker/">
-                        <img class="site-image" src="/public/site-images/flag-maker-square.jpg" alt="Flag Maker" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/flag-maker-square.webp" alt="Flag Maker" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Flag Maker</h2>
                         <p>Remix a real flag or build one from scratch — stripes, a canton, a field of stars, any colors you want. Download it or send someone the link.</p>
@@ -4307,7 +4314,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2024-12-31">
                     <a href="fontninja/">
-                        <img class="site-image" src="/public/site-images/fontninja-square.jpg" alt="Font Ninja" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/fontninja-square.webp" alt="Font Ninja" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Font Ninja</h2>
                         <p>Words fly. Slice only the target font. Wrong typeface costs a shuriken.</p>
@@ -4321,7 +4328,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2026-08-10">
                     <a href="fontsmith/">
-                        <img class="site-image" src="/public/site-images/fontsmith-square.jpg" alt="Fontsmith" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/fontsmith-square.webp" alt="Fontsmith" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Fontsmith</h2>
                         <p>Draw every letter, number, and punctuation mark by hand, then download a real, installable font you made yourself. Or upload one and see how it types.</p>
@@ -4335,7 +4342,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2024-12-18">
                     <a href="fractal/">
-                        <img class="site-image" src="/public/site-images/fractal-square.jpg" alt="Fractal" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/fractal-square.webp" alt="Fractal" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Fractal</h2>
                         <p>Click to split the screen in half, forever. Or shatter everything at once.</p>
@@ -4349,7 +4356,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-G" data-letter="G" aria-labelledby="letter-G-title"><h2 class="letter-heading" id="letter-G-title">G</h2><div class="site-grid">                <div class="site-card has-image" data-categories="fun" data-created="2026-08-20">
                     <a href="googlyeyes/">
-                        <img class="site-image" src="/public/site-images/googlyeyes-square.jpg" alt="Googly Eyes" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/googlyeyes-square.webp" alt="Googly Eyes" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Googly Eyes</h2>
                         <p>A wall of googly eyes. They follow your cursor, droop when you stop, and rattle when you knock.</p>
@@ -4363,7 +4370,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-10">
                     <a href="grass/">
-                        <img class="site-image" src="/public/site-images/grass-square.jpg" alt="Grass" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/grass-square.webp" alt="Grass" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Grass</h2>
                         <p>A dense field of thin blades that lean away from your cursor like wind pushing through them, then spring back with a little overshoot.</p>
@@ -4377,7 +4384,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-10">
                     <a href="gravitywell/">
-                        <img class="site-image" src="/public/site-images/gravitywell-square.jpg" alt="Gravity Well" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/gravitywell-square.webp" alt="Gravity Well" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Gravity Well</h2>
                         <p>A drifting field of particles. Your cursor is a gravity well — pull them into orbit, or slingshot them across the screen.</p>
@@ -4391,7 +4398,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-04">
                     <a href="groundhog/">
-                        <img class="site-image" src="/public/site-images/groundhog-square.jpg" alt="Groundhog" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/groundhog-square.webp" alt="Groundhog" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Groundhog</h2>
                         <p>Every round wipes the canvas, rebuilds everything you've drawn so far in its original colors, then hands you a fresh color to add on top.</p>
@@ -4405,7 +4412,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-03-27">
                     <a href="growyourgarden/">
-                        <img class="site-image" src="/public/site-images/growyourgarden-square.jpg" alt="Grow Your Garden" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/growyourgarden-square.webp" alt="Grow Your Garden" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Grow Your Garden</h2>
                         <p>Click to plant seeds that grow in real time. Come back tomorrow and they're taller.</p>
@@ -4419,7 +4426,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-H" data-letter="H" aria-labelledby="letter-H-title"><h2 class="letter-heading" id="letter-H-title">H</h2><div class="site-grid">                <div class="site-card has-image" data-categories="fun" data-created="2025-01-03">
                     <a href="happybirthday/">
-                        <img class="site-image" src="/public/site-images/happybirthday-square.jpg" alt="Happy Birthday!" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/happybirthday-square.webp" alt="Happy Birthday!" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Happy Birthday!</h2>
                         <p>Create personalized birthday celebrations with effects</p>
@@ -4433,7 +4440,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-01-24">
                     <a href="hatchtheegg/">
-                        <img class="site-image" src="/public/site-images/hatchtheegg-square.jpg" alt="Hatch The Egg" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/hatchtheegg-square.webp" alt="Hatch The Egg" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Hatch The Egg</h2>
                         <p>Wait and watch the egg hatch!</p>
@@ -4447,7 +4454,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-04">
                     <a href="heattrail/">
-                        <img class="site-image" src="/public/site-images/heattrail-square.jpg" alt="Heat Trail" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/heattrail-square.webp" alt="Heat Trail" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Heat Trail</h2>
                         <p>Move around and the room remembers, in heat. Hold still and it gets hotter.</p>
@@ -4461,7 +4468,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-10-04">
                     <a href="hello/">
-                        <img class="site-image" src="/public/site-images/hello-square.jpg" alt="Hello" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/hello-square.webp" alt="Hello" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Hello</h2>
                         <p>It says hello. Click and it says hello in another language — then another, and another, from all over the world.</p>
@@ -4475,7 +4482,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-07-19">
                     <a href="hearingtest/">
-                        <img class="site-image" src="/public/site-images/hearingtest-square.jpg" alt="How High Can You Hear?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/hearingtest-square.webp" alt="How High Can You Hear?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>How High Can You Hear?</h2>
                         <p>A tone climbs until it vanishes. Find out how old your ears are.</p>
@@ -4489,7 +4496,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-03-27">
                     <a href="howlonghaveyoubeenstaring/">
-                        <img class="site-image" src="/public/site-images/howlonghaveyoubeenstaring-square.jpg" alt="How Long Have You Been Staring?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/howlonghaveyoubeenstaring-square.webp" alt="How Long Have You Been Staring?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>How Long Have You Been Staring?</h2>
                         <p>A timer. That's it. Just a timer counting how long you've been here.</p>
@@ -4503,7 +4510,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-19">
                     <a href="howmany/">
-                        <img class="site-image" src="/public/site-images/howmany-square.jpg" alt="How Many?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/howmany-square.webp" alt="How Many?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>How Many?</h2>
                         <p>Dots flash for half a second — how many were there?</p>
@@ -4517,7 +4524,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-20">
                     <a href="hyperspace/">
-                        <img class="site-image" src="/public/site-images/hyperspace-square.jpg" alt="Hyperspace" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/hyperspace-square.webp" alt="Hyperspace" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Hyperspace</h2>
                         <p>Drift through the stars, or hold anywhere to punch it — the stars streak, the odometer climbs, physics is notified. Destination: none.</p>
@@ -4531,7 +4538,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-I" data-letter="I" aria-labelledby="letter-I-title"><h2 class="letter-heading" id="letter-I-title">I</h2><div class="site-grid">                <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-01">
                     <a href="im-sorry/">
-                        <img class="site-image" src="/public/site-images/im-sorry-square.jpg" alt="I'm Sorry :(" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/im-sorry-square.webp" alt="I'm Sorry :(" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>I'm Sorry :(</h2>
                         <p>A way to &quot;sincerely&quot; apologize to anyone you have wronged</p>
@@ -4545,7 +4552,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-14">
                     <a href="infinite-gradient/">
-                        <img class="site-image" src="/public/site-images/infinite-gradient-square.jpg" alt="Infinite Gradient" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/infinite-gradient-square.webp" alt="Infinite Gradient" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Infinite Gradient</h2>
                         <p>An endless grid of generated gradient tiles — linear, radial, conic, striped. Drag to explore, scroll to zoom, tap any tile to copy its CSS.</p>
@@ -4559,7 +4566,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-08-20">
                     <a href="infinite-loader/">
-                        <img class="site-image" src="/public/site-images/infinite-loader-square.jpg" alt="Infinite Loader" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/infinite-loader-square.webp" alt="Infinite Loader" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Infinite Loader</h2>
                         <p>A loading bar headed for 100%. It will not arrive. Click to hurry it — that has been noted.</p>
@@ -4573,7 +4580,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-17">
                     <a href="infinitemaze/">
-                        <img class="site-image" src="/public/site-images/infinitemaze-square.jpg" alt="Infinite Maze" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/infinitemaze-square.webp" alt="Infinite Maze" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Infinite Maze</h2>
                         <p>Zoom out. The maze keeps going. Zoom out more.</p>
@@ -4587,7 +4594,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-01-24">
                     <a href="infinitenumbercasino/">
-                        <img class="site-image" src="/public/site-images/infinitenumbercasino-square.jpg" alt="Infinite Number Casino" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/infinitenumbercasino-square.webp" alt="Infinite Number Casino" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Infinite Number Casino</h2>
                         <p>Every number, one at a time. Some are worth something. The house keeps your tab.</p>
@@ -4601,7 +4608,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2024-12-17">
                     <a href="infinitetictactoe/">
-                        <img class="site-image" src="/public/site-images/infinitetictactoe-square.jpg" alt="Infinite Tic Tac Toe" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/infinitetictactoe-square.webp" alt="Infinite Tic Tac Toe" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Infinite Tic Tac Toe</h2>
                         <p>Tic tac toe on a board that does not end. Five in a row. The computer is patient.</p>
@@ -4615,7 +4622,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-07-17">
                     <a href="inkdrop/">
-                        <img class="site-image" src="/public/site-images/inkdrop-square.jpg" alt="Ink Drop" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/inkdrop-square.webp" alt="Ink Drop" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Ink Drop</h2>
                         <p>Click to drop ink into water and watch it bloom, curl, and mix</p>
@@ -4629,7 +4636,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2024-12-25">
                     <a href="interdimensionaldvr/">
-                        <img class="site-image" src="/public/site-images/interdimensionaldvr-square.jpg" alt="Interdimensional DVR" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/interdimensionaldvr-square.webp" alt="Interdimensional DVR" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Interdimensional DVR</h2>
                         <p>Watch interdimensional cable shows from across the multiverse</p>
@@ -4643,7 +4650,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-04">
                     <a href="inventaday/">
-                        <img class="site-image" src="/public/site-images/inventaday-square.jpg" alt="Invent-A-Day" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/inventaday-square.webp" alt="Invent-A-Day" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Invent-A-Day</h2>
                         <p>Pick two days of the week. Push them into each other. Keep whatever survives the collision.</p>
@@ -4657,7 +4664,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-K" data-letter="K" aria-labelledby="letter-K-title"><h2 class="letter-heading" id="letter-K-title">K</h2><div class="site-grid">                <div class="site-card has-image" data-categories="art" data-created="2026-07-17">
                     <a href="kaleidoscope/">
-                        <img class="site-image" src="/public/site-images/kaleidoscope-square.jpg" alt="Kaleidoscope" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/kaleidoscope-square.webp" alt="Kaleidoscope" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Kaleidoscope</h2>
                         <p>Paint with radial symmetry — every stroke blooms into a mandala</p>
@@ -4671,7 +4678,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-L" data-letter="L" aria-labelledby="letter-L-title"><h2 class="letter-heading" id="letter-L-title">L</h2><div class="site-grid">                <div class="site-card has-image" data-categories="games" data-created="2025-01-06">
                     <a href="largestnumber/">
-                        <img class="site-image" src="/public/site-images/largestnumber-square.jpg" alt="Largest Number Game" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/largestnumber-square.webp" alt="Largest Number Game" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Largest Number Game</h2>
                         <p>Try to enter the largest number possible</p>
@@ -4685,7 +4692,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-10">
                     <a href="lasermaze/">
-                        <img class="site-image" src="/public/site-images/lasermaze-square.jpg" alt="Laser Maze" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/lasermaze-square.webp" alt="Laser Maze" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Laser Maze</h2>
                         <p>Aim a laser pinned to the center of a shape and watch it bounce off the walls forever.</p>
@@ -4699,7 +4706,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-01-24">
                     <a href="leapyear/">
-                        <img class="site-image" src="/public/site-images/leapyear-square.jpg" alt="Leap Year Test" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/leapyear-square.webp" alt="Leap Year Test" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Leap Year Test</h2>
                         <p>Submit a year to the Leap Certification Bureau and get a stamped verdict</p>
@@ -4713,7 +4720,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-14">
                     <a href="lenticular/">
-                        <img class="site-image" src="/public/site-images/lenticular-square.jpg" alt="Lenticular" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/lenticular-square.webp" alt="Lenticular" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Lenticular</h2>
                         <p>Two scenes, sliced into fine plastic ridges. Move your cursor (or tilt your phone) side to side and watch one comb into the other.</p>
@@ -4727,7 +4734,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2025-02-15">
                     <a href="library-of-everything/">
-                        <img class="site-image" src="/public/site-images/library-of-everything-square.jpg" alt="Library of Everything" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/library-of-everything-square.webp" alt="Library of Everything" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Library of Everything</h2>
                         <p>View the vast endlessness of numbers</p>
@@ -4741,7 +4748,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2025-02-19">
                     <a href="colortheory/">
-                        <img class="site-image" src="/public/site-images/colortheory-square.jpg" alt="Life Of Color Theory" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/colortheory-square.webp" alt="Life Of Color Theory" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Life Of Color Theory</h2>
                         <p>Every day, a new color from the RGB spectrum is displayed in a 45,964-year journey</p>
@@ -4755,7 +4762,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-06-26">
                     <a href="linguisticanomolies/">
-                        <img class="site-image" src="/public/site-images/linguisticanomolies-square.jpg" alt="Linguistic Anomalies" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/linguisticanomolies-square.webp" alt="Linguistic Anomalies" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Linguistic Anomalies</h2>
                         <p>Sentences that are grammatically correct, but shouldn't be.</p>
@@ -4769,7 +4776,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2025-01-24">
                     <a href="localstorage-terminal/">
-                        <img class="site-image" src="/public/site-images/localstorage-terminal-square.jpg" alt="LocalStorage Terminal" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/localstorage-terminal-square.webp" alt="LocalStorage Terminal" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>LocalStorage Terminal</h2>
                         <p>A terminal emulator that uses localStorage as a virtual filesystem</p>
@@ -4783,7 +4790,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-31">
                     <a href="luckychest/">
-                        <img class="site-image" src="/public/site-images/luckychest-square.jpg" alt="Lucky Chest" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/luckychest-square.webp" alt="Lucky Chest" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Lucky Chest</h2>
                         <p>Tap the chest. Sometimes it upgrades. Paperclips, a good stick, the other sock — collect them all in your binder.</p>
@@ -4797,7 +4804,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-28">
                     <a href="lyrics/">
-                        <img class="site-image" src="/public/site-images/lyrics-square.jpg" alt="Lyrics to Songs Without Lyrics" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/lyrics-square.webp" alt="Lyrics to Songs Without Lyrics" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Lyrics to Songs Without Lyrics</h2>
                         <p>Karaoke for instrumentals. Follow the bouncing ball through every word there isn't.</p>
@@ -4811,7 +4818,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-M" data-letter="M" aria-labelledby="letter-M-title"><h2 class="letter-heading" id="letter-M-title">M</h2><div class="site-grid">                <div class="site-card has-image" data-categories="fun" data-created="2024-12-20">
                     <a href="magic8ball/">
-                        <img class="site-image" src="/public/site-images/magic8ball-square.jpg" alt="Magic 8 Ball" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/magic8ball-square.webp" alt="Magic 8 Ball" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Magic 8 Ball</h2>
                         <p>Ask the mystical 8 ball your questions</p>
@@ -4825,7 +4832,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-01">
                     <a href="meme-soundboard/">
-                        <img class="site-image" src="/public/site-images/meme-soundboard-square.jpg" alt="Meme Soundboard" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/meme-soundboard-square.webp" alt="Meme Soundboard" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Meme Soundboard</h2>
                         <p>Play classic meme sound effects and download them</p>
@@ -4839,7 +4846,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2026-07-19">
                     <a href="metronome/">
-                        <img class="site-image" src="/public/site-images/metronome-square.jpg" alt="Metronome" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/metronome-square.webp" alt="Metronome" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Metronome</h2>
                         <p>A big honest metronome. Tap the tempo, it keeps it.</p>
@@ -4853,7 +4860,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-16">
                     <a href="mirror/">
-                        <img class="site-image" src="/public/site-images/mirror-square.jpg" alt="Mirror" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/mirror-square.webp" alt="Mirror" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Mirror</h2>
                         <p>Type something and watch it appear in 4 versions: normal, backwards, upside-down, and mirrored — all at once</p>
@@ -4867,7 +4874,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-14">
                     <a href="moire/">
-                        <img class="site-image" src="/public/site-images/moire-square.jpg" alt="Moiré" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/moire-square.webp" alt="Moiré" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Moiré</h2>
                         <p>Two fine grids of lines, slightly out of tune. Drag to turn one, scroll or pinch to change the beat.</p>
@@ -4881,7 +4888,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2025-02-10">
                     <a href="morse-code/">
-                        <img class="site-image" src="/public/site-images/morse-code-square.jpg" alt="Morse Code Sandbox" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/morse-code-square.webp" alt="Morse Code Sandbox" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Morse Code Sandbox</h2>
                         <p>Learn and Practice Morse Code!</p>
@@ -4895,7 +4902,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-07-17">
                     <a href="murmuration/">
-                        <img class="site-image" src="/public/site-images/murmuration-square.jpg" alt="Murmuration" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/murmuration-square.webp" alt="Murmuration" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Murmuration</h2>
                         <p>A few thousand starlings at dusk. Your cursor is the hawk.</p>
@@ -4909,7 +4916,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-07-16">
                     <a href="bad-art-museum/">
-                        <img class="site-image" src="/public/site-images/bad-art-museum-square.jpg" alt="Museum of Bad Art" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/bad-art-museum-square.webp" alt="Museum of Bad Art" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Museum of Bad Art</h2>
                         <p>Procedurally generated terrible abstract paintings paired with pompous gallery descriptions. Infinite collection.</p>
@@ -4923,7 +4930,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-N" data-letter="N" aria-labelledby="letter-N-title"><h2 class="letter-heading" id="letter-N-title">N</h2><div class="site-grid">                <div class="site-card has-image" data-categories="fun" data-created="2025-01-24">
                     <a href="nameashape/">
-                        <img class="site-image" src="/public/site-images/nameashape-square.jpg" alt="Name a Shape" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/nameashape-square.webp" alt="Name a Shape" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Name a Shape</h2>
                         <p>A shape appears under the spotlight. Name it. Take its portrait.</p>
@@ -4937,7 +4944,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-02-25">
                     <a href="namesinahat/">
-                        <img class="site-image" src="/public/site-images/namesinahat-square.jpg" alt="Names in a Hat" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/namesinahat-square.webp" alt="Names in a Hat" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Names in a Hat</h2>
                         <p>Put names in the hat. Tap the hat. The hat decides.</p>
@@ -4951,7 +4958,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-01-04">
                     <a href="nicecursor/">
-                        <img class="site-image" src="/public/site-images/nicecursor-square.jpg" alt="Nice Cursor" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/nicecursor-square.webp" alt="Nice Cursor" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Nice Cursor</h2>
                         <p>A cursor so big it shoves the whole page around</p>
@@ -4965,7 +4972,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="mindfulness" data-created="2026-07-16">
                     <a href="noise-machine/">
-                        <img class="site-image" src="/public/site-images/noise-machine-square.jpg" alt="Noise Machine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/noise-machine-square.webp" alt="Noise Machine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Noise Machine</h2>
                         <p>Mix white, brown, and pink noise with rain, thunder, café chatter, and fan hum — all generated live in your browser.</p>
@@ -4979,7 +4986,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-O" data-letter="O" aria-labelledby="letter-O-title"><h2 class="letter-heading" id="letter-O-title">O</h2><div class="site-grid">                <div class="site-card has-image" data-categories="entertainment" data-created="2026-07-18">
                     <a href="horoscope/">
-                        <img class="site-image" src="/public/site-images/horoscope-square.jpg" alt="Oddly Specific Horoscopes" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/horoscope-square.webp" alt="Oddly Specific Horoscopes" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Oddly Specific Horoscopes</h2>
                         <p>The stars have reviewed your file. Today's reading is uncomfortably precise.</p>
@@ -4993,7 +5000,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-07-19">
                     <a href="onhold/">
-                        <img class="site-image" src="/public/site-images/onhold-square.jpg" alt="On Hold" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/onhold-square.webp" alt="On Hold" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>On Hold</h2>
                         <p>Your call is important to us. Please continue to hold.</p>
@@ -5007,7 +5014,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-09-06">
                     <a href="on-this-day/">
-                        <img class="site-image" src="/public/site-images/on-this-day-square.jpg" alt="On This Day" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/on-this-day-square.webp" alt="On This Day" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>On This Day</h2>
                         <p>Pick your birthday and get a full real timeline of notable events, births, and deaths that happened on that calendar day.</p>
@@ -5021,7 +5028,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-03">
                     <a href="onepixel/">
-                        <img class="site-image" src="/public/site-images/onepixel-square.jpg" alt="One Pixel" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/onepixel-square.webp" alt="One Pixel" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>One Pixel</h2>
                         <p>The smallest painting on the web. One pixel, one color. A new one tomorrow.</p>
@@ -5035,7 +5042,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-P" data-letter="P" aria-labelledby="letter-P-title"><h2 class="letter-heading" id="letter-P-title">P</h2><div class="site-grid">                <div class="site-card has-image" data-categories="tools" data-created="2026-07-16">
                     <a href="paint-by-number/">
-                        <img class="site-image" src="/public/site-images/paint-by-number-square.jpg" alt="Paint by Number" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/paint-by-number-square.webp" alt="Paint by Number" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Paint by Number</h2>
                         <p>Upload a photo, get a numbered kit, and paint it back together. Drag to paint; stay true to the original.</p>
@@ -5049,7 +5056,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-14">
                     <a href="parallax/">
-                        <img class="site-image" src="/public/site-images/parallax-square.jpg" alt="Parallax" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/parallax-square.webp" alt="Parallax" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Parallax</h2>
                         <p>A field of sticker shapes stacked in depth. Move your cursor, tilt your phone, and watch the near ones race past the far ones.</p>
@@ -5063,7 +5070,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2025-02-19">
                     <a href="parallel_lines/">
-                        <img class="site-image" src="/public/site-images/parallel_lines-square.jpg" alt="Parallel Lines" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/parallel_lines-square.webp" alt="Parallel Lines" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Parallel Lines</h2>
                         <p>Two rails run straight toward a vanishing point, forever. They look like they're about to meet. They never do.</p>
@@ -5077,7 +5084,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2024-12-31">
                     <a href="passwordgenerator/">
-                        <img class="site-image" src="/public/site-images/passwordgenerator-square.jpg" alt="Password Generator" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/passwordgenerator-square.webp" alt="Password Generator" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Password Generator</h2>
                         <p>A mint that strikes passwords one character tile at a time</p>
@@ -5091,7 +5098,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-31">
                     <a href="passwordSecurity/">
-                        <img class="site-image" src="/public/site-images/passwordSecurity-square.jpg" alt="Password Security Checker" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/passwordSecurity-square.webp" alt="Password Security Checker" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Password Security Checker</h2>
                         <p>Type a password and get judged: crack-time estimates, itemized violations, and a lock that beefs up as you improve. Nothing leaves the page.</p>
@@ -5105,7 +5112,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-19">
                     <a href="perfectcircle/">
-                        <img class="site-image" src="/public/site-images/perfectcircle-square.jpg" alt="Perfect Circle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/perfectcircle-square.webp" alt="Perfect Circle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Perfect Circle</h2>
                         <p>Draw a circle freehand. Get judged to one decimal place.</p>
@@ -5119,7 +5126,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2024-12-21">
                     <a href="pi/">
-                        <img class="site-image" src="/public/site-images/pi-square.jpg" alt="Pi Digit Distribution" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/pi-square.webp" alt="Pi Digit Distribution" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Pi Digit Distribution</h2>
                         <p>A census of the first million digits of π — sweep the count and watch the digits jockey</p>
@@ -5133,7 +5140,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-01-24">
                     <a href="randomphotos/">
-                        <img class="site-image" src="/public/site-images/randomphotos-square.jpg" alt="Picsum Photo Generator" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/randomphotos-square.webp" alt="Picsum Photo Generator" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Picsum Photo Generator</h2>
                         <p>Endless stock photos pinned like polaroids — click one to copy its URL</p>
@@ -5147,7 +5154,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-10">
                     <a href="pinwheelfield/">
-                        <img class="site-image" src="/public/site-images/pinwheelfield-square.jpg" alt="Pinwheel Field" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/pinwheelfield-square.webp" alt="Pinwheel Field" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Pinwheel Field</h2>
                         <p>A grid of tiny windmills. Each one's spin speed depends on how close and how fast your cursor swept past it recently — wave your mouse and you get a trailing gust of spinning pinwheels.</p>
@@ -5161,7 +5168,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2024-12-24">
                     <a href="pong/">
-                        <img class="site-image" src="/public/site-images/pong-square.jpg" alt="Pong" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/pong-square.webp" alt="Pong" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Pong</h2>
                         <p>Classic Pong</p>
@@ -5175,7 +5182,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-31">
                     <a href="fallingsand/">
-                        <img class="site-image" src="/public/site-images/fallingsand-square.jpg" alt="Powder Toy" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/fallingsand-square.webp" alt="Powder Toy" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Powder Toy</h2>
                         <p>A falling-sand sandbox. Pour sand, water, and oil, strike a match, and watch it all react. Fire spreads, plants drink, oil floats. No goal, just physics.</p>
@@ -5189,7 +5196,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2025-09-20">
                     <a href="slot-machine/">
-                        <img class="site-image" src="/public/site-images/slot-machine-square.jpg" alt="Project Idea Slot Machine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/slot-machine-square.webp" alt="Project Idea Slot Machine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Project Idea Slot Machine</h2>
                         <p>Spin the wheels of creativity to generate random project ideas</p>
@@ -5203,7 +5210,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2025-01-03">
                     <a href="emojiprophunt/">
-                        <img class="site-image" src="/public/site-images/emojiprophunt-square.jpg" alt="Prop Hunt" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/emojiprophunt-square.webp" alt="Prop Hunt" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Prop Hunt</h2>
                         <p>One of them is wanted. Find the exact match — the decoys are in on it.</p>
@@ -5217,7 +5224,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-31">
                     <a href="psychadelics/">
-                        <img class="site-image" src="/public/site-images/psychadelics-square.jpg" alt="Psychedelic Waves" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/psychadelics-square.webp" alt="Psychedelic Waves" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Psychedelic Waves</h2>
                         <p>Paint into a living chemical culture and watch it bloom, crawl, and divide</p>
@@ -5231,7 +5238,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-20">
                     <a href="pullthecord/">
-                        <img class="site-image" src="/public/site-images/pullthecord-square.jpg" alt="Pull the Cord" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/pullthecord-square.webp" alt="Pull the Cord" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Pull the Cord</h2>
                         <p>A bulb, a cord, a room. Yank the cord — it clicks, springs back, and the lights go out everywhere.</p>
@@ -5245,7 +5252,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-Q" data-letter="Q" aria-labelledby="letter-Q-title"><h2 class="letter-heading" id="letter-Q-title">Q</h2><div class="site-grid">                <div class="site-card has-image" data-categories="fun" data-created="2026-10-07">
                     <a href="qr-wall/">
-                        <img class="site-image" src="/public/site-images/qr-wall-square.jpg" alt="QR Wall" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/qr-wall-square.webp" alt="QR Wall" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>QR Wall</h2>
                         <p>An infinite wall of QR codes. Drag to wander, tap any one, and it takes you somewhere real.</p>
@@ -5259,7 +5266,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-R" data-letter="R" aria-labelledby="letter-R-title"><h2 class="letter-heading" id="letter-R-title">R</h2><div class="site-grid">                <div class="site-card has-image" data-categories="games" data-created="2026-08-05">
                     <a href="typingrace/">
-                        <img class="site-image" src="/public/site-images/typingrace-square.jpg" alt="Race Your Ghost" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/typingrace-square.webp" alt="Race Your Ghost" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Race Your Ghost</h2>
                         <p>Type the line before your own ghost does. It never gets nervous and it never forgets your best time.</p>
@@ -5273,7 +5280,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-01-24">
                     <a href="randomcolor/">
-                        <img class="site-image" src="/public/site-images/randomcolor-square.jpg" alt="Random Color" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/randomcolor-square.webp" alt="Random Color" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Random Color</h2>
                         <p>A random color with its hex, rgb, and hsl — click for another</p>
@@ -5287,7 +5294,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-19">
                     <a href="ransomnote/">
-                        <img class="site-image" src="/public/site-images/ransomnote-square.jpg" alt="Ransom Note" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/ransomnote-square.webp" alt="Ransom Note" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Ransom Note</h2>
                         <p>A wall of plain words. Sweep across them and each one is cut loose — new font, new color, pinned back crooked, like a ransom note assembling itself.</p>
@@ -5301,7 +5308,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-03-27">
                     <a href="reactiontime/">
-                        <img class="site-image" src="/public/site-images/reactiontime-square.jpg" alt="Reaction Time" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/reactiontime-square.webp" alt="Reaction Time" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Reaction Time</h2>
                         <p>Click when the screen turns green. How fast are you?</p>
@@ -5315,7 +5322,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2024-12-31">
                     <a href="redlightgreenlight/">
-                        <img class="site-image" src="/public/site-images/redlightgreenlight-square.jpg" alt="Red Light, Green Light" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/redlightgreenlight-square.webp" alt="Red Light, Green Light" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Red Light, Green Light</h2>
                         <p>Hold to walk, freeze on red. Momentum is not your friend, and the official is watching.</p>
@@ -5329,7 +5336,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2025-09-20">
                     <a href="roman-numerals/">
-                        <img class="site-image" src="/public/site-images/roman-numerals-square.jpg" alt="Roman Numeral Converter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/roman-numerals-square.webp" alt="Roman Numeral Converter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Roman Numeral Converter</h2>
                         <p>Numerals chiseled onto a slab, itemized on the mason's invoice — converts both directions</p>
@@ -5343,7 +5350,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-07-17">
                     <a href="rothkomachine/">
-                        <img class="site-image" src="/public/site-images/rothkomachine-square.jpg" alt="Rothko Machine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/rothkomachine-square.webp" alt="Rothko Machine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Rothko Machine</h2>
                         <p>An endless stream of generated color field paintings, each with a deadpan title</p>
@@ -5357,7 +5364,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-16">
                     <a href="rubegoldberg/">
-                        <img class="site-image" src="/public/site-images/rubegoldberg-square.jpg" alt="Rube Goldberg Machine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/rubegoldberg-square.webp" alt="Rube Goldberg Machine" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Rube Goldberg Machine</h2>
                         <p>Click START and watch a 10-step chain reaction of satisfying canvas animations</p>
@@ -5371,7 +5378,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2026-07-19">
                     <a href="ruler/">
-                        <img class="site-image" src="/public/site-images/ruler-square.jpg" alt="Ruler" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/ruler-square.webp" alt="Ruler" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Ruler</h2>
                         <p>A real ruler on your screen — calibrate it with a credit card</p>
@@ -5385,7 +5392,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-S" data-letter="S" aria-labelledby="letter-S-title"><h2 class="letter-heading" id="letter-S-title">S</h2><div class="site-grid">                <div class="site-card has-image" data-categories="mindfulness" data-created="2026-08-05">
                     <a href="sandgarden/">
-                        <img class="site-image" src="/public/site-images/sandgarden-square.jpg" alt="Sand Garden" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/sandgarden-square.webp" alt="Sand Garden" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Sand Garden</h2>
                         <p>Drag to rake grooves into a patch of sand, tap to set a stone. It waits exactly as you left it, the next time you visit.</p>
@@ -5399,7 +5406,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2026-07-16">
                     <a href="scoreboard/">
-                        <img class="site-image" src="/public/site-images/scoreboard-square.jpg" alt="Scoreboard" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/scoreboard-square.webp" alt="Scoreboard" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Scoreboard</h2>
                         <p>A tap-to-score scoreboard for any game — track two teams, period, and time</p>
@@ -5413,7 +5420,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-09-01">
                     <a href="scratchers/">
-                        <img class="site-image" src="/public/site-images/scratchers-square.jpg" alt="Scratchers" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/scratchers-square.webp" alt="Scratchers" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Scratchers</h2>
                         <p>An endless supply of scratch-off tickets. The $1 ticket is always free. The rest is between you and the odds.</p>
@@ -5427,7 +5434,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-01-05">
                     <a href="scrollympics/">
-                        <img class="site-image" src="/public/site-images/scrollympics-square.jpg" alt="Scrollympics" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/scrollympics-square.webp" alt="Scrollympics" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Scrollympics</h2>
                         <p>Your scrolling career, measured in real distances. Medals included.</p>
@@ -5441,7 +5448,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-28">
                     <a href="severancedance/">
-                        <img class="site-image" src="/public/site-images/severancedance-square.jpg" alt="Severance Dance" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/severancedance-square.webp" alt="Severance Dance" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Severance Dance</h2>
                         <p>Watch the MDR Department dance to your favorite tunes</p>
@@ -5455,7 +5462,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2024-12-18">
                     <a href="shakespeareinsultmaker/">
-                        <img class="site-image" src="/public/site-images/shakespeareinsultmaker-square.jpg" alt="Shakespeare Insult Maker" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/shakespeareinsultmaker-square.webp" alt="Shakespeare Insult Maker" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Shakespeare Insult Maker</h2>
                         <p>Generate Shakespearean-style insults</p>
@@ -5469,7 +5476,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-03-27">
                     <a href="shapematch/">
-                        <img class="site-image" src="/public/site-images/shapematch-square.jpg" alt="Shape Match" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/shapematch-square.webp" alt="Shape Match" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Shape Match</h2>
                         <p>Same shape or mirrored? Decide fast. One mistake ends it. No appeals.</p>
@@ -5483,7 +5490,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-09-01">
                     <a href="shortwave/">
-                        <img class="site-image" src="/public/site-images/shortwave-square.jpg" alt="Shortwave" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/shortwave-square.webp" alt="Shortwave" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Shortwave</h2>
                         <p>Tune a late-night radio through the static. 72 stations are hiding out there — some only broadcast after dark.</p>
@@ -5497,7 +5504,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-09-06">
                     <a href="silk/">
-                        <img class="site-image" src="/public/site-images/silk-square.jpg" alt="Silk" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/silk-square.webp" alt="Silk" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Silk</h2>
                         <p>Move your cursor and watch silky ribbons of color flow and mirror around the screen. No instructions, no UI — just trace.</p>
@@ -5511,7 +5518,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-31">
                     <a href="simon/">
-                        <img class="site-image" src="/public/site-images/simon-square.jpg" alt="Simon" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/simon-square.webp" alt="Simon" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Simon</h2>
                         <p>Watch the pattern, then repeat it back. Each round adds one more light and a little more speed. How long can you hold the sequence in your head?</p>
@@ -5525,7 +5532,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-20">
                     <a href="sisyphus/">
-                        <img class="site-image" src="/public/site-images/sisyphus-square.jpg" alt="Sisyphus" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/sisyphus-square.webp" alt="Sisyphus" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Sisyphus</h2>
                         <p>Scroll to push the boulder up a mountain that never ends. Stop, and it all comes back down.</p>
@@ -5539,7 +5546,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-10-04">
                     <a href="nationaldebt/">
-                        <img class="site-image" src="/public/site-images/nationaldebt-square.jpg" alt="Spend the National Debt" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/nationaldebt-square.webp" alt="Spend the National Debt" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Spend the National Debt</h2>
                         <p>You've been handed the entire US national debt. Spend it on jets, islands, and aircraft carriers — the clock keeps ticking up faster than you can.</p>
@@ -5553,7 +5560,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-10-04">
                     <a href="spendyourlife/">
-                        <img class="site-image" src="/public/site-images/spendyourlife-square.jpg" alt="Spend Your Life" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/spendyourlife-square.webp" alt="Spend Your Life" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Spend Your Life</h2>
                         <p>Your budget isn't money — it's the hours you have left. Spend them on sleep, meetings, guitar, and falling in love, and watch the clock drain.</p>
@@ -5567,7 +5574,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2025-01-10">
                     <a href="spinthebottle/">
-                        <img class="site-image" src="/public/site-images/spinthebottle-square.jpg" alt="Spin the Bottle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/spinthebottle-square.webp" alt="Spin the Bottle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Spin the Bottle</h2>
                         <p>Add your friends around the table, rip the bottle, and let it decide.</p>
@@ -5581,7 +5588,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-05">
                     <a href="spirograph/">
-                        <img class="site-image" src="/public/site-images/spirograph-square.jpg" alt="Spirograph" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/spirograph-square.webp" alt="Spirograph" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Spirograph</h2>
                         <p>A gear rolls inside a ring and traces the flower it was always going to make. Drag to scrub the mechanism, switch gears to layer another.</p>
@@ -5595,7 +5602,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-03-27">
                     <a href="static/">
-                        <img class="site-image" src="/public/site-images/static-square.jpg" alt="Static" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/static-square.webp" alt="Static" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Static</h2>
                         <p>TV static that slowly resolves into a hidden message. Wait for it.</p>
@@ -5609,7 +5616,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-10">
                     <a href="stringart/">
-                        <img class="site-image" src="/public/site-images/stringart-square.jpg" alt="String Art" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/stringart-square.webp" alt="String Art" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>String Art</h2>
                         <p>Sweep your cursor around the ring of pins and thread stretches between them, leaving a permanent, ever-growing pattern behind.</p>
@@ -5623,7 +5630,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2026-08-30">
                     <a href="swissarmyknife/">
-                        <img class="site-image" src="/public/site-images/swissarmyknife-square.jpg" alt="Swiss Army Knife" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/swissarmyknife-square.webp" alt="Swiss Army Knife" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Swiss Army Knife</h2>
                         <p>A pocket knife for images — fold out the crop blade, the filter glass, the resize scissors. Everything happens on your device.</p>
@@ -5637,7 +5644,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-T" data-letter="T" aria-labelledby="letter-T-title"><h2 class="letter-heading" id="letter-T-title">T</h2><div class="site-grid">                <div class="site-card has-image" data-categories="art" data-created="2026-07-17">
                     <a href="tessellation/">
-                        <img class="site-image" src="/public/site-images/tessellation-square.jpg" alt="Tessellation" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/tessellation-square.webp" alt="Tessellation" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Tessellation</h2>
                         <p>Draw anywhere and your strokes tile into an endless repeating pattern</p>
@@ -5651,7 +5658,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2025-01-05">
                     <a href="cursors/">
-                        <img class="site-image" src="/public/site-images/cursors-square.jpg" alt="The Cursor Petting Zoo" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/cursors-square.webp" alt="The Cursor Petting Zoo" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Cursor Petting Zoo</h2>
                         <p>Every CSS cursor in its own enclosure — pet them, adopt your favorite</p>
@@ -5665,7 +5672,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-18">
                     <a href="dummyfactory/">
-                        <img class="site-image" src="/public/site-images/dummyfactory-square.jpg" alt="The Dummy Factory" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/dummyfactory-square.webp" alt="The Dummy Factory" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Dummy Factory</h2>
                         <p>A bear-headed helicopter in clown shoes. Or reroll for one of 29,000 others.</p>
@@ -5679,7 +5686,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-03">
                     <a href="ellipsis/">
-                        <img class="site-image" src="/public/site-images/ellipsis-square.jpg" alt="The Ellipsis" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/ellipsis-square.webp" alt="The Ellipsis" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Ellipsis</h2>
                         <p>The whole page is a dot. Click it and another one shows up. That's all this is.</p>
@@ -5693,7 +5700,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-07-17">
                     <a href="infinitepainting/">
-                        <img class="site-image" src="/public/site-images/infinitepainting-square.jpg" alt="The Infinite Painting" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/infinitepainting-square.webp" alt="The Infinite Painting" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Infinite Painting</h2>
                         <p>Zoom into the brushstrokes. There is no bottom.</p>
@@ -5707,7 +5714,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-08-04">
                     <a href="largesttriangle/">
-                        <img class="site-image" src="/public/site-images/largesttriangle-square.jpg" alt="The Largest Triangle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/largesttriangle-square.webp" alt="The Largest Triangle" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Largest Triangle</h2>
                         <p>A triangle. It has a point. Keep scrolling.</p>
@@ -5721,7 +5728,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-03-27">
                     <a href="thelastsurvivors/">
-                        <img class="site-image" src="/public/site-images/thelastsurvivors-square.jpg" alt="The Last Survivors" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/thelastsurvivors-square.webp" alt="The Last Survivors" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Last Survivors</h2>
                         <p>Conway's Game of Life with colored tribes. Place cells, place your bet, watch the chaos.</p>
@@ -5735,7 +5742,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-07-16">
                     <a href="the-last-time/">
-                        <img class="site-image" src="/public/site-images/the-last-time-square.jpg" alt="The Last Time" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/the-last-time-square.webp" alt="The Last Time" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Last Time</h2>
                         <p>A quiet scroll through the moments that passed without a goodbye</p>
@@ -5749,7 +5756,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-02-26">
                     <a href="prefixsuffix/">
-                        <img class="site-image" src="/public/site-images/prefixsuffix-square.jpg" alt="The Longest Name" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/prefixsuffix-square.webp" alt="The Longest Name" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Longest Name</h2>
                         <p>Hello, my name is... build the longest, most decorated name in history, one title at a time</p>
@@ -5763,7 +5770,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-26">
                     <a href="magicnumber/">
-                        <img class="site-image" src="/public/site-images/magicnumber-square.jpg" alt="The Magic Number 4" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/magicnumber-square.webp" alt="The Magic Number 4" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Magic Number 4</h2>
                         <p>A fun interactive way to learn about the number 4</p>
@@ -5777,7 +5784,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-03-27">
                     <a href="themap/">
-                        <img class="site-image" src="/public/site-images/themap-square.jpg" alt="The Map" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/themap-square.webp" alt="The Map" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Map</h2>
                         <p>A procedurally generated fantasy map. Different every time.</p>
@@ -5791,7 +5798,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-08-11">
                     <a href="mobiusstrip/">
-                        <img class="site-image" src="/public/site-images/mobiusstrip-square.jpg" alt="The Möbius Strip" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/mobiusstrip-square.webp" alt="The Möbius Strip" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Möbius Strip</h2>
                         <p>A little car drives an endless lap around a Möbius strip and comes back upside-down every time. Drag to look at it from anywhere.</p>
@@ -5805,7 +5812,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-08-04">
                     <a href="polygonmarch/">
-                        <img class="site-image" src="/public/site-images/polygonmarch-square.jpg" alt="The Polygon March" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/polygonmarch-square.webp" alt="The Polygon March" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Polygon March</h2>
                         <p>Triangle, square, pentagon, hexagon... it just keeps going. Eventually it becomes a circle. It was never a circle.</p>
@@ -5819,7 +5826,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-07-20">
                     <a href="punctuation-cemetery/">
-                        <img class="site-image" src="/public/site-images/punctuation-cemetery-square.jpg" alt="The Punctuation Cemetery" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/punctuation-cemetery-square.webp" alt="The Punctuation Cemetery" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Punctuation Cemetery</h2>
                         <p>Retired punctuation marks, laid to rest with full honors. Pay your respects to the exclamation comma.</p>
@@ -5833,7 +5840,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-17">
                     <a href="quietest/">
-                        <img class="site-image" src="/public/site-images/quietest-square.jpg" alt="The Quietest Site on the Web" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/quietest-square.webp" alt="The Quietest Site on the Web" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Quietest Site on the Web</h2>
                         <p>0.000 dB and holding. Please do not adjust your volume.</p>
@@ -5847,7 +5854,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2025-02-25">
                     <a href="puzzle/">
-                        <img class="site-image" src="/public/site-images/puzzle-square.jpg" alt="The Restoration" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/puzzle-square.webp" alt="The Restoration" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Restoration</h2>
                         <p>The museum's daily painting arrived in pieces. Slide it back together.</p>
@@ -5861,7 +5868,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-31">
                     <a href="stressdummy/">
-                        <img class="site-image" src="/public/site-images/stressdummy-square.jpg" alt="The Stress Dummy" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/stressdummy-square.webp" alt="The Stress Dummy" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>The Stress Dummy</h2>
                         <p>A floppy little ragdoll who exists to be flung, dragged, and bopped around the screen. Grab it, throw it, whack it. It always bounces back.</p>
@@ -5875,7 +5882,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-14">
                     <a href="tile/">
-                        <img class="site-image" src="/public/site-images/tile-square.jpg" alt="Tile" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/tile-square.webp" alt="Tile" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Tile</h2>
                         <p>A random geometric tile that repeats out to the edges of forever. Drag to wander it, tap for a new one.</p>
@@ -5889,7 +5896,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="art" data-created="2026-08-14">
                     <a href="tilt/">
-                        <img class="site-image" src="/public/site-images/tilt-square.jpg" alt="Tilt" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/tilt-square.webp" alt="Tilt" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Tilt</h2>
                         <p>A scattered deck of cards, each tilting toward your cursor in real 3D and catching a moving glare across its face.</p>
@@ -5903,7 +5910,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2026-07-16">
                     <a href="timemeters/">
-                        <img class="site-image" src="/public/site-images/timemeters-square.jpg" alt="Time Meters" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/timemeters-square.webp" alt="Time Meters" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Time Meters</h2>
                         <p>Progress bars for the day, week, month, year, decade, century, and millennium</p>
@@ -5917,7 +5924,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-02-19">
                     <a href="timezones/">
-                        <img class="site-image" src="/public/site-images/timezones-square.jpg" alt="Timezone Ticket" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/timezones-square.webp" alt="Timezone Ticket" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Timezone Ticket</h2>
                         <p>A live boarding pass between any two time zones. Gate B7, as always.</p>
@@ -5931,7 +5938,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2026-03-27">
                     <a href="translatetolegalese/">
-                        <img class="site-image" src="/public/site-images/translatetolegalese-square.jpg" alt="Translate to Legalese" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/translatetolegalese-square.webp" alt="Translate to Legalese" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Translate to Legalese</h2>
                         <p>Type anything casual. Get back an incomprehensible legal document.</p>
@@ -5945,7 +5952,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-U" data-letter="U" aria-labelledby="letter-U-title"><h2 class="letter-heading" id="letter-U-title">U</h2><div class="site-grid">                <div class="site-card has-image" data-categories="entertainment" data-created="2024-12-21">
                     <a href="unmotivationalquotes/">
-                        <img class="site-image" src="/public/site-images/unmotivationalquotes-square.jpg" alt="Unmotivational Quotes" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/unmotivationalquotes-square.webp" alt="Unmotivational Quotes" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Unmotivational Quotes</h2>
                         <p>Your daily dose of disappointment</p>
@@ -5959,7 +5966,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-V" data-letter="V" aria-labelledby="letter-V-title"><h2 class="letter-heading" id="letter-V-title">V</h2><div class="site-grid">                <div class="site-card has-image" data-categories="games" data-created="2024-12-31">
                     <a href="piano/">
-                        <img class="site-image" src="/public/site-images/piano-square.jpg" alt="Virtual Piano" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/piano-square.webp" alt="Virtual Piano" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Virtual Piano</h2>
                         <p>Play music on a virtual piano keyboard</p>
@@ -5973,7 +5980,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-21">
                     <a href="visitcounter/">
-                        <img class="site-image" src="/public/site-images/visitcounter-square.jpg" alt="Visit Counter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/visitcounter-square.webp" alt="Visit Counter" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Visit Counter</h2>
                         <p>An official odometer of your visits. Unique visitors: 1. The button trusts you.</p>
@@ -5987,7 +5994,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-W" data-letter="W" aria-labelledby="letter-W-title"><h2 class="letter-heading" id="letter-W-title">W</h2><div class="site-grid">                <div class="site-card has-image" data-categories="art" data-created="2026-07-17">
                     <a href="weaver/">
-                        <img class="site-image" src="/public/site-images/weaver-square.jpg" alt="Weaver" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/weaver-square.webp" alt="Weaver" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Weaver</h2>
                         <p>Drag to lay threads on a loom — warp and weft interlace into real cloth</p>
@@ -6001,7 +6008,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2025-01-03">
                     <a href="welcomeback/">
-                        <img class="site-image" src="/public/site-images/welcomeback-square.jpg" alt="Welcome Back" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/welcomeback-square.webp" alt="Welcome Back" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Welcome Back</h2>
                         <p>Your visitor time card: it knows exactly how long you were gone, and it keeps records.</p>
@@ -6015,7 +6022,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-17">
                     <a href="wetpaint/">
-                        <img class="site-image" src="/public/site-images/wetpaint-square.jpg" alt="Wet Paint" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/wetpaint-square.webp" alt="Wet Paint" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Wet Paint</h2>
                         <p>The sign says do not touch. Everything you touch smears.</p>
@@ -6029,7 +6036,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-10">
                     <a href="what-to-do/">
-                        <img class="site-image" src="/public/site-images/what-to-do-square.jpg" alt="What to do" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/what-to-do-square.webp" alt="What to do" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>What to do</h2>
                         <p>Helps you figure out your priorities for the day...</p>
@@ -6043,7 +6050,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2024-12-21">
                     <a href="whatsmyresolution/">
-                        <img class="site-image" src="/public/site-images/whatsmyresolution-square.jpg" alt="What's My Resolution?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/whatsmyresolution-square.webp" alt="What's My Resolution?" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>What's My Resolution?</h2>
                         <p>Your screen, measured live — resolution, pixel ratio, refresh rate, and every pixel you own</p>
@@ -6057,7 +6064,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="educational" data-created="2026-09-06">
                     <a href="wikipedia-roulette/">
-                        <img class="site-image" src="/public/site-images/wikipedia-roulette-square.jpg" alt="Wikipedia Roulette" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/wikipedia-roulette-square.webp" alt="Wikipedia Roulette" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Wikipedia Roulette</h2>
                         <p>One button. One real random Wikipedia article, opened in a new tab. That's the whole site.</p>
@@ -6071,7 +6078,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="games" data-created="2026-07-31">
                     <a href="bouncehigher/">
-                        <img class="site-image" src="/public/site-images/bouncehigher-square.jpg" alt="Winter Bells" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/bouncehigher-square.webp" alt="Winter Bells" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Winter Bells</h2>
                         <p>Steer a snow bunny up an endless winter sky. Every bell you touch bounces you higher — chain them for combos and climb as high as you can before you fall.</p>
@@ -6085,7 +6092,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="mindfulness" data-created="2026-08-05">
                     <a href="worryjar/">
-                        <img class="site-image" src="/public/site-images/worryjar-square.jpg" alt="Worry Jar" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/worryjar-square.webp" alt="Worry Jar" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Worry Jar</h2>
                         <p>Write down what's weighing on you and drop it in the jar. Watch it sink, settle, and take up permanent residence.</p>
@@ -6099,7 +6106,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-01-10">
                     <a href="wow/">
-                        <img class="site-image" src="/public/site-images/wow-square.jpg" alt="WOW" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/wow-square.webp" alt="WOW" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>WOW</h2>
                         <p>Endless wows. Click for more wow. Hold to spray wow.</p>
@@ -6113,7 +6120,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="mindfulness" data-created="2025-01-06">
                     <a href="wreckroom/">
-                        <img class="site-image" src="/public/site-images/wreckroom-square.jpg" alt="Wreck Room" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/wreckroom-square.webp" alt="Wreck Room" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Wreck Room</h2>
                         <p>Upload a picture of your problem. Take a bat to it.</p>
@@ -6127,7 +6134,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2024-12-18">
                     <a href="writemeastory/">
-                        <img class="site-image" src="/public/site-images/writemeastory-square.jpg" alt="Write Me a Story" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/writemeastory-square.webp" alt="Write Me a Story" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Write Me a Story</h2>
                         <p>Interactive story writing experience</p>
@@ -6141,7 +6148,7 @@
                 </div></div></section>
 <section class="letter-section" id="letter-Y" data-letter="Y" aria-labelledby="letter-Y-title"><h2 class="letter-heading" id="letter-Y-title">Y</h2><div class="site-grid">                <div class="site-card has-image" data-categories="mindfulness" data-created="2026-08-11">
                     <a href="yinyang/">
-                        <img class="site-image" src="/public/site-images/yinyang-square.jpg" alt="Yin Yang" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/yinyang-square.webp" alt="Yin Yang" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Yin Yang</h2>
                         <p>Click it. It spins, and says which one it is now.</p>
@@ -6155,7 +6162,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="fun" data-created="2026-07-16">
                     <a href="youarebeingwatched/">
-                        <img class="site-image" src="/public/site-images/youarebeingwatched-square.jpg" alt="You Are Being Watched" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/youarebeingwatched-square.webp" alt="You Are Being Watched" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>You Are Being Watched</h2>
                         <p>A fake surveillance feed of you — with tracking boxes, biometric readouts, and a rising threat level.</p>
@@ -6169,7 +6176,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="tools" data-created="2025-10-03">
                     <a href="birthdaycolor/">
-                        <img class="site-image" src="/public/site-images/birthdaycolor-square.jpg" alt="Your Birthday, Your Color!" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/birthdaycolor-square.webp" alt="Your Birthday, Your Color!" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Your Birthday, Your Color!</h2>
                         <p>Enter your birthday and get your unique hex color</p>
@@ -6183,7 +6190,7 @@
                 </div>
                 <div class="site-card has-image" data-categories="entertainment" data-created="2025-02-28">
                     <a href="yourphonehasacrackinit/">
-                        <img class="site-image" src="/public/site-images/yourphonehasacrackinit-square.jpg" alt="Your Phone Has a Crack in It" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
+                        <img class="site-image" src="/public/site-images/yourphonehasacrackinit-square.webp" alt="Your Phone Has a Crack in It" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">
                         <div class="card-copy">
                         <h2>Your Phone Has a Crack in It</h2>
                         <p>Your phone has a crack in it. Tap the screen and it will have several.</p>
@@ -6209,6 +6216,7 @@
             <!-- Footer message -->
         </div>
     </section>
+    </main>
 
     <dialog class="site-preview" id="sitePreview" aria-labelledby="sitePreviewTitle" aria-describedby="sitePreviewDescription">
         <form method="dialog">
@@ -6229,8 +6237,13 @@
             </button>
         </div>
         <div class="footer-bottom">
-            <a href="#top" aria-label="Back to top"><img src="/logo.png" alt="Random Sites On the Web" width="140" loading="lazy" decoding="async"></a>
+            <a href="#top" aria-label="Back to top"><img src="/logo.webp" alt="Random Sites On the Web" width="140" height="93" loading="lazy" decoding="async"></a>
             <p>Made by <a href="https://dylanlandman.com" target="_blank" rel="noopener">Dylan Landman</a></p>
+            <nav class="footer-links" aria-label="Site information">
+                <a href="/about/">About</a>
+                <a href="/privacy/">Privacy</a>
+                <a href="https://dylanlandman.com" target="_blank" rel="noopener">Contact</a>
+            </nav>
             <a class="secret-door" href="/404/" aria-label="A small door">
                 <span class="door-plaque">404</span>
                 <span class="door-frame"><span class="door-knob"></span></span>
@@ -9066,9 +9079,6 @@
             document.addEventListener('dblclick', clearFilters);
         })();
     </script>
-
-    <!-- Add QR Code library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <!-- Click splat: comic burst wherever you click, to match the sticker logo -->
     <script>

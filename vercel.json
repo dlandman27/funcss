@@ -2,6 +2,12 @@
   "framework": null,
   "outputDirectory": ".",
   "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.randomsitesontheweb.com" }],
+      "destination": "https://randomsitesontheweb.com/:path*",
+      "permanent": true
+    },
     { "source": "/sites/:slug", "destination": "/:slug/", "permanent": true },
     { "source": "/sites/:slug/", "destination": "/:slug/", "permanent": true }
   ],
@@ -12,9 +18,18 @@
   ],
   "headers": [
     {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" }
+      ]
+    },
+    {
       "source": "/(.*)\\.(png|jpg|jpeg|gif|webp|avif|svg|ico|mp3|wav|ogg|glb|gltf|woff|woff2)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=2592000" }
+        { "key": "Cache-Control", "value": "public, max-age=2592000, stale-while-revalidate=2592000" }
       ]
     },
     {
