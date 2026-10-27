@@ -3,9 +3,14 @@
   const collage = document.querySelector('.hero-collage');
   if (!collage) return;
   const cards = [...document.querySelectorAll('.site-grid .site-card.has-image')];
-  // Spread the alphabet through both rows so nearby cards have varied artwork.
+  // A fresh random set of artwork on every visit.
   const rows = [[], []];
-  const sample = cards.filter((_, index) => index % Math.max(1, Math.floor(cards.length / 16)) === 0).slice(0, 16);
+  const shuffled = cards.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const sample = shuffled.slice(0, 16);
   sample.forEach((card, index) => rows[index % 2].push(card));
   rows.forEach((cards, rowIndex) => {
     const row = document.createElement('div');
@@ -17,8 +22,13 @@
     const group = document.createElement('div');
     group.className = 'hero-group';
     cards.forEach(card => {
-      const link = document.createElement('div');
+      // Tiles are real links for mouse/touch discovery; the catalog below is the
+      // accessible way in, so they stay out of the tab order (collage is aria-hidden).
+      const link = document.createElement('a');
       link.className = 'hero-tile';
+      link.href = card.querySelector('a').getAttribute('href');
+      link.tabIndex = -1;
+      link.title = (card.querySelector('h2') || {}).textContent || '';
       const image = card.querySelector('.site-image').cloneNode();
       image.removeAttribute('onerror');
       image.removeAttribute('class');

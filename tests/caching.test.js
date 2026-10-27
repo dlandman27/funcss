@@ -9,8 +9,11 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-// The catch-all rule only carries security headers; caching rules are the rest.
-const rules = (config.headers || []).filter((r) => r.source !== '/(.*)');
+// Security-only rules (no Cache-Control) are excluded; caching rules are the rest.
+const SECURITY_KEYS = ['Strict-Transport-Security', 'Content-Security-Policy', 'X-Frame-Options'];
+const isSecurityRule = (r) => (r.headers || []).every((h) => h.key !== 'Cache-Control')
+  && (r.headers || []).some((h) => SECURITY_KEYS.includes(h.key));
+const rules = (config.headers || []).filter((r) => !isSecurityRule(r));
 
 const cacheControl = (rule) =>
   ((rule.headers || []).find((h) => h.key === 'Cache-Control') || {}).value || '';
@@ -85,4 +88,14 @@ test('globals and catalog.json get short shared caches, not immutable ones', () 
     const age = maxAge(cacheControl(rule));
     assert.ok(age > 0 && age <= 3600, `${source} max-age should be minutes-to-an-hour, got ${age}`);
   }
+});
+
+test('only /embed/ may be framed by other sites', () => {
+  const all = config.headers || [];
+  const deny = all.find((r) => (r.headers || []).some((h) => h.key === 'X-Frame-Options'));
+  const re = sourceToRegExp(deny.source);
+  for (const p of ['/', '/silk/', '/about/', '/embedded-thing/']) assert.match(p, re, p + ' must send X-Frame-Options');
+  for (const p of ['/embed', '/embed/']) assert.doesNotMatch(p, re, p + ' must be frameable');
+  const embed = all.find((r) => r.source.startsWith('/embed/'));
+  assert.ok(embed.headers.some((h) => h.key === 'Content-Security-Policy' && /frame-ancestors \*/.test(h.value)));
 });
