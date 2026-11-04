@@ -41,6 +41,13 @@ function validateCatalog(catalog) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(site.created || '')) {
       throw new Error(`created must be YYYY-MM-DD: ${site.slug}`);
     }
+    if (site.seoTitle !== undefined && !(typeof site.seoTitle === 'string' && site.seoTitle.trim())) {
+      throw new Error(`seoTitle must be a non-empty string: ${site.slug}`);
+    }
+    if (site.about !== undefined && !(Array.isArray(site.about) && site.about.length
+      && site.about.every((p) => typeof p === 'string' && p.trim()))) {
+      throw new Error(`about must be a non-empty array of paragraphs: ${site.slug}`);
+    }
   }
 }
 
@@ -66,6 +73,9 @@ function ogMetaBlock(site) {
   const img = ogImageUrl(site.slug);
   const lines = [
     OG_START,
+    // Toys are reachable at /<slug>, /<slug>/ and with query strings; point
+    // search engines at the one clean URL.
+    `<link rel="canonical" href="${url}">`,
     '<meta property="og:type" content="website">',
     `<meta property="og:url" content="${url}">`,
     `<meta property="og:title" content="${name}">`,
@@ -129,6 +139,74 @@ function injectOgBlock(html, site) {
     return html.replace(titleRe, (m) => `${m}\n    ${block}`);
   }
   return html;
+}
+
+// Drop hand-written og:/twitter: tags outside the managed block. Older toys
+// carried their own (pointing at the generic og-image.jpg and /sites/ URLs),
+// and duplicates leave scrapers to pick either set.
+function stripLegacySocialMeta(html) {
+  const managed = new RegExp(`${OG_START}[\\s\\S]*?${OG_END}`);
+  const block = (html.match(managed) || [''])[0];
+  const parts = block ? html.split(block) : [html];
+  const clean = (s) => s
+    .replace(/^[ \t]*<meta\s[^>]*(?:property|name)=["'](?:og|twitter):[^>]*>[ \t]*\r?\n/gim, '')
+    .replace(/^[ \t]*<!--\s*(?:Open Graph(?:\s*\/\s*Facebook)?|Twitter)\s*-->[ \t]*\r?\n/gim, '');
+  return parts.map(clean).join(block);
+}
+
+// Replace a toy's <title> with its search-friendly catalog seoTitle. Toys
+// without one keep whatever title they wrote for themselves.
+function applySeoTitle(html, seoTitle) {
+  if (!seoTitle) return html;
+  return html.replace(/<title>[\s\S]*?<\/title>/i, () => `<title>${escapeHtml(seoTitle)}</title>`);
+}
+
+// Up to n visible toys from the same section, taken in name order starting
+// just after this one (wrapping), so every toy gets linked from a few others.
+function relatedSites(site, catalog, n = 4) {
+  const peers = catalog.sites
+    .filter((s) => s.visible && s.section === site.section)
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+  const at = peers.findIndex((s) => s.slug === site.slug);
+  const out = [];
+  for (let i = 1; i < peers.length && out.length < n; i += 1) {
+    out.push(peers[(at + i) % peers.length]);
+  }
+  return out;
+}
+
+const ABOUT_START = '<!-- rsotw:about:start -->';
+const ABOUT_END = '<!-- rsotw:about:end -->';
+
+// Crawlable "about this toy" copy + related-toy links. Most toys are
+// full-viewport with overflow:hidden, so the block ships hidden and global.js
+// opens it in a panel from the corner menu ("About this site").
+function aboutBlock(site, catalog) {
+  const paragraphs = site.about || [site.description];
+  const visibleCount = catalog.sites.filter((s) => s.visible).length;
+  const related = relatedSites(site, catalog).map((s) =>
+    `<li><a href="/${s.slug}/">${escapeHtml(s.name)}</a>: ${escapeHtml(s.description)}</li>`);
+  return [
+    ABOUT_START,
+    // Inline display:none too, in case a toy's own CSS styles <aside>.
+    '<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">',
+    `<h2 id="rsotw-about-title">About ${escapeHtml(site.name)}</h2>`,
+    ...paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`),
+    ...(related.length ? ['<h3>More like this</h3>', '<ul>', ...related, '</ul>'] : []),
+    `<p><a href="/">Browse all ${visibleCount} random sites</a></p>`,
+    '</aside>',
+    ABOUT_END,
+  ].join('\n');
+}
+
+// Idempotently insert/replace the managed about block just before </body>.
+function injectAboutBlock(html, site, catalog) {
+  const block = aboutBlock(site, catalog);
+  const existing = new RegExp(`${ABOUT_START}[\\s\\S]*?${ABOUT_END}`);
+  if (existing.test(html)) return html.replace(existing, () => block);
+  const bodyEnd = html.toLowerCase().lastIndexOf('</body>');
+  if (bodyEnd === -1) return html;
+  return `${html.slice(0, bodyEnd)}${block}\n${html.slice(bodyEnd)}`;
 }
 
 // Static info pages (sites/<slug>/index.html, not in the catalog) linked from the footer.
@@ -294,7 +372,8 @@ function processToys(catalog) {
     if (site.visible) {
       const withOg = injectOgBlock(next, site);
       if (withOg !== next) ogUpdated += 1;
-      next = withOg;
+      next = applySeoTitle(stripLegacySocialMeta(withOg), site.seoTitle);
+      next = injectAboutBlock(next, site, catalog);
     }
     if (next !== html) fs.writeFileSync(file, next);
   }
@@ -366,6 +445,7 @@ function build() {
 module.exports = {
   escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, generateHtml,
   injectOgBlock, ogMetaBlock, ensureGlobalJs, ensureMetaDescription, toyUrl, ogImageUrl,
+  applySeoTitle, relatedSites, aboutBlock, injectAboutBlock, stripLegacySocialMeta,
   generateSitemap, generateRobots, renderJsonLd, generateLlmsTxt, versionGlobals,
 };
 
