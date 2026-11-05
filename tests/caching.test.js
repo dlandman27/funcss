@@ -67,7 +67,7 @@ test('media rule matches deployed asset paths and nothing else', () => {
 test('every media extension deployed under sites/, og/, icons/ is covered', () => {
   const re = sourceToRegExp(mediaRule.source);
   // Text-ish types intentionally left on Vercel's revalidating default.
-  const nonMedia = new Set(['html', 'js', 'css', 'json', 'txt', 'md', 'xml', 'webmanifest']);
+  const nonMedia = new Set(['html', 'js', 'mjs', 'css', 'json', 'txt', 'md', 'xml', 'webmanifest']);
   const found = new Set();
   for (const dir of ['sites', 'og', 'icons']) {
     for (const file of fs.readdirSync(path.join(ROOT, dir), { recursive: true })) {
