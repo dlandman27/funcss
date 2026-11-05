@@ -14,6 +14,11 @@ module.exports = async (req, res) => {
   }
   try {
     const count = await redis(['hincrby', 'plays', slug, '1']);
+    // per-day tally for "Trending this week"; expires on its own after 9 days
+    const day = 'plays:d:' + new Date().toISOString().slice(0, 10);
+    redis(['hincrby', day, slug, '1'])
+      .then(() => redis(['expire', day, String(9 * 86400)]))
+      .catch((err) => console.error('daily hit failed:', err));
     return res.status(200).json({ slug, count });
   } catch (err) {
     console.error('hit failed:', err);

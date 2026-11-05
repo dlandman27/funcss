@@ -33,6 +33,7 @@ function validateCatalog(catalog) {
     slugs.add(site.slug);
     if (!site.name) throw new Error(`missing name: ${site.slug}`);
     if (typeof site.visible !== 'boolean') throw new Error(`visible must be boolean: ${site.slug}`);
+    if ('pick' in site && typeof site.pick !== 'boolean') throw new Error(`pick must be boolean: ${site.slug}`);
     if (typeof site.random !== 'boolean') throw new Error(`random must be boolean: ${site.slug}`);
     if (!keys.has(site.section)) throw new Error(`unknown section "${site.section}": ${site.slug}`);
     if (site.visible && !(typeof site.description === 'string' && site.description.trim())) {
@@ -265,7 +266,7 @@ function renderCard(site, sectionTitle) {
   const srcset = smallPath !== imagePath && fs.existsSync(path.join(ROOT, smallPath))
     ? ` srcset="${smallPath} 200w, ${imagePath} 400w" sizes="(max-width: 320px) 100vw, 200px"` : '';
   return [
-    `                <div class="site-card${hasImage ? ' has-image' : ''}" data-categories="${site.section}" data-created="${site.created}">`,
+    `                <div class="site-card${hasImage ? ' has-image' : ''}" data-categories="${site.section}" data-created="${site.created}"${site.pick ? ' data-pick="1"' : ''}>`,
     `                    <a href="${site.slug}/">`,
     ...(hasImage ? [`                        <img class="site-image" src="${imagePath}"${srcset} alt="${escapeHtml(site.name)}" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">`] : []),
     '                        <div class="card-copy">',

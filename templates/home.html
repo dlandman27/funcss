@@ -645,18 +645,15 @@
             padding-bottom: 40px;
         }
 
-        /* Sticky search + sort bar — sticks to the top once you scroll
-           down into the directory */
+        /* Search + sort bar: sits at the top of the catalog, then sticks
+           to the top of the screen once you scroll it there */
         .sites-header {
-            visibility: hidden;
-            pointer-events: none;
             position: sticky;
             top: 8px;
             z-index: 900;
             padding: 0 20px;
         }
 
-        .sites-header.is-visible { visibility: visible; pointer-events: auto; }
 
         .sites-header-inner {
             max-width: 848px;
@@ -1284,6 +1281,99 @@
             margin: 30px 0 0;
         }
 
+        #featured .all-title {
+            margin-top: 40px;
+        }
+
+        #featured .rail-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        #featured .rail-head .rail-title {
+            margin: 0;
+        }
+
+        #featured .rail-tools {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: none;
+        }
+
+        /* reset the site's chunky default button look for these small controls */
+        #featured .rail-tools button {
+            font-family: var(--font-display);
+            box-shadow: none;
+            transform: none;
+            transition: background-color .12s, opacity .12s;
+        }
+
+        #featured .rail-more {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--ink);
+            background: none;
+            border: 0;
+            border-radius: 999px;
+            padding: 6px 10px;
+            margin-right: 2px;
+            white-space: nowrap;
+        }
+
+        #featured .rail-more:hover {
+            background: rgba(32, 26, 23, 0.08);
+            box-shadow: none;
+            transform: none;
+        }
+
+        #featured .rail-arrow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 50%;
+            border: 2.5px solid var(--ink);
+            background: #fff;
+            color: var(--ink);
+        }
+
+        #featured .rail-arrow svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        #featured .rail-arrow:hover:not(:disabled) {
+            background: var(--sun, #ffd34d);
+            box-shadow: none;
+            transform: none;
+        }
+
+        #featured .rail-arrow:active:not(:disabled) {
+            background: var(--ink);
+            color: #fff;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #featured .rail-arrow[hidden] { display: none; }
+
+        #featured .rail-arrow:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        /* phones swipe; the arrows would just take up room */
+        @media (hover: none) {
+            #featured .rail-arrow { display: none; }
+        }
+
+
         #featured .rail {
             display: flex;
             gap: 18px;
@@ -1291,7 +1381,18 @@
             overflow-x: auto;
             padding: 6px 6px 18px;
             scroll-snap-type: x proximity;
+            scroll-padding-inline: 6px;
             -webkit-overflow-scrolling: touch;
+        }
+
+        #featured .rail.is-dragging {
+            cursor: grabbing;
+            scroll-snap-type: none;
+            user-select: none;
+        }
+
+        #featured .rail.is-dragging a {
+            pointer-events: none;
         }
 
         #featured .rail .site-card {
@@ -2483,8 +2584,9 @@
                 <h2>The Catalog</h2>
                 <span id="catalogCount" role="status" aria-live="polite"></span>
             </div>
-            <!-- Featured rails (New / Hottest) — populated by JS from card data,
-                 hidden automatically while searching or filtering -->
+            <!-- Shelves (Top picks / Trending / New / one per category) — built by
+                 JS from the cards below, hidden automatically while searching or filtering -->
+            <div id="featured"></div>
 
 
 <div class="catalog-empty" id="catalogEmpty" hidden>
@@ -2890,7 +2992,7 @@
                 }
             });
 
-            // ---- Featured rails: New / Hottest --------------------------------
+            // ---- Shelves: Top picks / Trending / New / one per category -------
             const featured = document.getElementById('featured');
             const cardSlug = (card) => {
                 const link = card.querySelector('a');
@@ -2898,12 +3000,50 @@
                     ? (link.getAttribute('href') || '').replace(/^\/?(?:sites\/)?/, '').replace(/\/$/, '').toLowerCase()
                     : '';
             };
+            const allCards = Array.from(siteCards);
+            const CATS = Array.from(categorySelect.options)
+                .filter(o => o.value !== 'all')
+                .map(o => ({ key: o.value, title: o.textContent }));
 
-            function buildRail(id, title, cards) {
-                if (!featured || !cards.length || document.getElementById(id)) return;
+            // Reserve a slot per shelf up front so shelves that wait on play
+            // counts still land in the right order.
+            const shelfBlocks = {};
+            if (featured) {
+                ['railPicks', 'railTrending', 'railNew', ...CATS.map(c => 'rail-' + c.key)].forEach(id => {
+                    const block = document.createElement('div');
+                    block.className = 'rail-block';
+                    featured.appendChild(block);
+                    shelfBlocks[id] = block;
+                });
+                const all = document.createElement('h2');
+                all.className = 'category-title rail-title all-title';
+                all.textContent = 'Everything, A–Z';
+                featured.appendChild(all);
+            }
+
+            function buildRail(id, title, cards, seeAllCategory) {
+                const block = shelfBlocks[id];
+                if (!block || !cards.length || document.getElementById(id)) return;
+                const head = document.createElement('div');
+                head.className = 'rail-head';
                 const heading = document.createElement('h2');
                 heading.className = 'category-title rail-title';
                 heading.innerHTML = title;   // static strings only (may contain an icon)
+                head.appendChild(heading);
+                const tools = document.createElement('div');
+                tools.className = 'rail-tools';
+                if (seeAllCategory) {
+                    const more = document.createElement('button');
+                    more.type = 'button';
+                    more.className = 'rail-more';
+                    more.textContent = 'See all';
+                    more.addEventListener('click', () => {
+                        categorySelect.value = seeAllCategory;
+                        categorySelect.dispatchEvent(new Event('change'));
+                        document.getElementById('all-sites').scrollIntoView({ behavior: 'smooth' });
+                    });
+                    tools.appendChild(more);
+                }
                 const rail = document.createElement('div');
                 rail.className = 'rail';
                 rail.id = id;
@@ -2912,12 +3052,75 @@
                     clone.classList.remove('hidden');
                     rail.appendChild(clone);
                 });
-                featured.appendChild(heading);
-                featured.appendChild(rail);
+                const arrows = ['prev', 'next'].map(dir => {
+                    const arrow = document.createElement('button');
+                    arrow.type = 'button';
+                    arrow.className = 'rail-arrow';
+                    arrow.setAttribute('aria-label', (dir === 'prev' ? 'Scroll left: ' : 'Scroll right: ') + heading.textContent.trim());
+                    arrow.innerHTML = dir === 'prev'
+                        ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                        : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                    arrow.addEventListener('click', () => {
+                        rail.scrollBy({ left: (dir === 'prev' ? -1 : 1) * rail.clientWidth * 0.85, behavior: 'smooth' });
+                    });
+                    tools.appendChild(arrow);
+                    return arrow;
+                });
+                head.appendChild(tools);
+                block.appendChild(head);
+                block.appendChild(rail);
+                enableRailScrolling(rail, arrows[0], arrows[1]);
             }
 
-            // New rail: same freshness window as the badges, newest first
-            const newCards = Array.from(siteCards)
+            // Arrows fade out at either end of a shelf; mice can
+            // also click-and-drag a shelf (touch already swipes natively).
+            function enableRailScrolling(rail, prev, next) {
+                const sync = () => {
+                    const max = rail.scrollWidth - rail.clientWidth;
+                    prev.disabled = rail.scrollLeft <= 12;
+                    next.disabled = rail.scrollLeft >= max - 12;
+                    // nothing to scroll at all: hide both
+                    prev.hidden = next.hidden = max <= 12;
+                };
+                rail.addEventListener('scroll', sync, { passive: true });
+                window.addEventListener('resize', sync);
+                requestAnimationFrame(sync);
+
+                let startX = 0, startLeft = 0, dragging = false, moved = false;
+                rail.addEventListener('pointerdown', e => {
+                    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+                    dragging = true; moved = false;
+                    startX = e.clientX; startLeft = rail.scrollLeft;
+                });
+                window.addEventListener('pointermove', e => {
+                    if (!dragging) return;
+                    const dx = e.clientX - startX;
+                    if (!moved && Math.abs(dx) < 6) return;
+                    if (!moved) { moved = true; rail.classList.add('is-dragging'); }
+                    rail.scrollLeft = startLeft - dx;
+                });
+                window.addEventListener('pointerup', () => {
+                    if (!dragging) return;
+                    dragging = false;
+                    rail.classList.remove('is-dragging');
+                });
+                // a drag shouldn't also open the card it ended on
+                rail.addEventListener('click', e => {
+                    if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
+                }, true);
+                rail.addEventListener('dragstart', e => e.preventDefault());
+            }
+
+            // Top picks: hand-picked in catalog.json (pick: true), shuffled each visit
+            const picks = allCards.filter(card => card.dataset.pick);
+            for (let i = picks.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [picks[i], picks[j]] = [picks[j], picks[i]];
+            }
+            buildRail('railPicks', '♥ Top picks', picks);
+
+            // New: same freshness window as the badges, newest first
+            const newCards = allCards
                 .filter(card => {
                     const d = card.dataset.created;
                     if (!d) return false;
@@ -2925,13 +3128,20 @@
                     return age >= 0 && age < NEW_FOR_DAYS;
                 })
                 .sort((a, b) => (b.dataset.created || '').localeCompare(a.dataset.created || ''))
-                .slice(0, 8);
+                .slice(0, 12);
             buildRail('railNew', '★ New', newCards);
 
             // ---- Play counts (live, from /api/counts) -------------------------
-            fetch('/api/counts')
-                .then(r => (r.ok ? r.json() : null))
-                .then(countsBySlug => {
+            const getCounts = (url) => fetch(url).then(r => (r.ok ? r.json() : null)).catch(() => null);
+            const lifetimeCounts = getCounts('/api/counts');
+            const weekCounts = getCounts('/api/counts?range=week');
+            const ranked = (counts, min) => allCards
+                .map(card => ({ card, n: (counts && counts[cardSlug(card)]) || 0 }))
+                .filter(x => x.n >= min)
+                .sort((a, b) => b.n - a.n)
+                .map(x => x.card);
+
+            lifetimeCounts.then(countsBySlug => {
                     if (!countsBySlug) return;
 
                     // Real lifetime total → the liveness bar's honest anchor.
@@ -2939,14 +3149,7 @@
                         .reduce((a, b) => a + (Number(b) || 0), 0);
                     if (window.__setLivenessToys) window.__setLivenessToys(total);
 
-                    // Hottest rail: most-played sites (built before the sticker
-                    // pass below, so its clones get play stickers too)
-                    const hotCards = Array.from(siteCards)
-                        .map(card => ({ card, n: countsBySlug[cardSlug(card)] || 0 }))
-                        .filter(x => x.n >= 5)
-                        .sort((a, b) => b.n - a.n)
-                        .slice(0, 8)
-                        .map(x => x.card);
+                    const hotCards = ranked(countsBySlug, 5).slice(0, 8);
 
                     // Weight the activity ticker toward sites people actually play.
                     if (window.__setLivenessHot) {
@@ -2955,7 +3158,7 @@
                             .filter(Boolean));
                     }
 
-                    // red chip on the originals first, so the rail clones carry it
+                    // red chip on the originals first, so the shelf clones carry it
                     hotCards.forEach(card => {
                         const link = card.querySelector('a');
                         if (!link || link.querySelector('.hot-badge')) return;
@@ -2966,8 +3169,6 @@
                         chip.title = 'Hot site';
                         link.appendChild(chip);
                     });
-
-                    buildRail('railHot', '<i class="icon" aria-hidden="true"><svg viewBox="0 0 448 512"><use href="#i-fire"/></svg></i> Hottest', hotCards);
 
                     document.querySelectorAll('.site-card a').forEach(link => {
                         const slug = (link.getAttribute('href') || '')
@@ -2982,8 +3183,27 @@
                         el.title = n + ' plays';
                         (link.querySelector('.card-copy') || link).appendChild(el);
                     });
-                })
-                .catch(() => {}); // local dev / API down → no counts, no errors
+            });
+
+            // Trending + category shelves wait for counts (or their failure),
+            // so they're ordered by plays when the API is up
+            Promise.all([lifetimeCounts, weekCounts]).then(([life, week]) => {
+                const weekTop = ranked(week, 3);
+                if (weekTop.length >= 6) {
+                    buildRail('railTrending', '<i class="icon" aria-hidden="true"><svg viewBox="0 0 448 512"><use href="#i-fire"/></svg></i> Trending this week', weekTop.slice(0, 12));
+                } else {
+                    // not a week of data yet: fall back to all-time plays
+                    buildRail('railTrending', '<i class="icon" aria-hidden="true"><svg viewBox="0 0 448 512"><use href="#i-fire"/></svg></i> Most played', ranked(life, 5).slice(0, 12));
+                }
+                const plays = card => (life && life[cardSlug(card)]) || 0;
+                CATS.forEach(c => {
+                    const cards = allCards
+                        .filter(card => card.dataset.categories.split(' ').includes(c.key))
+                        .sort((a, b) => plays(b) - plays(a))
+                        .slice(0, 14);
+                    buildRail('rail-' + c.key, c.title, cards, c.key);
+                });
+            });
 
             const rickrollTerms = ['rickroll', 'rick roll', 'rick astley', 'never gonna give you up'];
 

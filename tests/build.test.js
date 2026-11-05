@@ -112,12 +112,17 @@ test('generated homepage includes the new-site badge logic', () => {
   const path = require('path');
   const root = path.join(__dirname, '..');
   const template = fs.readFileSync(path.join(root, 'templates', 'home.html'), 'utf8');
-  const html = generateHtml(template, clone(CATALOG));
+  const catalog = clone(CATALOG);
+  catalog.sites[0].pick = true;
+  const html = generateHtml(template, catalog);
   assert.ok(html.includes("badge.className = 'new-badge'"), 'homepage should render .new-badge elements');
   assert.ok(html.includes('data-created'), 'cards should carry data-created');
   assert.ok(html.includes('aria-label="Filter by category"'), 'catalog should offer a category filter');
   assert.ok(html.includes("buildRail('railNew'"), 'homepage should build the New rail');
-  assert.ok(html.includes("buildRail('railHot'"), 'homepage should build the Hottest rail');
+  assert.ok(html.includes("buildRail('railTrending'"), 'homepage should build the Trending rail');
+  assert.ok(html.includes("buildRail('railPicks'"), 'homepage should build the Top picks rail');
+  assert.ok(html.includes('<div id="featured"></div>'), 'the shelves need their #featured container');
+  assert.ok(html.includes('data-pick="1"'), 'picked sites should carry data-pick');
   assert.ok(html.includes("chip.className = 'hot-badge'"), 'homepage should render .hot-badge chips');
 });
 
@@ -317,7 +322,8 @@ test('generated homepage includes the play-counts fetch', () => {
   const root = path.join(__dirname, '..');
   const template = fs.readFileSync(path.join(root, 'templates', 'home.html'), 'utf8');
   const html = generateHtml(template, clone(CATALOG));
-  assert.ok(html.includes("fetch('/api/counts')"), 'homepage should fetch /api/counts');
+  assert.ok(html.includes("getCounts('/api/counts')"), 'homepage should fetch /api/counts');
+  assert.ok(html.includes("getCounts('/api/counts?range=week')"), 'homepage should fetch weekly counts for Trending');
   assert.ok(html.includes("el.className = 'plays'"), 'homepage should render .plays elements');
 });
 

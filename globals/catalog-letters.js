@@ -22,7 +22,7 @@
     search.focus();
   });
   let pending = false;
-  let searchVisible = false;
+  let searchVisible = true; // shown from the start; it just sticks on scroll
   let searchAnimation;
   let animateSearch;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -132,8 +132,8 @@
     }
     const heroVisible = hero && hero.getBoundingClientRect().bottom > 0;
     rail.hidden = !visible.length || heroVisible;
-    const filtering = search.value.trim() !== '' || category.value !== 'all';
-    setSearchVisible(!heroVisible || filtering);
+    // the search bar always shows in place and simply sticks once it reaches the top
+    setSearchVisible(true);
   }
 
   function updateMatches() {
