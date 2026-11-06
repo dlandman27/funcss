@@ -1191,6 +1191,23 @@
             transform: rotate(-3deg) scale(1.08);
         }
 
+        .site-card.has-image .plays-chip {
+            position: absolute;
+            left: 8px;
+            bottom: 8px;
+            z-index: 2;
+            padding: 3px 8px;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            background: var(--card);
+            color: var(--ink);
+            font: 900 0.68rem/1.2 'Arial Black', 'Arial Bold', Arial, sans-serif;
+            letter-spacing: .02em;
+            box-shadow: 2px 2px 0 var(--ink);
+            pointer-events: none;
+            transition: opacity .2s ease;
+        }
+
         .site-card.has-image .card-copy .plays {
             display: inline-block;
             position: static;
@@ -3182,6 +3199,15 @@
                             : n) + ' plays';
                         el.title = n + ' plays';
                         (link.querySelector('.card-copy') || link).appendChild(el);
+                        // picture cards hide the copy, so pin a compact chip on the art too
+                        if (link.closest('.site-card.has-image') && !link.querySelector('.plays-chip')) {
+                            const chip = document.createElement('div');
+                            chip.className = 'plays-chip';
+                            chip.textContent = el.textContent.replace(' plays', '');
+                            chip.title = n.toLocaleString() + ' plays';
+                            chip.setAttribute('aria-label', n.toLocaleString() + ' plays');
+                            link.appendChild(chip);
+                        }
                     });
             });
 
