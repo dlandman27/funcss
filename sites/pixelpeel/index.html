@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Peel</title>
+<meta name="description" content="There is a picture inside the circle. Move your mouse over it until the circle gives up.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/pixelpeel/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/pixelpeel/">
+    <meta property="og:title" content="Pixel Peel">
+    <meta property="og:description" content="There is a photo inside the circle. A pug, a tiger, a typewriter. Move your mouse over it until the circle gives up.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/pixelpeel.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pixel Peel">
+    <meta name="twitter:description" content="There is a photo inside the circle. A pug, a tiger, a typewriter. Move your mouse over it until the circle gives up.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/pixelpeel.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root {
+    --bg: #141210;
+    --ink: #f2ede2;
+    --muted: #8f877c;
+    --accent: #ffd34d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.4 Georgia, "Times New Roman", serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  header {
+    width: 100%;
+    max-width: 720px;
+    padding: 18px 16px 10px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  h1 {
+    margin: 0;
+    font: 700 18px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: .02em;
+  }
+  .meta { color: var(--muted); font-style: italic; font-size: 14px; white-space: nowrap; }
+  .meta b { color: var(--ink); font-style: normal; font-variant-numeric: tabular-nums; }
+  main {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 16px 16px;
+  }
+  canvas {
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+    border-radius: 4px;
+  }
+  .reveal {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    translate: -50% 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 12px 16px;
+    background: rgba(20, 18, 16, .92);
+    border: 1px solid rgba(242, 237, 226, .18);
+    border-radius: 14px;
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: opacity .35s ease, transform .35s ease;
+  }
+  .reveal.show { opacity: 1; transform: none; pointer-events: auto; }
+  .reveal p { margin: 0; font-style: italic; }
+  .reveal p b { font-style: normal; }
+  .reveal small { color: var(--muted); font-size: 12px; margin-left: 4px; }
+  .reveal a, .reveal button {
+    font: 600 14px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+    border-radius: 999px;
+    padding: 9px 14px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .reveal a { background: var(--accent); color: #201a17; border: 0; }
+  .reveal button { background: none; color: var(--ink); border: 1px solid rgba(242, 237, 226, .35); }
+  .reveal a:hover { filter: brightness(1.08); }
+  .reveal button:hover { background: rgba(242, 237, 226, .08); }
+  .hint {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    translate: -50% 0;
+    color: var(--muted);
+    font-style: italic;
+    transition: opacity .6s ease;
+    pointer-events: none;
+    text-align: center;
+    width: calc(100vw - 32px);
+  }
+  .hint.gone { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { transition: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pixel Peel</h1>
+  <span class="meta"><span id="which">mystery photo</span> · <b id="pct">0%</b></span>
+</header>
+<main>
+  <canvas id="c" aria-label="A circle hiding a picture. Move over it to split it into smaller circles."></canvas>
+</main>
+<div class="hint" id="hint">Move over the circle.</div>
+<div class="reveal" id="reveal" role="status" aria-live="polite">
+  <p>It was <b id="answer"></b>. <small id="credit"></small></p>
+  <a id="play" href="/" target="_blank" rel="noopener">See the photo →</a>
+  <button type="button" id="again">Another one</button>
+</div>
+
+<script>
+(() => {
+
+  const N = 512;          // working resolution of the picture
+  const MIN = 4;          // smallest circle (in picture pixels)
+  const COUNTED = 8;      // a region counts as "peeled" once its circles are this small
+  const REVEAL_AT = 0.9;
+  const GROW_MS = 150;
+  const BG = '#141210';
+
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const pctEl = document.getElementById('pct');
+  const whichEl = document.getElementById('which');
+  const hint = document.getElementById('hint');
+  const reveal = document.getElementById('reveal');
+
+  let sumR, sumG, sumB;   // summed-area tables, (N+1)^2
+  let root = null, current = null, peeled = 0, revealed = false;
+  let scale = 1, dpr = 1;
+  const anims = [];       // parents whose four children are still growing
+  let raf = 0;
+
+  // hand-picked Lorem Picsum photos with an obvious subject: [id, what it is, photographer]
+  const PHOTOS = [
+    [0,"a laptop","Alejandro Escamilla"],
+    [21,"a pair of high heels","Alejandro Escamilla"],
+    [30,"a coffee mug","Shyamanta Baruah"],
+    [40,"a cat's nose","Ryan Mcguire"],
+    [45,"a tuk-tuk","Alan Haverty"],
+    [58,"a lighthouse","Tony Naccarato"],
+    [63,"a cup of coffee","Justin Leibow"],
+    [64,"a girl in sunglasses","Alexander Shustov"],
+    [75,"grapes","Jassy Onyae"],
+    [76,"a bike by a shed","Alexander Shustov"],
+    [102,"raspberries","Ben Moore"],
+    [103,"sneakers","Ilham Rahmansyah"],
+    [104,"a dreamcatcher","Dyaa Eldin"],
+    [111,"a vintage car","Gabe Rodriguez"],
+    [129,"a couple on a bench","Charlie Foster"],
+    [133,"two old cars","Dietmar Becker"],
+    [146,"a tricycle","Florian Klauer"],
+    [152,"purple flowers","Steven Spassov"],
+    [169,"two dogs","Noel Lopez"],
+    [174,"a hot air balloon","Linh Nguyen"],
+    [175,"a clock","petradr"],
+    [183,"a VW van","müllermarc"],
+    [200,"a highland cow","Elias Carlsson"],
+    [211,"a boat","Martin Wessely"],
+    [219,"a leopard","Martyn Seddon"],
+    [237,"a black dog","André Spieker"],
+    [239,"a dandelion","Coley Christine"],
+    [244,"a pelican","Yair Hazout"],
+    [248,"a cactus","Oliver Pacas"],
+    [250,"a camera","Nicola Perantoni"],
+    [275,"a seagull","davide ragusa"],
+    [292,"a red onion","Webvilla"],
+    [306,"a water lily","Schicka"],
+    [312,"honey","Sonja Langford"],
+    [319,"a camera","Kristian Karlsson"],
+    [326,"a cup of tea","Dominik Martin"],
+    [328,"a cable car","Nathalie Gouzée"],
+    [336,"padlocks","Sylwia Bartyzel"],
+    [357,"an alarm clock","Sonja Langford"],
+    [360,"flowers","Cas Cornelissen"],
+    [364,"an airplane","José Martín"],
+    [367,"an e-reader","James Tarbotton"],
+    [372,"a lifeguard tower","Gabriel Santiago"],
+    [376,"taxis","Andrew Ruiz"],
+    [392,"the Golden Gate Bridge","Chris Brignola"],
+    [401,"a hot air balloon","Austin Ban"],
+    [403,"a typewriter","Sergey Zolkin"],
+    [407,"a sparkler","Kelley Bozarth"],
+    [419,"a tram","POR7O"],
+    [425,"coffee beans","Daniel Ruswick"],
+    [428,"a yellow house","Thong Vo"],
+    [429,"raspberries","Glen Carrie"],
+    [431,"a latte","Carli Jean"],
+    [433,"a bear","Thomas Lefebvre"],
+    [435,"a camera","chancema"],
+    [437,"a red brick building","Bonnie Meisels"],
+    [442,"a map","Sylwia Bartyzel"],
+    [451,"a motel sign","Steven Lewis"],
+    [454,"a camera","Mia Domenico"],
+    [469,"a canoe","Matthew Clark"],
+    [486,"a typewriter","Florian Klauer"],
+    [488,"a salad","Monstruo Estudio"],
+    [491,"tools","Todd Quackenbush"],
+    [493,"strawberries and yogurt","Jeffrey Deng"],
+    [503,"the Golden Gate Bridge","Ramiro Checchi"],
+    [509,"a waterfall","Jeff Sheldon"],
+    [514,"a Land Rover","Jeff Sheldon"],
+    [517,"oranges","Brian Jimenez"],
+    [529,"a desk","Jeff Sheldon"],
+    [531,"cameras","Jeff Sheldon"],
+    [535,"coat hangers","Jeff Sheldon"],
+    [553,"park benches","Rula Sibai"],
+    [577,"an elk","Thomas Lefebvre"],
+    [580,"a flag","Christopher Skor"],
+    [581,"jellyfish","Lance Anderson"],
+    [582,"a coyote","Levi Saunders"],
+    [584,"horses","Bethany Legg"],
+    [585,"a stadium","Abigail  Keenan"],
+    [593,"a tiger","Paula Borowska"],
+    [598,"a sailboat","Pawel Kadysz"],
+    [619,"a red mailbox","Davey Heuser"],
+    [625,"chairs","Breather"],
+    [629,"the Leaning Tower of Pisa","davide ragusa"],
+    [639,"a Ferris wheel","Ilya"],
+    [655,"a VW bus","Kyle Szegedi"],
+    [659,"a husky","Alexander Dimitrov"],
+    [660,"a sparkler","Morgan Sessions"],
+    [669,"a guy in a beanie","Luke Pamer"],
+    [670,"a red tram","Gabriel Garcia Marengo"],
+    [674,"grapes","Maja Petric"],
+    [687,"binoculars","davide ragusa"],
+    [692,"Grand Central","Nicolai Berntsen"],
+    [696,"tulips","Leigh Kendell"],
+    [718,"a wolf","Josh Felise"],
+    [736,"the Empire State Building","Ben Dumond"],
+    [742,"the Statue of Liberty","Anthony DELANOIX"],
+    [743,"the Flatiron Building","Anthony DELANOIX"],
+    [755,"a cup of coffee","Padurariu Alexandru"],
+    [783,"a monkey","Damir Kotoric"],
+    [797,"a red umbrella","Gabriel Santiago"],
+    [798,"a daisy","Aaron Burden"],
+    [815,"a heart made of hands","Mayur Gala"],
+    [818,"the Statue of Liberty","Anthony DELANOIX"],
+    [819,"a fire station","Verne Ho"],
+    [822,"a mom and her kid","London Scout"],
+    [823,"a photographer","Benjamin Combs"],
+    [824,"a pineapple","Pineapples"],
+    [828,"fireworks","kazuend"],
+    [832,"a woman reading","hieu le"],
+    [835,"cookies","Olenka Kotyk"],
+    [836,"a guitarist","Lechon Kirb"],
+    [837,"a bulldog","Yamon  Figurs"],
+    [838,"a mom and her kid","London Scout"],
+    [839,"a girl on a bike","Abigail  Keenan"],
+    [841,"a swimmer","Todd Quackenbush"],
+    [856,"a guy in a suit","Olu Eletu"],
+    [859,"a bike by a red wall","Brennan Ehrhardt"],
+    [870,"a lighthouse","Joshua Hibbert"],
+    [881,"a jellyfish","贝莉儿 NG"],
+    [889,"frozen berries","Devin Rajaram"],
+    [937,"a polar bear","Sergei Akulich"],
+    [946,"a green door","Padurariu Alexandru"],
+    [959,"fireworks","kazuend"],
+    [976,"tulips","Ales Krivec"],
+    [977,"a mushroom","Manuel Barroso Parejo"],
+    [1003,"a fawn","E+N Photographies"],
+    [1010,"a kid reading","Samantha Sophia"],
+    [1011,"a canoe","Roberto Nickson"],
+    [1020,"a bear","Adam Willoughby-Knox"],
+    [1024,"an eagle","Niko Virtanen"],
+    [1025,"a pug in a blanket","Matthew Wiebe"],
+    [1027,"a portrait","Roksolana Zasiadko"],
+    [1040,"a castle","Rachel Davis"],
+    [1062,"a pug in a blanket","Matthew Wiebe"],
+    [1066,"a baby","Giu Vicente"],
+    [1069,"a jellyfish","Marat Gilyadzinov"],
+    [1071,"a vintage car","Tim Stief"],
+    [1072,"an old truck","jamie mink"],
+    [1074,"a lioness","Samuel Scrimshaw"],
+    [1080,"strawberries","veeterzy"],
+    [1082,"a piano","Lukas Budimaier"],
+    [1084,"walruses","Jay Ruzesky"]
+  ];
+  let lastPhoto = -1;
+  function pickPhoto() {
+    let i;
+    do { i = Math.floor(Math.random() * PHOTOS.length); } while (i === lastPhoto);
+    lastPhoto = i;
+    const [id, what, author] = PHOTOS[i];
+    return { src: 'https://picsum.photos/id/' + id + '/' + N + '/' + N, what, author, url: 'https://picsum.photos/id/' + id + '/1600/1600' };
+  }
+
+  function buildTables(img) {
+    const off = document.createElement('canvas');
+    off.width = off.height = N;
+    const octx = off.getContext('2d', { willReadFrequently: true });
+    octx.drawImage(img, 0, 0, N, N);
+    const px = octx.getImageData(0, 0, N, N).data;
+    const W = N + 1;
+    sumR = new Float64Array(W * W); sumG = new Float64Array(W * W); sumB = new Float64Array(W * W);
+    for (let y = 0; y < N; y++) {
+      let r = 0, g = 0, b = 0;
+      for (let x = 0; x < N; x++) {
+        const i = (y * N + x) * 4;
+        r += px[i]; g += px[i + 1]; b += px[i + 2];
+        const k = (y + 1) * W + (x + 1), up = y * W + (x + 1);
+        sumR[k] = sumR[up] + r; sumG[k] = sumG[up] + g; sumB[k] = sumB[up] + b;
+      }
+    }
+  }
+
+  function meanColor(x, y, s) {
+    const W = N + 1;
+    const a = y * W + x, b = y * W + x + s, c = (y + s) * W + x, d = (y + s) * W + x + s;
+    const n = s * s;
+    const r = (sumR[d] - sumR[b] - sumR[c] + sumR[a]) / n;
+    const g = (sumG[d] - sumG[b] - sumG[c] + sumG[a]) / n;
+    const bl = (sumB[d] - sumB[b] - sumB[c] + sumB[a]) / n;
+    return `rgb(${r | 0},${g | 0},${bl | 0})`;
+  }
+
+  const node = (x, y, s, parent) => ({ x, y, s, parent, kids: null, color: meanColor(x, y, s) });
+
+  // ---- drawing (in picture coordinates; the transform maps them to the screen)
+  function clearSquare(n) {
+    ctx.fillStyle = BG;
+    ctx.fillRect(n.x, n.y, n.s, n.s);
+  }
+  function circle(cx, cy, r, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  function drawLeaves(n) {
+    if (n.kids) n.kids.forEach(drawLeaves);
+    else circle(n.x + n.s / 2, n.y + n.s / 2, n.s / 2, n.color);
+  }
+  function redrawAll() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+    if (root) drawLeaves(root);
+  }
+
+  // a split animates its four children out of the parent's middle
+  function drawSplit(p, t) {
+    clearSquare(p);
+    const e = 1 - Math.pow(1 - t, 3);
+    const pcx = p.x + p.s / 2, pcy = p.y + p.s / 2;
+    for (const k of p.kids) {
+      const cx = pcx + (k.x + k.s / 2 - pcx) * e;
+      const cy = pcy + (k.y + k.s / 2 - pcy) * e;
+      circle(cx, cy, (k.s / 2) * (0.35 + 0.65 * e), k.color);
+    }
+  }
+  function finishAnim(p) {
+    const i = anims.findIndex(a => a.p === p);
+    if (i < 0) return;
+    anims.splice(i, 1);
+    drawSplit(p, 1);
+  }
+  function tick(now) {
+    raf = 0;
+    for (let i = anims.length - 1; i >= 0; i--) {
+      const a = anims[i];
+      const t = Math.max(0, Math.min(1, (now - a.t0) / GROW_MS));
+      drawSplit(a.p, t);
+      if (t >= 1) anims.splice(i, 1);
+    }
+    if (anims.length) raf = requestAnimationFrame(tick); // sleeps when nothing is growing
+  }
+  const wake = () => { if (!raf && anims.length) raf = requestAnimationFrame(tick); };
+
+  function split(n) {
+    if (n.kids || n.s <= MIN) return null;
+    // a child splitting mid-animation: settle its parent first
+    if (n.parent) finishAnim(n.parent);
+    const h = n.s / 2;
+    n.kids = [node(n.x, n.y, h, n), node(n.x + h, n.y, h, n), node(n.x, n.y + h, h, n), node(n.x + h, n.y + h, h, n)];
+    if (h === COUNTED) peeled += n.s * n.s;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) drawSplit(n, 1);
+    else { anims.push({ p: n, t0: performance.now() }); wake(); }
+    updateProgress();
+    return n.kids;
+  }
+
+  function leafAt(x, y) {
+    let n = root;
+    while (n && n.kids) {
+      const h = n.s / 2;
+      n = n.kids[(x >= n.x + h ? 1 : 0) + (y >= n.y + h ? 2 : 0)];
+    }
+    return n;
+  }
+
+  // ---- pointer: sample along the path so fast swipes still peel everything they cross
+  let last = null, lastBorn = null;
+  function visit(x, y) {
+    if (x < 0 || y < 0 || x >= N || y >= N) return;
+    const n = leafAt(x, y);
+    if (!n || n === lastBorn) return;
+    const dx = x - (n.x + n.s / 2), dy = y - (n.y + n.s / 2);
+    if (dx * dx + dy * dy > (n.s / 2) * (n.s / 2)) return; // in the gap between circles
+    const kids = split(n);
+    // the child we're now standing in won't split until we move into another one
+    if (kids) lastBorn = leafAt(x, y);
+  }
+  function moveTo(cx, cy) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (cx - rect.left) / scale, y = (cy - rect.top) / scale;
+    if (last) {
+      const d = Math.hypot(x - last.x, y - last.y);
+      const steps = Math.min(200, Math.ceil(d / 2));
+      for (let i = 1; i <= steps; i++) visit(last.x + (x - last.x) * i / steps, last.y + (y - last.y) * i / steps);
+    } else visit(x, y);
+    last = { x, y };
+    if (!hint.classList.contains('gone')) hint.classList.add('gone');
+  }
+  canvas.addEventListener('mousemove', e => moveTo(e.clientX, e.clientY));
+  canvas.addEventListener('mouseleave', () => { last = null; lastBorn = null; });
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); last = null; lastBorn = null; const t = e.touches[0]; moveTo(t.clientX, t.clientY); }, { passive: false });
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.touches) moveTo(t.clientX, t.clientY); }, { passive: false });
+  canvas.addEventListener('touchend', () => { last = null; lastBorn = null; });
+
+  function updateProgress() {
+    const p = peeled / (N * N);
+    pctEl.textContent = Math.floor(p * 100) + '%';
+    if (!revealed && p >= REVEAL_AT) {
+      revealed = true;
+      reveal.classList.add('show');
+      try { localStorage.setItem('pixelpeel:peeled', String(+(localStorage.getItem('pixelpeel:peeled') || 0) + 1)); } catch {}
+    }
+  }
+
+  // ---- layout
+  function resize() {
+    const header = document.querySelector('header').offsetHeight;
+    const size = Math.max(200, Math.floor(Math.min(innerWidth - 32, innerHeight - header - 32 - 76, 720)));
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    scale = size / N;
+    canvas.style.width = canvas.style.height = size + 'px';
+    canvas.width = canvas.height = Math.round(size * dpr);
+    anims.length = 0;
+    redrawAll();
+  }
+  let resizeTimer = 0;
+  addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 120); });
+
+  // ---- pictures
+  let loading = 0;
+  function load(label, tries = 0) {
+    const token = ++loading;
+    const photo = pickPhoto();
+    if (token !== loading) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (token !== loading) return;
+      current = photo;
+      buildTables(img);
+      root = node(0, 0, N, null);
+      peeled = 0; revealed = false; anims.length = 0; last = null; lastBorn = null;
+      reveal.classList.remove('show');
+      answerEl.textContent = photo.what;
+      creditEl.textContent = 'photo: ' + photo.author;
+      play.hidden = !photo.url;
+      if (photo.url) play.href = photo.url;
+      whichEl.textContent = label;
+      updateProgress();
+      redrawAll();
+    };
+    img.onerror = () => { if (token === loading && tries < 3) load(label, tries + 1); };
+    img.src = photo.src;
+  }
+
+  const answerEl = document.getElementById('answer');
+  const creditEl = document.getElementById('credit');
+  const play = document.getElementById('play');
+  document.getElementById('again').addEventListener('click', () => load('random photo'));
+
+  resize();
+  load('mystery photo');
+})();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About Pixel Peel</h2>
+<p>There is a photo inside the circle. A pug, a tiger, a typewriter. Move your mouse over it until the circle gives up.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/ransomnote/">Ransom Note</a>: A wall of plain words. Sweep across them and each one is cut loose — new font, new color, pinned back crooked, like a ransom note assembling itself.</li>
+<li><a href="/rothkomachine/">Rothko Machine</a>: An endless stream of generated color field paintings, each with a deadpan title</li>
+<li><a href="/silk/">Silk</a>: Move your cursor and watch silky ribbons of color flow and mirror around the screen. No instructions, no UI — just trace.</li>
+<li><a href="/spirograph/">Spirograph</a>: A gear rolls inside a ring and traces the flower it was always going to make. Drag to scrub the mechanism, switch gears to layer another.</li>
+</ul>
+<p><a href="/">Browse all 209 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>
