@@ -7,7 +7,7 @@
     <title>Eyes On Me</title>
 
     <!-- Add metadata -->
-    <meta name="description" content="Interactive emoji that follows your cursor and reacts to various events">
+    <meta name="description" content="A drawn face that watches your cursor and reacts to everything your browser does">
     <!-- rsotw:og:start -->
     <link rel="canonical" href="https://randomsitesontheweb.com/eyesonme/">
     <meta property="og:type" content="website">
@@ -22,70 +22,87 @@
     <meta name="twitter:description" content="Use your imagination on this one!">
     <meta name="twitter:image" content="https://randomsitesontheweb.com/og/eyesonme.png">
     <!-- rsotw:og:end -->
-    <meta name="keywords" content="interactive emoji, cursor tracking, reactive animations">
+    <meta name="keywords" content="interactive face, cursor tracking, reactive animations, eyes follow cursor">
     <meta name="author" content="Random Sites On The Web">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='25' cy='25' r='20' fill='%23ffdb4d'/><circle cx='18' cy='20' r='4' fill='%23000'/><circle cx='32' cy='20' r='4' fill='%23000'/><path d='M15 32 Q25 40 35 32' fill='none' stroke='%23000' stroke-width='2'/></svg>">
-    
-
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'><circle cx='26' cy='26' r='21' fill='%23201a17'/><circle cx='24' cy='24' r='21' fill='%23f7c948' stroke='%23201a17' stroke-width='3'/><ellipse cx='17' cy='21' rx='5' ry='6' fill='%23fff8ef' stroke='%23201a17' stroke-width='2'/><ellipse cx='31' cy='21' rx='5' ry='6' fill='%23fff8ef' stroke='%23201a17' stroke-width='2'/><circle cx='18' cy='22' r='2.6' fill='%23201a17'/><circle cx='32' cy='22' r='2.6' fill='%23201a17'/><path d='M17 32 Q24 37 31 32' fill='none' stroke='%23201a17' stroke-width='2.5' stroke-linecap='round'/></svg>">
 
     <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --size: min(80vw, 62vh, 520px);
+        }
+        html, body { height: 100%; }
         body {
             margin: 0;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 15vw;
             overflow: hidden;
-        }
-        #emoji {
-            position: absolute;
-            transform: translate(-50%, -50%); /* Center the emoji relative to its position */
-            transition: transform 0.3s ease, left 0.3s ease, top 0.3s ease;
+            background: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, .07) 1.2px, transparent 1.2px);
+            background-size: 22px 22px;
+            -webkit-user-select: none;
             user-select: none;
-            -webkit-user-select: none; /* Safari support */
-            -moz-user-select: none; /* Firefox support */
-            -ms-user-select: none; /* IE/Edge support */
+            touch-action: manipulation;
         }
-        .whoosh {
-            position: fixed;
-            font-size: 2rem;
+        #face {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: var(--size);
+            height: var(--size);
+            transform: translate(-50%, -50%);
+            transition: transform 0.3s ease, left 0.3s ease, top 0.3s ease;
             pointer-events: none;
-            animation: fadeOut 0.5s forwards;
         }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+        #face.slow-move { transition: all 2s ease; }
+        #art {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            display: block;
+            transition: transform .45s cubic-bezier(.3, 1.4, .5, 1);
         }
-        #emoji.slow-move {
-            transition: all 2s ease;
+        #art.flip { transform: rotate(180deg); }
+        #art.squash { animation: squash .24s ease-out; }
+        #art.flip.squash { animation: none; }
+        @keyframes squash {
+            0% { transform: scale(1.06, .92); }
+            55% { transform: scale(.97, 1.04); }
+            100% { transform: scale(1, 1); }
         }
+        .eye { transform-box: fill-box; transform-origin: center; transition: transform .07s ease; }
+        #parts.blinking .eye { transform: scaleY(.08); }
+        .pupil { transition: none; }
+        .wave-hand { transform-box: fill-box; transform-origin: 50% 90%; animation: handwave .5s ease-in-out infinite alternate; }
+        @keyframes handwave { from { transform: rotate(-16deg); } to { transform: rotate(18deg); } }
+        .flame { transform-box: fill-box; transform-origin: 50% 0%; animation: flicker .12s ease-in-out infinite alternate; }
+        @keyframes flicker { from { transform: scale(.9, .8); } to { transform: scale(1.08, 1.15); } }
+        .orbit { transform-origin: 100px 100px; animation: orbit 1.6s linear infinite; }
+        @keyframes orbit { to { transform: rotate(360deg); } }
+        .zz { animation: zz 2.4s ease-in-out infinite; }
+        .zz.b { animation-delay: .8s; }
+        .zz.c { animation-delay: 1.6s; }
+        @keyframes zz {
+            0% { opacity: 0; transform: translate(0, 10px) scale(.6); }
+            30% { opacity: 1; }
+            100% { opacity: 0; transform: translate(18px, -30px) scale(1.1); }
+        }
+
+        /* the original's whole-face moves */
         @keyframes spin {
             from { transform: translate(-50%, -50%) rotate(0deg); }
             to { transform: translate(-50%, -50%) rotate(360deg); }
         }
-        .spinning {
-            animation: spin 1s linear infinite;
-        }
-        .spinning-slow {
-            animation: spin 3s linear infinite; 
-        }
-        .spinning-fast {
-            animation: spin 0.5s linear infinite;
-        }
-        .spinning-reverse {
-            animation: spin 0.5s linear infinite reverse;
-        }
+        .spinning { animation: spin 1s linear infinite; }
+        .spinning-slow { animation: spin 3s linear infinite; }
+        .spinning-fast { animation: spin 0.5s linear infinite; }
+        .spinning-reverse { animation: spin 0.5s linear infinite reverse; }
         @keyframes bounce {
             0%, 100% { transform: translate(-50%, -50%) scale(1); }
             50% { transform: translate(-50%, -50%) scale(1.3); }
         }
-        .bounce {
-            animation: bounce 0.5s ease;
-        }
-        .shake{
-            animation: shake 1s ease;
-        }
+        .bounce { animation: bounce 0.5s ease; }
+        .shake { animation: shake 1s ease; }
         @keyframes shake {
             0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
             20% { transform: translate(-50%, -50%) rotate(-20deg); }
@@ -98,520 +115,740 @@
             25% { transform: translate(-50%, -50%) rotate(-20deg); }
             75% { transform: translate(-50%, -50%) rotate(20deg); }
         }
-        .wave {
-            animation: wave 0.5s ease-in-out;
-        }
+        .wave { animation: wave 0.5s ease-in-out; }
         @keyframes shoot {
-            0% { 
-                transform: translate(-50%, -50%) scale(1); 
-                left: 50%;
-                top: 50%;
-            }
-            50% { 
-                transform: translate(-50%, -50%) scale(1);
-                left: calc(100% * var(--x-dir));
-                top: calc(100% * var(--y-dir));
-            }
-            100% { 
-                transform: translate(-50%, -50%) scale(1);
-                left: 50%;
-                top: 50%;
-            }
+            0% { transform: translate(-50%, -50%) scale(1); left: 50%; top: 50%; }
+            50% { transform: translate(-50%, -50%) scale(.6); left: calc(100% * var(--x-dir)); top: calc(100% * var(--y-dir)); }
+            100% { transform: translate(-50%, -50%) scale(1); left: 50%; top: 50%; }
         }
-        .shooting {
-            animation: shoot 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        .shooting { animation: shoot 2s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+        /* particles: drawn, outlined */
+        .whoosh, .spark {
+            position: fixed;
+            pointer-events: none;
+            width: 70px;
+            height: 70px;
+            margin: -35px 0 0 -35px;
+        }
+        .whoosh { animation: fadeOut .55s forwards; }
+        .spark { width: 34px; height: 34px; margin: -17px 0 0 -17px; animation: spark .7s ease-out forwards; }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes spark {
+            0% { opacity: 0; transform: translate(0, 0) scale(.3) rotate(0deg); }
+            25% { opacity: 1; }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1) rotate(90deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .spinning, .spinning-slow, .spinning-fast, .spinning-reverse,
+            .bounce, .shake, .wave, .shooting { animation: none; }
+            #art.squash, .wave-hand, .flame, .orbit { animation: none; }
+            #face, #face.slow-move, #art { transition: opacity .3s ease; }
+            .zz { animation: zzfade 2.4s ease-in-out infinite; }
+            @keyframes zzfade { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+            .spark { animation: fadeOut .7s forwards; }
         }
     </style>
 </head>
 <body>
-    <div id="emoji">👀</div>
+    <div id="face" aria-hidden="true">
+        <svg id="art" viewBox="-50 -50 300 300">
+            <g id="back"></g>
+            <circle cx="107" cy="107" r="80" fill="#201a17"/>
+            <circle id="faceFill" cx="100" cy="100" r="80" fill="#f7c948" stroke="#201a17" stroke-width="6"/>
+            <g id="parts"></g>
+        </svg>
+    </div>
 
     <script>
-        // DOM element references and state variables
-        const emoji = document.getElementById('emoji');
-        let isAnimating = false;        // Tracks if emoji is currently in an animation
-        let currentTimeout;             // Stores timeout for current animation
-        let isHovering = false;         // Tracks if mouse is hovering over emoji
-        let lastMouseX = 0;             // Last known mouse X position
-        let lastMouseY = 0;             // Last known mouse Y position
-        let lastMouseTime = Date.now(); // Timestamp of last mouse movement
-        let isMoving = false;           // Tracks if emoji is moving to a position
-        let moveTimeout;                // Timeout for movement animations
-        let centerX = window.innerWidth / 2;   // Center X position of window
-        let centerY = window.innerHeight / 2;  // Center Y position of window
-        let fastMoveTimeout;            // Timeout for fast movement animations
-        let raceStartTime;              // Start time for racing animation
-        let isRacing = false;           // Tracks if emoji is in racing mode
-        let isMouseDown = false;        // Tracks if mouse button is held down
-        let isFirstVisit = true;
-        let isShooting = false;
+    (() => {
+        // ---- drawing ---------------------------------------------------------
+        const INK = '#201a17', WHITE = '#fff8ef', BLUSH = '#ff7fa5', TEAR = '#5aa0db',
+              CORAL = '#f0563e', GOLD = '#f7c948', LIME = '#b7ce3c', DARK = '#7a2618';
+        let FACE = GOLD;
+        const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        /**
-         * Creates a whoosh effect particle at the specified coordinates
-         * @param {number} x - X coordinate for whoosh effect
-         * @param {number} y - Y coordinate for whoosh effect 
-         * @param {number} angle - Rotation angle in degrees for whoosh effect
-         */
-        function createWhoosh(x, y, angle) {
-            const whoosh = document.createElement('div');
-            whoosh.textContent = '💨';
-            whoosh.className = 'whoosh';
-            whoosh.style.left = `${x}px`;
-            whoosh.style.top = `${y}px`;
-            whoosh.style.transform = `rotate(${angle}deg)`;
-            document.body.appendChild(whoosh);
-            setTimeout(() => whoosh.remove(), 500);
+        const S = (d, w = 5, color = INK) => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+        const F = (d, fill, w = 4) => `<path d="${d}" fill="${fill}" stroke="${INK}" stroke-width="${w}" stroke-linejoin="round"/>`;
+
+        // a pupil group the gaze system can move; max = how far it may travel
+        const pupil = (cx, cy, r, max, highlights = 1) =>
+            `<g class="pupil" data-max="${max}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${INK}"/>` +
+            `<circle cx="${cx - r * .38}" cy="${cy - r * .38}" r="${Math.max(1.6, r * .32)}" fill="${WHITE}"/>` +
+            (highlights > 1 ? `<circle cx="${cx + r * .35}" cy="${cy + r * .3}" r="${r * .16}" fill="${WHITE}"/>` : '') + '</g>';
+
+        function spiral(cx, cy) {
+            let d = '';
+            for (let i = 0; i <= 60; i++) {
+                const t = i / 60, a = t * Math.PI * 5, r = 2 + t * 13;
+                d += (i ? 'L' : 'M') + (cx + Math.cos(a) * r).toFixed(1) + ' ' + (cy + Math.sin(a) * r).toFixed(1) + ' ';
+            }
+            return S(d, 3.6);
+        }
+        function star(cx, cy, r, fill) {
+            let d = '';
+            for (let i = 0; i < 10; i++) {
+                const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r;
+                d += (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1);
+            }
+            return F(d + 'Z', fill, 3.5);
+        }
+        const sparkle = (cx, cy, r, fill) =>
+            F(`M${cx} ${cy - r} Q${cx + r * .18} ${cy - r * .18} ${cx + r} ${cy} Q${cx + r * .18} ${cy + r * .18} ${cx} ${cy + r} Q${cx - r * .18} ${cy + r * .18} ${cx - r} ${cy} Q${cx - r * .18} ${cy - r * .18} ${cx} ${cy - r}Z`, fill, 3);
+
+        function eye(type, cx, cy, side) {
+            const white = (rx, ry) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${WHITE}" stroke="${INK}" stroke-width="4"/>`;
+            let g;
+            switch (type) {
+                case 'open': g = white(15, 18) + pupil(cx, cy, 8, 7); break;
+                case 'wide': g = white(18, 22) + pupil(cx, cy, 7, 10); break;
+                case 'tiny': g = white(18, 23) + pupil(cx, cy, 3.5, 11); break;
+                case 'plead': g = white(17, 21) + pupil(cx, cy + 2, 12.5, 3, 2); break;
+                case 'big': g = white(19, 23) + pupil(cx, cy, 7, 11); break;
+                case 'small': g = white(10, 12) + pupil(cx, cy, 4.5, 4); break;
+                case 'squint': g = white(15, 9) + pupil(cx, cy, 6, 6); break;
+                case 'sleepy':
+                    g = white(15, 18) + pupil(cx, cy + 6, 7, 4) +
+                        F(`M${cx - 17} ${cy + 1} Q${cx - 16} ${cy - 22} ${cx} ${cy - 21} Q${cx + 16} ${cy - 22} ${cx + 17} ${cy + 1} Z`, FACE, 0) +
+                        S(`M${cx - 15} ${cy + 1} L${cx + 15} ${cy + 1}`, 4.5);
+                    break;
+                case 'side':
+                    g = white(15, 18) + pupil(cx, cy, 8, 7) +
+                        F(`M${cx - 17} ${cy - 3} Q${cx - 16} ${cy - 22} ${cx} ${cy - 21} Q${cx + 16} ${cy - 22} ${cx + 17} ${cy - 3} Z`, FACE, 0) +
+                        S(`M${cx - 15} ${cy - 3} L${cx + 15} ${cy - 3}`, 4.5);
+                    break;
+                case 'closed': g = S(`M${cx - 14} ${cy + 1} Q${cx} ${cy + 11} ${cx + 14} ${cy + 1}`, 5); break;
+                case 'happy': g = S(`M${cx - 14} ${cy + 5} Q${cx} ${cy - 12} ${cx + 14} ${cy + 5}`, 5); break;
+                case 'squeeze':
+                    g = side === 'L' ? S(`M${cx - 12} ${cy - 10} L${cx + 11} ${cy} L${cx - 12} ${cy + 10}`, 5)
+                                     : S(`M${cx + 12} ${cy - 10} L${cx - 11} ${cy} L${cx + 12} ${cy + 10}`, 5);
+                    break;
+                case 'tired':
+                    g = side === 'L' ? S(`M${cx - 14} ${cy - 2} Q${cx} ${cy + 8} ${cx + 14} ${cy + 4}`, 5)
+                                     : S(`M${cx - 14} ${cy + 4} Q${cx} ${cy + 8} ${cx + 14} ${cy - 2}`, 5);
+                    break;
+                case 'x': g = S(`M${cx - 11} ${cy - 11} L${cx + 11} ${cy + 11} M${cx + 11} ${cy - 11} L${cx - 11} ${cy + 11}`, 5); break;
+                case 'spiral': g = white(16, 18) + spiral(cx, cy); break;
+                case 'star': g = star(cx, cy, 19, CORAL); break;
+                default: g = '';
+            }
+            return `<g class="eye">${g}</g>`;
         }
 
-        /**
-         * Changes the emoji display with optional duration and next emoji
-         * @param {string} newEmoji - The emoji to display
-         * @param {number} duration - How long to show the emoji in milliseconds
-         * @param {string} nextEmoji - Optional emoji to show after duration
-         */
-        function changeEmoji(newEmoji, duration = 10, nextEmoji) {
-            if (isAnimating) {
-                clearTimeout(currentTimeout);
+        function brow(type, cx, cy, side) {
+            const y = cy - 27, L = side === 'L';
+            switch (type) {
+                case 'raised': return S(`M${cx - 13} ${y} Q${cx} ${y - 8} ${cx + 13} ${y}`, 6);
+                case 'flat': return S(`M${cx - 13} ${y} L${cx + 13} ${y}`, 6);
+                case 'angry': return L ? S(`M${cx - 13} ${y - 4} L${cx + 13} ${y + 5}`, 6) : S(`M${cx - 13} ${y + 5} L${cx + 13} ${y - 4}`, 6);
+                case 'worried': return L ? S(`M${cx - 13} ${y + 3} L${cx + 13} ${y - 5}`, 6) : S(`M${cx - 13} ${y - 5} L${cx + 13} ${y + 3}`, 6);
+                default: return '';
             }
-            
+        }
+
+        const MOUTHS = {
+            small: () => S('M89 127 Q100 134 111 127'),
+            smile: () => S('M78 121 Q100 141 122 121'),
+            bigsmile: () => S('M74 118 Q100 148 126 118', 5.5),
+            grin: () => F('M72 116 Q100 154 128 116 Z', DARK) +
+                F('M82 136 Q100 128 118 136 Q100 148 82 136 Z', BLUSH, 3) +
+                F('M75 117 L125 117 Q123 123 120 125 L80 125 Q77 123 75 117 Z', WHITE, 3),
+            O: () => `<ellipse cx="100" cy="131" rx="9" ry="11" fill="${DARK}" stroke="${INK}" stroke-width="4"/>`,
+            o: () => `<ellipse cx="100" cy="130" rx="5" ry="6" fill="${DARK}" stroke="${INK}" stroke-width="3.5"/>`,
+            bigO: () => `<ellipse cx="100" cy="137" rx="12" ry="22" fill="${DARK}" stroke="${INK}" stroke-width="4"/>`,
+            flat: () => S('M86 130 L114 130'),
+            frown: () => S('M80 136 Q100 120 120 136'),
+            pout: () => S('M89 134 Q100 127 111 134'),
+            wobble: () => S('M78 131 Q84 123 90 131 Q96 139 102 131 Q108 123 114 131 Q119 137 122 132', 4.5),
+            tongue: () => S('M76 120 Q100 142 124 120') + F('M103 133 Q104 151 114 150 Q123 148 120 129 Z', BLUSH, 3.5) + S('M110 136 L112 145', 2.5, DARK),
+            side: () => S('M87 133 Q99 130 115 125'),
+            cry: () => F('M78 141 Q100 110 122 141 Q100 134 78 141 Z', DARK),
+            weary: () => F('M80 140 Q100 117 120 140 Q100 133 80 140 Z', DARK),
+            teeth: () => F('M80 122 L120 122 Q124 122 124 127 L124 133 Q124 138 120 138 L80 138 Q76 138 76 133 L76 127 Q76 122 80 122 Z', WHITE) + S('M76 130 L124 130 M90 122 L90 138 M100 122 L100 138 M110 122 L110 138', 2.5)
+        };
+
+        // mitten hands in the face colour; the finger points along -y before rotation
+        const pointHand = (x, y, rot, s = 1) =>
+            `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})">` +
+            F('M-4.5 -34 Q-4.5 -39 0 -39 Q4.5 -39 4.5 -34 L4.5 -6 L-4.5 -6 Z', FACE) +
+            F('M-12 -10 Q-12 -14 -8 -14 L8 -14 Q13 -14 13 -9 L13 6 Q13 14 4 14 L-4 14 Q-12 14 -12 6 Z', FACE) +
+            S('M-12 -3 Q-7 -1 -4 -6', 3) + '</g>';
+        const openHand = (x, y, rot, s = 1, cls = '') =>
+            `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><g class="${cls}">` +
+            F('M-13 -12 L-13 -26 Q-13 -31 -9 -31 Q-5 -31 -5 -26 L-5 -14 Z', FACE, 3.5) +
+            F('M-4 -14 L-4 -31 Q-4 -36 0 -36 Q4 -36 4 -31 L4 -14 Z', FACE, 3.5) +
+            F('M5 -13 L5 -27 Q5 -32 9 -32 Q13 -32 13 -27 L13 -11 Z', FACE, 3.5) +
+            F('M-15 -14 Q-15 -16 -12 -16 L12 -16 Q16 -16 16 -12 L16 6 Q16 16 4 16 L-4 16 Q-15 16 -15 6 Z', FACE, 4) +
+            F('M15 -2 Q24 -10 27 -4 Q28 2 17 9 Z', FACE, 3.5) + '</g></g>';
+
+        const POINT = { up: [100, 2, 0], down: [100, 198, 180], left: [2, 100, -90], right: [198, 100, 90] };
+        const HANDS = {
+            wave: () => openHand(186, 112, 12, 1.15, 'wave-hand'),
+            hug: () => openHand(14, 146, -38, 1.2) + openHand(186, 146, 38, 1.2),
+            cheeks: () => openHand(30, 132, -14, 1.2) + openHand(170, 132, 14, 1.2),
+            cover: () => openHand(72, 98, -12, 1.55) + openHand(104, 144, 6, 1.25),
+            chin: () => pointHand(120, 170, -32, 1),
+            finger: () => pointHand(100, 160, 0, 1.05),
+            point: (dir) => { const [x, y, r] = POINT[dir] || POINT.right; return pointHand(x, y, r, 1.15); }
+        };
+
+        const ARROW_ROT = { up: -90, down: 90, left: 180, right: 0 };
+        const PROPS = {
+            clipboard: () => '<g transform="translate(176 22) rotate(8)">' + F('M-20 -24 L20 -24 L20 26 L-20 26 Z', '#c8955b') +
+                F('M-14 -16 L14 -16 L14 20 L-14 20 Z', WHITE, 3) + F('M-9 -30 L9 -30 L9 -18 L-9 -18 Z', '#9aa3ad', 3.5) +
+                S('M-8 -6 L8 -6 M-8 2 L8 2 M-8 10 L3 10', 3) + '</g>',
+            envelope: () => '<g transform="translate(176 26) rotate(-8)">' + F('M-26 -17 L26 -17 L26 17 L-26 17 Z', WHITE) +
+                S('M-24 -15 L0 4 L24 -15', 3.5) + '</g>',
+            magnifier: () => S('M146 106 L170 132', 11) + S('M146 106 L170 132', 6, '#c8955b') +
+                `<circle cx="128" cy="88" r="25" fill="rgba(191,227,242,.45)" stroke="${INK}" stroke-width="6"/>`,
+            dotGreen: () => `<circle cx="174" cy="24" r="16" fill="#5fc35c" stroke="${INK}" stroke-width="4"/><circle cx="169" cy="19" r="4" fill="${WHITE}"/>`,
+            dotRed: () => `<circle cx="174" cy="24" r="16" fill="${CORAL}" stroke="${INK}" stroke-width="4"/><circle cx="169" cy="19" r="4" fill="${WHITE}"/>`,
+            batteryLow: () => '<g transform="translate(174 24)">' + F('M-24 -13 L20 -13 L20 13 L-24 13 Z', WHITE) +
+                F('M20 -6 L26 -6 L26 6 L20 6 Z', INK, 2) + F('M-20 -9 L-12 -9 L-12 9 L-20 9 Z', CORAL, 2) + '</g>',
+            batteryFull: () => '<g transform="translate(174 24)">' + F('M-24 -13 L20 -13 L20 13 L-24 13 Z', WHITE) +
+                F('M20 -6 L26 -6 L26 6 L20 6 Z', INK, 2) + F('M-20 -9 L16 -9 L16 9 L-20 9 Z', LIME, 2) + '</g>',
+            bolt: () => F('M180 -6 L160 28 L174 28 L166 56 L192 18 L177 18 L186 -6 Z', GOLD),
+            alarm: () => '<g transform="translate(174 26)">' + F('M-22 -16 Q-26 -30 -12 -28 Z', GOLD, 3.5) + F('M22 -16 Q26 -30 12 -28 Z', GOLD, 3.5) +
+                `<circle r="22" fill="${CORAL}" stroke="${INK}" stroke-width="4"/><circle r="16" fill="${WHITE}" stroke="${INK}" stroke-width="3"/>` +
+                S('M0 0 L0 -11 M0 0 L8 4', 3.5) + S('M-14 18 L-19 26 M14 18 L19 26', 4) + '</g>',
+            trash: () => '<g transform="translate(176 30)">' + F('M-16 -12 L16 -12 L12 24 L-12 24 Z', '#9aa3ad') +
+                F('M-21 -20 L21 -20 L21 -12 L-21 -12 Z', '#9aa3ad', 3.5) + F('M-6 -26 L6 -26 L6 -20 L-6 -20 Z', '#9aa3ad', 3) +
+                S('M-6 -4 L-5 16 M0 -4 L0 16 M6 -4 L5 16', 3) + '</g>',
+            boom: () => {
+                let d = '';
+                for (let i = 0; i < 18; i++) {
+                    const a = Math.PI + i * Math.PI / 17, r = i % 2 ? 40 : 62;
+                    d += (i ? 'L' : 'M') + (100 + Math.cos(a) * r * 1.2).toFixed(1) + ' ' + (36 + Math.sin(a) * r).toFixed(1);
+                }
+                return F(d + 'Z', CORAL) + F(d.replace(/[\d.]+ [\d.]+/g, (m) => { const [x, y] = m.split(' ').map(Number); return (100 + (x - 100) * .55).toFixed(1) + ' ' + (36 + (y - 36) * .55).toFixed(1); }) + 'Z', GOLD, 3);
+            },
+            arrow: (p) => {
+                const dir = p && p.dir || 'right', dbl = p && p.double;
+                const head = (x) => F(`M${x - 8} -14 L${x + 8} 0 L${x - 8} 14 Z`, GOLD, 3.5);
+                return `<g transform="translate(176 26) rotate(${ARROW_ROT[dir]})">` +
+                    `<rect x="-22" y="-22" width="44" height="44" rx="12" fill="${WHITE}" stroke="${INK}" stroke-width="4"/>` +
+                    (dbl ? head(-4) + head(9) : S('M-12 0 L6 0', 6) + head(6)) + '</g>';
+            }
+        };
+        const BACK = {
+            flames: () => '<g transform="translate(100 172)"><g class="flame">' + F('M-30 0 Q-34 34 0 70 Q34 34 30 0 Z', CORAL) + F('M-16 0 Q-18 22 0 44 Q18 22 16 0 Z', GOLD, 3) + '</g></g>',
+            speed: () => S('M-44 66 L2 66 M-36 98 L4 98 M-44 130 L2 130', 9) + S('M-44 66 L2 66 M-36 98 L4 98 M-44 130 L2 130', 4, WHITE)
+        };
+        const EXTRAS = {
+            blush: () => `<ellipse cx="58" cy="114" rx="12" ry="7" fill="${BLUSH}" opacity=".8"/><ellipse cx="142" cy="114" rx="12" ry="7" fill="${BLUSH}" opacity=".8"/>`,
+            tear: () => F('M76 106 Q66 122 72 128 Q80 132 82 124 Q83 116 76 106 Z', TEAR, 3),
+            streams: () => S('M66 104 Q60 140 68 176 M134 104 Q140 140 132 176', 13) + S('M66 104 Q60 140 68 176 M134 104 Q140 140 132 176', 7, TEAR),
+            sweat: () => F('M158 44 Q146 62 152 70 Q160 76 166 68 Q170 60 158 44 Z', TEAR, 3.5),
+            zzz: () => `<g font-family="'Arial Black', Arial, sans-serif" font-weight="900" fill="${WHITE}" stroke="${INK}" stroke-width="3.5" paint-order="stroke">` +
+                '<text class="zz a" x="150" y="40" font-size="26">Z</text><text class="zz b" x="166" y="16" font-size="32">Z</text><text class="zz c" x="184" y="-10" font-size="38">Z</text></g>',
+            orbit: () => `<g class="orbit">${sparkle(100, 6, 13, GOLD)}${sparkle(184, 120, 11, WHITE)}${sparkle(20, 128, 12, GOLD)}</g>`,
+            shades: () => F('M46 74 L154 74 L150 84 Q146 106 124 106 Q106 106 103 88 L97 88 Q94 106 76 106 Q54 106 50 84 Z', INK, 3) +
+                S('M60 82 L70 82 M116 82 L126 82', 3, '#6b6460'),
+            monocle: () => `<circle cx="128" cy="88" r="23" fill="none" stroke="${GOLD}" stroke-width="5"/><circle cx="128" cy="88" r="23" fill="none" stroke="${INK}" stroke-width="2"/>` +
+                S('M146 102 Q160 140 150 176', 2.5)
+        };
+
+        // ---- expressions: one per original emoji ------------------------------
+        const X = {
+            idle:        { eyes: ['open', 'open'], mouth: 'small' },
+            wink:        { eyes: ['open', 'happy'], brows: ['raised', 'flat'], mouth: 'smile', extras: ['blush'] },
+            winkWrong:   { eyes: ['happy', 'open'], brows: ['flat', 'raised'], mouth: 'smile', extras: ['blush'] },
+            wave:        { eyes: ['happy', 'happy'], mouth: 'smile', hands: 'wave' },
+            race:        { eyes: ['squint', 'squint'], brows: ['angry', 'angry'], mouth: 'grin', back: 'speed' },
+            point:       { eyes: ['open', 'open'], mouth: 'small', hands: 'point' },
+            starstruck:  { eyes: ['star', 'star'], mouth: 'grin' },
+            surprised:   { eyes: ['wide', 'wide'], brows: ['raised', 'raised'], mouth: 'O' },
+            peek:        { eyes: ['open', 'open'], mouth: 'small', hands: 'cover' },
+            sad:         { eyes: ['open', 'open'], brows: ['worried', 'worried'], mouth: 'frown', extras: ['tear'] },
+            sob:         { eyes: ['closed', 'closed'], brows: ['worried', 'worried'], mouth: 'cry', extras: ['streams'] },
+            anxious:     { eyes: ['wide', 'wide'], brows: ['worried', 'worried'], mouth: 'teeth', extras: ['sweat'] },
+            tired:       { eyes: ['squeeze', 'squeeze'], brows: ['worried', 'worried'], mouth: 'weary' },
+            weary:       { eyes: ['tired', 'tired'], brows: ['worried', 'worried'], mouth: 'weary' },
+            plead:       { eyes: ['plead', 'plead'], brows: ['worried', 'worried'], mouth: 'pout' },
+            shush:       { eyes: ['side', 'side'], look: 'left', mouth: 'o', hands: 'finger' },
+            hug:         { eyes: ['happy', 'happy'], mouth: 'bigsmile', extras: ['blush'], hands: 'hug' },
+            cool:        { eyes: ['open', 'open'], mouth: 'smile', extras: ['shades'] },
+            sleep:       { eyes: ['closed', 'closed'], mouth: 'o', extras: ['zzz'] },
+            dizzy:       { eyes: ['spiral', 'spiral'], mouth: 'wobble', extras: ['orbit'] },
+            trash:       { eyes: ['side', 'side'], look: 'right', mouth: 'flat', props: 'trash' },
+            rocket:      { eyes: ['squint', 'squint'], brows: ['angry', 'angry'], mouth: 'grin', back: 'flames' },
+            look:        { eyes: ['open', 'open'], mouth: 'small', props: 'arrow' },
+            dazzled:     { eyes: ['star', 'star'], mouth: 'grin', extras: ['blush'] },
+            mindblown:   { eyes: ['tiny', 'tiny'], brows: ['raised', 'raised'], mouth: 'bigO', props: 'boom' },
+            clipboard:   { eyes: ['open', 'open'], mouth: 'small', props: 'clipboard' },
+            envelope:    { eyes: ['wide', 'wide'], mouth: 'O', props: 'envelope' },
+            think:       { eyes: ['open', 'open'], look: 'up', brows: ['raised', 'flat'], mouth: 'side', hands: 'chin' },
+            magnify:     { eyes: ['open', 'wide'], mouth: 'o', props: 'magnifier' },
+            monocle:     { eyes: ['squint', 'wide'], brows: ['angry', 'raised'], mouth: 'side', extras: ['monocle'] },
+            online:      { eyes: ['open', 'open'], mouth: 'smile', props: 'dotGreen' },
+            offline:     { eyes: ['open', 'open'], brows: ['worried', 'worried'], mouth: 'flat', props: 'dotRed' },
+            happy:       { eyes: ['happy', 'happy'], mouth: 'bigsmile', extras: ['blush'] },
+            batteryLow:  { eyes: ['wide', 'wide'], mouth: 'flat', props: 'batteryLow' },
+            batteryFull: { eyes: ['open', 'open'], mouth: 'smile', props: 'batteryFull' },
+            relieved:    { eyes: ['closed', 'closed'], mouth: 'smile', extras: ['blush'] },
+            charging:    { eyes: ['wide', 'wide'], mouth: 'grin', props: 'bolt' },
+            upside:      { eyes: ['open', 'open'], mouth: 'smile', flip: true },
+            scream:      { eyes: ['tiny', 'tiny'], brows: ['worried', 'worried'], mouth: 'bigO', hands: 'cheeks' },
+            alarm:       { eyes: ['wide', 'wide'], brows: ['raised', 'raised'], mouth: 'O', props: 'alarm' },
+            grin:        { eyes: ['wide', 'wide'], mouth: 'grin' },
+            zany:        { eyes: ['big', 'small'], brows: ['raised', 'angry'], mouth: 'tongue' },
+            sleepy:      { eyes: ['sleepy', 'sleepy'], mouth: 'flat' }
+        };
+        const BLINKS = new Set(['open', 'wide', 'plead', 'big', 'small', 'side', 'squint']);
+
+        const face = document.getElementById('face');
+        const art = document.getElementById('art');
+        const parts = document.getElementById('parts');
+        const back = document.getElementById('back');
+        const faceFill = document.getElementById('faceFill');
+
+        let current = '', currentKey = '', fixedLook = null;
+        function render(name, param) {
+            const x = X[name] || X.idle;
+            const eyes = x.eyes, brows = x.brows || [null, null];
+            let h = eye(eyes[0], 72, 88, 'L') + eye(eyes[1], 128, 88, 'R') +
+                brow(brows[0], 72, 88, 'L') + brow(brows[1], 128, 88, 'R') +
+                (MOUTHS[x.mouth] || MOUTHS.small)();
+            for (const e of x.extras || []) h += EXTRAS[e]();
+            if (x.hands) h += HANDS[x.hands](param);
+            if (x.props) h += PROPS[x.props](param);
+            parts.innerHTML = h;
+            back.innerHTML = x.back ? BACK[x.back]() : '';
+            art.classList.toggle('flip', !!x.flip);
+            fixedLook = x.look || (name === 'look' && param ? param.dir : null);
+            canBlink = eyes.some(t => BLINKS.has(t));
+            if (!reduceMotion && !x.flip) {
+                art.classList.remove('squash');
+                void art.getBoundingClientRect();
+                art.classList.add('squash');
+            }
+            applyGaze();
+        }
+
+        // same contract as the original changeEmoji(newEmoji, duration, nextEmoji)
+        let isAnimating = false, currentTimeout;
+        function show(name, duration = 10, next, param) {
+            if (isAnimating) clearTimeout(currentTimeout);
             isAnimating = true;
-            emoji.textContent = newEmoji;
-            
+            const key = name + JSON.stringify(param || '');
+            if (key !== currentKey) { render(name, param); current = name; currentKey = key; }
             currentTimeout = setTimeout(() => {
                 isAnimating = false;
-                if (nextEmoji) {
-                    emoji.textContent = nextEmoji;
-                } else if (isHovering) {
-                    emoji.textContent = '😉';
-                }
+                if (next) show(next, 10);
+                else if (isHovering) show('wink', 10);
             }, duration);
         }
 
-        /**
-         * Resets the emoji position to the center of the window
-         */
+        // ---- gaze: pupils follow the pointer, always --------------------------
+        const LOOK_DIR = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+        let target = { x: 0, y: 0 }, gaze = { x: 0, y: 0 }, gazeRaf = 0;
+        let pointerX = innerWidth / 2, pointerY = innerHeight / 2;
+        function faceCenter() {
+            const r = art.getBoundingClientRect();
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2, size: r.width };
+        }
+        function updateTarget() {
+            if (fixedLook) { const [dx, dy] = LOOK_DIR[fixedLook]; target = { x: dx, y: dy }; return; }
+            const c = faceCenter();
+            const dx = pointerX - c.x, dy = pointerY - c.y, d = Math.hypot(dx, dy) || 1;
+            const k = Math.min(1, d / (c.size * .35));
+            const flip = art.classList.contains('flip') ? -1 : 1;
+            target = { x: dx / d * k * flip, y: dy / d * k * flip };
+        }
+        function applyGaze() {
+            for (const p of parts.querySelectorAll('.pupil')) {
+                const m = +p.dataset.max;
+                p.setAttribute('transform', `translate(${(gaze.x * m).toFixed(2)} ${(gaze.y * m).toFixed(2)})`);
+            }
+        }
+        function gazeStep() {
+            gazeRaf = 0;
+            updateTarget();
+            gaze.x += (target.x - gaze.x) * .35;
+            gaze.y += (target.y - gaze.y) * .35;
+            applyGaze();
+            if (Math.abs(target.x - gaze.x) + Math.abs(target.y - gaze.y) > .01) gazeRaf = requestAnimationFrame(gazeStep);
+        }
+        const wakeGaze = () => { if (!gazeRaf) gazeRaf = requestAnimationFrame(gazeStep); };
+
+        // ---- blinking ----------------------------------------------------------
+        let canBlink = true;
+        (function blinkLoop() {
+            setTimeout(() => {
+                if (canBlink && !document.hidden) {
+                    parts.classList.add('blinking');
+                    setTimeout(() => parts.classList.remove('blinking'), 120);
+                }
+                blinkLoop();
+            }, 2400 + Math.random() * 3800);
+        })();
+
+        // ---- particles (drawn, outlined) ---------------------------------------
+        function createWhoosh(x, y, angle) {
+            const el = document.createElement('div');
+            el.className = 'whoosh';
+            el.innerHTML = `<svg viewBox="0 0 70 70" width="70" height="70">${S('M6 22 Q34 16 64 26 M2 36 Q34 32 66 36 M8 50 Q34 56 62 46', 8)}${S('M6 22 Q34 16 64 26 M2 36 Q34 32 66 36 M8 50 Q34 56 62 46', 3.5, WHITE)}</svg>`;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.transform = `rotate(${angle}deg)`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 560);
+        }
+        function sparkles(n = 7) {
+            const c = faceCenter();
+            for (let i = 0; i < n; i++) {
+                const el = document.createElement('div'), a = Math.random() * Math.PI * 2, d = c.size * (.32 + Math.random() * .2);
+                el.className = 'spark';
+                el.innerHTML = `<svg viewBox="-17 -17 34 34" width="34" height="34">${sparkle(0, 0, 13, [GOLD, CORAL, WHITE, '#5aa0db'][i % 4])}</svg>`;
+                el.style.left = c.x + 'px';
+                el.style.top = c.y + 'px';
+                el.style.setProperty('--dx', (Math.cos(a) * d).toFixed(0) + 'px');
+                el.style.setProperty('--dy', (Math.sin(a) * d).toFixed(0) + 'px');
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 720);
+            }
+        }
+
+        // ---- state (ported from the original) ----------------------------------
+        let isHovering = false, lastMouseX = 0, lastMouseY = 0, lastMouseTime = Date.now();
+        let isMoving = false, moveTimeout, fastMoveTimeout, isRacing = false;
+        let isMouseDown = false, isFirstVisit = true, isShooting = false;
+        let centerX = innerWidth / 2, centerY = innerHeight / 2;
+
         function resetPosition() {
-            emoji.style.left = `${centerX}px`;
-            emoji.style.top = `${centerY}px`;
-            emoji.classList.remove('slow-move');
+            face.style.left = centerX + 'px';
+            face.style.top = centerY + 'px';
+            face.classList.remove('slow-move');
+        }
+        // leans part of the way toward a cursor that has stopped
+        function slowlyApproachMouse(x, y) {
+            if (isMoving || isShooting) return;
+            face.classList.add('slow-move');
+            face.style.left = (centerX + (x - centerX) * .35) + 'px';
+            face.style.top = (centerY + (y - centerY) * .35) + 'px';
+            setTimeout(wakeGaze, 60);
+            setTimeout(wakeGaze, 1100);
+            setTimeout(wakeGaze, 2050);
+        }
+        function overFace(x, y) {
+            const r = art.getBoundingClientRect();
+            const cx = r.left + r.width / 2, cy = r.top + r.height / 2, rad = r.width * 80 / 300;
+            return Math.hypot(x - cx, y - cy) < rad;
         }
 
-        /**
-         * Makes the emoji slowly move towards the mouse position
-         * @param {Event} e - Mouse event containing client coordinates
-         */
-        function slowlyApproachMouse(e) {
-            if (!isMoving) {
-                emoji.classList.add('slow-move');
-                emoji.style.left = `${e.clientX}px`;
-                emoji.style.top = `${e.clientY}px`;
+        // ---- long-idle secret: dozes off, then snores ---------------------------
+        let idleTimers = [], dozing = false;
+        function noteInput() {
+            idleTimers.forEach(clearTimeout);
+            if (dozing) { dozing = false; show('surprised', 700); }
+            idleTimers = [
+                setTimeout(() => { if (!isAnimating && !document.hidden) { dozing = true; show('sleepy', 10); } }, 40000),
+                setTimeout(() => { if (dozing && !document.hidden) show('sleep', 10); }, 75000)
+            ];
+        }
+
+        // hover (hit-tested against the drawn face, not its bounding box)
+        function hoverCheck(x, y) {
+            const over = overFace(x, y);
+            if (over && !isHovering) {
+                if (!isRacing && !isMouseDown && !isShooting) {
+                    isHovering = true;
+                    if (Math.random() < 0.04) show('winkWrong', 380, 'wink');
+                    else show('wink', 500);
+                }
+            } else if (!over && isHovering) {
+                if (!isRacing && !isMouseDown) {
+                    isHovering = false;
+                    show('wave', 500);
+                }
             }
         }
 
-        // Event Listeners
+        let mouseStopTimer;
+        document.addEventListener('pointermove', (e) => {
+            pointerX = e.clientX; pointerY = e.clientY;
+            wakeGaze();
+            noteInput();
+            if (isMouseDown || isShooting) return;
+            hoverCheck(e.clientX, e.clientY);
 
-        // Mouse hover handlers
-        document.querySelector('#emoji').addEventListener('mouseover', (e) => {
-            e.preventDefault();
-            if (!isRacing && !isMouseDown && !isShooting) {
-                isHovering = true;
-                changeEmoji('😉', 500);
-            }
-        });
+            const now = Date.now();
+            const dt = Math.max(1, now - lastMouseTime);
+            const dx = e.clientX - lastMouseX, dy = e.clientY - lastMouseY;
+            const speed = Math.hypot(dx, dy) / dt;
 
-        document.querySelector('#emoji').addEventListener('mouseout', () => {
-            if (!isRacing && !isMouseDown) {
-                isHovering = false;
-                changeEmoji('👋', 500);
-            }
-        });
-        
-        // Mouse movement tracking and speed detection
-        document.addEventListener('mousemove', (e) => {
-            if (isMouseDown || isShooting) return; // Skip all actions if shooting
-            
-            const currentTime = Date.now();
-            const timeDiff = currentTime - lastMouseTime;
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
-            const distX = mouseX - lastMouseX;
-            const distY = mouseY - lastMouseY;
-            const speed = Math.sqrt(distX * distX + distY * distY) / timeDiff;
-            
-            if (speed > 15) { // Increased from 10 to 15 for less frequent triggering
+            if (speed > 15 && e.pointerType === 'mouse') {
                 if (!fastMoveTimeout) {
-                    raceStartTime = Date.now();
                     isRacing = true;
-
-                    changeEmoji('🏎️', 1000);
-                    
-                    // Add a cooldown period
-                    fastMoveTimeout = setTimeout(() => {
-                        fastMoveTimeout = null;
-                        isRacing = false;
-                    }, 2000); // 2 second cooldown
+                    show('race', 1000);
+                    if (!reduceMotion) {
+                        const c = faceCenter(), ang = Math.atan2(dy, dx), deg = ang * 180 / Math.PI;
+                        for (let i = 1; i <= 3; i++) {
+                            setTimeout(() => createWhoosh(c.x - Math.cos(ang) * c.size * (.28 + i * .1), c.y - Math.sin(ang) * c.size * (.28 + i * .1), deg), i * 70);
+                        }
+                    }
+                    fastMoveTimeout = setTimeout(() => { fastMoveTimeout = null; isRacing = false; }, 2000);
                 }
             } else {
-                if (fastMoveTimeout) {
-                    clearTimeout(fastMoveTimeout);
-                    fastMoveTimeout = null;
-                }
+                if (fastMoveTimeout) { clearTimeout(fastMoveTimeout); fastMoveTimeout = null; }
                 isRacing = false;
             }
 
-            // Update emoji direction based on mouse position relative to window center
+            // point at the cursor's side of the screen
             if (!isAnimating && !isHovering) {
-                const windowCenter = window.innerWidth / 2;
-                const windowMiddle = window.innerHeight / 2;
-                
-                if (Math.abs(mouseY - windowMiddle) > Math.abs(mouseX - windowCenter)) {
-                    if (mouseY < windowMiddle) {
-                        changeEmoji('👆', 1);
-                    } else {
-                        changeEmoji('👇', 1);
-                    }
-                } else {
-                    if (mouseX > windowCenter) {
-                        changeEmoji('👉', 1);
-                    } else {
-                        changeEmoji('👈', 1);
-                    }
-                }
+                const cx = innerWidth / 2, cy = innerHeight / 2;
+                let dir;
+                if (Math.abs(e.clientY - cy) > Math.abs(e.clientX - cx)) dir = e.clientY < cy ? 'up' : 'down';
+                else dir = e.clientX > cx ? 'right' : 'left';
+                show('point', 1, null, dir);
             }
 
-            lastMouseX = mouseX;
-            lastMouseY = mouseY;
-            lastMouseTime = currentTime;
+            lastMouseX = e.clientX; lastMouseY = e.clientY; lastMouseTime = now;
+
+            clearTimeout(mouseStopTimer);
+            clearTimeout(moveTimeout);
+            const sx = e.clientX, sy = e.clientY;
+            mouseStopTimer = setTimeout(() => {
+                moveTimeout = setTimeout(() => slowlyApproachMouse(sx, sy), 1000);
+            }, 100);
         });
 
-        // Mouse click handlers
+        // clicks
+        let clickCount = 0, clickTimer;
         document.addEventListener('click', () => {
-            if (!isShooting) {
-                changeEmoji('🤩', 800);
+            noteInput();
+            if (!isShooting) show('starstruck', 800);
+            clickCount++;
+            clearTimeout(clickTimer);
+            if (clickCount >= 2) {
+                show('dazzled', 3000);
+                if (!reduceMotion) sparkles(8);
+                clickCount = 0;
             }
+            clickTimer = setTimeout(() => { clickCount = 0; }, 500);
         });
-        document.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) { // Non-left clicks
-                changeEmoji('😮', 1000);
-            } else if (e.button === 1){
-                // Middle click
-                changeEmoji('🫣', 1000);
-            }
+        document.addEventListener('pointerdown', (e) => {
+            pointerX = e.clientX; pointerY = e.clientY;
+            wakeGaze();
+            noteInput();
+            if (e.pointerType === 'touch') hoverCheck(e.clientX, e.clientY);
+            if (e.button === 1) show('peek', 1000);
+            else if (e.button !== 0) show('surprised', 1000);
+            isMouseDown = true;
         });
+        document.addEventListener('pointerup', () => { isMouseDown = false; });
+        document.addEventListener('pointercancel', () => { isMouseDown = false; });
+        document.addEventListener('auxclick', (e) => { if (e.button === 1) e.preventDefault(); });
 
-        // Mouse leave handler with progressive sadness
-        document.addEventListener('mouseleave', () => {
-            const sadEmojis = ['😢', '😭', '😰', '😫', '😩', '🥺'];
+        // leaving the page: sadder and sadder
+        const SAD = ['sad', 'sob', 'anxious', 'tired', 'weary', 'plead'];
+        let sadderInterval;
+        document.documentElement.addEventListener('mouseleave', () => {
             let sadLevel = 0;
-            changeEmoji(sadEmojis[0], 0);
-            
-            const sadderInterval = setInterval(() => {
-                if (!document.hidden && sadLevel < sadEmojis.length - 1) {
+            isHovering = false;
+            show(SAD[0], 0);
+            clearInterval(sadderInterval);
+            sadderInterval = setInterval(() => {
+                if (!document.hidden && sadLevel < SAD.length - 1) {
                     sadLevel++;
-                    changeEmoji(sadEmojis[sadLevel], 0);
+                    show(SAD[sadLevel], 0);
                 }
             }, 12000);
-
-            document.addEventListener('mouseenter', () => {
-                clearInterval(sadderInterval);
-            }, { once: true });
         });
+        function greet() {
+            if (!isFirstVisit) return;
+            isFirstVisit = false;
+            show('wave', 400);
+            face.classList.add('wave');
+            setTimeout(() => face.classList.remove('wave'), 520);
+            setTimeout(() => show('hug', 1000), 400);
+        }
+        document.documentElement.addEventListener('mouseenter', () => {
+            clearInterval(sadderInterval);
+            if (isFirstVisit) greet();
+            else show('hug', 1000);
+        });
+        setTimeout(greet, 900);
 
-        // Context menu and mouse enter handlers
         document.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            changeEmoji('🤫', 800);
-        });
-        document.addEventListener('mouseenter', () => {
-            if (isFirstVisit) {
-                isFirstVisit = false;
-                changeEmoji('👋', 400);
-                emoji.classList.add('wave');
-                setTimeout(() => {
-                    changeEmoji('🤗', 1000);
-                }, 400);
-            } else {
-                changeEmoji('🤗', 1000); 
-            }
+            show('shush', 800);
         });
 
-        // Konami code implementation
+        // keyboard (Konami included)
         const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-        let konamiIndex = 0;
-
-        // Keyboard event handling
-        let spacebarTimer;
-        let isCharging = false;
+        let konamiIndex = 0, spacebarTimer, isCharging = false;
+        const KEYS = {
+            Escape: ['sleep', 1], Enter: ['dizzy', 1], Backspace: ['trash', 1], ' ': ['rocket', 1],
+            Tab: ['look', 1000, { dir: 'right', double: true }],
+            ArrowUp: ['look', 500, { dir: 'up' }], ArrowDown: ['look', 500, { dir: 'down' }],
+            ArrowLeft: ['look', 500, { dir: 'left' }], ArrowRight: ['look', 500, { dir: 'right' }],
+            End: ['look', 500, { dir: 'right', double: true }], Home: ['look', 500, { dir: 'left', double: true }],
+            PageDown: ['look', 500, { dir: 'down', double: true }], PageUp: ['look', 500, { dir: 'up', double: true }],
+            w: ['look', 500, { dir: 'up' }], a: ['look', 500, { dir: 'left' }],
+            s: ['look', 500, { dir: 'down' }], d: ['look', 500, { dir: 'right' }]
+        };
+        const PALETTE = ['#f7c948', '#ff7fa5', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#2fb0a3', '#f0563e'];
+        function setFaceColor(c) { FACE = c; faceFill.setAttribute('fill', c); currentKey = ''; }
 
         document.addEventListener('keydown', (e) => {
-            // Konami code check
+            noteInput();
+            if (e.key === 'Tab') e.preventDefault();
             if (e.key === konamiCode[konamiIndex]) {
                 konamiIndex++;
                 if (konamiIndex === konamiCode.length) {
                     konamiIndex = 0;
-                    
-                    // Konami code celebration animation
-                    const crazyEmojis = ['🌈', '✨', '💫', '⚡️', '🎉', '🎊', '🌟', '💥'];
-                    let crazyIndex = 0;
-                    const crazyInterval = setInterval(() => {
-                        changeEmoji(crazyEmojis[crazyIndex], 100);
-                        crazyIndex = (crazyIndex + 1) % crazyEmojis.length;
+                    let i = 0;
+                    const colorInterval = setInterval(() => {
+                        setFaceColor(PALETTE[i++ % PALETTE.length]);
+                        show('starstruck', 100);
+                        if (!reduceMotion && i % 3 === 0) sparkles(4);
                     }, 100);
-
-                    // Spinning animation
-                    emoji.style.transform = 'translate(-50%, -50%) rotate(0deg)';
                     let rotation = 0;
-                    const spinInterval = setInterval(() => {
+                    const spinInterval = reduceMotion ? 0 : setInterval(() => {
                         rotation += 45;
-                        emoji.style.transform = `translate(-50%, -50%) rotate(${rotation}deg) scale(2)`;
+                        face.style.transform = `translate(-50%, -50%) rotate(${rotation}deg) scale(1.4)`;
                     }, 50);
-
-                    // Reset after celebration
                     setTimeout(() => {
-                        clearInterval(crazyInterval);
+                        clearInterval(colorInterval);
                         clearInterval(spinInterval);
-                        emoji.style.transform = 'translate(-50%, -50%)';
-                        changeEmoji('😎', 1000);
+                        face.style.transform = '';
+                        setFaceColor(GOLD);
+                        show('cool', 1000);
                     }, 2000);
                 }
             } else {
-                konamiIndex = 0;
+                konamiIndex = e.key === konamiCode[0] ? 1 : 0;
             }
 
-            // Regular keyboard controls
-            switch(e.keyCode) {
-                case 27: changeEmoji('😴', 1); break;      // Escape
-                case 13: changeEmoji('💫', 1); break;      // Enter
-                case 8:  changeEmoji('🗑️', 1); break;      // Backspace
-                case 32: changeEmoji('🚀', 1); break;      // Space
-                case 9:  changeEmoji('⏩', 1000); break;   // Tab
-                case 38: changeEmoji('⬆️', 500); break;    // ArrowUp
-                case 40: changeEmoji('⬇️', 500); break;    // ArrowDown
-                case 37: changeEmoji('⬅️', 500); break;    // ArrowLeft
-                case 39: changeEmoji('➡️', 500); break;    // ArrowRight
-                case 35: changeEmoji('⏭️', 500); break;    // End
-                case 36: changeEmoji('⏮️', 500); break;    // Home
-                case 34: changeEmoji('⏬', 500); break;    // PageDown
-                case 33: changeEmoji('⏫', 500); break;    // PageUp
-                case 87: changeEmoji('⬆️', 500); break;    // W
-                case 65: changeEmoji('⬅️', 500); break;    // A
-                case 83: changeEmoji('⬇️', 500); break;    // S
-                case 68: changeEmoji('➡️', 500); break;    // D
-            }
+            const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key] || KEYS[e.key];
+            if (k) show(k[0], k[1], null, k[2]);
 
-            if (e.keyCode === 32 && !isCharging && !isShooting) { // Space bar
+            if (e.key === ' ' && !isCharging && !isShooting) {
+                e.preventDefault();
                 isCharging = true;
-                changeEmoji('🚀', 3000);
-                
+                show('rocket', 3000);
                 spacebarTimer = setTimeout(() => {
                     isShooting = true;
-                    const xDir = Math.random();
-                    const yDir = Math.random();
-                    
-                    emoji.style.setProperty('--x-dir', xDir);
-                    emoji.style.setProperty('--y-dir', yDir);
-                    emoji.classList.add('shooting');
-                    
-                    createWhoosh(parseInt(emoji.style.left), parseInt(emoji.style.top), 
-                        Math.atan2(yDir - 0.5, xDir - 0.5) * 180 / Math.PI);
-                    
+                    const xDir = Math.random(), yDir = Math.random();
+                    face.style.setProperty('--x-dir', xDir);
+                    face.style.setProperty('--y-dir', yDir);
+                    face.classList.add('shooting');
+                    if (!reduceMotion) {
+                        const c = faceCenter();
+                        createWhoosh(c.x, c.y, Math.atan2(yDir - 0.5, xDir - 0.5) * 180 / Math.PI);
+                    }
                     setTimeout(() => {
-                        emoji.classList.remove('shooting');
+                        face.classList.remove('shooting');
                         isCharging = false;
                         isShooting = false;
                     }, 2000);
                 }, 1500);
             }
         });
-
         document.addEventListener('keyup', (e) => {
-            if (e.keyCode === 32) { // Space bar
+            if (e.key === ' ') {
                 clearTimeout(spacebarTimer);
-                if (!emoji.classList.contains('shooting')) {
-                    changeEmoji('👀', 500);
+                if (!face.classList.contains('shooting')) {
+                    show('idle', 500);
                     isCharging = false;
                 }
             }
         });
 
-        // Window resize handler
-        window.addEventListener('resize', () => {
-            changeEmoji('😵‍💫');
-            centerX = window.innerWidth / 2;
-            centerY = window.innerHeight / 2;
-            resetPosition();
-            
-            // Add bounce animation
-            emoji.classList.add('shake');
-
-            // Stop spinning after 3 seconds
-            setTimeout(() => {
-                emoji.classList.remove('shake');
-            }, 1000);
-        });
-        
-        // Rapid click handler
-        let clickCount = 0;
-        let clickTimer;
-        document.addEventListener('click', () => {
-            clickCount++;
-            clearTimeout(clickTimer);
-            
-            if (clickCount >= 2) {
-                changeEmoji('🌟', 3000);
-                clickCount = 0;
-            }
-            
-            clickTimer = setTimeout(() => {
-                clickCount = 0;
-            }, 500);
+        // resize: dizzy + shake, recentre
+        let resizeTimer;
+        addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                show('dizzy');
+                centerX = innerWidth / 2;
+                centerY = innerHeight / 2;
+                resetPosition();
+                face.classList.add('shake');
+                setTimeout(() => face.classList.remove('shake'), 1000);
+            }, 120);
         });
 
-        // Tab visibility tracking with progressive anger
-        let tabAwayTime;
-        let angerLevel = 0;
-        const angerEmojis = ['😠', '😡', '🤬', '💢', '👿', '😈'];
-        
+        // wheel
+        let wheelLock = 0;
+        document.addEventListener('wheel', (e) => {
+            noteInput();
+            const now = Date.now();
+            if (now - wheelLock < 220) return;
+            wheelLock = now;
+            const spin = e.deltaY > 0 ? 'spinning-fast' : 'spinning-reverse';
+            show(e.deltaY > 0 ? 'dizzy' : 'zany', 800);
+            face.classList.add(spin, 'bounce');
+            setTimeout(() => face.classList.remove(spin), 1000);
+            setTimeout(() => face.classList.remove('bounce'), 500);
+        }, { passive: true });
+
+        document.addEventListener('dblclick', () => show('mindblown', 3000));
+        document.addEventListener('copy', () => show('clipboard', 800, 'wink'));
+        document.addEventListener('paste', () => show('envelope', 800, 'think'));
+        document.addEventListener('selectstart', () => show('magnify', 800, 'monocle'));
+        addEventListener('online', () => show('online', 1000, 'happy'));
+        addEventListener('offline', () => show('offline', 1000, 'sad'));
+
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then((battery) => {
+                battery.addEventListener('levelchange', () => {
+                    if (battery.level <= 0.2) show('batteryLow', 1000, 'anxious');
+                    else if (battery.level >= 0.8) show('batteryFull', 1000, 'relieved');
+                });
+                battery.addEventListener('chargingchange', () => {
+                    if (battery.charging) show('charging', 1000, 'happy');
+                });
+            }).catch(() => {});
+        }
+
+        addEventListener('deviceorientation', (event) => {
+            if (event.beta > 60) show('upside', 500);
+            else if (event.beta < -60) show('scream', 500);
+        }, true);
+
+        // the tab title sulks while you're gone (plain words, no emoji)
+        const TITLE = 'Eyes On Me';
+        const SULK = ['come back', 'hello?', 'HELLO?', 'rude.', 'i can wait.', 'i will remember this.'];
+        let tabAwayTime = 0, angerLevel = 0, angerInterval;
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 tabAwayTime = Date.now();
-                document.title = '🙄';
-                
-                const angerInterval = setInterval(() => {
-                    if (!document.hidden) {
-                        clearInterval(angerInterval);
-                        return;
-                    }
-                    
-                    angerLevel = Math.min(angerLevel + 1, angerEmojis.length - 1);
-                    document.title = angerEmojis[angerLevel];
+                document.title = SULK[0];
+                show('sleep', 1000);
+                clearInterval(angerInterval);
+                angerInterval = setInterval(() => {
+                    if (!document.hidden) { clearInterval(angerInterval); return; }
+                    angerLevel = Math.min(angerLevel + 1, SULK.length - 1);
+                    document.title = SULK[angerLevel];
                 }, 5000);
-                
             } else {
                 angerLevel = 0;
-                const timeAway = Math.floor((Date.now() - tabAwayTime) / 1000);
-                if (timeAway > 30) {
-                    document.title = '😤';
-                    setTimeout(() => document.title = '🙂', 3000);
+                clearInterval(angerInterval);
+                const away = Math.floor((Date.now() - tabAwayTime) / 1000);
+                if (away > 30) {
+                    document.title = 'oh. you’re back.';
+                    setTimeout(() => { document.title = TITLE; }, 3000);
                 } else {
-                    document.title = '👀';
+                    document.title = TITLE;
                 }
+                show('alarm', 1000, 'grin');
             }
         });
 
-        // Mouse stop detection
-        document.addEventListener('mousestop', (e) => {
-            if (!isMoving) {
-                moveTimeout = setTimeout(() => {
-                    slowlyApproachMouse(e);
-                }, 1000);
-            }
-        });
-
-        // Custom mousestop event creation
-        let mouseStopTimer;
-        document.addEventListener('mousemove', (e) => {
-            clearTimeout(mouseStopTimer);
-            mouseStopTimer = setTimeout(() => {
-                const event = new CustomEvent('mousestop', {
-                    detail: { clientX: e.clientX, clientY: e.clientY },
-                    bubbles: true
-                });
-                document.dispatchEvent(event);
-            }, 100);
-        });
-
-        // Scroll wheel handler
-        document.addEventListener('wheel', (e) => {
-            if (e.deltaY > 0) {
-                changeEmoji('😵‍💫', 800);
-                emoji.classList.add('spinning-fast');
-                setTimeout(() => emoji.classList.remove('spinning-fast'), 1000);
-                emoji.classList.add('bounce');
-                setTimeout(() => emoji.classList.remove('bounce'), 500);
-            } else {
-                changeEmoji('🤪', 800);
-                emoji.classList.add('spinning-reverse');
-                setTimeout(() => emoji.classList.remove('spinning-reverse'), 1000);
-                emoji.classList.add('bounce');
-                setTimeout(() => emoji.classList.remove('bounce'), 500);
-            }
-        });
-
-        // Double-click handler
-        document.addEventListener('dblclick', () => {
-            changeEmoji('🤯', 3000);
-        });
-
-        // Copy/Paste handlers
-        document.addEventListener('copy', () => {
-            changeEmoji('📋', 800, '😉');
-        });
-
-        document.addEventListener('paste', () => {
-            changeEmoji('📨', 800, '🤔');
-        });
-
-        // Text selection handler
-        document.addEventListener('selectstart', () => {
-            changeEmoji('🔍', 800, '🧐');
-        });
-
-        // Online/Offline status handlers
-        window.addEventListener('online', () => {
-            changeEmoji('🟢', 1000, '😊');
-        });
-
-        window.addEventListener('offline', () => {
-            changeEmoji('🔴', 1000, '😢');
-        });
-
-        // Battery status monitoring
-        if ('getBattery' in navigator) {
-            navigator.getBattery().then(battery => {
-                battery.addEventListener('levelchange', () => {
-                    if (battery.level <= 0.2) {
-                        changeEmoji('🪫', 1000, '😰');
-                    } else if (battery.level >= 0.8) {
-                        changeEmoji('🔋', 1000, '😌');
-                    }
-                });
-
-                battery.addEventListener('charging', () => {
-                    changeEmoji('⚡', 1000, '😊');
-                });
-            });
-        }
-
-        // Device orientation handler for mobile devices
-        window.addEventListener('deviceorientation', (event) => {
-            if (event.beta > 60) {
-                changeEmoji('🙃', 500); // Phone is facing up
-            } else if (event.beta < -60) {
-                changeEmoji('😱', 500); // Phone is facing down
-            }
-        }, true);
-
-        // Screen visibility handler
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                changeEmoji('😴', 1000);
-            } else {
-                changeEmoji('⏰', 1000, '😃');
-            }
-        });
-
-        // Initialize emoji position
+        // ---- go ----------------------------------------------------------------
         resetPosition();
-
-        // Add these mouse event listeners
-        document.addEventListener('mousedown', () => {
-            isMouseDown = true;
-        });
-
-        document.addEventListener('mouseup', () => {
-            isMouseDown = false;
-        });
+        render('idle');
+        current = 'idle';
+        currentKey = 'idle""';
+        noteInput();
+        wakeGaze();
+    })();
     </script>
 <!-- rsotw:about:start -->
 <aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
@@ -624,7 +861,7 @@
 <li><a href="/grass/">Grass</a>: A dense field of thin blades that lean away from your cursor like wind pushing through them, then spring back with a little overshoot.</li>
 <li><a href="/happybirthday/">Happy Birthday!</a>: Create personalized birthday celebrations with effects</li>
 </ul>
-<p><a href="/">Browse all 214 random sites</a></p>
+<p><a href="/">Browse all 215 random sites</a></p>
 </aside>
 <!-- rsotw:about:end -->
 </body>
