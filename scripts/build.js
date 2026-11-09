@@ -184,6 +184,14 @@ function renderCard(site, sectionTitle) {
   ].join('\n');
 }
 
+// AdSense display-unit IDs from the dashboard (Ads → By ad unit). A slot with
+// an empty ID stays hidden: initAds() in home.html skips it.
+const AD_SLOT_IDS = {
+  'home-inline-1': '9755868727',
+  'home-inline-2': '6371816625',
+  'home-bottom': '7331730418', // rendered directly in templates/home.html, listed here for reference
+};
+
 // A hidden-until-live AdSense slot. Activated client-side by initAds() once the
 // site is approved and every data-ad-slot ID is filled in (see home.html).
 function renderAdSlot(name) {
@@ -194,7 +202,7 @@ function renderAdSlot(name) {
     '                <span class="ad-slot__label">Advertisement</span>',
     '                <ins class="adsbygoogle" style="display:block"',
     '                     data-ad-client="ca-pub-1505383837343849"',
-    '                     data-ad-slot=""',
+    `                     data-ad-slot="${AD_SLOT_IDS[name] || ''}"`,
     '                     data-ad-format="auto"',
     '                     data-full-width-responsive="true"></ins>',
     '            </div>',
