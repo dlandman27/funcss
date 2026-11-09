@@ -1,15 +1,20 @@
 (function() {
-    var script = document.createElement('script');
-    script.async = true;
-    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-ZHEXFVEQT1';
-    document.head.appendChild(script);
+    // Load GA after the page finishes loading so it never competes with first paint.
+    function loadAnalytics() {
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-ZHEXFVEQT1';
+        document.head.appendChild(script);
 
-    script.onload = function() {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-ZHEXFVEQT1');
-    };
+        script.onload = function() {
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-ZHEXFVEQT1');
+        };
+    }
+    if (document.readyState === 'complete') loadAnalytics();
+    else window.addEventListener('load', loadAnalytics, { once: true });
 })();
 
 
@@ -118,6 +123,22 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             + 'padding:8px 12px;border-radius:10px;opacity:0;pointer-events:none;'
             + (reduce ? '' : 'transition:opacity .18s ease;') + '}'
             + '.toast.show{opacity:1}'
+            // "About this site" panel: copy from the build's hidden #rsotw-about block.
+            + '.about{position:fixed;inset:0;display:none;align-items:center;justify-content:center;'
+            + 'padding:16px;background:rgba(32,26,23,.45);font-family:Nunito,"Segoe UI",system-ui,sans-serif}'
+            + '.about.open{display:flex}'
+            + '.panel{position:relative;box-sizing:border-box;width:min(560px,100%);max-height:min(80vh,640px);'
+            + 'overflow:auto;background:#fefaf0;color:#201a17;border:3px solid #201a17;border-radius:16px;'
+            + 'box-shadow:6px 6px 0 #201a17;padding:22px 24px 18px;font-size:16px;line-height:1.55;text-align:left}'
+            + '.panel h2{font-size:22px;line-height:1.2;margin:0 40px 12px 0;font-weight:800}'
+            + '.panel h3{font-size:15px;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 6px;font-weight:800}'
+            + '.panel p{margin:0 0 12px}'
+            + '.panel ul{margin:0 0 12px;padding-left:20px}'
+            + '.panel li{margin:0 0 6px}'
+            + '.panel a{color:#201a17;font-weight:800;text-decoration:underline;text-underline-offset:2px}'
+            + '.panel a:focus-visible,.close:focus-visible{outline:3px solid #5aa0db;outline-offset:2px}'
+            + '.close{position:absolute;top:12px;right:12px;width:36px;height:36px}'
+            + '.close svg{width:18px;height:18px}'
             + '@media (max-width:520px){.chip{width:40px;height:40px}.chip svg{width:20px;height:20px}}'
             + '.confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:2147483000;'
             + (reduce ? 'transition:opacity .5s ease;' : '') + '}';
@@ -127,6 +148,7 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             shuffle: '<svg ' + SVG + '><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>',
             share: '<svg ' + SVG + '><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>',
             home: '<svg ' + SVG + '><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+            info: '<svg ' + SVG + '><circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="17"/><circle cx="12" cy="7.3" r="1.2" fill="currentColor" stroke="none"/></svg>',
             confetti: '<svg ' + SVG + '><path d="M12 3l1.8 4.9L19 9.5l-5.2 1.6L12 16l-1.8-4.9L5 9.5l5.2-1.6z"/><circle cx="19.5" cy="18" r="1.1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="5" r="1" fill="currentColor" stroke="none"/></svg>',
             // Close (X), shown on the FAB while the menu is open.
             close: '<svg ' + SVG + '><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
@@ -139,6 +161,8 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             { icon: ICONS.confetti, label: 'Confetti', act: confetti, ev: 'confetti' },
             { icon: ICONS.shuffle, label: 'Random site', act: shuffle, ev: 'shuffle' }
         ];
+        var aboutSrc = document.getElementById('rsotw-about');
+        if (aboutSrc) chips.unshift({ icon: ICONS.info, label: 'About this site', act: openAbout, ev: 'about_open' });
 
         var html = '<style>' + css + '</style>'
             + '<div class="menu" role="group" aria-label="Random Sites controls"><div class="items">';
@@ -157,8 +181,39 @@ var RSOTW_HOME_URL = 'https://randomsitesontheweb.com';
             + '<span class="x">' + ICONS.close + '</span></button>'
             + '</div><div class="toast" role="status" aria-live="polite"></div>'
             + '<canvas class="confetti-canvas" aria-hidden="true"></canvas>';
+        if (aboutSrc) {
+            html += '<div class="about"><div class="panel" role="dialog" aria-modal="true" aria-labelledby="rsotw-about-title">'
+                + '<button class="chip close" type="button" aria-label="Close">' + ICONS.close + '</button>'
+                + aboutSrc.innerHTML + '</div></div>';
+        }
         root.innerHTML = html;
         document.body.appendChild(host);
+
+        var about = root.querySelector('.about');
+        var aboutReturn = null;
+        function openAbout() {
+            aboutReturn = document.activeElement;
+            about.classList.add('open');
+            about.querySelector('.close').focus();
+        }
+        function closeAbout() {
+            about.classList.remove('open');
+            if (aboutReturn && aboutReturn.focus) aboutReturn.focus();
+        }
+        if (about) {
+            about.addEventListener('click', function (e) {
+                if (e.target === about || (e.target.closest && e.target.closest('.close'))) closeAbout();
+            });
+            about.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeAbout();
+            });
+            // Keep panel input away from toys that listen on document/window
+            // ("click anywhere to start", spacebar shortcuts, wheel zoom).
+            ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend',
+                'touchmove', 'wheel', 'keydown', 'keyup'].forEach(function (type) {
+                about.addEventListener(type, function (e) { e.stopPropagation(); });
+            });
+        }
 
         var toast = root.querySelector('.toast');
         function flash(msg) {

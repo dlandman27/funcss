@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wreck This Page</title>
+<meta name="description" content="Our homepage, loaded and fully destructible. Hammer it, shoot it, bomb it. A Restore button puts everything back like it never happened.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/wreckthispage/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/wreckthispage/">
+    <meta property="og:title" content="Wreck This Page">
+    <meta property="og:description" content="Our homepage, fully destructible. Hammer it, shoot it, bomb it. The Restore button pretends none of it happened.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/wreckthispage.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Wreck This Page">
+    <meta name="twitter:description" content="Our homepage, fully destructible. Hammer it, shoot it, bomb it. The Restore button pretends none of it happened.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/wreckthispage.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root {
+    --ink: #201a17;
+    --paper: #f2ede2;
+    --cream: #fff8ef;
+    --coral: #f0563e;
+    --sky: #5aa0db;
+    --lime: #b7ce3c;
+    --purple: #a98fd0;
+    --orange: #f47b28;
+    --gold: #f7c948;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper); }
+  body { font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; color: var(--ink); user-select: none; -webkit-user-select: none; }
+
+  #stage { position: fixed; inset: 0; }
+  #frame { width: 100%; height: 100%; border: 0; display: block; background: var(--paper); }
+
+  /* wrecking ball + black holes are drawn here, above the page, never catching clicks */
+  #rig { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 19; }
+  /* comic bursts, debris chips, +$ popups */
+  #fx { position: fixed; inset: 0; pointer-events: none; z-index: 20; overflow: hidden; }
+  .flash { position: absolute; inset: 0; background: var(--cream); opacity: 0; }
+  .comic { position: absolute; width: var(--s); height: var(--s); }
+  .comic svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .comic b {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: calc(var(--s) * .2); letter-spacing: .02em; color: var(--cream);
+    -webkit-text-stroke: max(4px, calc(var(--s) * .035)) var(--ink); paint-order: stroke fill;
+    text-shadow: 3px 3px 0 var(--ink);
+  }
+  .ring {
+    position: absolute; border-radius: 50%; border: 6px solid var(--coral);
+    box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink);
+  }
+  .chip { position: absolute; border: 2px solid var(--ink); }
+  .cash {
+    position: absolute; transform: translate(-50%, -50%);
+    font-size: 20px; color: var(--lime); white-space: nowrap;
+    -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill;
+    text-shadow: 2px 2px 0 var(--ink);
+  }
+
+  /* HUD: the damage bill */
+  .hud {
+    position: fixed; z-index: 30; left: 16px; top: 16px; max-width: 260px;
+    background: var(--cream); border: 2px solid var(--ink); border-radius: 14px;
+    box-shadow: 3px 3px 0 var(--ink); padding: 10px 14px 10px; rotate: -1.5deg;
+  }
+  .hud h1 {
+    margin: 0 0 2px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+    display: inline-block; background: var(--coral); color: var(--cream);
+    border: 2px solid var(--ink); border-radius: 999px; padding: 3px 10px; rotate: 2deg;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .damage {
+    display: block; font-size: 36px; line-height: 1.05; margin-top: 4px;
+    color: var(--gold); font-variant-numeric: tabular-nums; transform-origin: 20% 60%;
+    -webkit-text-stroke: 7px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink);
+    rotate: -3deg; white-space: nowrap;
+  }
+  .caption, .best {
+    margin: 2px 0 0; font-family: Georgia, "Times New Roman", serif; font-style: italic;
+    font-weight: 400; font-size: 13px; line-height: 1.3;
+  }
+  .best { opacity: .7; font-size: 12px; }
+
+  /* control pill */
+  .toolbar {
+    position: fixed; z-index: 30; left: 50%; bottom: 16px; translate: -50% 0; width: max-content;
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; flex-wrap: wrap; justify-content: center;
+    background: var(--cream); border: 2px solid var(--ink); border-radius: 999px;
+    box-shadow: 3px 3px 0 var(--ink); max-width: calc(100vw - 32px);
+  }
+  .toolbar button {
+    font: inherit; font-size: 13px; color: var(--ink); text-transform: uppercase; letter-spacing: .03em;
+    display: flex; align-items: center; gap: 6px; min-height: 44px;
+    background: #fff; border: 2px solid var(--ink); border-radius: 999px;
+    padding: 5px 12px 5px 6px; cursor: pointer; box-shadow: 3px 3px 0 var(--ink);
+    transition: transform .1s, box-shadow .1s, background-color .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toolbar button svg { width: 30px; height: 30px; flex: none; overflow: visible; }
+  .toolbar button:hover { transform: translate(-2px, -2px) rotate(-2deg); box-shadow: 5px 5px 0 var(--ink); }
+  .toolbar button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .toolbar button[aria-pressed="true"] { background: var(--gold); transform: rotate(-6deg); }
+  .toolbar button[aria-pressed="true"]:hover { transform: translate(-2px, -2px) rotate(-6deg); }
+  .toolbar button:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+  .toolbar .quake { background: var(--lime); }
+  .toolbar .restore { background: var(--sky); }
+  .toolbar .icon-only { padding: 5px 6px; }
+  .toolbar .sep { width: 2px; align-self: stretch; background: var(--ink); border-radius: 2px; margin: 4px 2px; opacity: .5; }
+
+  .hint {
+    position: fixed; z-index: 30; left: 50%; bottom: 92px; translate: -50% 0;
+    font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 400; font-size: 15px;
+    background: var(--cream); border: 2px solid var(--ink); border-radius: 999px; padding: 4px 14px;
+    box-shadow: 2px 2px 0 var(--ink); white-space: nowrap; transition: opacity .8s;
+  }
+  .hint.gone { opacity: 0; }
+
+  #toasts { position: fixed; z-index: 35; top: 16px; left: 50%; translate: -50% 0; pointer-events: none; }
+  .toast {
+    background: var(--gold); border: 2px solid var(--ink); border-radius: 12px;
+    box-shadow: 3px 3px 0 var(--ink); padding: 8px 16px 9px; text-align: center; white-space: nowrap;
+    font-size: 17px; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .toast small {
+    display: block; font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 400;
+    font-size: 13px; text-transform: none; letter-spacing: 0; margin-top: 2px;
+  }
+
+  .notice {
+    position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px;
+    background: var(--paper); text-align: center;
+  }
+  .notice > div { background: var(--cream); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 3px 3px 0 var(--ink); padding: 18px 24px; rotate: -1deg; }
+  .notice h2 { margin: 0 0 6px; text-transform: uppercase; }
+  .notice p { font-family: Georgia, serif; font-style: italic; font-weight: 400; max-width: 420px; margin: 0; }
+
+  @media (max-width: 999px) {
+    .toolbar .label { display: none; }
+    .toolbar button { padding: 5px 6px; }
+  }
+  @media (max-width: 560px) {
+    .toolbar { gap: 4px; padding: 6px 7px; border-radius: 22px; }
+    .toolbar button { min-height: 38px; padding: 4px 5px; box-shadow: 2px 2px 0 var(--ink); }
+    .toolbar button svg { width: 24px; height: 24px; }
+    .toolbar .sep { display: none; }
+    .hud { padding: 7px 10px; max-width: 200px; }
+    .damage { font-size: 26px; -webkit-text-stroke-width: 6px; }
+    .caption { font-size: 12px; }
+    #toasts { top: auto; bottom: 150px; }
+    .hint { bottom: 132px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"><iframe id="frame" src="/" title="The randomsitesontheweb homepage, ready to be wrecked"></iframe></div>
+<canvas id="rig" aria-hidden="true"></canvas>
+<div id="fx"><div class="flash" id="flash"></div></div>
+
+<div class="hud" aria-live="polite">
+  <h1>Wreck This Page</h1>
+  <span class="damage" id="damage">$0</span>
+  <p class="caption">in damages. Billing has been notified.</p>
+  <p class="best" id="best" hidden></p>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<div class="hint" id="hint">tap anything. it's all insured.</div>
+
+<div class="toolbar" role="toolbar" aria-label="Weapons">
+  <button type="button" data-weapon="hammer" aria-pressed="true" title="Hammer (1)" data-icon="hammer"><span class="label">Hammer</span></button>
+  <button type="button" data-weapon="blaster" aria-pressed="false" title="Blaster (2) — hold to keep firing" data-icon="blaster"><span class="label">Blaster</span></button>
+  <button type="button" data-weapon="bomb" aria-pressed="false" title="Bomb (3)" data-icon="bomb"><span class="label">Bomb</span></button>
+  <button type="button" data-weapon="ball" aria-pressed="false" title="Wrecking ball (4) — drag to swing" data-icon="ball"><span class="label">Wrecking ball</span></button>
+  <button type="button" data-weapon="hole" aria-pressed="false" title="Black hole (5)" data-icon="hole"><span class="label">Black hole</span></button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" class="quake" id="quake" title="Earthquake (Q)" data-icon="quake"><span class="label">Quake</span></button>
+  <button type="button" class="restore" id="restore" title="Restore" data-icon="restore"><span class="label">Restore</span></button>
+  <button type="button" class="icon-only" id="sound" aria-label="Sound" aria-pressed="true" data-icon="sound"></button>
+</div>
+
+<div class="notice" id="notice" hidden>
+  <div>
+    <h2>The page is out of reach.</h2>
+    <p>This only works when the homepage loads from the same place as this page. Try it on randomsitesontheweb.com.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const frame = document.getElementById('frame');
+  const fx = document.getElementById('fx');
+  const rig = document.getElementById('rig');
+  const rctx = rig.getContext('2d');
+  const flashEl = document.getElementById('flash');
+  const damageEl = document.getElementById('damage');
+  const bestEl = document.getElementById('best');
+  const hintEl = document.getElementById('hint');
+  const toastsEl = document.getElementById('toasts');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const INK = '#201a17', CREAM = '#fff8ef', CORAL = '#f0563e', SKY = '#5aa0db', LIME = '#b7ce3c',
+    PURPLE = '#a98fd0', ORANGE = '#f47b28', GOLD = '#f7c948', PINK = '#ff7fa5', TEAL = '#2fb0a3', STEEL = '#b9bfc6';
+  const PALETTE = [CORAL, SKY, LIME, PURPLE, ORANGE, GOLD, PINK, TEAL];
+
+  const GRAVITY = 2400;      // px/s²
+  const MAX_FLYING = 150;    // every detached piece, flying or in the heap
+  const MAX_PILE = 70;
+  const COL = 16;            // heap height-map column width
+  const BOMB_RADIUS = 180;
+  const SKIP = new Set(['HTML', 'BODY', 'MAIN', 'HEAD', 'SCRIPT', 'STYLE', 'LINK', 'META', 'NOSCRIPT', 'TEMPLATE', 'IFRAME', 'BR']);
+  const CANDIDATES = 'img, svg, h1, h2, h3, h4, p, button, a, input, select, label, li, .site-card, .wtp-letter, span, i, nav';
+  const KEEP_STYLES = ['color', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
+    'letterSpacing', 'textTransform', 'textAlign', 'whiteSpace', 'backgroundColor', 'borderRadius'];
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // ---------- icons: hand-drawn stickers, reused for buttons and cursors ----------
+  const S = `stroke='${INK}' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'`;
+  const ICONS = {
+    hammer: `<g transform='rotate(-30 16 16)' ${S}><rect x='13.5' y='12' width='5' height='18' rx='2' fill='${ORANGE}'/><rect x='5' y='5' width='22' height='9' rx='2.5' fill='${STEEL}'/><path d='M8 8.5h4' fill='none' stroke-width='1.5'/></g>`,
+    blaster: `<g ${S}><path d='M7 20l-2 8h6l2-8z' fill='${CORAL}'/><rect x='3' y='11' width='19' height='10' rx='4' fill='${CORAL}'/><rect x='21' y='13' width='6' height='6' rx='1.5' fill='${GOLD}'/><circle cx='28.5' cy='16' r='2.2' fill='${SKY}'/><path d='M7.5 14.5h7' fill='none' stroke-width='1.5'/></g>`,
+    bomb: `<g ${S}><circle cx='14' cy='19' r='10' fill='#3a3330'/><rect x='17' y='7' width='7' height='5' rx='1' fill='${STEEL}' transform='rotate(40 20.5 9.5)'/><path d='M23 7c1.5-3 4-3.5 5-1.5' fill='none'/><path d='M9.5 15a6 6 0 0 1 4-3' stroke='${CREAM}' fill='none'/><circle cx='28.5' cy='4.5' r='2.6' fill='${GOLD}' stroke-width='1.5'/><path d='M28.5 0v-1M32 4.5h1M31 1.5l.8-.8' fill='none' stroke-width='1.5'/></g>`,
+    ball: `<g ${S}><path d='M16 0v5' fill='none'/><ellipse cx='16' cy='7' rx='2.2' ry='3' fill='none'/><circle cx='16' cy='20' r='10' fill='#4a423e'/><rect x='13' y='9' width='6' height='3.5' rx='1' fill='${GOLD}'/><path d='M10.5 17a6 6 0 0 1 4-3.5' stroke='${CREAM}' fill='none'/></g>`,
+    hole: `<g ${S}><circle cx='16' cy='16' r='13' fill='${PURPLE}'/><path d='M16 5.5a10.5 10.5 0 0 1 10 9M26.5 16.5a10.5 10.5 0 0 1-9 10M15.5 26.5a10.5 10.5 0 0 1-10-9M5.5 15.5a10.5 10.5 0 0 1 9-10' fill='none'/><circle cx='16' cy='16' r='5' fill='${INK}'/></g>`,
+    quake: `<g ${S}><path d='M3 21h26v8H3z' fill='${ORANGE}'/><path d='M15 21l2 3-3 2 2 3' fill='none'/><path d='M4 14l3-4 3 4 3-4 3 4 3-4 3 4 3-4 3 4' fill='none'/></g>`,
+    restore: `<g ${S}><path d='M25 17a9 9 0 1 1-3.2-7.5' fill='none' stroke-width='3'/><path d='M18.5 4.5l6.5 3.5-5.5 5z' fill='${INK}'/></g>`,
+    sound: `<g ${S}><path d='M4 12h5l7-6v20l-7-6H4z' fill='${GOLD}'/><path d='M20 11.5c2 2 2 7 0 9M24 8c4 4 4 12 0 16' fill='none'/></g>`,
+    muted: `<g ${S}><path d='M4 12h5l7-6v20l-7-6H4z' fill='${GOLD}'/><path d='M20 12l8 8M28 12l-8 8' fill='none'/></g>`
+  };
+  const svgIcon = (name, size) => `<svg xmlns='http://www.w3.org/2000/svg'${size ? ` width='${size}' height='${size}'` : ''} viewBox='-1 -2 34 34' aria-hidden='true'>${ICONS[name]}</svg>`;
+  document.querySelectorAll('[data-icon]').forEach(btn => btn.insertAdjacentHTML('afterbegin', svgIcon(btn.dataset.icon)));
+
+  const cursorUrl = (name, x, y, fallback) => `url("data:image/svg+xml,${encodeURIComponent(svgIcon(name, 40))}") ${x} ${y}, ${fallback}`;
+  const CURSORS = {
+    hammer: cursorUrl('hammer', 5, 20, 'pointer'),
+    blaster: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='34' height='34'><g fill='none' stroke-linecap='round'><g stroke='${INK}' stroke-width='5.5'><circle cx='17' cy='17' r='9'/><path d='M17 2v8M17 24v8M2 17h8M24 17h8'/></g><g stroke='${CORAL}' stroke-width='2.5'><circle cx='17' cy='17' r='9'/><path d='M17 2v8M17 24v8M2 17h8M24 17h8'/></g></g></svg>`)}") 17 17, crosshair`,
+    bomb: cursorUrl('bomb', 17, 25, 'pointer'),
+    ball: 'grab',
+    hole: cursorUrl('hole', 20, 20, 'crosshair')
+  };
+
+  // ---------- state ----------
+  let weapon = 'hammer';
+  let damage = 0, best = 0;
+  let doc = null, win = null, debris = null, decalLayer = null;
+  let bodies = [], holes = [], cols = new Float32Array(1);
+  let raf = 0, last = 0;
+  let hits = new WeakMap();      // element -> blaster hits
+  let decals = new WeakMap();    // element -> decal nodes
+  let refs = { logo: null, search: null, surprise: null, letters: [], targets: [] };
+  let seen = new Set();
+  let bellLogo = false, bellRings = 0, denied = false, quaking = false, lastKrak = 0;
+  try { best = +(localStorage.getItem('wreckthispage:best') || 0); } catch (e) {}
+  const money = n => '$' + n.toLocaleString('en-US');
+  function showBest() {
+    bestEl.hidden = !best;
+    bestEl.textContent = 'Personal best: ' + money(best) + '.';
+  }
+  showBest();
+
+  // ---------- sound: everything synthesized ----------
+  let actx = null, noiseBuf = null, muted = false;
+  try { muted = localStorage.getItem('wreckthispage:muted') === '1'; } catch (e) {}
+  const soundBtn = document.getElementById('sound');
+  function paintSound() {
+    soundBtn.setAttribute('aria-pressed', String(!muted));
+    soundBtn.querySelector('svg').outerHTML = svgIcon(muted ? 'muted' : 'sound');
+  }
+  paintSound();
+  soundBtn.addEventListener('click', () => {
+    muted = !muted;
+    try { localStorage.setItem('wreckthispage:muted', muted ? '1' : '0'); } catch (e) {}
+    paintSound();
+  });
+  function audio() {
+    if (muted) return null;
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function env(g, t, attack, decay, peak) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+  }
+  function tone(a, type, f0, f1, t, dur, peak) {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    o.connect(g).connect(a.destination);
+    env(g, t, .005, dur, peak);
+    o.start(t); o.stop(t + dur + .05);
+  }
+  function sfx(kind, k = 1) {
+    const a = audio();
+    if (!a) return;
+    const t = a.currentTime;
+    const NOISE = { thud: [.16, 900, .45], boom: [.9, 1500, .8], rumble: [2.1, 180, .7], whoosh: [1.3, 2600, .35] };
+    if (NOISE[kind]) {
+      if (!noiseBuf) {
+        noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      const [dur, f0, peak] = NOISE[kind];
+      const n = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+      n.buffer = noiseBuf; n.loop = true;
+      f.type = kind === 'whoosh' ? 'bandpass' : 'lowpass';
+      f.frequency.setValueAtTime(f0, t);
+      f.frequency.exponentialRampToValueAtTime(kind === 'rumble' ? 50 : 90, t + dur);
+      n.connect(f).connect(g).connect(a.destination);
+      env(g, t, kind === 'rumble' || kind === 'whoosh' ? .2 : .004, dur, peak * k);
+      n.start(t); n.stop(t + dur + .3);
+    }
+    if (kind === 'thud') tone(a, 'sine', 170, 45, t, .2, .5 * k);
+    if (kind === 'boom') tone(a, 'sine', 120, 30, t, .7, .8);
+    if (kind === 'zap') tone(a, 'square', 1500, 160, t, .11, .07);
+    if (kind === 'pop') tone(a, 'sine', 500, 1300, t, .09, .25);
+    if (kind === 'ding') { tone(a, 'triangle', 880, 870, t, .25, .15); tone(a, 'triangle', 1320, 1310, t + .09, .35, .12); }
+    if (kind === 'bell') {
+      [[1, 3, .3], [2.76, 2, .12], [5.4, 1.2, .08], [8.9, .7, .05]].forEach(([m, dur, p]) => tone(a, 'sine', 330 * m, 330 * m * .995, t, dur, p));
+    }
+  }
+
+  // ---------- effects in the parent page, over the iframe ----------
+  function starPath(spikes, outer, inner) {
+    let d = '';
+    for (let i = 0; i < spikes * 2; i++) {
+      const r = i % 2 ? inner * rand(.8, 1.1) : outer * rand(.85, 1.08);
+      const a = i * Math.PI / spikes - Math.PI / 2;
+      d += (i ? 'L' : 'M') + (Math.cos(a) * r).toFixed(1) + ' ' + (Math.sin(a) * r).toFixed(1);
+    }
+    return d + 'Z';
+  }
+  function comic(word, x, y, size, color) {
+    const el = document.createElement('div');
+    el.className = 'comic';
+    el.style.cssText = `--s:${size}px;left:${x - size / 2}px;top:${y - size / 2}px`;
+    const d = starPath(word ? 13 : 9, 50, word ? 34 : 24);
+    el.innerHTML = `<svg viewBox='-56 -56 112 112'><path d='${d}' transform='translate(4 4)' fill='${INK}'/>` +
+      `<path d='${d}' fill='${color}' stroke='${INK}' stroke-width='2.5' vector-effect='non-scaling-stroke' stroke-linejoin='round'/></svg>` +
+      (word ? `<b>${word}</b>` : '');
+    fx.appendChild(el);
+    const r = rand(-14, 14);
+    el.animate([
+      { transform: `rotate(${r}deg) scale(.2)`, opacity: 1 },
+      { transform: `rotate(${r}deg) scale(1.15)`, opacity: 1, offset: .3 },
+      { transform: `rotate(${r}deg) scale(1)`, opacity: 1, offset: .55 },
+      { transform: `rotate(${r}deg) scale(1)`, opacity: 0 }
+    ], { duration: word ? 900 : 260, easing: 'ease-out' }).onfinish = () => el.remove();
+  }
+  function ring(x, y, r) {
+    const el = document.createElement('div');
+    el.className = 'ring';
+    el.style.cssText = `left:${x - r}px;top:${y - r}px;width:${r * 2}px;height:${r * 2}px`;
+    fx.appendChild(el);
+    el.animate([{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }],
+      { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => el.remove();
+  }
+  // little ink-outlined chunks of whatever got hit, thrown on a parabola
+  function chunks(x, y, n, color) {
+    for (let i = 0; i < n; i++) {
+      const el = document.createElement('div');
+      el.className = 'chip';
+      const s = rand(6, 13);
+      el.style.cssText = `left:${x}px;top:${y}px;width:${s}px;height:${s * rand(.6, 1.2)}px;` +
+        `background:${Math.random() < .5 && color ? color : pick(PALETTE)};border-radius:${pick(['2px', '50%', '1px 6px'])}`;
+      fx.appendChild(el);
+      const vx = rand(-380, 380), vy = rand(-650, -150), vr = rand(-900, 900), dur = rand(.7, 1.1);
+      const frames = [];
+      for (let k = 0; k <= 6; k++) {
+        const t = dur * k / 6;
+        frames.push({ transform: `translate(${vx * t}px, ${vy * t + 1100 * t * t}px) rotate(${vr * t}deg)`, opacity: k === 6 ? 0 : 1 });
+      }
+      el.animate(frames, { duration: dur * 1000 }).onfinish = () => el.remove();
+    }
+  }
+  function cashPop(n, x, y) {
+    const el = document.createElement('div');
+    el.className = 'cash';
+    el.textContent = '+' + money(n);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    fx.appendChild(el);
+    el.animate([
+      { opacity: 1, transform: 'translate(-50%, -50%) scale(.4)' },
+      { opacity: 1, transform: 'translate(-50%, -90%) scale(1.1)', offset: .25 },
+      { opacity: 0, transform: 'translate(-50%, -170%) scale(1)' }
+    ], { duration: 1000, easing: 'ease-out' }).onfinish = () => el.remove();
+  }
+  function shake(ms = 300, amp = 9) {
+    if (reduced) return;
+    const frames = [];
+    const n = Math.max(5, Math.round(ms / 45));
+    for (let i = 0; i <= n; i++) {
+      const k = i === n ? 0 : amp * (1 - i / n);
+      frames.push({ transform: `translate(${rand(-k, k)}px, ${rand(-k, k)}px)` });
+    }
+    frame.animate(frames, { duration: ms, easing: 'linear' });
+  }
+  function flash() {
+    flashEl.animate([{ opacity: reduced ? .25 : .7 }, { opacity: 0 }], { duration: 260, easing: 'ease-out' });
+  }
+  function bgOf(el) {
+    try {
+      const c = win.getComputedStyle(el).backgroundColor;
+      return c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent' ? c : null;
+    } catch (e) { return null; }
+  }
+
+  // ---------- the bill ----------
+  function addDamage(n, x, y) {
+    if (!n) return;
+    damage += n;
+    damageEl.textContent = money(damage);
+    damageEl.animate([
+      { transform: 'scale(.2)' }, { transform: 'scale(1.15)', offset: .55 }, { transform: 'scale(1)' }
+    ], { duration: 320, easing: 'ease-out' });
+    if (damage > best) {
+      best = damage;
+      try { localStorage.setItem('wreckthispage:best', String(best)); } catch (e) {}
+      showBest();
+    }
+    if (x != null) cashPop(n, x, y);
+    checkMilestones();
+  }
+
+  // ---------- milestones, each once per load ----------
+  const gone = el => !!el && (!el.isConnected || debris.contains(el));
+  const MILESTONES = [
+    { id: 'logo', test: () => gone(refs.logo), title: 'Logo destroyed', note: 'Brand guidelines: void.' },
+    { id: 'headline', test: () => refs.letters.length > 0 && refs.letters.every(gone), title: 'Headline erased', note: 'The message has been lost.' },
+    { id: 'surprise', test: () => gone(refs.surprise), title: 'No more surprises', note: 'The Surprise Me button has left the building.' },
+    { id: 'search', test: () => gone(refs.search), title: 'Search bar destroyed', note: 'Nothing can be found now.' },
+    { id: '100k', test: () => damage >= 100000, title: '$100,000 club', note: 'Your deductible has been met.' },
+    { id: '1m', test: () => damage >= 1000000, title: 'Seven figures', note: 'Legal would like a word.' },
+    { id: 'total', test: () => refs.targets.length >= 5 && refs.targets.filter(gone).length >= refs.targets.length * .8,
+      title: 'Total demolition', note: 'The homepage is mostly a rumor now.' }
+  ];
+  function checkMilestones() {
+    if (!debris) return;
+    for (const m of MILESTONES) {
+      if (seen.has(m.id) || !m.test()) continue;
+      seen.add(m.id);
+      toast(m.title, m.note, m.id === 'total' ? CORAL : GOLD);
+    }
+  }
+  const toastQ = [];
+  let toasting = false;
+  function toast(title, note, color) {
+    toastQ.push({ title, note, color });
+    if (!toasting) nextToast();
+  }
+  function nextToast() {
+    const t = toastQ.shift();
+    if (!t) { toasting = false; return; }
+    toasting = true;
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.style.background = t.color;
+    el.innerHTML = `${t.title}<small></small>`;
+    el.querySelector('small').textContent = t.note;
+    toastsEl.appendChild(el);
+    const r = rand(-4, 3);
+    el.animate([
+      { transform: `rotate(${r}deg) scale(.2)` }, { transform: `rotate(${r}deg) scale(1.15)`, offset: .6 }, { transform: `rotate(${r}deg) scale(1)` }
+    ], { duration: 380, easing: 'ease-out', fill: 'forwards' });
+    sfx('ding');
+    setTimeout(() => {
+      el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' }).onfinish = () => { el.remove(); nextToast(); };
+    }, 2400);
+  }
+
+  // ---------- picking what to break ----------
+  // climb from the element under the pointer to something worth throwing:
+  // not the page itself, not a giant container, not a 3px icon path
+  function pickTarget(el) {
+    const vpArea = win.innerWidth * win.innerHeight;
+    while (el && el.nodeType === 1) {
+      if (SKIP.has(el.tagName) || el === debris || debris.contains(el) || el === decalLayer) return null;
+      if (el.ownerSVGElement) { el = el.ownerSVGElement; continue; }
+      const r = el.getBoundingClientRect();
+      const area = r.width * r.height;
+      if (area < 150) { el = el.parentElement; continue; }
+      if (area > vpArea * 0.4 && !el.classList.contains('site-card')) return null;
+      return el;
+    }
+    return null;
+  }
+
+  // whole things on screen within R of a point, biggest first, never a thing and its own part
+  function nearby(x, y, R, limit) {
+    const W = win.innerWidth, H = win.innerHeight, vpArea = W * H;
+    const near = [];
+    doc.body.querySelectorAll(CANDIDATES).forEach(el => {
+      if (debris.contains(el) || decalLayer.contains(el)) return;
+      const r = el.getBoundingClientRect();
+      const area = r.width * r.height;
+      if (area < 150 || area > vpArea * 0.4) return;
+      if (r.bottom < 0 || r.top > H || r.right < 0 || r.left > W) return;
+      const dist = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+      if (dist > R) return;
+      const cs = win.getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.opacity === '0') return;   // the page's own hidden bits stay hidden
+      near.push({ el, r, dist, area });
+    });
+    near.sort((a, b) => b.area - a.area);
+    const chosen = [];
+    for (const n of near) {
+      if (chosen.length >= limit) break;
+      if (chosen.some(c => c.el.contains(n.el) || n.el.contains(c.el))) continue;
+      chosen.push(n);
+    }
+    return chosen;
+  }
+
+  function valueOf(el, r) {
+    let v = Math.max(40, Math.round(r.width * r.height / 400) * 10);
+    if (el.tagName === 'IMG' || el.tagName === 'svg') v *= 2;
+    if (el.classList.contains('site-card')) v *= 3;
+    if (el.classList.contains('wtp-letter')) v = 250;
+    if (el === refs.logo || (el.contains && el.contains(refs.logo))) v = Math.max(v, 50000);
+    return Math.min(v, 50000);
+  }
+
+  // ---------- physics ----------
+  function detach(el, vx, vy, vr, hole) {
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return 0;
+    if (bodies.length >= MAX_FLYING) {
+      const old = bodies[0];
+      removeBody(old);
+      if (old.rest) slump();
+    }
+    const cs = win.getComputedStyle(el);
+    const saved = {};
+    KEEP_STYLES.forEach(k => { saved[k] = cs[k]; });
+    clearDecals(el);
+    debris.appendChild(el);   // pulling it out of the flow lets the page reflow around the hole
+    Object.assign(el.style, saved, {
+      position: 'absolute', left: r.left + 'px', top: r.top + 'px',
+      width: r.width + 'px', height: r.height + 'px', maxWidth: 'none', margin: '0',
+      boxSizing: 'border-box', transition: 'none', animation: 'none', opacity: '1',
+      visibility: 'visible', pointerEvents: 'none', transformOrigin: '50% 50%',
+      transform: 'none', rotate: 'none', translate: 'none', scale: 'none', display: cs.display === 'inline' ? 'inline-block' : cs.display
+    });
+    const b = { el, x: 0, y: 0, vx, vy, rot: 0, vr, left: r.left, top: r.top, w: r.width, h: r.height, bounces: 0, rest: false };
+    if (hole) {
+      b.hole = hole;
+      b.ht0 = performance.now();
+      b.hdur = rand(650, 1050);
+      b.cx0 = r.left + r.width / 2;
+      b.cy0 = r.top + r.height / 2;
+      b.d0 = Math.hypot(b.cx0 - hole.x, b.cy0 - hole.y);
+      b.a0 = Math.atan2(b.cy0 - hole.y, b.cx0 - hole.x);
+    }
+    bodies.push(b);
+    wake();
+    return valueOf(el, r);
+  }
+
+  function removeBody(b) {
+    b.el.remove();
+    bodies = bodies.filter(x => x !== b);
+  }
+
+  function wake() {
+    if (!win) return;
+    if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); }
+  }
+
+  const setT = (b, s) => { b.el.style.transform = `translate(${b.x}px, ${b.y}px) rotate(${b.rot}deg)${s != null ? ` scale(${s})` : ''}`; };
+  function extents(b) {
+    const a = b.rot * Math.PI / 180, c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a));
+    return { hx: c * b.w / 2 + s * b.h / 2, hy: s * b.w / 2 + c * b.h / 2 };
+  }
+  // the floor is the bottom of the screen, except where the control pill sits: debris lands on that
+  let base = new Float32Array(1);
+  function ensureCols(W) {
+    const n = Math.ceil(W / COL) + 1;
+    if (cols.length !== n) { cols = new Float32Array(n); measureFloor(); slump(); }
+  }
+  function measureFloor() {
+    base = new Float32Array(cols.length);
+    const r = document.querySelector('.toolbar').getBoundingClientRect();
+    const lift = Math.max(0, innerHeight - r.top - 2);
+    for (let i = 0; i < base.length; i++) {
+      const x = i * COL;
+      if (x + COL > r.left + 12 && x < r.right - 12) base[i] = lift;
+    }
+  }
+  function heapAt(cx, hx) {
+    let m = 0;
+    const a = Math.max(0, Math.floor((cx - hx) / COL)), z = Math.min(cols.length - 1, Math.floor((cx + hx) / COL));
+    for (let i = a; i <= z; i++) m = Math.max(m, cols[i]);
+    return m;
+  }
+  // the heap lost a piece: everything in it drops and settles again
+  function slump() {
+    if (base.length === cols.length) cols.set(base); else cols.fill(0);
+    for (const b of bodies) if (b.rest) { b.rest = false; b.bounces = 2; b.vx = b.vy = b.vr = 0; }
+    wake();
+  }
+  function settle(b, H, cx) {
+    // land on the nearest flat side, a little crooked, so it reads as a heap
+    b.rot = Math.round(b.rot / 90) * 90 + rand(-7, 7);
+    const { hx, hy } = extents(b);
+    const floor = H - heapAt(cx, hx);
+    // the heap is tall enough here: this one tumbles down behind it and off the screen
+    if (H - floor + hy * 2 > H * 0.5) { b.through = true; b.vr = rand(-200, 200); return; }
+    b.y = floor - hy - (b.top + b.h / 2);
+    b.vx = b.vy = b.vr = 0;
+    b.rest = true;
+    setT(b);
+    const top = (H - floor) + hy * 2 * 0.9;
+    const a = Math.max(0, Math.floor((cx - hx) / COL)), z = Math.min(cols.length - 1, Math.floor((cx + hx) / COL));
+    for (let i = a; i <= z; i++) cols[i] = Math.max(cols[i], top);
+    // too many pieces: the oldest is hauled away and the rest slumps
+    const resting = bodies.filter(x => x.rest);
+    if (resting.length > MAX_PILE) { removeBody(resting[0]); slump(); }
+  }
+
+  function step(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    const H = win.innerHeight, W = win.innerWidth;
+    ensureCols(W);
+    let moving = false;
+    for (const b of bodies.slice()) {
+      if (b.rest) continue;
+      moving = true;
+      if (b.hole) { suck(b, now, dt); continue; }
+      b.vy += GRAVITY * dt;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.rot += b.vr * dt;
+      const { hx, hy } = extents(b);
+      const cx = b.left + b.w / 2 + b.x, cy = b.top + b.h / 2 + b.y;
+      if ((cx - hx < 0 && b.vx < 0) || (cx + hx > W && b.vx > 0)) { b.vx *= -0.5; b.vr *= -0.6; }
+      if (b.vy > 0 && !b.through) {
+        const floor = H - heapAt(cx, hx);
+        if (cy + hy > floor) {
+          if (b.bounces < 2 && b.vy > 260) {
+            b.y -= cy + hy - floor;
+            b.vy *= -0.38;
+            b.vx *= 0.7;
+            b.vr *= 0.6;
+            b.bounces++;
+          } else {
+            settle(b, H, Math.min(W, Math.max(0, cx)));
+            continue;
+          }
+        }
+      }
+      setT(b);
+      if (b.top + b.y > H + 600) removeBody(b);
+    }
+    const ballOn = stepBall(dt, now);
+    const holesOn = stepHoles(now);
+    drawRig(now);
+    raf = (moving || ballOn || holesOn) ? requestAnimationFrame(step) : 0;
+  }
+
+  function clearDecals(el) {
+    (decals.get(el) || []).forEach(d => d.remove());
+    decals.delete(el);
+    // holes on anything inside it go too
+    el.querySelectorAll && el.querySelectorAll('*').forEach(c => {
+      (decals.get(c) || []).forEach(d => d.remove());
+      decals.delete(c);
+    });
+  }
+
+  // ---------- weapons ----------
+  function isLogo(t) { return refs.logo && (t === refs.logo || t.contains(refs.logo) || refs.logo.contains(t)); }
+
+  function hammer(x, y) {
+    const t = pickTarget(doc.elementFromPoint(x, y));
+    if (!t) { comic('', x, y, 40, GOLD); return; }
+    if (bellLogo && isLogo(t) && bellRings < 3) {
+      bellRings++;
+      sfx('bell');
+      comic('DONG', x, y - 30, 130, GOLD);
+      t.animate([0, 9, -7, 5, -3, 1, 0].map(d => ({ transform: `rotate(${d}deg)` })), { duration: 1400, easing: 'ease-out' });
+      return;
+    }
+    const color = bgOf(t);
+    const v = detach(t, rand(-250, 250), rand(-650, -350), rand(-300, 300));
+    if (v) addDamage(v, x, y);
+    comic(pick(['BAM', 'WHAM', 'BONK', 'THWACK', 'CLANG']), x, y, 110, pick([GOLD, CORAL, SKY, PINK]));
+    chunks(x, y, 7, color);
+    sfx('thud');
+    shake(160, 4);
+  }
+
+  const HOLE = encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -20 40 40'>" +
+    "<g stroke='#201a17' stroke-width='1.6' stroke-linecap='round' fill='none'>" +
+    "<path d='M0 0 L-15 -6 M0 0 L12 -13 M0 0 L16 7 M0 0 L-4 17 M0 0 L-17 9 M0 0 L5 -18'/>" +
+    "<path d='M-9 -3.6 l-2 3 M7 -7.5 l3 1.6 M9.6 4.2 l-1 3 M-2.4 10 l-3 -1' stroke-width='1.1'/></g>" +
+    "<circle r='4.6' fill='#201a17'/><circle r='2.2' fill='#000'/></svg>");
+  function blaster(x, y) {
+    comic('', x, y, 46, GOLD);
+    sfx('zap');
+    const t = pickTarget(doc.elementFromPoint(x, y));
+    if (!t) return;
+    const n = (hits.get(t) || 0) + 1;
+    hits.set(t, n);
+    const hole = doc.createElement('div');
+    Object.assign(hole.style, {
+      position: 'absolute', left: (x + win.scrollX - 20) + 'px', top: (y + win.scrollY - 20) + 'px',
+      width: '40px', height: '40px', pointerEvents: 'none',
+      background: `url("data:image/svg+xml,${HOLE}") center/contain no-repeat`,
+      rotate: Math.floor(Math.random() * 360) + 'deg'
+    });
+    decalLayer.appendChild(hole);
+    decals.set(t, [...(decals.get(t) || []), hole]);
+    chunks(x, y, 2, bgOf(t));
+    addDamage(75, x, y);
+    if (n >= 3) {
+      const v = detach(t, rand(-350, 350), -500, rand(-450, 450));
+      if (v) addDamage(v, x, y - 24);
+      comic('PEW', x + 30, y - 30, 80, SKY);
+    }
+  }
+
+  function bomb(x, y) {
+    const chosen = nearby(x, y, BOMB_RADIUS, 40);
+    let total = 0;
+    chosen.forEach(({ el, r, dist }) => {
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const dx = cx - x, dy = cy - y;
+      const d = Math.hypot(dx, dy) || 1;
+      const power = (1 - dist / BOMB_RADIUS) * 1200 + 500;
+      total += detach(el, dx / d * power, dy / d * power - 550, rand(-720, 720));
+    });
+    comic(pick(['BOOM', 'KABOOM', 'BLAM']), x, y, 230, pick([GOLD, ORANGE, CORAL]));
+    ring(x, y, BOMB_RADIUS);
+    chunks(x, y, 16);
+    flash();
+    shake(320, 10);
+    sfx('boom');
+    if (total) addDamage(total, x, y);
+  }
+
+  // ---------- wrecking ball: drag it, let go, it swings ----------
+  const PIVOT_Y = -6;
+  const ball = { x: 0, y: 0, vx: 0, vy: 0, px: 0, r: 34, len: 0, grab: false, tx: 0, ty: 0 };
+  function resetBall() {
+    ball.r = innerWidth < 560 ? 26 : 34;
+    ball.len = Math.min(innerHeight * 0.55, 460);
+    ball.px = innerWidth / 2;
+    ball.x = ball.px;
+    ball.y = PIVOT_Y + ball.len;
+    ball.vx = ball.vy = 0;
+  }
+  function stepBall(dt, now) {
+    if (weapon !== 'ball') return false;
+    const b = ball;
+    if (b.grab) {
+      // the trolley slides along the top toward you; the ball is pulled to your finger
+      b.px += (b.tx - b.px) * Math.min(1, dt * 2.2);
+      b.vx += ((b.tx - b.x) * 140 - b.vx * 14) * dt;
+      b.vy += ((b.ty - b.y) * 140 - b.vy * 14) * dt;
+    } else {
+      b.vy += 1700 * dt;
+      const damp = 1 - 0.45 * dt;
+      b.vx *= damp; b.vy *= damp;
+    }
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    const dx = b.x - b.px, dy = b.y - PIVOT_Y, d = Math.hypot(dx, dy);
+    if (d > b.len) {
+      const nx = dx / d, ny = dy / d;
+      b.x = b.px + nx * b.len;
+      b.y = PIVOT_Y + ny * b.len;
+      const vr = b.vx * nx + b.vy * ny;
+      if (vr > 0) { b.vx -= vr * nx; b.vy -= vr * ny; }
+    }
+    const speed = Math.hypot(b.vx, b.vy);
+    if (speed > 320) smash(now);
+    return b.grab || speed > 4 || Math.abs(b.x - b.px) > 0.5;
+  }
+  function smash(now) {
+    const W = win.innerWidth, H = win.innerHeight;
+    let n = 0, total = 0, color = null;
+    for (let i = 0; i < 9 && n < 3; i++) {
+      const a = i * Math.PI / 4, rr = i === 8 ? 0 : ball.r * 0.85;
+      const px = ball.x + Math.cos(a) * rr, py = ball.y + Math.sin(a) * rr;
+      if (px < 0 || py < 0 || px >= W || py >= H) continue;
+      const t = pickTarget(doc.elementFromPoint(px, py));
+      if (!t) continue;
+      color = color || bgOf(t);
+      const v = detach(t, ball.vx * 0.8 + rand(-100, 100), ball.vy * 0.8 - 250, rand(-450, 450));
+      if (v) { total += v; n++; }
+    }
+    // plough through the heap too
+    let shoved = false;
+    for (const b of bodies) {
+      if (!b.rest) continue;
+      const cx = b.left + b.w / 2 + b.x, cy = b.top + b.h / 2 + b.y;
+      if (Math.hypot(cx - ball.x, cy - ball.y) < ball.r + Math.max(b.w, b.h) * 0.45) {
+        b.rest = false; b.bounces = 0; b.hit = true;
+        b.vx = ball.vx * 0.7; b.vy = Math.min(-250, ball.vy * 0.6); b.vr = rand(-600, 600);
+        shoved = true;
+      }
+    }
+    if (shoved) {
+      const kicked = bodies.filter(b => b.hit);
+      slump();
+      kicked.forEach(b => { b.bounces = 0; b.hit = false; b.vx = ball.vx * 0.7; b.vy = Math.min(-250, ball.vy * 0.6); b.vr = rand(-600, 600); });
+    }
+    if (!n) return;
+    addDamage(total, ball.x, ball.y - ball.r);
+    chunks(ball.x, ball.y, 6, color);
+    sfx('thud', 1.3);
+    ball.vx *= 0.85; ball.vy *= 0.85;
+    if (now - lastKrak > 260) {
+      lastKrak = now;
+      comic(pick(['KRAK', 'CRUNCH', 'SMASH']), ball.x, ball.y - ball.r - 20, 120, pick([GOLD, CORAL, LIME]));
+      shake(180, 6);
+    }
+  }
+
+  // ---------- black hole: it opens, it eats, it closes ----------
+  function openHole(x, y) {
+    if (holes.length >= 3) return;
+    holes.push({ x, y, t0: performance.now(), life: 2600, R: Math.min(240, Math.max(150, win.innerWidth * 0.22)), lastPull: 0 });
+    sfx('whoosh');
+    comic('VWOOM', x, y - 80, 120, PURPLE);
+    wake();
+  }
+  function grow(age, life) {
+    if (age < 300) { const p = age / 300 - 1; return 1 + 2.4 * p * p * p + 1.4 * p * p; }  // ease-out-back
+    if (age > life - 350) return Math.max(0, (life - age) / 350);
+    return 1;
+  }
+  function stepHoles(now) {
+    for (const h of holes.slice()) {
+      const age = now - h.t0;
+      if (age > h.life) {
+        holes.splice(holes.indexOf(h), 1);
+        comic('POP', h.x, h.y, 70, GOLD);
+        sfx('pop');
+        continue;
+      }
+      if (age > 200 && age < h.life - 600 && now - h.lastPull > 130) {
+        h.lastPull = now;
+        const near = nearby(h.x, h.y, h.R, 30).sort((a, b) => a.dist - b.dist).slice(0, 3);
+        let total = 0;
+        near.forEach(({ el }) => { total += detach(el, 0, 0, 0, h); });
+        if (total) addDamage(total, h.x, h.y - 50);
+      }
+    }
+    return holes.length > 0;
+  }
+  function suck(b, now, dt) {
+    const h = b.hole, p = Math.min(1, (now - b.ht0) / b.hdur), e = p * p;
+    const ang = b.a0 + e * 6, dist = b.d0 * (1 - e);
+    b.x = h.x + Math.cos(ang) * dist - b.cx0;
+    b.y = h.y + Math.sin(ang) * dist - b.cy0;
+    b.rot += (200 + 900 * p) * dt;
+    setT(b, Math.max(0.03, 1 - e));
+    if (p >= 1) removeBody(b);
+  }
+
+  // ---------- the rig canvas ----------
+  let dpr = 1;
+  function sizeRig() {
+    dpr = Math.min(2, devicePixelRatio || 1);
+    rig.width = Math.round(innerWidth * dpr);
+    rig.height = Math.round(innerHeight * dpr);
+  }
+  function drawRig(now) {
+    rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    rctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (const h of holes) drawHole(h, now);
+    if (weapon === 'ball') drawBall();
+  }
+  function doubleStroke(color, wide, narrow) {
+    rctx.strokeStyle = INK; rctx.lineWidth = wide; rctx.stroke();
+    rctx.strokeStyle = color; rctx.lineWidth = narrow; rctx.stroke();
+  }
+  function drawHole(h, now) {
+    const age = now - h.t0, k = grow(age, h.life);
+    if (k <= 0) return;
+    const R = h.R * k, spin = age / 1000 * 4, c = rctx;
+    c.save();
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.setLineDash([14, 12]);
+    c.lineDashOffset = -age / 18;
+    c.beginPath(); c.arc(h.x, h.y, R * 0.95, 0, Math.PI * 2);
+    doubleStroke(SKY, 5, 2.5);
+    c.setLineDash([]);
+    [PURPLE, PINK, SKY].forEach((color, arm) => {
+      c.beginPath();
+      for (let s = 0; s <= 1.0001; s += 0.05) {
+        const r = R * 0.85 * (1 - s) + 22 * k;
+        const a = spin + arm * Math.PI * 2 / 3 + s * 4.2;
+        const px = h.x + Math.cos(a) * r, py = h.y + Math.sin(a) * r;
+        s ? c.lineTo(px, py) : c.moveTo(px, py);
+      }
+      doubleStroke(color, 9, 4.5);
+    });
+    const core = 26 * k;
+    c.beginPath(); c.arc(h.x + 3, h.y + 3, core + 6, 0, Math.PI * 2); c.fillStyle = INK; c.fill();
+    c.beginPath(); c.arc(h.x, h.y, core + 3, 0, Math.PI * 2);
+    c.fillStyle = INK; c.fill();
+    doubleStroke(PURPLE, 6, 3);
+    c.restore();
+  }
+  function drawBall() {
+    const b = ball, c = rctx;
+    if (!b.len) resetBall();
+    c.save();
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    // chain: a sagging curve of links from the trolley to the ball
+    const dx = b.x - b.px, dy = b.y - PIVOT_Y, d = Math.hypot(dx, dy) || 1;
+    const slack = Math.sqrt(Math.max(0, b.len * b.len - d * d)) * 0.45;
+    const qx = b.px + dx / 2, qy = PIVOT_Y + dy / 2 + slack;
+    const n = Math.max(4, Math.round(b.len / 13));
+    for (let i = 0; i < n; i++) {
+      const t = (i + 0.5) / n, u = 1 - t;
+      const px = u * u * b.px + 2 * u * t * qx + t * t * b.x;
+      const py = u * u * PIVOT_Y + 2 * u * t * qy + t * t * b.y;
+      const tx = 2 * u * (qx - b.px) + 2 * t * (b.x - qx), ty = 2 * u * (qy - PIVOT_Y) + 2 * t * (b.y - qy);
+      c.save();
+      c.translate(px, py);
+      c.rotate(Math.atan2(ty, tx));
+      c.beginPath();
+      c.ellipse(0, 0, 7.5, i % 2 ? 1.6 : 4.2, 0, 0, Math.PI * 2);
+      doubleStroke(STEEL, 4.5, 2);
+      c.restore();
+    }
+    // trolley on the top edge
+    c.fillStyle = INK; c.fillRect(b.px - 22 + 3, -6 + 3, 44, 18);
+    c.beginPath(); c.roundRect(b.px - 22, -6, 44, 18, 5);
+    c.fillStyle = GOLD; c.fill(); c.strokeStyle = INK; c.lineWidth = 2; c.stroke();
+    // the ball itself
+    c.beginPath(); c.arc(b.x + 4, b.y + 4, b.r, 0, Math.PI * 2); c.fillStyle = INK; c.fill();
+    c.beginPath(); c.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    c.fillStyle = '#4a423e'; c.fill(); c.lineWidth = 3; c.strokeStyle = INK; c.stroke();
+    c.beginPath(); c.arc(b.x, b.y, b.r * 0.62, Math.PI * 1.1, Math.PI * 1.45);
+    c.strokeStyle = CREAM; c.lineWidth = 3.5; c.stroke();
+    const sx = b.x - dx / d * (b.r + 2), sy = b.y - dy / d * (b.r + 2);
+    c.beginPath(); c.arc(sx, sy, 6, 0, Math.PI * 2);
+    c.fillStyle = GOLD; c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+    c.restore();
+  }
+
+  // ---------- earthquake: everything everywhere shakes loose ----------
+  function quake() {
+    if (!win || quaking) return;
+    quaking = true;
+    firstUse();
+    sfx('rumble');
+    comic('RUMBLE', innerWidth / 2, innerHeight * 0.35, 220, LIME);
+    shake(2000, 12);
+    let ticks = 0;
+    const iv = setInterval(() => {
+      ticks++;
+      const pool = nearby(win.innerWidth / 2, win.innerHeight / 2, Infinity, 400);
+      let total = 0, at = null;
+      for (let i = 0; i < 3 && pool.length; i++) {
+        const { el, r } = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+        at = at || { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        total += detach(el, rand(-220, 220), rand(-380, -120), rand(-400, 400));
+        chunks(r.left + r.width / 2, r.bottom, 3, bgOf(el));
+      }
+      if (total) addDamage(total, at.x, at.y);
+      if (ticks >= 10) { clearInterval(iv); quaking = false; }
+    }, 200);
+  }
+
+  // ---------- wiring the iframe ----------
+  function applyCursor() {
+    if (!doc) return;
+    let s = doc.getElementById('wtp-cursor');
+    if (!s) { s = doc.createElement('style'); s.id = 'wtp-cursor'; doc.head.appendChild(s); }
+    s.textContent = `html, html * { cursor: ${CURSORS[weapon]} !important; } #wtp-debris, #wtp-debris * { transition: none !important; }` +
+      (weapon === 'ball' ? ' html { touch-action: none !important; } html:active, html:active * { cursor: grabbing !important; }' : '');
+  }
+
+  // split the hero headline's plain text into letters so you can knock them out one by one
+  function splitHeadline() {
+    const h1 = doc.querySelector('h1');
+    if (!h1) return;
+    [...h1.childNodes].forEach(node => {
+      if (node.nodeType !== 3 || !node.textContent.trim()) return;
+      const frag = doc.createDocumentFragment();
+      for (const ch of node.textContent) {
+        if (ch === ' ') { frag.appendChild(doc.createTextNode(' ')); continue; }
+        const s = doc.createElement('span');
+        s.className = 'wtp-letter';
+        s.style.display = 'inline-block';
+        s.textContent = ch;
+        frag.appendChild(s);
+      }
+      node.replaceWith(frag);
+    });
+  }
+
+  let used = false;
+  function firstUse() {
+    if (used) return;
+    used = true;
+    hintEl.classList.add('gone');
+  }
+  setTimeout(() => hintEl.classList.add('gone'), 10000);
+
+  const TAP = { hammer, bomb, hole: openHole };
+
+  function setup() {
+    try {
+      doc = frame.contentDocument;
+      win = frame.contentWindow;
+      if (!doc || !doc.body) throw new Error('no document');
+    } catch (err) {
+      document.getElementById('notice').hidden = false;
+      return;
+    }
+    bodies = [];
+    holes = [];
+    hits = new WeakMap();
+    decals = new WeakMap();
+    seen = new Set();
+    bellLogo = Math.random() < 0.04;
+    bellRings = 0;
+    cols = new Float32Array(Math.ceil(win.innerWidth / COL) + 1);
+    measureFloor();
+    cols.set(base);
+
+    debris = doc.createElement('div');
+    debris.id = 'wtp-debris';
+    Object.assign(debris.style, { position: 'fixed', inset: '0', pointerEvents: 'none', zIndex: '2147483000', overflow: 'visible' });
+    decalLayer = doc.createElement('div');
+    decalLayer.id = 'wtp-decals';
+    Object.assign(decalLayer.style, { position: 'absolute', left: '0', top: '0', width: '0', height: '0', overflow: 'visible', pointerEvents: 'none', zIndex: '2147482000' });
+    doc.body.appendChild(decalLayer);
+    doc.body.appendChild(debris);
+    applyCursor();
+    splitHeadline();
+    refs = {
+      logo: doc.querySelector('.logo-img'),
+      search: doc.getElementById('search'),
+      surprise: doc.getElementById('surpriseBtn'),
+      letters: [...doc.querySelectorAll('.wtp-letter')],
+      targets: nearby(win.innerWidth / 2, win.innerHeight / 2, Infinity, 999).map(n => n.el)
+    };
+
+    // the page's own clicks, links and buttons are off while you're wrecking it;
+    // a tap (not a scroll or drag) fires the current weapon
+    let down = null, ptr = { x: 0, y: 0 }, autoFire = 0;
+    const capture = e => { try { doc.documentElement.setPointerCapture(e.pointerId); } catch (err) {} };
+    win.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      ptr = { x: e.clientX, y: e.clientY };
+      down = { ...ptr };
+      if (weapon === 'ball') {
+        firstUse();
+        capture(e);
+        ball.grab = true; ball.tx = ptr.x; ball.ty = ptr.y;
+        wake();
+      } else if (weapon === 'blaster') {
+        firstUse();
+        capture(e);
+        blaster(ptr.x, ptr.y);
+        autoFire = setInterval(() => blaster(ptr.x, ptr.y), 110);
+      }
+    }, true);
+    win.addEventListener('pointermove', e => {
+      ptr = { x: e.clientX, y: e.clientY };
+      if (ball.grab) { ball.tx = ptr.x; ball.ty = ptr.y; }
+    }, true);
+    const release = (e, cancelled) => {
+      clearInterval(autoFire);
+      autoFire = 0;
+      ball.grab = false;
+      if (!down) return;
+      const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+      down = null;
+      if (!cancelled && moved < 10 && TAP[weapon]) { firstUse(); TAP[weapon](e.clientX, e.clientY); }
+    };
+    win.addEventListener('pointerup', e => { e.stopPropagation(); release(e, false); }, true);
+    win.addEventListener('pointercancel', e => release(e, true), true);
+    ['click', 'auxclick', 'dblclick', 'submit', 'dragstart', 'contextmenu'].forEach(type => {
+      win.addEventListener(type, e => { e.preventDefault(); e.stopPropagation(); }, true);
+    });
+    win.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); }, true);
+    win.addEventListener('mouseup', e => e.stopPropagation(), true);
+    win.addEventListener('keydown', onKey, true);
+    drawRig(performance.now());
+  }
+
+  frame.addEventListener('load', setup);
+  sizeRig();
+  addEventListener('resize', () => {
+    sizeRig();
+    resetBall();
+    if (win) { measureFloor(); slump(); drawRig(performance.now()); }
+  });
+
+  // ---------- toolbar ----------
+  function setWeapon(w) {
+    weapon = w;
+    document.querySelectorAll('[data-weapon]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.weapon === w)));
+    applyCursor();
+    if (w === 'ball') { resetBall(); wake(); }
+    drawRig(performance.now());
+  }
+  document.querySelectorAll('[data-weapon]').forEach(btn => {
+    btn.addEventListener('click', () => setWeapon(btn.dataset.weapon));
+  });
+  document.getElementById('quake').addEventListener('click', quake);
+  function onKey(e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const map = { '1': 'hammer', '2': 'blaster', '3': 'bomb', '4': 'ball', '5': 'hole' };
+    if (map[e.key]) { e.preventDefault(); setWeapon(map[e.key]); }
+    if (e.key === 'q' || e.key === 'Q') quake();
+  }
+  addEventListener('keydown', onKey);
+
+  const restoreBtn = document.getElementById('restore');
+  restoreBtn.addEventListener('click', () => {
+    if (!denied && damage > 0 && Math.random() < 0.05) {
+      denied = true;
+      toast('Insurance claim denied', 'Please try again.', CORAL);
+      restoreBtn.animate([0, -12, 10, -6, 3, 0].map(d => ({ transform: `rotate(${d}deg)` })), { duration: 500 });
+      sfx('thud');
+      return;
+    }
+    damage = 0;
+    damageEl.textContent = '$0';
+    bodies = [];
+    holes = [];
+    toastQ.length = 0;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    resetBall();
+    drawRig(performance.now());
+    try { win.location.reload(); } catch (e) { frame.src = frame.src; }
+  });
+})();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About Wreck This Page</h2>
+<p>Our homepage, fully destructible. Hammer it, shoot it, bomb it. The Restore button pretends none of it happened.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/writemeastory/">Write Me a Story</a>: Interactive story writing experience</li>
+<li><a href="/youarebeingwatched/">You Are Being Watched</a>: A fake surveillance feed of you — with tracking boxes, biometric readouts, and a rising threat level.</li>
+<li><a href="/thousandballs/">2,500 Balls</a>: Exactly two thousand five hundred bouncing balls. Count them if you don't believe us.</li>
+<li><a href="/bread/">Bread</a>: A random photo of bread. That's it. Click for another.</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

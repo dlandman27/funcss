@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horrible Forms</title>
+<meta name="description" content="Fill out one terribly designed form field at a time. A birthday slider. A phone number dropdown. Please wait one second between keystrokes.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/horribleforms/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/horribleforms/">
+    <meta property="og:title" content="Horrible Forms">
+    <meta property="og:description" content="Fill out one terribly designed form field at a time. A birthday slider. A shuffling keyboard. A checkbox that works half the time.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/horribleforms.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Horrible Forms">
+    <meta name="twitter:description" content="Fill out one terribly designed form field at a time. A birthday slider. A shuffling keyboard. A checkbox that works half the time.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/horribleforms.png">
+    <!-- rsotw:og:end -->
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #e8e8e8;
+    color: #222;
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px;
+  }
+  .wrap { width: 100%; max-width: 580px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; color: #666; font-size: 13px; }
+  header h1 { font-size: 15px; margin: 0; color: #333; font-weight: 600; }
+  .card {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 28px 24px 24px;
+  }
+  .form-id { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .card h2 { margin: 0 0 20px; font-size: 22px; font-weight: 600; }
+  label.field { display: block; font-weight: 600; margin-bottom: 8px; }
+  .hint { font-size: 13px; color: #777; margin-top: 6px; }
+  .readout {
+    font: 20px/1.3 ui-monospace, Menlo, Consolas, monospace;
+    background: #f6f6f6; border: 1px solid #ddd; border-radius: 4px;
+    padding: 10px 12px; margin: 12px 0; min-height: 48px; word-break: break-all;
+  }
+  input[type=text], input[type=password], select {
+    font: inherit; padding: 8px 10px; border: 1px solid #bbb; border-radius: 4px; width: 100%; background: #fff;
+  }
+  input[type=range] { width: 100%; margin: 14px 0; }
+  button {
+    font: inherit; padding: 8px 16px; border: 1px solid #aaa; border-radius: 4px;
+    background: #f4f4f4; cursor: pointer; color: #222;
+  }
+  button:hover { background: #ebebeb; }
+  button:active { background: #e0e0e0; }
+  button.primary { background: #2f6fd6; border-color: #2a62bd; color: #fff; }
+  button.primary:hover { background: #2a62bd; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .actions { margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+  .received {
+    margin-top: 16px; padding: 12px 14px; background: #eef7ee; border: 1px solid #b9dcb9; border-radius: 4px; font-size: 14px; display: none;
+  }
+  .received.show { display: block; }
+  .received b { font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 600; word-break: break-all; }
+
+  /* per-form bits */
+  .keys { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .keys button { padding: 8px 0; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .digits { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .digits select { width: auto; padding: 6px 4px; }
+  .checks label { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; font-weight: normal; }
+  .checks input { margin-top: 4px; }
+  .dodge { position: relative; height: 180px; border: 1px dashed #ddd; border-radius: 4px; touch-action: none; }
+  .dodge label { position: absolute; display: flex; gap: 4px; align-items: center; transition: left .15s, top .15s; white-space: nowrap; font-weight: normal; }
+  .rules { list-style: none; padding: 0; margin: 12px 0 0; font-size: 14px; }
+  .rules li { padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; }
+  .rules li.bad { background: #fdeeee; color: #9b2c2c; }
+  .rules li.ok { background: #eef7ee; color: #2d6b2d; }
+  .clock { font: 44px/1 ui-monospace, Menlo, Consolas, monospace; text-align: center; padding: 18px 0; }
+  .wait { color: #b33; font-size: 13px; min-height: 20px; margin-top: 6px; }
+  .tiny { font-size: 9px; padding: 1px 4px; }
+  .reels { display: flex; gap: 8px; justify-content: center; }
+  .reel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .reel span { font: 36px/1 ui-monospace, Menlo, Consolas, monospace; border: 1px solid #ccc; border-radius: 4px; padding: 10px 12px; background: #f6f6f6; }
+  .reel button { padding: 4px 8px; font-size: 13px; }
+  .morse { width: 100%; padding: 28px 0; font-size: 18px; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .chart { font: 11px/1.6 ui-monospace, Menlo, Consolas, monospace; color: #888; margin-top: 8px; }
+  canvas.sig { width: 100%; height: 180px; border: 1px solid #ccc; border-radius: 4px; background: #fffef8; touch-action: none; display: block; }
+  .swatch { height: 70px; border: 1px solid #ccc; border-radius: 4px; margin: 10px 0; }
+  .slider-row { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 8px; }
+  .slider-row input { margin: 6px 0; }
+  .captcha { font: italic 34px/1 Georgia, serif; text-align: center; padding: 18px 0; letter-spacing: .1em; background: repeating-linear-gradient(-30deg, #f2f2f2 0 6px, #e6e6e6 6px 12px); border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; }
+  .captcha i { display: inline-block; }
+  .masked { -webkit-text-security: disc; }
+  .question { font-size: 18px; margin: 4px 0 14px; min-height: 52px; }
+  .dial-wrap { position: relative; width: 240px; height: 240px; margin: 8px auto; }
+  .dial { position: absolute; inset: 0; border-radius: 50%; background: #333; transition: transform .3s ease-out; }
+  .dial button { position: absolute; width: 40px; height: 40px; border-radius: 50%; padding: 0; background: #fafafa; font-weight: 600; transform: translate(-50%, -50%); }
+  .dial-stop { position: absolute; left: 196px; top: 186px; width: 30px; height: 8px; background: #c33; border-radius: 3px; transform: rotate(50deg); }
+  .fill { height: 26px; border: 1px solid #ccc; border-radius: 4px; background: #f6f6f6; overflow: hidden; margin: 10px 0; }
+  .fill div { height: 100%; width: 0; background: #2f6fd6; }
+  .vendors label { display: flex; gap: 8px; align-items: center; font-weight: normal; font-size: 14px; margin-bottom: 4px; }
+  .pixels { display: grid; grid-template-columns: repeat(12, 1fr); width: min(100%, 300px); aspect-ratio: 1; border: 1px solid #ccc; margin: 0 auto; touch-action: none; }
+  .pixels div { border: 1px solid #f2f2f2; }
+  .pixels div.on { background: #222; border-color: #222; }
+
+  footer { margin-top: 14px; font-size: 12px; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Horrible Forms</h1>
+    <span id="tally"></span>
+  </header>
+  <div class="card">
+    <div class="form-id" id="formId"></div>
+    <h2 id="formTitle"></h2>
+    <div id="formBody"></div>
+    <div class="received" id="received"></div>
+    <div class="actions">
+      <button class="primary" id="submit">Submit</button>
+      <button id="next">Another form</button>
+    </div>
+  </div>
+  <footer>All fields are required. All fields are like this.</footer>
+</div>
+
+<script>
+const $ = (tag, attrs = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v);
+  }
+  kids.forEach(k => el.append(k));
+  return el;
+};
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const fmtDate = d => d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+const DAY = 86400000;
+const today = new Date(); today.setHours(12, 0, 0, 0);
+
+const FORMS = [
+  {
+    slug: 'birthday',
+    title: 'Date of Birth',
+    build(body) {
+      const start = new Date(1900, 0, 1, 12);
+      const max = Math.round((today - start) / DAY);
+      const out = $('div', { class: 'readout' });
+      const slider = $('input', { type: 'range', min: 0, max, step: 1, value: Math.floor(Math.random() * max) });
+      const show = () => out.textContent = fmtDate(new Date(start.getTime() + slider.value * DAY));
+      slider.addEventListener('input', show); show();
+      body.append($('label', { class: 'field', text: 'Slide to your birthday' }), slider, out,
+        $('div', { class: 'hint', text: 'Range: January 1, 1900 to today. Every day is available.' }));
+      return () => out.textContent;
+    }
+  },
+  {
+    slug: 'phone-slider',
+    title: 'Phone Number',
+    build(body) {
+      const out = $('div', { class: 'readout' });
+      const slider = $('input', { type: 'range', min: 0, max: 9999999999, step: 1, value: Math.floor(Math.random() * 9999999999) });
+      const show = () => { const s = String(slider.value).padStart(10, '0'); out.textContent = `(${s.slice(0,3)}) ${s.slice(3,6)}-${s.slice(6)}`; };
+      slider.addEventListener('input', show); show();
+      body.append($('label', { class: 'field', text: 'Mobile number' }), slider, out,
+        $('div', { class: 'hint', text: 'Standard rates may apply.' }));
+      return () => out.textContent;
+    }
+  },
+  {
+    slug: 'phone-dropdowns',
+    title: 'Phone Number (Again)',
+    build(body) {
+      const wrap = $('div', { class: 'digits' });
+      const sels = [];
+      for (let i = 0; i < 10; i++) {
+        if (i === 0) wrap.append('(');
+        if (i === 3) wrap.append(') ');
+        if (i === 6) wrap.append('-');
+        const s = $('select');
+        s.append($('option', { value: '', text: '-' }));
+        shuffle([0,1,2,3,4,5,6,7,8,9]).forEach(d => s.append($('option', { value: d, text: d })));
+        sels.push(s); wrap.append(s);
+      }
+      body.append($('label', { class: 'field', text: 'Select each digit' }), wrap,
+        $('div', { class: 'hint', text: 'Digits are listed in no particular order, for security.' }));
+      return () => sels.map(s => s.value || '?').join('');
+    }
+  },
+  {
+    slug: 'name-keyboard',
+    title: 'Full Name',
+    build(body) {
+      let val = '';
+      const out = $('div', { class: 'readout' });
+      const keys = $('div', { class: 'keys' });
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').concat(['space', 'del']);
+      const render = () => {
+        keys.replaceChildren(...shuffle(chars).map(c => $('button', { text: c, onclick: () => {
+          if (c === 'del') val = val.slice(0, -1);
+          else val += c === 'space' ? ' ' : c;
+          out.textContent = val; render();
+        }})));
+      };
+      render();
+      body.append($('label', { class: 'field', text: 'Name as it appears on your passport' }), out, keys,
+        $('div', { class: 'hint', text: 'Keyboard is rearranged after each key to prevent keyloggers.' }));
+      return () => val;
+    }
+  },
+  {
+    slug: 'age-plus-one',
+    title: 'Age',
+    build(body) {
+      let n = 0;
+      const out = $('div', { class: 'readout', text: '0' });
+      const minus = $('button', { class: 'tiny', text: 'reset', onclick: () => { n = 0; out.textContent = n; } });
+      body.append($('label', { class: 'field', text: 'How old are you?' }), out,
+        $('div', { class: 'row' }, $('button', { text: '+1', onclick: () => { n++; out.textContent = n; } }), minus),
+        $('div', { class: 'hint', text: 'Please count carefully.' }));
+      return () => String(n);
+    }
+  },
+  {
+    slug: 'previous-day',
+    title: 'Date of Birth (Calendar)',
+    build(body) {
+      let d = new Date(today);
+      const out = $('div', { class: 'readout', text: fmtDate(d) });
+      body.append($('label', { class: 'field', text: 'Go back to your birthday' }), out,
+        $('div', { class: 'row' },
+          $('button', { text: 'Previous day', onclick: () => { d = new Date(d.getTime() - DAY); out.textContent = fmtDate(d); } }),
+          $('button', { class: 'tiny', text: 'start over', onclick: () => { d = new Date(today); out.textContent = fmtDate(d); } })),
+        $('div', { class: 'hint', text: 'For your convenience, we have started you at today.' }));
+      return () => out.textContent;
+    }
+  },
+  {
+    slug: 'email-roll',
+    title: 'Email Address',
+    build(body) {
+      const pool = 'abcdefghijklmnopqrstuvwxyz0123456789@._-';
+      let val = '', cur = pool[Math.floor(Math.random() * pool.length)];
+      const out = $('div', { class: 'readout' });
+      const curEl = $('span', { style: 'font:28px ui-monospace,Menlo,monospace;min-width:1.4em;display:inline-block;text-align:center;border:1px solid #ccc;border-radius:4px;padding:2px 8px', text: cur });
+      body.append($('label', { class: 'field', text: 'Email' }), out,
+        $('div', { class: 'row' }, curEl,
+          $('button', { text: 'Roll', onclick: () => { cur = pool[Math.floor(Math.random() * pool.length)]; curEl.textContent = cur; } }),
+          $('button', { text: 'Keep', onclick: () => { val += cur; out.textContent = val; } }),
+          $('button', { class: 'tiny', text: 'clear', onclick: () => { val = ''; out.textContent = ''; } })),
+        $('div', { class: 'hint', text: 'Roll until you get the next character, then keep it.' }));
+      return () => val;
+    }
+  },
+  {
+    slug: 'consent',
+    title: 'Communication Preferences',
+    build(body) {
+      const items = [
+        'I do not wish to not receive no marketing emails.',
+        'Uncheck this box if you would prefer we did not refrain from sharing your data.',
+        'Leave unchecked unless you do not want this box to remain unchecked.',
+        'I agree to disagree with the terms I have not declined.',
+      ];
+      const boxes = items.map(t => { const c = $('input', { type: 'checkbox' }); if (Math.random() < .5) c.checked = true; return [c, t]; });
+      body.append($('div', { class: 'checks' }, ...boxes.map(([c, t]) => $('label', {}, c, $('span', { text: t })))),
+        $('div', { class: 'hint', text: 'Some boxes have been pre-checked based on your preferences.' }));
+      return () => `${boxes.filter(([c]) => c.checked).length} of 4 boxes checked. Outcome: you are subscribed.`;
+    }
+  },
+  {
+    slug: 'backwards',
+    title: 'Home Address',
+    build(body) {
+      const input = $('input', { type: 'text', autocomplete: 'off', spellcheck: 'false' });
+      input.addEventListener('beforeinput', e => {
+        if (e.inputType === 'insertText' || e.inputType === 'insertCompositionText') {
+          e.preventDefault();
+          input.value = (e.data || '') + input.value;
+          input.setSelectionRange(0, 0);
+        } else if (e.inputType.startsWith('delete')) {
+          e.preventDefault();
+          input.value = input.value.slice(0, -1);
+          input.setSelectionRange(0, 0);
+        } else if (e.inputType === 'insertFromPaste') e.preventDefault();
+      });
+      input.addEventListener('click', () => input.setSelectionRange(0, 0));
+      body.append($('label', { class: 'field', text: 'Street address' }), input,
+        $('div', { class: 'hint', text: 'Our system stores addresses right-to-left.' }));
+      return () => input.value;
+    }
+  },
+  {
+    slug: 'one-per-second',
+    title: 'Mother’s Maiden Name',
+    build(body) {
+      let last = 0;
+      const input = $('input', { type: 'text', autocomplete: 'off', spellcheck: 'false' });
+      const warn = $('div', { class: 'wait' });
+      let t;
+      input.addEventListener('beforeinput', e => {
+        if (e.inputType === 'insertFromPaste') { e.preventDefault(); warn.textContent = 'Pasting is not permitted.'; return; }
+        if (!e.inputType.startsWith('insert')) return;
+        const now = performance.now();
+        if (now - last < 1000) {
+          e.preventDefault();
+          warn.textContent = 'Please wait one (1) second between characters.';
+          clearTimeout(t); t = setTimeout(() => warn.textContent = '', 1200);
+        } else last = now;
+      });
+      body.append($('label', { class: 'field', text: 'Mother’s maiden name' }), input, warn,
+        $('div', { class: 'hint', text: 'For stability, input is limited to one character per second.' }));
+      return () => input.value;
+    }
+  },
+  {
+    slug: 'password',
+    title: 'Create a Password',
+    build(body) {
+      const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+      const month = months[today.getMonth()];
+      const isPrime = n => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+      const rules = [
+        ['Must be at least 8 characters.', p => p.length >= 8],
+        ['Must include a number.', p => /\d/.test(p)],
+        ['Must include an uppercase letter.', p => /[A-Z]/.test(p)],
+        ['Must include a special character.', p => /[^A-Za-z0-9]/.test(p)],
+        ['The digits must add up to 25.', p => (p.match(/\d/g) || []).reduce((s, d) => s + +d, 0) === 25],
+        ['Must include the current month.', p => p.toLowerCase().includes(month)],
+        ['Must include a planet.', p => /mercury|venus|earth|mars|jupiter|saturn|uranus|neptune/i.test(p)],
+        ['Length must be a prime number.', p => isPrime(p.length)],
+        ['Must not start with the same character it ends with.', p => p[0] !== p[p.length - 1]],
+      ];
+      const input = $('input', { type: 'password', autocomplete: 'new-password' });
+      const list = $('ul', { class: 'rules' });
+      const check = () => {
+        const p = input.value; list.replaceChildren();
+        for (const [text, fn] of rules) {
+          const ok = fn(p);
+          list.append($('li', { class: ok ? 'ok' : 'bad', text }));
+          if (!ok) break;
+        }
+      };
+      input.addEventListener('input', check);
+      body.append($('label', { class: 'field', text: 'Password' }), input, list);
+      return () => rules.every(([, fn]) => fn(input.value)) ? '•'.repeat(input.value.length) + ' (accepted)' : 'Password does not meet requirements.';
+    }
+  },
+  {
+    slug: 'satisfaction',
+    title: 'Customer Satisfaction',
+    build(body) {
+      const box = $('div', { class: 'dodge' });
+      const radios = [];
+      for (let i = 1; i <= 10; i++) {
+        const r = $('input', { type: 'radio', name: 'sat', value: i });
+        const l = $('label', {}, r, document.createTextNode(i === 10 ? '10 (very satisfied)' : i === 1 ? '1 (not satisfied)' : String(i)));
+        radios.push(r); box.append(l);
+      }
+      const labels = [...box.children];
+      const place = l => {
+        const w = box.clientWidth - l.offsetWidth - 8, h = box.clientHeight - l.offsetHeight - 8;
+        l.style.left = 4 + Math.random() * Math.max(0, w) + 'px';
+        l.style.top = 4 + Math.random() * Math.max(0, h) + 'px';
+      };
+      requestAnimationFrame(() => labels.forEach(place));
+      const flee = (x, y) => labels.forEach((l, i) => {
+        if (i < 2) return; // 1 and 2 are always welcome
+        const b = l.getBoundingClientRect();
+        const dx = x - (b.left + b.width / 2), dy = y - (b.top + b.height / 2);
+        if (Math.hypot(dx, dy) < 60) place(l);
+      });
+      box.addEventListener('pointermove', e => flee(e.clientX, e.clientY));
+      box.addEventListener('pointerdown', e => flee(e.clientX, e.clientY));
+      body.append($('label', { class: 'field', text: 'How satisfied are you with this form?' }), box);
+      return () => (radios.find(r => r.checked) || {}).value || 'No answer';
+    }
+  },
+  {
+    slug: 'stop-the-clock',
+    title: 'Preferred Appointment Time',
+    build(body) {
+      let mins = Math.floor(Math.random() * 1440), running = true, raf, last = performance.now();
+      const clock = $('div', { class: 'clock' });
+      const fmt = m => { const h = Math.floor(m / 60), mm = m % 60; return `${(h % 12) || 12}:${String(mm).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
+      const tick = now => {
+        if (!clock.isConnected) return;
+        const dt = now - last; last = now;
+        if (running) { mins = (mins + dt / 25) % 1440; clock.textContent = fmt(Math.floor(mins)); }
+        raf = requestAnimationFrame(tick);
+      };
+      clock.textContent = fmt(Math.floor(mins));
+      raf = requestAnimationFrame(tick);
+      const btn = $('button', { text: 'Stop', onclick: () => {
+        running = !running; btn.textContent = running ? 'Stop' : 'Resume';
+        if (running) { last = performance.now(); raf = requestAnimationFrame(tick); } else cancelAnimationFrame(raf);
+      }});
+      body.append($('label', { class: 'field', text: 'Stop the clock at your preferred time' }), clock,
+        $('div', { class: 'row', style: 'justify-content:center' }, btn));
+      return () => clock.textContent;
+    }
+  },
+  {
+    slug: 'guess-birthday',
+    title: 'Date of Birth (Verification)',
+    build(body) {
+      const start = new Date(1900, 0, 1, 12);
+      let lo = 0, hi = Math.round((today - start) / DAY), guess, done = false, tries = 0;
+      const out = $('div', { class: 'readout' });
+      const ask = () => {
+        guess = lo + Math.floor(Math.random() * (hi - lo + 1));
+        tries++;
+        out.textContent = `Is it ${fmtDate(new Date(start.getTime() + guess * DAY))}?`;
+      };
+      const btns = $('div', { class: 'row' },
+        $('button', { text: 'Earlier', onclick: () => { if (done) return; hi = Math.max(lo, guess - 1); ask(); } }),
+        $('button', { text: 'Yes', onclick: () => { done = true; out.textContent = fmtDate(new Date(start.getTime() + guess * DAY)) + ` (guess #${tries})`; } }),
+        $('button', { text: 'Later', onclick: () => { if (done) return; lo = Math.min(hi, guess + 1); ask(); } }));
+      ask();
+      body.append($('label', { class: 'field', text: 'We will guess your birthday' }), out, btns,
+        $('div', { class: 'hint', text: 'Answer honestly. Guesses are random within the remaining range.' }));
+      return () => done ? out.textContent : 'Not confirmed';
+    }
+  },
+  {
+    slug: 'fifty-fifty',
+    title: 'Terms of Service',
+    build(body) {
+      const box = $('input', { type: 'checkbox' });
+      box.addEventListener('click', e => { if (Math.random() < .5) e.preventDefault(); });
+      body.append($('div', { class: 'checks' }, $('label', {}, box, $('span', { text: 'I have read and agree to the Terms of Service.' }))),
+        $('div', { class: 'hint', text: 'Checkbox reliability: 50%.' }));
+      return () => box.checked ? 'Agreed' : 'Not agreed';
+    }
+  },
+  {
+    slug: 'volume-dice',
+    title: 'Notification Volume',
+    build(body) {
+      let vol = 50;
+      const out = $('div', { class: 'readout', text: 'Volume: 50' });
+      const bar = $('progress', { max: 100, value: 50, style: 'width:100%' });
+      body.append($('label', { class: 'field', text: 'Set your preferred volume' }), bar, out,
+        $('div', { class: 'row' }, $('button', { text: 'Roll', onclick: () => {
+          vol = Math.floor(Math.random() * 101); bar.value = vol; out.textContent = `Volume: ${vol}`;
+        }})),
+        $('div', { class: 'hint', text: 'Keep rolling until you like the result.' }));
+      return () => String(vol);
+    }
+  },
+  {
+    slug: 'zip-slots',
+    title: 'ZIP Code',
+    build(body) {
+      const reels = [];
+      const wrap = $('div', { class: 'reels' });
+      for (let i = 0; i < 5; i++) {
+        const r = { n: Math.floor(Math.random() * 10), spinning: true, el: $('span') };
+        r.el.textContent = r.n;
+        const btn = $('button', { text: 'Stop', onclick: () => {
+          r.spinning = !r.spinning; btn.textContent = r.spinning ? 'Stop' : 'Spin';
+          if (r.spinning) start();
+        }});
+        reels.push(r); wrap.append($('div', { class: 'reel' }, r.el, btn));
+      }
+      let timer;
+      const start = () => { if (timer) return; timer = setInterval(() => {
+        if (!wrap.isConnected || !reels.some(r => r.spinning)) { clearInterval(timer); timer = null; return; }
+        reels.forEach((r, i) => { if (r.spinning && Math.random() < .9 - i * .05) { r.n = (r.n + 1) % 10; r.el.textContent = r.n; } });
+      }, 70); };
+      start();
+      body.append($('label', { class: 'field', text: 'Stop each reel on the correct digit' }), wrap,
+        $('div', { class: 'hint', text: 'Good luck.' }));
+      return () => reels.some(r => r.spinning) ? 'Reels still spinning' : reels.map(r => r.n).join('');
+    }
+  },
+  {
+    slug: 'title',
+    title: 'Title',
+    build(body) {
+      const titles = ['Admiral','Archbishop','Baron','Baroness','Brigadier','Captain','Chancellor','Count','Countess','Dame','Deacon','Doctor','Duchess','Duke','Earl','Elder','Emperor','Empress','Father','Grand Duchess','Grand Vizier','Her Excellency','His Holiness','Inspector','Judge','Lady','Lord','Madam','Marquess','Master','Miss','Mr','Mrs','Ms','Mx','Pharaoh','Pope','Prince','Princess','Professor','Rabbi','Regent','Reverend','Sergeant','Sheriff','Sir','Sister','Sultan','The Honourable','Viscount','Wizard'];
+      const sel = $('select');
+      titles.forEach(t => sel.append($('option', { value: t, text: t })));
+      body.append($('label', { class: 'field', text: 'Title' }), sel,
+        $('div', { class: 'hint', text: 'Defaults to the first option.' }));
+      return () => sel.value;
+    }
+  },
+  {
+    slug: 'confirm-email',
+    title: 'Confirm Email',
+    build(body) {
+      const a = $('input', { type: 'text', autocomplete: 'off', spellcheck: 'false' });
+      const b = $('input', { type: 'text', class: 'masked', autocomplete: 'off', spellcheck: 'false', style: 'margin-top:12px' });
+      const warn = $('div', { class: 'wait' });
+      [a, b].forEach(el => el.addEventListener('paste', e => { e.preventDefault(); warn.textContent = 'Pasting is disabled for your security.'; }));
+      b.addEventListener('blur', () => {
+        if (b.value && b.value !== a.value) { a.value = ''; b.value = ''; warn.textContent = 'Emails did not match. Both fields have been cleared.'; }
+      });
+      body.append($('label', { class: 'field', text: 'Email' }), a,
+        $('label', { class: 'field', text: 'Confirm email', style: 'margin-top:14px' }), b, warn,
+        $('div', { class: 'hint', text: 'The confirmation field is hidden to protect your email from onlookers.' }));
+      return () => a.value && a.value === b.value ? a.value : 'Emails do not match';
+    }
+  },
+  {
+    slug: 'unsubscribe',
+    title: 'Unsubscribe',
+    build(body) {
+      // [question, which answer unsubscribes]
+      const qs = shuffle([
+        ['Do you want to unsubscribe?', 'Yes'],
+        ['Would you like to keep receiving our emails?', 'No'],
+        ['Are you sure you don’t want to stay subscribed?', 'Yes'],
+        ['Cancel your unsubscription?', 'No'],
+        ['Should we stop not emailing you?', 'No'],
+        ['Is leaving really what you want?', 'Yes'],
+      ]);
+      let step = 0, status = 'Subscribed';
+      const q = $('div', { class: 'question' });
+      const row = $('div', { class: 'row' });
+      const prog = $('div', { class: 'hint' });
+      const render = () => {
+        if (step >= qs.length) { status = 'Unsubscribed'; q.textContent = 'You have been unsubscribed. Expect fewer emails within 6–8 weeks.'; row.replaceChildren(); prog.textContent = ''; return; }
+        q.textContent = qs[step][0];
+        prog.textContent = `Step ${step + 1} of ${qs.length}`;
+        row.replaceChildren(...shuffle(['Yes', 'No']).map(ans => $('button', { text: ans, onclick: () => {
+          if (ans === qs[step][1]) step++;
+          else { step = 0; q.textContent = 'Thank you for staying! You have been resubscribed.'; row.replaceChildren(); setTimeout(render, 1600); return; }
+          render();
+        }})));
+      };
+      render();
+      body.append($('label', { class: 'field', text: 'Email preferences' }), q, row, prog);
+      return () => status;
+    }
+  },
+  {
+    slug: 'morse-name',
+    title: 'First Name',
+    build(body) {
+      const CODE = { '.-':'A','-...':'B','-.-.':'C','-..':'D','.':'E','..-.':'F','--.':'G','....':'H','..':'I','.---':'J','-.-':'K','.-..':'L','--':'M','-.':'N','---':'O','.--.':'P','--.-':'Q','.-.':'R','...':'S','-':'T','..-':'U','...-':'V','.--':'W','-..-':'X','-.--':'Y','--..':'Z' };
+      let val = '', buf = '', down = 0, gap;
+      const out = $('div', { class: 'readout' });
+      const show = () => out.textContent = val + (buf ? ` [${buf}]` : '');
+      const commit = () => { if (buf) { val += CODE[buf] || '?'; buf = ''; show(); } };
+      const btn = $('button', { class: 'morse', text: 'Press' });
+      btn.addEventListener('pointerdown', e => { e.preventDefault(); clearTimeout(gap); down = performance.now(); btn.setPointerCapture(e.pointerId); });
+      btn.addEventListener('pointerup', () => {
+        if (!down) return;
+        buf += performance.now() - down < 220 ? '.' : '-'; down = 0; show();
+        gap = setTimeout(commit, 800);
+      });
+      const chart = Object.entries(CODE).map(([k, v]) => `${v} ${k}`).join('   ');
+      body.append($('label', { class: 'field', text: 'First name (Morse code)' }), out, btn,
+        $('div', { class: 'row', style: 'margin-top:8px' }, $('button', { class: 'tiny', text: 'clear', onclick: () => { val = ''; buf = ''; show(); } })),
+        $('div', { class: 'chart', text: chart }));
+      return () => val;
+    }
+  },
+  {
+    slug: 'roman-year',
+    title: 'Year of Birth',
+    build(body) {
+      const V = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+      const toNum = s => { let n = 0; for (let i = 0; i < s.length; i++) { const a = V[s[i]], b = V[s[i + 1]] || 0; n += a < b ? -a : a; } return n; };
+      const toRoman = n => [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']].reduce((s, [v, r]) => { while (n >= v) { s += r; n -= v; } return s; }, '');
+      const input = $('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', style: 'text-transform:uppercase' });
+      const warn = $('div', { class: 'wait' });
+      input.addEventListener('beforeinput', e => {
+        if (e.data && /[^ivxlcdm]/i.test(e.data)) { e.preventDefault(); warn.textContent = 'Only Roman numerals are accepted.'; }
+      });
+      input.addEventListener('input', () => { warn.textContent = ''; });
+      const value = () => { const s = input.value.toUpperCase(); const n = toNum(s); return s && toRoman(n) === s ? n : null; };
+      body.append($('label', { class: 'field', text: 'Year of birth (Roman numerals)' }), input, warn,
+        $('div', { class: 'hint', text: 'Example: MCMXC' }));
+      return () => value() ?? 'Invalid numeral';
+    }
+  },
+  {
+    slug: 'signature',
+    title: 'Signature',
+    build(body) {
+      const cv = $('canvas', { class: 'sig' });
+      const ctx = cv.getContext('2d');
+      let pen = null, target = null, vel = { x: 0, y: 0 }, drawing = false, raf = 0, strokes = 0;
+      const fit = () => { const dpr = Math.min(2, devicePixelRatio || 1); const r = cv.getBoundingClientRect(); cv.width = r.width * dpr; cv.height = r.height * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.lineCap = 'round'; ctx.lineWidth = 2.2; ctx.strokeStyle = '#1b2a6b'; };
+      requestAnimationFrame(fit);
+      const pos = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+      const step = () => {
+        raf = 0;
+        if (!pen || !target) return;
+        // the pen is attached to your cursor by a rubber band
+        vel.x = (vel.x + (target.x - pen.x) * .045) * .9;
+        vel.y = (vel.y + (target.y - pen.y) * .045) * .9;
+        const nx = pen.x + vel.x, ny = pen.y + vel.y;
+        if (drawing) { ctx.beginPath(); ctx.moveTo(pen.x, pen.y); ctx.lineTo(nx, ny); ctx.stroke(); }
+        pen = { x: nx, y: ny };
+        if (drawing || Math.hypot(vel.x, vel.y) > .05) raf = requestAnimationFrame(step);
+      };
+      const wake = () => { if (!raf) raf = requestAnimationFrame(step); };
+      cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); target = pos(e); if (!pen) pen = { ...target }; drawing = true; strokes++; wake(); });
+      cv.addEventListener('pointermove', e => { if (drawing) { target = pos(e); wake(); } });
+      cv.addEventListener('pointerup', () => { drawing = false; });
+      body.append($('label', { class: 'field', text: 'Sign within the box' }), cv,
+        $('div', { class: 'row', style: 'margin-top:8px' }, $('button', { class: 'tiny', text: 'clear', onclick: () => { ctx.clearRect(0, 0, cv.width, cv.height); strokes = 0; pen = null; vel = { x: 0, y: 0 }; } })),
+        $('div', { class: 'hint', text: 'Signatures must match the one on file.' }));
+      return () => strokes ? `Signature on file (${strokes} stroke${strokes === 1 ? '' : 's'}). Does not match.` : 'Unsigned';
+    }
+  },
+  {
+    slug: 'favorite-color',
+    title: 'Favorite Color',
+    build(body) {
+      const ch = [Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0];
+      let map = shuffle([0, 1, 2]);
+      const swatch = $('div', { class: 'swatch' });
+      const hex = () => '#' + ch.map(v => v.toString(16).padStart(2, '0')).join('');
+      const paint = () => { swatch.style.background = hex(); };
+      const sliders = ['Red', 'Green', 'Blue'].map((name, i) => {
+        const s = $('input', { type: 'range', min: 0, max: 255, value: ch[map[i]] });
+        s.addEventListener('input', () => { ch[map[i]] = +s.value; paint(); });
+        s.addEventListener('change', () => {
+          // rewire after every adjustment
+          map = shuffle([0, 1, 2]);
+          sliders.forEach((sl, j) => sl.value = ch[map[j]]);
+        });
+        return [name, s];
+      });
+      paint();
+      body.append($('label', { class: 'field', text: 'Mix your favorite color' }), swatch,
+        ...sliders.map(([n, s]) => $('div', { class: 'slider-row' }, $('span', { text: n }), s)),
+        $('div', { class: 'hint', text: 'Sliders are labeled for your convenience.' }));
+      return () => hex();
+    }
+  },
+  {
+    slug: 'pets',
+    title: 'Household',
+    build(body) {
+      let n = 0;
+      const out = $('div', { class: 'readout', text: '0', style: 'text-align:center' });
+      body.append($('label', { class: 'field', text: 'Number of pets' }), out,
+        $('div', { class: 'row', style: 'justify-content:center' },
+          $('button', { text: '−', onclick: () => { n++; out.textContent = n; } }),
+          $('button', { text: '+', onclick: () => { n--; out.textContent = n; } })),
+        $('div', { class: 'hint', text: 'Include fish.' }));
+      return () => String(n);
+    }
+  },
+  {
+    slug: 'captcha',
+    title: 'Verification',
+    build(body) {
+      const words = ['kettle','furlong','obelisk','marmalade','quorum','sprocket','lozenge','nimbus','gherkin','tuba','wombat','parsnip','vestibule','zeppelin'];
+      let word;
+      const box = $('div', { class: 'captcha' });
+      const input = $('input', { type: 'text', autocomplete: 'off', spellcheck: 'false' });
+      const draw = () => {
+        word = words[Math.random() * words.length | 0];
+        box.replaceChildren(...[...word].map(c => $('i', { text: c, style: `transform: rotate(${(Math.random() * 40 - 20) | 0}deg) translateY(${(Math.random() * 10 - 5) | 0}px)` })));
+      };
+      draw();
+      const timer = setInterval(() => box.isConnected ? draw() : clearInterval(timer), 2500);
+      body.append($('label', { class: 'field', text: 'Type the word below to prove you are human' }), box, input,
+        $('div', { class: 'hint', text: 'For your security, the word refreshes every 2.5 seconds.' }));
+      return () => input.value.trim().toLowerCase() === word ? 'Human' : `Robot (the word was “${word}”)`;
+    }
+  },
+  {
+    slug: 'sorted-phone',
+    title: 'Phone Number (Organized)',
+    build(body) {
+      const input = $('input', { type: 'text', inputmode: 'numeric', autocomplete: 'off' });
+      const fmt = d => d.length > 6 ? `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}` : d.length > 3 ? `(${d.slice(0,3)}) ${d.slice(3)}` : d;
+      input.addEventListener('input', () => {
+        const d = (input.value.match(/\d/g) || []).sort().join('').slice(0, 10);
+        input.value = fmt(d);
+      });
+      body.append($('label', { class: 'field', text: 'Phone number' }), input,
+        $('div', { class: 'hint', text: 'Digits are sorted automatically for easier reading.' }));
+      return () => input.value;
+    }
+  },
+  {
+    slug: 'hold-height',
+    title: 'Height',
+    build(body) {
+      let cm = 0, held = 0, raf = 0, last;
+      const bar = $('div');
+      const out = $('div', { class: 'readout' });
+      const show = () => {
+        const inches = cm / 2.54;
+        out.textContent = `${cm.toFixed(1)} cm (${Math.floor(inches / 12)}′ ${Math.round(inches % 12)}″)`;
+        bar.style.width = Math.min(100, cm / 2.5) + '%';
+      };
+      const tick = now => {
+        if (!held) { raf = 0; return; }
+        const t = (now - held) / 1000, dt = (now - last) / 1000; last = now;
+        cm += dt * (8 + t * t * 30); // it speeds up the longer you hold
+        show(); raf = requestAnimationFrame(tick);
+      };
+      const btn = $('button', { class: 'morse', text: 'Hold to grow' });
+      btn.addEventListener('pointerdown', e => { e.preventDefault(); btn.setPointerCapture(e.pointerId); held = last = performance.now(); if (!raf) raf = requestAnimationFrame(tick); });
+      btn.addEventListener('pointerup', () => { held = 0; });
+      btn.addEventListener('pointercancel', () => { held = 0; });
+      show();
+      body.append($('label', { class: 'field', text: 'How tall are you?' }), $('div', { class: 'fill' }, bar), out, btn,
+        $('div', { class: 'row', style: 'margin-top:8px' }, $('button', { class: 'tiny', text: 'reset', onclick: () => { cm = 0; show(); } })),
+        $('div', { class: 'hint', text: 'Growth cannot be reversed.' }));
+      return () => out.textContent;
+    }
+  },
+  {
+    slug: 'autocorrect',
+    title: 'Last Name',
+    build(body) {
+      const dict = 'apple baker banana barn bean bear bell berry bird boat bone book boot bread brick brook bucket butter cake camel candle card carrot castle cat chair cheese cherry clam cloud coat coin corn cow crab crow cup daisy desk dial dish dog donut door dove duck eagle egg elbow elm fan farm fern fig fish flag flute fog fork fox frog garden goat gold goose grape gravy hammer harp hat hawk hen hill honey horse ice jam jar kettle key kite lamb lamp leaf lemon lime lion llama mango maple marsh melon milk mint mole moon moose mop moth mouse mule nail nest noodle nut oak oat olive onion otter owl pan pea peach pear pebble pen pickle pie pig pigeon pine plum pond potato pumpkin quail rabbit radish rake rat raven river robin rock rose salad salmon sand seal sheep shell sock soup spoon squash stone straw swan table taco tea toad toast tomato towel trout tulip turkey turnip vase violin waffle walnut wasp water whale wheat willow wolf yam yarn zebra'.split(' ');
+      const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1)); return d[a.length][b.length]; };
+      const fix = w => {
+        if (!w) return w;
+        const lw = w.toLowerCase();
+        let best = lw, score = Infinity;
+        for (const c of dict) { const s = lev(lw, c); if (s < score) { score = s; best = c; } }
+        return w[0] === w[0].toUpperCase() ? best[0].toUpperCase() + best.slice(1) : best;
+      };
+      const input = $('input', { type: 'text', autocomplete: 'off', spellcheck: 'false' });
+      const correctAll = () => { input.value = input.value.split(' ').map(fix).join(' '); };
+      input.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { const parts = input.value.split(' '); parts[parts.length - 1] = fix(parts[parts.length - 1]); input.value = parts.join(' '); } });
+      input.addEventListener('blur', correctAll);
+      body.append($('label', { class: 'field', text: 'Last name' }), input,
+        $('div', { class: 'hint', text: 'Autocorrect is enabled to reduce typos.' }));
+      return () => { correctAll(); return input.value; };
+    }
+  },
+  {
+    slug: 'calculator-phone',
+    title: 'Phone Number (Calculated)',
+    build(body) {
+      let n = 0;
+      const out = $('div', { class: 'readout' });
+      const show = () => { const s = String(n).padStart(10, '0'); out.textContent = `(${s.slice(0,3)}) ${s.slice(3,6)}-${s.slice(6)}` + (n > 9999999999 ? '  too long' : ''); };
+      const op = (label, f) => $('button', { text: label, onclick: () => { n = f(n); show(); } });
+      show();
+      body.append($('label', { class: 'field', text: 'Reach your phone number using the buttons' }), out,
+        $('div', { class: 'row' }, op('+7', x => x + 7), op('×3', x => x * 3), op('−2', x => Math.max(0, x - 2)), op('÷2', x => Math.floor(x / 2)),
+          $('button', { class: 'tiny', text: 'clear', onclick: () => { n = 0; show(); } })),
+        $('div', { class: 'hint', text: 'Every number is reachable. Probably.' }));
+      return () => out.textContent;
+    }
+  },
+  {
+    slug: 'rotary',
+    title: 'Phone Number (Landline)',
+    build(body) {
+      let val = '', busy = false;
+      const out = $('div', { class: 'readout' });
+      const dial = $('div', { class: 'dial' });
+      const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+      digits.forEach((d, i) => {
+        const a = (30 + i * 30) * Math.PI / 180; // laid out counter-clockwise from the finger stop
+        const b = $('button', { text: d, style: `left:${120 + Math.cos(a) * 92}px; top:${120 - Math.sin(a) * 92}px` });
+        b.addEventListener('click', () => {
+          if (busy || val.length >= 10) return;
+          busy = true;
+          const turns = d === 0 ? 10 : d;
+          const angle = 40 + turns * 30; // drag the hole clockwise to the stop
+          dial.style.transition = 'transform .35s ease-in';
+          dial.style.transform = `rotate(${angle}deg)`;
+          setTimeout(() => {
+            dial.style.transition = `transform ${turns * .28}s linear`; // the dial takes its time coming home
+            dial.style.transform = 'rotate(0deg)';
+            setTimeout(() => { val += d; out.textContent = val; busy = false; }, turns * 280);
+          }, 400);
+        });
+        dial.append(b);
+      });
+      body.append($('label', { class: 'field', text: 'Dial your number' }), out,
+        $('div', { class: 'dial-wrap' }, dial, $('div', { class: 'dial-stop' })),
+        $('div', { class: 'row' }, $('button', { class: 'tiny', text: 'hang up', onclick: () => { if (!busy) { val = ''; out.textContent = ''; } } })),
+        $('div', { class: 'hint', text: 'Please wait for the dial to return before dialing the next digit.' }));
+      return () => val;
+    }
+  },
+  {
+    slug: 'cookies',
+    title: 'Cookie Preferences',
+    build(body) {
+      const vendors = ['Essential Cookies Ltd.', 'AdTrackr', 'Pixel Partners', 'Behavioral Insights Group', 'Cross-Site Friends', 'Legitimate Interest Inc.', 'Marketing Solutions (EU)', 'Marketing Solutions (Non-EU)', 'Fingerprint & Co.', 'Retargeting Brothers', 'Data Enrichment Holdings', 'Your Mom’s Analytics'];
+      const boxes = vendors.map(v => { const c = $('input', { type: 'checkbox' }); c.checked = true; return [c, v]; });
+      const msg = $('div', { class: 'hint' });
+      const checked = () => boxes.filter(([c]) => c.checked);
+      body.append($('label', { class: 'field', text: 'We value your privacy' }),
+        $('div', { class: 'vendors' }, ...boxes.map(([c, v]) => $('label', {}, c, document.createTextNode(v)))),
+        $('div', { class: 'row', style: 'margin-top:10px' },
+          $('button', { class: 'primary', text: 'Accept all', onclick: () => { boxes.forEach(([c]) => c.checked = true); msg.textContent = 'Thank you for accepting all cookies.'; } }),
+          $('button', { class: 'tiny', text: 'Reject all', onclick: () => {
+            const on = checked();
+            if (on.length) on[Math.random() * on.length | 0][0].checked = false;
+            // legitimate interest is legitimately interested
+            const off = boxes.filter(([c]) => !c.checked);
+            if (off.length && Math.random() < .3) { off[Math.random() * off.length | 0][0].checked = true; msg.textContent = 'A vendor has re-enabled itself under legitimate interest.'; }
+            else msg.textContent = `1 vendor rejected. ${checked().length} remaining.`;
+          }})),
+        msg);
+      return () => `Consented to ${checked().length} of ${vendors.length} vendors.`;
+    }
+  },
+  {
+    slug: 'date-dropdown',
+    title: 'Date of Birth (Dropdown)',
+    build(body) {
+      const start = new Date(1900, 0, 1, 12);
+      const n = Math.round((today - start) / DAY);
+      const sel = $('select');
+      let html = '';
+      for (let i = 0; i <= n; i++) html += `<option>${new Date(start.getTime() + i * DAY).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</option>`;
+      sel.innerHTML = html;
+      body.append($('label', { class: 'field', text: 'Select your date of birth' }), sel,
+        $('div', { class: 'hint', text: `${(n + 1).toLocaleString()} options, in order.` }));
+      return () => sel.value;
+    }
+  },
+  {
+    slug: 'profile-picture',
+    title: 'Profile Picture',
+    build(body) {
+      const grid = $('div', { class: 'pixels' });
+      let painting = null;
+      for (let i = 0; i < 144; i++) grid.append($('div'));
+      const cellAt = e => { const el = document.elementFromPoint(e.clientX, e.clientY); return el && el.parentNode === grid ? el : null; };
+      grid.addEventListener('pointerdown', e => {
+        const c = cellAt(e); if (!c) return;
+        grid.setPointerCapture(e.pointerId);
+        painting = !c.classList.contains('on'); c.classList.toggle('on', painting);
+      });
+      grid.addEventListener('pointermove', e => { if (painting === null) return; const c = cellAt(e); if (c) c.classList.toggle('on', painting); });
+      grid.addEventListener('pointerup', () => painting = null);
+      body.append($('label', { class: 'field', text: 'Upload a profile picture' }), grid,
+        $('div', { class: 'hint', text: 'File uploads are not supported. Please draw yourself.' }));
+      return () => { const k = grid.querySelectorAll('.on').length; return k ? `Profile picture saved (${k} pixels). It looks just like you.` : 'No picture'; };
+    }
+  },
+  {
+    slug: 'username',
+    title: 'Choose a Username',
+    build(body) {
+      let tries = 0, assigned = '';
+      const input = $('input', { type: 'text', autocomplete: 'off', spellcheck: 'false' });
+      const msg = $('div', { class: 'hint', style: 'font-size:14px;color:#9b2c2c' });
+      const check = () => {
+        const u = input.value.trim().replace(/\s+/g, '_');
+        if (!u) return;
+        tries++;
+        if (tries >= 6) {
+          assigned = 'user' + (1000000 + Math.random() * 8999999 | 0);
+          msg.style.color = '#2d6b2d';
+          msg.textContent = `To save time, we have chosen a username for you: ${assigned}`;
+          return;
+        }
+        const r = () => Math.random() * 9000 + 1000 | 0;
+        msg.textContent = `“${u}” is already taken. Try: ${u}_${r()}, ${u}.the.real.${tries}, xX_${u}_Xx, ${u}${u.slice(-1).repeat(4)}`;
+      };
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+      body.append($('label', { class: 'field', text: 'Username' }),
+        $('div', { class: 'row', style: 'flex-wrap:nowrap' }, input, $('button', { text: 'Check', onclick: check })), msg);
+      return () => assigned || 'No username chosen';
+    }
+  },
+  {
+    slug: 'country',
+    title: 'Country of Residence',
+    build(body) {
+      const countries = ['Argentina','Australia','Austria','Belgium','Brazil','Canada','Chile','China','Colombia','Denmark','Egypt','Finland','France','Germany','Ghana','Greece','Iceland','India','Indonesia','Ireland','Israel','Italy','Japan','Kenya','Mexico','Morocco','Netherlands','New Zealand','Nigeria','Norway','Pakistan','Peru','Philippines','Poland','Portugal','South Africa','South Korea','Spain','Sweden','Switzerland','Thailand','Turkey','Ukraine','United Kingdom','United States','Vietnam'];
+      const rev = s => [...s].reverse().join('');
+      const sel = $('select');
+      sel.append($('option', { value: '', text: 'Select…' }));
+      countries.map(c => [rev(c.toLowerCase()), c]).sort((a, b) => a[0].localeCompare(b[0]))
+        .forEach(([, c]) => sel.append($('option', { value: c, text: c })));
+      body.append($('label', { class: 'field', text: 'Country' }), sel,
+        $('div', { class: 'hint', text: 'Sorted alphabetically (by last letter).' }));
+      return () => sel.value || 'None selected';
+    }
+  },
+];
+
+// ---- randomizer ----
+const ui = {
+  id: document.getElementById('formId'), title: document.getElementById('formTitle'),
+  body: document.getElementById('formBody'), received: document.getElementById('received'),
+  tally: document.getElementById('tally'),
+};
+let deck = [], current, getValue;
+let submitted = 0;
+try { submitted = +localStorage.getItem('horribleforms:submitted') || 0; } catch {}
+const showTally = () => ui.tally.textContent = `${submitted} form${submitted === 1 ? '' : 's'} submitted`;
+showTally();
+
+function load(form) {
+  current = form;
+  ui.id.textContent = `Form HF-${String(FORMS.indexOf(form) + 1).padStart(3, '0')}`;
+  ui.title.textContent = form.title;
+  ui.body.replaceChildren();
+  ui.received.classList.remove('show');
+  getValue = form.build(ui.body);
+  history.replaceState(null, '', '#' + form.slug);
+}
+
+function next() {
+  if (!deck.length) deck = shuffle(FORMS.filter(f => f !== current));
+  load(deck.pop());
+}
+
+document.getElementById('next').addEventListener('click', next);
+document.getElementById('submit').addEventListener('click', () => {
+  ui.received.replaceChildren('Thank you. We have received: ', $('b', { text: getValue() || '(blank)' }));
+  ui.received.classList.add('show');
+  submitted++;
+  try { localStorage.setItem('horribleforms:submitted', submitted); } catch {}
+  showTally();
+});
+
+const fromHash = FORMS.find(f => f.slug === location.hash.slice(1));
+fromHash ? load(fromHash) : next();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About Horrible Forms</h2>
+<p>Fill out one terribly designed form field at a time. A birthday slider. A shuffling keyboard. A checkbox that works half the time.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/hyperspace/">Hyperspace</a>: Drift through the stars, or hold anywhere to punch it — the stars streak, the odometer climbs, physics is notified. Destination: none.</li>
+<li><a href="/infinitemaze/">Infinite Maze</a>: Zoom out. The maze keeps going. Zoom out more.</li>
+<li><a href="/infinitenumbercasino/">Infinite Number Casino</a>: Every number, one at a time. Some are worth something. The house keeps your tab.</li>
+<li><a href="/inventaday/">Invent-A-Day</a>: Pick two days of the week. Push them into each other. Keep whatever survives the collision.</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

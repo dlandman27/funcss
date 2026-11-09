@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Random Site of the Day — Random Sites On the Web</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;800&display=swap" rel="stylesheet">
+    <style>
+        /* Embeddable widget: other sites iframe this page (vercel.json allows framing for /embed/ only). */
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; }
+        body { display: flex; padding: 6px 10px 10px 6px; background: transparent; color: #201a17; font-family: 'Nunito', sans-serif; }
+        .card { display: flex; flex-direction: column; align-items: center; width: 100%; padding: 14px 16px 12px; text-align: center;
+            background: #f5ecd6; background-image: radial-gradient(#201a1710 1px, transparent 1px); background-size: 20px 20px;
+            border: 3px solid #201a17; border-radius: 18px; box-shadow: 5px 5px 0 #201a17; }
+        .label { margin: 0 0 10px; padding: 3px 10px; font: 700 12px/1 'Fredoka', sans-serif; letter-spacing: .04em; text-transform: uppercase;
+            background: #b7ce3c; border: 2px solid #201a17; border-radius: 999px; transform: rotate(-2deg); }
+        .art { display: block; width: 150px; height: 150px; border: 3px solid #201a17; border-radius: 14px; box-shadow: 4px 4px 0 #201a17; overflow: hidden; background: #fefaf0; }
+        .art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        h1 { margin: 12px 0 4px; font: 700 20px/1.15 'Fredoka', sans-serif; }
+        p { margin: 0 0 12px; font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .visit { display: inline-block; padding: 8px 16px; color: #201a17; text-decoration: none; font: 700 14px/1 'Fredoka', sans-serif;
+            background: #f47b28; border: 3px solid #201a17; border-radius: 10px; box-shadow: 3px 3px 0 #201a17; }
+        .visit:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #201a17; }
+        .more { margin-top: auto; padding-top: 10px; font-size: 11px; color: #201a17cc; }
+        .more a { color: #201a17; font-weight: 800; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span class="label">Random site of the day</span>
+        <a class="art" id="art" target="_blank" rel="noopener" href="https://randomsitesontheweb.com/"><img id="img" alt="" width="150" height="150"></a>
+        <h1 id="name">Random Sites On the Web</h1>
+        <p id="desc">Small websites. Endless distractions.</p>
+        <a class="visit" id="visit" target="_blank" rel="noopener" href="https://randomsitesontheweb.com/">Visit →</a>
+        <div class="more">more at <a href="https://randomsitesontheweb.com/" target="_blank" rel="noopener">randomsitesontheweb.com</a></div>
+    </div>
+    <script>
+        // Everyone sees the same pick on a given day: hash the date, index the visible catalog.
+        (function () {
+            var ORIGIN = 'https://randomsitesontheweb.com';
+            fetch('/catalog.json').then(function (r) { return r.json(); }).then(function (catalog) {
+                var sites = catalog.sites.filter(function (s) { return s.visible; })
+                    .sort(function (a, b) { return a.slug < b.slug ? -1 : 1; });
+                if (!sites.length) return;
+                var day = new Date().toISOString().slice(0, 10), h = 2166136261;
+                for (var i = 0; i < day.length; i++) { h ^= day.charCodeAt(i); h = Math.imul(h, 16777619); }
+                var site = sites[(h >>> 0) % sites.length];
+                var url = ORIGIN + '/' + site.slug + '/?ref=embed';
+                document.getElementById('name').textContent = site.name;
+                document.getElementById('desc').textContent = site.description;
+                document.getElementById('visit').href = url;
+                document.getElementById('art').href = url;
+                var img = document.getElementById('img');
+                img.alt = site.name;
+                img.onerror = function () {
+                    img.onerror = function () { document.getElementById('art').style.display = 'none'; };
+                    img.src = '/public/site-images/' + site.slug + '-square.jpg';
+                };
+                img.src = '/public/site-images/' + site.slug + '-square-200.webp';
+            }).catch(function () {});
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seating Chart</title>
+<meta name="description" content="Plan the reception seating chart. Every round, the family group chat adds a new demand. Aunt Deb will not sit with Uncle Ray.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/seatingchart/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/seatingchart/">
+    <meta property="og:title" content="The Seating Chart">
+    <meta property="og:description" content="Plan the wedding reception seating chart while the family group chat adds one new demand per round. Aunt Deb will not sit with Uncle Ray.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/seatingchart.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Seating Chart">
+    <meta name="twitter:description" content="Plan the wedding reception seating chart while the family group chat adds one new demand per round. Aunt Deb will not sit with Uncle Ray.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/seatingchart.png">
+    <!-- rsotw:og:end -->
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --paper: #f7f3ec;
+    --card: #fffdf9;
+    --gold: #b8955a;
+    --ink: #2b2622;
+    --muted: #8a8178;
+    --ok: #3f8a4f;
+    --bad: #c0463b;
+    --you: #2f7cf6;
+  }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    -webkit-user-select: none; user-select: none;
+  }
+  .app {
+    max-width: 1060px; margin: 0 auto; padding: 24px 16px 40px;
+    display: grid; grid-template-columns: 1fr 340px; gap: 20px;
+  }
+  header { grid-column: 1 / -1; text-align: center; }
+  header h1 { font: italic 400 34px/1.1 Georgia, "Times New Roman", serif; margin: 0; }
+  header .sub { color: var(--muted); font: italic 14px Georgia, serif; margin-top: 4px; }
+  header .rule { width: 120px; height: 1px; background: var(--gold); margin: 12px auto 0; }
+
+  /* floor */
+  .floor { display: flex; flex-direction: column; gap: 16px; }
+  .tables { display: grid; grid-template-columns: repeat(2, auto); gap: 14px; justify-content: center; }
+  .table-zone {
+    background: var(--card); border: 1px solid #e6dccb; border-radius: 10px;
+    padding: 10px 8px 20px; width: 220px; text-align: center;
+  }
+  .zone-label { font: italic 13px Georgia, serif; color: var(--muted); min-height: 18px; }
+  .round-table { position: relative; width: 184px; height: 184px; margin: 4px auto 0; }
+  .round-table .top {
+    position: absolute; left: 50%; top: 50%; width: 78px; height: 78px; transform: translate(-50%, -50%);
+    border-radius: 50%; border: 1.5px solid var(--gold); background: #fff;
+    display: flex; align-items: center; justify-content: center; font: 22px Georgia, serif; color: var(--gold);
+  }
+  .round-table { --seat: 62px; }
+  .seat {
+    position: absolute; width: var(--seat); height: var(--seat); border-radius: 50%; transform: translate(-50%, -50%);
+    border: 1.5px dashed #cfc3b0; background: #fbf8f2;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .seat.hover { border-color: var(--gold); background: #f6eedd; }
+  .seat.target { border-style: solid; border-color: var(--gold); }
+  .seat.broken { border-style: solid; border-color: #e2d6c4; background: repeating-linear-gradient(45deg, #efe7da 0 5px, #f8f3ea 5px 10px); cursor: default; }
+  .seat.broken span { font: italic 11px Georgia, serif; color: var(--muted); }
+  .seat[data-pos="0"] { left: 50%; top: calc(var(--seat) / 2); }
+  .seat[data-pos="1"] { left: calc(100% - var(--seat) / 2); top: 50%; }
+  .seat[data-pos="2"] { left: 50%; top: calc(100% - var(--seat) / 2); }
+  .seat[data-pos="3"] { left: calc(var(--seat) / 2); top: 50%; }
+
+  .chip {
+    display: inline-flex; flex-direction: row; align-items: center; gap: 8px;
+    background: #fff; border: 1px solid #d8cdbb; border-radius: 999px; padding: 4px 14px 4px 4px;
+    cursor: grab; touch-action: none; line-height: 1.15; transition: box-shadow .15s, transform .15s;
+  }
+  .chip .face { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: #f1ead9; flex: none; }
+  .chip .face svg { width: 100%; height: 100%; display: block; }
+  .chip .txt { display: flex; flex-direction: column; }
+  .chip b { font-weight: 600; font-size: 14px; }
+  .chip small { font-size: 11px; color: var(--muted); }
+  .chip.sel { box-shadow: 0 0 0 3px var(--gold); }
+  .chip.new { animation: arrive .5s ease-out; }
+  @keyframes arrive { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .seat .chip { width: calc(var(--seat) - 4px); height: calc(var(--seat) - 4px); padding: 0; border-radius: 50%; display: block; }
+  .seat .chip .face { width: 100%; height: 100%; }
+  .seat .chip .txt { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); background: #fff; border: 1px solid #d8cdbb; border-radius: 999px; padding: 0 6px; white-space: nowrap; }
+  .seat .chip b { font-size: 11px; }
+  .seat .chip small { display: none; }
+  .chip.ghost { position: fixed; pointer-events: none; z-index: 50; transform: translate(-50%, -50%) scale(1.06); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .chip.lifted { opacity: .3; }
+
+  .notes {
+    background: var(--card); border: 1px solid #e6dccb; border-radius: 10px; padding: 10px 14px;
+    width: 100%; max-width: 470px; margin: 0 auto;
+  }
+  .notes:empty { display: none; }
+  .notes-head { display: flex; justify-content: space-between; font: italic 13px Georgia, serif; color: var(--muted); margin-bottom: 6px; }
+  .note { display: flex; gap: 8px; align-items: baseline; font-size: 13px; padding: 3px 0; }
+  .note::before { content: ''; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--bad); transform: translateY(1px); }
+  .note.ok::before { background: var(--ok); }
+  .note b { font-weight: 600; white-space: nowrap; }
+  .note.bad span { color: var(--bad); }
+  .note.retired { color: #aaa; text-decoration: line-through; }
+  .note.retired::before { background: #ccc; }
+  .lobby {
+    background: var(--card); border: 1px dashed #d8cdbb; border-radius: 10px; padding: 12px;
+    min-height: 74px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;
+  }
+  .lobby.hover { border-color: var(--gold); background: #f6eedd; }
+  .lobby .empty { color: var(--muted); font: italic 13px Georgia, serif; }
+  .lobby-label { font: italic 13px Georgia, serif; color: var(--muted); text-align: center; margin-bottom: -8px; }
+
+  /* chat */
+  .chat {
+    background: #fff; border: 1px solid #e3ddd3; border-radius: 16px; overflow: hidden;
+    display: flex; flex-direction: column; height: calc(100vh - 150px); min-height: 420px; position: sticky; top: 16px;
+  }
+  .chat-head { padding: 10px 14px; border-bottom: 1px solid #eee; text-align: center; }
+  .chat-head b { display: block; font-size: 14px; }
+  .chat-head span { font-size: 12px; color: var(--muted); }
+  .feed { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { max-width: 86%; }
+  .msg .who { font-size: 11px; color: var(--muted); margin: 0 0 2px 10px; }
+  .bubble { background: #ececf0; border-radius: 16px; padding: 8px 12px; font-size: 14px; position: relative; }
+  .msg.you { align-self: flex-end; }
+  .msg.you .bubble { background: var(--you); color: #fff; }
+  .msg.rule .bubble { padding-right: 30px; }
+  .msg.rule .bubble::after {
+    content: ''; position: absolute; right: 9px; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%;
+    background: var(--bad);
+  }
+  .msg.rule.ok .bubble::after { background: var(--ok); }
+  .msg.rule.retired .bubble { text-decoration: line-through; color: #aaa; }
+  .msg.rule.retired .bubble::after { background: #ccc; }
+  .sys { align-self: center; font-size: 12px; color: var(--muted); text-align: center; }
+  .typing { align-self: flex-start; background: #ececf0; border-radius: 16px; padding: 10px 14px; display: flex; gap: 4px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: #999; animation: blink 1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .chat-foot { border-top: 1px solid #eee; padding: 10px; }
+  .send {
+    width: 100%; font: inherit; font-weight: 600; padding: 11px; border: 0; border-radius: 999px;
+    background: var(--you); color: #fff; cursor: pointer;
+  }
+  .send:disabled { background: #d9d9de; color: #888; cursor: default; }
+  .status { font-size: 12px; color: var(--muted); text-align: center; margin-top: 6px; min-height: 16px; }
+
+  /* end card */
+  .end {
+    position: fixed; inset: 0; background: rgba(43,38,34,.45); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 60;
+  }
+  .end.show { display: flex; }
+  .end .card {
+    background: var(--card); border: 1px solid var(--gold); border-radius: 6px; padding: 30px 26px; max-width: 380px; text-align: center;
+    outline: 1px solid var(--gold); outline-offset: -8px;
+  }
+  .end h2 { font: italic 400 28px Georgia, serif; margin: 0 0 8px; }
+  .end p { font: italic 15px Georgia, serif; color: #5a5149; margin: 6px 0; }
+  .end button { margin-top: 16px; font: inherit; padding: 9px 18px; border-radius: 999px; border: 1px solid var(--gold); background: #fff; cursor: pointer; }
+
+  @media (max-width: 820px) {
+    .app { grid-template-columns: 1fr; padding-top: 16px; }
+    .chat { position: static; height: 300px; min-height: 0; order: -1; grid-row: 2; }
+    header h1 { font-size: 28px; }
+    .tables { gap: 10px; }
+    .table-zone { width: 158px; padding: 8px 4px 16px; }
+    .zone-label { font-size: 12px; }
+    .round-table { width: 146px; height: 146px; }
+    .round-table .top { width: 40px; height: 40px; font-size: 16px; }
+    .round-table { --seat: 50px; }
+    .seat .chip b { font-size: 10px; }
+    .seat .chip .txt { padding: 0 4px; bottom: -6px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .chip.new, .typing i { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>The Seating Chart</h1>
+    <div class="sub" id="roundLabel">Reception · Round 1</div>
+    <div class="rule"></div>
+  </header>
+
+  <section class="floor">
+    <div class="tables" id="tables"></div>
+    <div class="lobby-label">Not yet seated</div>
+    <div class="lobby" id="lobby"></div>
+    <div class="notes" id="notes"></div>
+  </section>
+
+  <aside class="chat">
+    <div class="chat-head"><b>Family</b><span id="members">group chat</span></div>
+    <div class="feed" id="feed"></div>
+    <div class="chat-foot">
+      <button class="send" id="send" disabled>Send chart to the group</button>
+      <div class="status" id="status"></div>
+    </div>
+  </aside>
+</div>
+
+<div class="end" id="end">
+  <div class="card">
+    <h2>Chart approved.</h2>
+    <p id="endStats"></p>
+    <p>Nobody is happy. Everybody is seated.</p>
+    <button id="again">Plan another wedding</button>
+  </div>
+</div>
+
+<script>
+/* GAME:start */
+const TABLES = [
+  { id: 1, label: 'dance floor & speakers' },
+  { id: 2, label: 'the bar' },
+  { id: 3, label: 'restrooms & exit' },
+  { id: 4, label: 'kitchen doors' },
+];
+const SEATS_PER_TABLE = 4;
+const GUESTS = {
+  mom:   { name: 'Mom',     role: 'mother of the bride' },
+  dad:   { name: 'Dad',     role: 'father of the bride' },
+  june:  { name: 'Grandma', role: 'Grandma June' },
+  ray:   { name: 'Ray',     role: 'Uncle Ray' },
+  deb:   { name: 'Deb',     role: 'Aunt Deb, Ray’s ex' },
+  morty: { name: 'Morty',   role: 'great-uncle' },
+  linda: { name: 'Linda',   role: 'Dad’s new wife' },
+  kyle:  { name: 'Kyle',    role: 'cousin, twin' },
+  kayla: { name: 'Kayla',   role: 'cousin, twin' },
+  brett: { name: 'Brett',   role: 'cousin' },
+  sky:   { name: 'Sky',     role: 'Brett’s plus-one' },
+  tyler: { name: 'Tyler',   role: 'your ex' },
+  jim:   { name: 'Jim',     role: 'Pastor Jim' },
+  lily:  { name: 'Lily',    role: 'flower girl, 6' },
+  gary:  { name: 'Gary',    role: 'Dad’s golf buddy' },
+  nina:  { name: 'Nina',    role: 'your boss' },
+};
+const START_GUESTS = ['mom', 'dad', 'june', 'ray', 'deb', 'morty'];
+
+// `h` answers questions about the current chart. Seats around a table are 0-3 clockwise;
+// 0/2 and 1/3 face each other.
+function makeHelper(posOf) {
+  const both = (a, b) => { const A = posOf(a), B = posOf(b); return A && B ? [A, B] : null; };
+  return {
+    seated: g => !!posOf(g),
+    table: g => (posOf(g) || [0])[0],
+    same: (a, b) => { const p = both(a, b); return !!p && p[0][0] === p[1][0]; },
+    apart: (a, b) => { const p = both(a, b); return !!p && p[0][0] !== p[1][0]; },
+    adj: (a, b) => { const p = both(a, b); if (!p || p[0][0] !== p[1][0]) return false; const d = Math.abs(p[0][1] - p[1][1]); return d === 1 || d === SEATS_PER_TABLE - 1; },
+    across: (a, b) => { const p = both(a, b); return !!p && p[0][0] === p[1][0] && Math.abs(p[0][1] - p[1][1]) === 2; },
+  };
+}
+
+// Each round: who arrives or leaves, broken chairs, retired notes, and new notes.
+// `g` lists the guests a note is about (a note about someone who left is dropped).
+const ROUNDS = [
+  { rules: [
+    { id: 'mom-june', g: ['mom', 'june'], who: 'Mom', text: 'I’m sitting with Grandma. Obviously.', check: h => h.same('mom', 'june') },
+  ]},
+  { rules: [
+    { id: 'deb-ray', g: ['deb', 'ray'], who: 'Aunt Deb', text: 'If I’m at Ray’s table, I’m leaving.', check: h => h.apart('deb', 'ray') },
+  ]},
+  { rules: [
+    { id: 'ray-bar', g: ['ray'], who: 'Uncle Ray', text: 'Put me by the bar. Doctor’s orders.', check: h => h.table('ray') === 2 },
+  ]},
+  { rules: [
+    { id: 'june-speakers', g: ['june'], who: 'Grandma June', text: 'Not by the speakers, sweetheart. My pacemaker.', check: h => h.seated('june') && h.table('june') !== 1 },
+  ]},
+  { arrive: ['linda'], sys: 'Dad added Linda to the group', rules: [
+    { id: 'dad-linda', g: ['dad', 'linda'], who: 'Dad', text: 'Linda’s coming!! Seat her right next to me.', check: h => h.adj('dad', 'linda') },
+  ]},
+  { rules: [
+    { id: 'mom-linda', g: ['mom', 'linda'], who: 'Mom', text: 'Linda and I are not sharing a table. I mean it.', check: h => h.apart('mom', 'linda') },
+  ]},
+  { arrive: ['kyle', 'kayla'], sys: 'Mom added Kyle and Kayla to the group', rules: [
+    { id: 'twins', g: ['kyle', 'kayla'], who: 'Kayla', text: 'Kyle and I want the same table but NOT next to each other. We’re 30.', check: h => h.across('kyle', 'kayla') },
+  ]},
+  { rules: [
+    { id: 'morty-june', g: ['morty', 'june'], who: 'Great-uncle Morty', text: 'WHAT? PUT ME NEXT TO JUNE. SHE TALKS LOUD.', check: h => h.adj('morty', 'june') },
+  ]},
+  { rules: [
+    { id: 'mom-ray', g: ['mom', 'ray'], who: 'Mom', text: 'Also not next to Ray. He chews with his mouth open.', check: h => h.seated('mom') && h.seated('ray') && !h.adj('mom', 'ray') },
+  ]},
+  { arrive: ['brett', 'sky'], sys: 'Brett added Sky to the group', rules: [
+    { id: 'brett-sky', g: ['brett', 'sky'], who: 'Brett', text: 'Sky’s coming! We sit together, obviously.', check: h => h.adj('brett', 'sky') },
+    { id: 'sky-ray', g: ['sky', 'ray'], who: 'Brett', text: 'Sky is vegan. Keep them away from Ray’s table, he brought jerky.', check: h => h.apart('sky', 'ray') },
+  ]},
+  { arrive: ['tyler'], sys: 'Mom added Tyler to the group', pre: [{ who: 'Mom', text: 'I invited Tyler! He’s such a nice boy. Make room.' }], rules: [
+    { id: 'tyler-exit', g: ['tyler'], who: 'You', you: true, text: 'Tyler sits by the exit.', check: h => h.table('tyler') === 3 },
+  ]},
+  { rules: [
+    { id: 'kayla-tyler', g: ['kayla', 'tyler'], who: 'Kayla', text: 'Put me next to Tyler. Don’t ask.', check: h => h.adj('kayla', 'tyler') },
+  ]},
+  { arrive: ['jim'], sys: 'Mom added Pastor Jim to the group', rules: [
+    { id: 'jim-bar', g: ['jim'], who: 'Pastor Jim', text: 'Bless you all. Please not the bar table. I’m on duty.', check: h => h.seated('jim') && h.table('jim') !== 2 },
+    { id: 'jim-tyler', g: ['jim', 'tyler'], who: 'Pastor Jim', text: 'And not next to Tyler. I know what he did.', check: h => h.seated('jim') && h.seated('tyler') && !h.adj('jim', 'tyler') },
+  ]},
+  { arrive: ['lily'], sys: 'Mom added Lily to the group', pre: [{ who: 'Mom', text: 'Your cousin’s daughter Lily is the flower girl. She’s 6.' }], rules: [
+    { id: 'lily-june', g: ['lily', 'june'], who: 'Grandma June', text: 'Lily sits next to me. I have stickers.', check: h => h.adj('lily', 'june') },
+  ]},
+  { arrive: ['gary'], sys: 'Dad added Gary to the group', rules: [
+    { id: 'dad-gary', g: ['dad', 'gary'], who: 'Dad', text: 'Gary’s my golf buddy. Wherever I sit, he sits. Same table.', check: h => h.same('dad', 'gary') },
+  ]},
+  { rules: [
+    { id: 'deb-jim', g: ['deb', 'jim'], who: 'Aunt Deb', text: 'Seat me next to Pastor Jim. I have some things to confess.', check: h => h.adj('deb', 'jim') },
+  ]},
+  { arrive: ['nina'], sys: 'You added Nina to the group', pre: [{ who: 'You', you: true, text: 'My boss Nina is coming. Please be normal.' }], rules: [
+    { id: 'nina-dance', g: ['nina'], who: 'Nina', text: 'Thanks for having me! Somewhere near the exit? Early flight.', check: h => h.table('nina') === 3 },
+  ]},
+  { rules: [
+    { id: 'sky-jim', g: ['sky', 'jim'], who: 'Brett', text: 'Sky wants to sit directly across from Pastor Jim. They have questions.', check: h => h.across('sky', 'jim') },
+  ]},
+  { leave: ['tyler'], sys: 'Tyler left the group', rules: [
+    { id: 'ray-linda', g: ['ray', 'linda'], who: 'Uncle Ray', text: 'Put me directly across from Linda. We have history.', check: h => h.across('ray', 'linda') },
+  ]},
+  { retire: ['twins', 'sky-jim'], close: ['1-3'], pre: [
+    { who: 'Brett', text: 'Update: Sky got their answers. They can sit anywhere now. Different person honestly.' },
+    { who: 'The Venue', text: 'Heads up: one of the chairs at Table 1 is broken. Please seat accordingly.' },
+  ], rules: [
+    { id: 'twins-split', g: ['kyle', 'kayla'], who: 'Kyle', text: 'Kayla and I aren’t speaking anymore. Different tables.', check: h => h.apart('kyle', 'kayla') },
+    { id: 'kayla-jim', g: ['kayla', 'jim'], who: 'Kayla', text: 'Seat me next to Pastor Jim. I need to talk to someone.', check: h => h.adj('kayla', 'jim') },
+  ]},
+];
+/* GAME:end */
+
+// ---- portraits: a little bust of each person, front or in profile ----
+const LOOKS = {
+  you:   { skin: '#f3cba9', hair: 'bun',      hc: '#6b4226', outfit: '#fbfaf7', fit: 'dress', veil: true, blush: true },
+  alex:  { skin: '#c68a5e', hair: 'short',    hc: '#1f1a17', outfit: '#25324d', fit: 'suit', tie: '#8a2b3d', beard: 'stubble' },
+  mom:   { skin: '#f2c9a8', hair: 'bob',      hc: '#d9b26a', outfit: '#9d86c4', fit: 'dress' },
+  dad:   { skin: '#e7b08a', hair: 'receding', hc: '#a29d97', outfit: '#3d3f44', fit: 'suit', tie: '#3c6e9e', mustache: true },
+  june:  { skin: '#f3d3bb', hair: 'curly',    hc: '#ece8e2', outfit: '#3f8f8a', fit: 'dress', glasses: true, old: true, pearls: true },
+  ray:   { skin: '#dfa47c', hair: 'sides',    hc: '#7a5a40', outfit: '#7e2e35', fit: 'shirt', beard: 'full' },
+  deb:   { skin: '#f0c09a', hair: 'bigcurly', hc: '#b3472a', outfit: '#4f8a4a', fit: 'dress' },
+  morty: { skin: '#e8bc9a', hair: 'sides',    hc: '#d8d5d0', outfit: '#7a5c3e', fit: 'shirt', glasses: true, old: true, bigEars: true, mouth: 'flat' },
+  linda: { skin: '#f6d6bd', hair: 'long',     hc: '#eddcae', outfit: '#c8343a', fit: 'dress' },
+  kyle:  { skin: '#8d5a3b', hair: 'buzz',     hc: '#1b1512', outfit: '#7d8288', fit: 'suit', tie: '#222' },
+  kayla: { skin: '#8d5a3b', hair: 'ponytail', hc: '#1b1512', outfit: '#e7b84a', fit: 'dress' },
+  lily:  { skin: '#96603f', hair: 'pigtails', hc: '#1b1512', outfit: '#f29bb6', fit: 'dress', crown: true, blush: true },
+  tyler: { skin: '#efc29d', hair: 'swoop',    hc: '#7b4a26', outfit: '#1f1f22', fit: 'jacket', mouth: 'smirk' },
+  brett: { skin: '#e9b48f', hair: 'short',    hc: '#c9a35a', outfit: '#5a7d9a', fit: 'shirt', beard: 'stubble' },
+  sky:   { skin: '#f1d0b0', hair: 'bob',      hc: '#6fa58a', outfit: '#d9a441', fit: 'shirt' },
+  jim:   { skin: '#e2b08f', hair: 'receding', hc: '#ddd9d3', outfit: '#1d1d20', fit: 'collar', glasses: true, old: true },
+  gary:  { skin: '#e9a77f', hair: 'short',    hc: '#8c8378', outfit: '#7fb36a', fit: 'shirt', mustache: true },
+  nina:  { skin: '#c7956c', hair: 'long',     hc: '#2a1d17', outfit: '#2f3b52', fit: 'suit', tie: null, glasses: true },
+};
+const INK = '#2b2220', LIP = '#7a3a32';
+const curls = (cx, cy, rx, ry, from, to, n, r, c) => {
+  let out = '';
+  for (let i = 0; i <= n; i++) { const a = (from + (to - from) * i / n) * Math.PI / 180; out += `<circle cx="${(cx + rx * Math.cos(a)).toFixed(1)}" cy="${(cy + ry * Math.sin(a)).toFixed(1)}" r="${r}" fill="${c}"/>`; }
+  return out;
+};
+
+function frontParts(L) {
+  const hc = L.hc;
+  let back = '', top = '';
+  const cap = `<path d="M29 50 C28 28 40 24 50 24 C62 24 73 30 71 50 C68 37 60 32 50 32 C41 32 33 37 29 50Z" fill="${hc}"/>`;
+  const parted = `<path d="M29 52 C28 28 42 23 50 24 C60 23 73 30 71 52 C68 40 62 34 54 32 C48 36 38 38 29 52Z" fill="${hc}"/>`;
+  switch (L.hair) {
+    case 'short': top = cap; break;
+    case 'buzz': top = `<path d="M30 47 C30 30 40 26 50 26 C60 26 70 30 70 47 C66 36 58 31 50 31 C42 31 34 36 30 47Z" fill="${hc}" opacity=".9"/>`; break;
+    case 'swoop': top = `<path d="M29 50 C27 26 45 20 58 24 C70 27 74 38 71 50 C66 40 58 35 44 37 C38 38 32 43 29 50Z" fill="${hc}"/><path d="M38 33 C50 24 64 28 68 40 C60 33 50 32 38 36Z" fill="${hc}"/>`; break;
+    case 'receding': top = `<path d="M30 49 C30 35 36 29 43 27 C40 33 39 38 35 42 C33 45 31 47 30 49Z" fill="${hc}"/><path d="M70 49 C70 35 64 29 57 27 C60 33 61 38 65 42 C67 45 69 47 70 49Z" fill="${hc}"/><path d="M44 28 C48 26 52 26 56 28 C53 29 47 29 44 28Z" fill="${hc}"/>`; break;
+    case 'sides': top = `<path d="M29.5 58 C28.5 50 30 45 33 43 L34 59Z" fill="${hc}"/><path d="M70.5 58 C71.5 50 70 45 67 43 L66 59Z" fill="${hc}"/>`; break;
+    case 'long': back = `<path d="M27 50 C25 24 75 24 73 50 L77 98 C66 103 34 103 23 98Z" fill="${hc}"/>`; top = parted; break;
+    case 'bob': back = `<path d="M27 50 C25 24 75 24 73 50 L75 75 C66 80 34 80 25 75Z" fill="${hc}"/>`; top = parted; break;
+    case 'bun': back = `<circle cx="50" cy="22" r="9" fill="${hc}"/>`; top = cap; break;
+    case 'ponytail': top = `<path d="M29 50 C29 28 42 24 50 24 C58 24 71 28 71 50 C68 36 58 30 50 30 C42 30 32 36 29 50Z" fill="${hc}"/>`; break;
+    case 'pigtails': back = `<circle cx="25" cy="58" r="8" fill="${hc}"/><circle cx="75" cy="58" r="8" fill="${hc}"/>`; top = cap; break;
+    case 'curly': top = curls(50, 48, 21, 22, 180, 360, 9, 6.5, hc); break;
+    case 'bigcurly': back = curls(50, 52, 26, 30, 150, 390, 13, 8.5, hc); top = curls(50, 46, 20, 20, 190, 350, 6, 6, hc); break;
+  }
+  if (L.veil) back = `<path d="M32 26 C20 50 13 92 10 120 L90 120 C87 92 80 50 68 26Z" fill="#fff" opacity=".6"/>` + back;
+  return { back, top };
+}
+
+function profileParts(L) {
+  const hc = L.hc;
+  let back = '', top = '';
+  const cap = `<path d="M28 52 C26 34 38 25 52 26 C62 27 68 34 67 42 C60 36 50 35 44 39 C38 43 36 50 35 58 C31 58 29 56 28 52Z" fill="${hc}"/>`;
+  switch (L.hair) {
+    case 'short': top = cap; break;
+    case 'buzz': top = `<path d="M29 50 C28 35 38 27 52 28 C61 29 66 35 65 41 C58 37 50 36 44 40 C39 44 37 51 36 57 C32 56 30 54 29 50Z" fill="${hc}" opacity=".9"/>`; break;
+    case 'swoop': top = cap + `<path d="M46 29 C60 24 71 30 71 40 C64 35 56 34 48 36Z" fill="${hc}"/>`; break;
+    case 'receding': top = `<path d="M28 54 C26 41 32 32 42 30 C40 37 38 45 37 58 C32 58 29 57 28 54Z" fill="${hc}"/>`; break;
+    case 'sides': top = `<path d="M28.5 54 C28 47 30 43 33 42 C35 47 36 54 37 62 C33 61 29.5 58 28.5 54Z" fill="${hc}"/>`; break;
+    case 'long': back = `<path d="M29 48 C28 30 42 25 54 27 C62 29 66 34 66 40 L44 40 C40 52 42 72 47 98 L21 98 C21 80 26 62 29 48Z" fill="${hc}"/>`; top = cap; break;
+    case 'bob': back = `<path d="M29 48 C28 30 42 25 54 27 C62 29 66 34 66 40 L44 40 C41 52 42 64 45 76 L24 76 C24 66 27 56 29 48Z" fill="${hc}"/>`; top = cap; break;
+    case 'bun': back = `<circle cx="33" cy="31" r="9" fill="${hc}"/>`; top = cap; break;
+    case 'ponytail': back = `<path d="M31 44 C17 50 15 72 21 88 C26 74 28 62 35 53Z" fill="${hc}"/>`; top = cap; break;
+    case 'pigtails': back = `<circle cx="29" cy="60" r="8" fill="${hc}"/>`; top = cap; break;
+    case 'curly': top = curls(46, 49, 20, 22, 160, 300, 8, 6.5, hc); break;
+    case 'bigcurly': back = curls(44, 54, 24, 30, 100, 300, 11, 8.5, hc); top = curls(47, 47, 19, 20, 190, 300, 5, 6, hc); break;
+  }
+  if (L.veil) back = `<path d="M42 28 C24 42 16 82 12 120 L62 120 C54 92 48 62 50 30Z" fill="#fff" opacity=".6"/>` + back;
+  return { back, top };
+}
+
+function outfit(L, view) {
+  const shirtV = view === 'front' ? `<path d="M44 88 L50 104 L56 88Z" fill="#fff"/>` : `<path d="M55 88 L61 98 L60 88Z" fill="#fff"/>`;
+  const tie = L.tie ? (view === 'front' ? `<path d="M48.5 92 L51.5 92 L52.5 104 L50 108 L47.5 104Z" fill="${L.tie}"/>` : `<path d="M58 91 L60 92 L61 100 L59 101Z" fill="${L.tie}"/>`) : '';
+  const body = view === 'front'
+    ? `<path d="M13 120 C13 97 29 88 50 88 C71 88 87 97 87 120Z" fill="${L.outfit}"/>`
+    : `<path d="M25 120 C25 98 36 88 50 88 C64 88 74 98 76 120Z" fill="${L.outfit}"/>`;
+  const line = L.outfit === '#fbfaf7' ? `<path d="${view === 'front' ? 'M13 120 C13 97 29 88 50 88 C71 88 87 97 87 120' : 'M25 120 C25 98 36 88 50 88 C64 88 74 98 76 120'}" fill="none" stroke="#ddd6cc" stroke-width="1.2"/>` : '';
+  let extra = '';
+  if (L.fit === 'suit' || L.fit === 'jacket') extra = shirtV + tie;
+  if (L.fit === 'jacket') extra = view === 'front' ? `<path d="M44 88 L50 100 L56 88Z" fill="#555"/>` : `<path d="M55 88 L60 96 L60 88Z" fill="#555"/>`;
+  if (L.fit === 'shirt') extra = view === 'front' ? `<path d="M43 88 L50 96 L57 88Z" fill="${L.skin}"/>` : '';
+  if (L.fit === 'dress') extra = view === 'front' ? `<path d="M40 88 C44 98 56 98 60 88Z" fill="${L.skin}"/>` : '';
+  if (L.fit === 'collar') extra = view === 'front' ? `<rect x="45.5" y="88" width="9" height="4" rx="1" fill="#fff"/>` : `<rect x="54" y="88" width="5" height="4" rx="1" fill="#fff"/>`;
+  if (L.pearls) extra += view === 'front' ? curls(50, 88, 11, 9, 20, 160, 8, 1.4, '#fffaf0') : '';
+  return body + line + extra;
+}
+
+function portraitSVG(g, pose, { blink = false, fill = false, head = false } = {}) {
+  const L = LOOKS[g];
+  const view = pose === 'front' ? 'front' : 'profile';
+  const sk = L.skin;
+  let svg = '';
+  if (view === 'front') {
+    const { back, top } = frontParts(L);
+    const ear = L.bigEars ? 'rx="6" ry="8"' : 'rx="4" ry="6"';
+    svg += back + outfit(L, 'front');
+    svg += `<rect x="43" y="68" width="14" height="24" rx="5" fill="${sk}"/><rect x="43" y="68" width="14" height="24" rx="5" fill="#000" opacity=".07"/>`;
+    svg += `<ellipse cx="30" cy="54" ${ear} fill="${sk}"/><ellipse cx="70" cy="54" ${ear} fill="${sk}"/>`;
+    svg += `<ellipse cx="50" cy="52" rx="20.5" ry="24.5" fill="${sk}"/>`;
+    if (L.beard === 'full') svg += `<path d="M30 54 C31 73 40 81 50 81 C60 81 69 73 70 54 C66 65 60 70 50 70 C40 70 34 65 30 54Z" fill="${L.hc}"/>`;
+    if (L.beard === 'stubble') svg += `<path d="M31 56 C32 72 40 77 50 77 C60 77 68 72 69 56 C66 65 60 69 50 69 C40 69 34 65 31 56Z" fill="${L.hc}" opacity=".28"/>`;
+    if (L.blush) svg += `<circle cx="38" cy="60" r="3.5" fill="#e8737a" opacity=".3"/><circle cx="62" cy="60" r="3.5" fill="#e8737a" opacity=".3"/>`;
+    const brow = L.hair === 'sides' || L.hair === 'receding' || L.old ? L.hc : INK;
+    svg += `<path d="M38.5 45.5 Q43 43.5 46.5 45.5" stroke="${brow}" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M53.5 45.5 Q57 43.5 61.5 45.5" stroke="${brow}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    svg += blink ? `<path d="M40.5 52 Q43 54 45.5 52 M54.5 52 Q57 54 59.5 52" stroke="${INK}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`
+                 : `<circle cx="43" cy="51.5" r="2.2" fill="${INK}"/><circle cx="57" cy="51.5" r="2.2" fill="${INK}"/>`;
+    if (L.old) svg += `<path d="M34 50 l-2.5 -1.5 M34 53 l-2.5 1.2 M66 50 l2.5 -1.5 M66 53 l2.5 1.2 M43 38 q7 -2 14 0" stroke="#000" stroke-opacity=".18" stroke-width="1" fill="none"/>`;
+    svg += `<path d="M50 52 Q47.5 59.5 51 60.5" stroke="#000" stroke-opacity=".25" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+    if (L.mustache) svg += `<path d="M42.5 64.5 Q50 59.5 57.5 64.5 Q50 63 42.5 64.5Z" fill="${L.hc}" stroke="${L.hc}" stroke-width="1.5" stroke-linejoin="round"/>`;
+    const mouth = L.mouth === 'flat' ? 'M45 67 L55 67' : L.mouth === 'smirk' ? 'M45 67 Q52 69.5 57 64.5' : 'M44 65.5 Q50 71 56 65.5';
+    svg += `<path d="${mouth}" stroke="${LIP}" stroke-width="1.9" fill="none" stroke-linecap="round"/>`;
+    svg += top;
+    if (L.glasses) svg += `<circle cx="43" cy="51.5" r="5.5" fill="none" stroke="#333" stroke-width="1.4"/><circle cx="57" cy="51.5" r="5.5" fill="none" stroke="#333" stroke-width="1.4"/><path d="M48.5 51 L51.5 51 M37.5 50.5 L30 49 M62.5 50.5 L70 49" stroke="#333" stroke-width="1.3"/>`;
+    if (L.crown) svg += ['#f7d14a', '#f2729a', '#fff', '#9fd47b', '#f2729a', '#f7d14a'].map((c, i) => `<circle cx="${34 + i * 6.4}" cy="${29 - Math.sin(i / 5 * Math.PI) * 4}" r="3" fill="${c}" stroke="#d96c8c" stroke-width=".6"/>`).join('');
+  } else {
+    const { back, top } = profileParts(L);
+    svg += back + outfit(L, 'profile');
+    svg += `<rect x="42" y="66" width="14" height="26" rx="5" fill="${sk}"/><rect x="42" y="66" width="14" height="26" rx="5" fill="#000" opacity=".07"/>`;
+    svg += `<path d="M50 27 C36 27 28 38 28 50 C28 62 31 69 36 72 C42 77 48 79 54 79 C58 79 62 78 63 75 L64 71 L66.5 69.5 L64.5 67.5 L66.5 65.5 L66 62 L71.5 58 L67 50 C68 40 64 28 50 27Z" fill="${sk}"/>`;
+    svg += `<ellipse cx="43" cy="54" ${L.bigEars ? 'rx="6" ry="8.5"' : 'rx="4" ry="6"'} fill="${sk}"/><path d="M43 50 q2.5 4 0 8" stroke="#000" stroke-opacity=".15" stroke-width="1.2" fill="none"/>`;
+    if (L.beard === 'full') svg += `<path d="M40 60 C41 71 47 79 55 80 C60 80 63 78 64 74 L64.5 68 C58 70 52 68 48 62 C45 58 42 58 40 60Z" fill="${L.hc}"/>`;
+    if (L.beard === 'stubble') svg += `<path d="M42 62 C43 71 48 77 55 78 C60 78 63 76 63.5 73 L64 68 C58 70 52 68 48 63Z" fill="${L.hc}" opacity=".28"/>`;
+    if (L.blush) svg += `<circle cx="58" cy="60" r="3.5" fill="#e8737a" opacity=".3"/>`;
+    const brow = L.hair === 'sides' || L.hair === 'receding' || L.old ? L.hc : INK;
+    svg += `<path d="M57 45 Q61.5 43.5 65 45.5" stroke="${brow}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    svg += blink ? `<path d="M59.5 51 Q61.5 53 63.5 51" stroke="${INK}" stroke-width="1.6" fill="none" stroke-linecap="round"/>` : `<circle cx="61.5" cy="50.5" r="2.1" fill="${INK}"/>`;
+    if (L.old) svg += `<path d="M57.5 50 l-3 -1 M57.5 52.5 l-3 1" stroke="#000" stroke-opacity=".18" stroke-width="1"/>`;
+    if (L.mustache) svg += `<path d="M59.5 63.5 Q65 62 67 64.8 Q62.5 65.8 59.5 65Z" fill="${L.hc}"/>`;
+    const mouth = L.mouth === 'flat' ? 'M60 68 L64.5 68' : L.mouth === 'smirk' ? 'M59.5 68.5 Q62.5 69 64.8 66.8' : 'M59 67.5 Q62 70 64.8 67.8';
+    svg += `<path d="${mouth}" stroke="${LIP}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    svg += top;
+    if (L.glasses) svg += `<circle cx="61.5" cy="50.5" r="5" fill="none" stroke="#333" stroke-width="1.4"/><path d="M56.5 50 L44 52" stroke="#333" stroke-width="1.3"/>`;
+    if (L.crown) svg += ['#f7d14a', '#f2729a', '#fff', '#9fd47b', '#f2729a'].map((c, i) => `<circle cx="${36 + i * 6}" cy="${32 - i * 1.2}" r="3" fill="${c}" stroke="#d96c8c" stroke-width=".6"/>`).join('');
+  }
+  // profiles are drawn facing right; mirror for left
+  if (pose === 'left') svg = `<g transform="translate(100 0) scale(-1 1)">${svg}</g>`;
+  // `fill` frames head and shoulders tighter, for the spots in the photo
+  // `head` is a square crop around the face, for round seats
+  return `<svg viewBox="${head ? '17 14 66 66' : fill ? '12 12 76 92' : '0 0 100 120'}" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${svg}</svg>`;
+}
+
+
+// ---- chart helpers ----
+const seatKey = (t, p) => `${t}-${p}`;
+let seats = {};   // seatKey -> guest id
+let round = 0;
+let present = [];
+let moves = 0;
+let selected = null;
+let accepting = false;
+
+const where = g => { for (const k in seats) if (seats[k] === g) return k; return null; };
+const helper = () => makeHelper(g => { const k = where(g); return k ? k.split('-').map(Number) : null; });
+let closed = new Set();
+// notes that no longer count: retired outright, or about someone who left
+const retiredIds = () => {
+  const past = ROUNDS.slice(0, round + 1);
+  const left = new Set(past.flatMap(r => r.leave || []));
+  const ids = new Set(past.flatMap(r => r.retire || []));
+  past.flatMap(r => r.rules).forEach(r => { if (r.g.some(g => left.has(g))) ids.add(r.id); });
+  return ids;
+};
+const activeRules = () => {
+  const retired = retiredIds();
+  return ROUNDS.slice(0, round + 1).flatMap(r => r.rules).filter(r => !retired.has(r.id));
+};
+
+// ---- DOM ----
+const $ = s => document.querySelector(s);
+const tablesEl = $('#tables'), lobbyEl = $('#lobby'), feed = $('#feed'), sendBtn = $('#send'), statusEl = $('#status');
+
+function buildTables() {
+  tablesEl.replaceChildren();
+  for (const t of TABLES) {
+    const zone = document.createElement('div');
+    zone.className = 'table-zone';
+    zone.innerHTML = `<div class="zone-label">${t.label}</div>`;
+    const rt = document.createElement('div');
+    rt.className = 'round-table';
+    rt.innerHTML = `<div class="top">${t.id}</div>`;
+    for (let p = 0; p < SEATS_PER_TABLE; p++) {
+      const s = document.createElement('div');
+      s.className = 'seat'; s.dataset.seat = seatKey(t.id, p); s.dataset.pos = p;
+      rt.append(s);
+    }
+    zone.append(rt); tablesEl.append(zone);
+  }
+}
+
+function chip(g, fresh) {
+  const c = document.createElement('div');
+  c.className = 'chip' + (selected === g ? ' sel' : '') + (fresh ? ' new' : '');
+  c.dataset.guest = g;
+  c.title = `${GUESTS[g].name} (${GUESTS[g].role})`;
+  c.innerHTML = `<span class="face">${portraitSVG(g, 'front', { head: true })}</span><span class="txt"><b>${GUESTS[g].name}</b><small>${GUESTS[g].role}</small></span>`;
+  return c;
+}
+
+let freshGuests = new Set();
+let announced = [];   // rule ids in the order they hit the chat
+function render() {
+  document.querySelectorAll('.seat').forEach(s => {
+    const g = seats[s.dataset.seat];
+    const broken = closed.has(s.dataset.seat);
+    s.classList.toggle('broken', broken);
+    s.replaceChildren(...(g ? [chip(g)] : broken ? [Object.assign(document.createElement('span'), { textContent: 'broken' })] : []));
+    s.classList.toggle('target', !!selected && !g && !broken);
+  });
+  const waiting = present.filter(g => !where(g));
+  lobbyEl.replaceChildren(...waiting.map(g => chip(g, freshGuests.has(g))));
+  freshGuests.clear();
+  if (!waiting.length) lobbyEl.innerHTML = '<span class="empty">Everyone has a seat.</span>';
+  evaluate();
+}
+
+function evaluate() {
+  const h = helper();
+  const live = activeRules();
+  let broken = 0;
+  for (const r of live) {
+    const ok = !!r.check(h);
+    if (!ok) broken++;
+    const el = feed.querySelector(`[data-rule="${r.id}"]`);
+    if (el) el.classList.toggle('ok', ok);
+  }
+  renderNotes(h);
+  const unseated = present.filter(g => !where(g)).length;
+  const ready = !accepting && !broken && !unseated;
+  sendBtn.disabled = !ready;
+  statusEl.textContent = accepting ? '' : unseated ? `${unseated} guest${unseated > 1 ? 's' : ''} without a seat` : broken ? `${broken} note${broken > 1 ? 's' : ''} not handled` : 'Everyone is satisfied. For now.';
+}
+
+function renderNotes(h) {
+  const byId = Object.fromEntries(ROUNDS.flatMap(r => r.rules).map(r => [r.id, r]));
+  const retired = retiredIds();
+  const notesEl = document.getElementById('notes');
+  if (!announced.length) { notesEl.replaceChildren(); return; }
+  const live = announced.filter(id => !retired.has(id));
+  const done = live.filter(id => byId[id].check(h)).length;
+  const head = document.createElement('div');
+  head.className = 'notes-head';
+  head.innerHTML = `<span>Notes from the family</span><span>${done} of ${live.length} handled</span>`;
+  // unhandled notes float to the top, crossed-off ones sink
+  const state = id => retired.has(id) ? 'retired' : byId[id].check(h) ? 'ok' : 'bad';
+  const rank = { bad: 0, ok: 1, retired: 2 };
+  const ordered = announced.slice().sort((a, b) => rank[state(a)] - rank[state(b)]);
+  const rows = ordered.map(id => {
+    const r = byId[id], row = document.createElement('div');
+    row.className = 'note ' + state(id);
+    row.innerHTML = '<b></b><span></span>';
+    row.querySelector('b').textContent = r.who + ':';
+    row.querySelector('span').textContent = r.text;
+    return row;
+  });
+  notesEl.replaceChildren(head, ...rows);
+}
+
+function move(g, key) {
+  const from = where(g);
+  if (key === from || closed.has(key)) { selected = null; render(); return; }
+  if (from) delete seats[from];
+  if (key) {
+    const other = seats[key];
+    if (other) { if (from) seats[from] = other; else delete seats[key]; }
+    seats[key] = g;
+  }
+  moves++;
+  selected = null;
+  render();
+}
+
+// ---- chat ----
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const scroll = () => { feed.scrollTop = feed.scrollHeight; };
+function say({ who, text, you, rule }) {
+  const m = document.createElement('div');
+  m.className = 'msg' + (you ? ' you' : '') + (rule ? ' rule' : '');
+  if (rule) { m.dataset.rule = rule; announced.push(rule); }
+  m.innerHTML = (you ? '' : `<div class="who"></div>`) + `<div class="bubble"></div>`;
+  if (!you) m.querySelector('.who').textContent = who;
+  m.querySelector('.bubble').textContent = text;
+  feed.append(m); scroll();
+}
+function sys(text) { const d = document.createElement('div'); d.className = 'sys'; d.textContent = text; feed.append(d); scroll(); }
+async function typing(ms = 900) {
+  const t = document.createElement('div'); t.className = 'typing'; t.innerHTML = '<i></i><i></i><i></i>';
+  feed.append(t); scroll(); await wait(ms); t.remove();
+}
+
+async function playRound(i) {
+  accepting = true; evaluate();
+  const r = ROUNDS[i];
+  $('#roundLabel').textContent = `Reception · Round ${i + 1} of ${ROUNDS.length}`;
+  if (r.sys) sys(r.sys);
+  (r.arrive || []).forEach(g => { present.push(g); freshGuests.add(g); });
+  (r.leave || []).forEach(g => { const k = where(g); if (k) delete seats[k]; present = present.filter(x => x !== g); });
+  $('#members').textContent = `${present.length + 1} members`;
+  render();
+  for (const p of r.pre || []) {
+    if (p.you) await wait(400); else await typing();
+    say(p);
+  }
+  for (const k of r.close || []) {
+    closed.add(k);
+    if (seats[k]) delete seats[k]; // whoever was in that chair is standing now
+  }
+  for (const id of retiredIds()) {
+    const el = feed.querySelector(`[data-rule="${id}"]`);
+    if (el) el.classList.add('retired');
+  }
+  render();
+  for (const rule of r.rules) {
+    if (!rule.you) await typing(700 + rule.text.length * 12);
+    else await wait(400);
+    say({ who: rule.who, text: rule.text, you: rule.you, rule: rule.id });
+  }
+  accepting = false;
+  render();
+}
+
+sendBtn.addEventListener('click', async () => {
+  if (sendBtn.disabled) return;
+  say({ you: true, text: round === 0 ? 'Updated the chart!' : ['Updated!', 'Done. Again.', 'Fixed it.', 'Okay. New chart.', 'Here.', 'Please.'][round % 6] });
+  if (round === ROUNDS.length - 1) {
+    accepting = true; evaluate();
+    await typing(1200);
+    say({ who: 'Mom', text: 'Looks great honey. Can we move Grandma closer to the dance floor?' });
+    await wait(900);
+    sys('You left the group');
+    await wait(900);
+    finish();
+    return;
+  }
+  round++;
+  playRound(round);
+});
+
+function finish() {
+  let best = null;
+  try { best = +localStorage.getItem('seatingchart:best') || null; if (!best || moves < best) localStorage.setItem('seatingchart:best', moves); } catch {}
+  $('#endStats').textContent = `${moves} moves across ${ROUNDS.length} rounds.` + (best && best < moves ? ` Your best is ${best}.` : '');
+  $('#end').classList.add('show');
+}
+
+$('#again').addEventListener('click', () => { $('#end').classList.remove('show'); start(); });
+
+// ---- input: drag, or tap a guest then tap a seat ----
+let drag = null;
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest('.chip');
+  if (!c || accepting) return;
+  drag = { g: c.dataset.guest, x: e.clientX, y: e.clientY, el: c, ghost: null };
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.ghost && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) {
+    drag.ghost = chip(drag.g); drag.ghost.classList.add('ghost'); document.body.append(drag.ghost);
+    drag.el.classList.add('lifted');
+  }
+  if (drag.ghost) {
+    drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px';
+    document.querySelectorAll('.hover').forEach(x => x.classList.remove('hover'));
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const t = under && (under.closest('.seat') || under.closest('.lobby'));
+    if (t) t.classList.add('hover');
+  }
+});
+document.addEventListener('pointerup', e => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  document.querySelectorAll('.hover').forEach(x => x.classList.remove('hover'));
+  if (d.ghost) {
+    d.ghost.remove();
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const seat = under && under.closest('.seat');
+    const lobby = under && under.closest('.lobby');
+    if (seat) move(d.g, seat.dataset.seat);
+    else if (lobby) move(d.g, null);
+    else render();
+    return;
+  }
+  // a tap: select, or swap with the selected guest
+  if (selected && selected !== d.g) {
+    const k = where(d.g);
+    if (k) { move(selected, k); return; }
+  }
+  selected = selected === d.g ? null : d.g;
+  render();
+});
+document.addEventListener('pointercancel', () => { if (drag && drag.ghost) drag.ghost.remove(); drag = null; render(); });
+document.addEventListener('click', e => {
+  if (!selected || accepting) return;
+  if (e.target.closest('.chip')) return;
+  const seat = e.target.closest('.seat');
+  if (seat) { move(selected, seat.dataset.seat); return; }
+  if (e.target.closest('.lobby')) { move(selected, null); return; }
+});
+
+async function start() {
+  seats = {}; round = 0; moves = 0; selected = null; closed = new Set();
+  present = START_GUESTS.slice();
+  START_GUESTS.forEach(g => freshGuests.add(g));
+  feed.replaceChildren();
+  announced = [];
+  $('#members').textContent = `${present.length + 1} members`;
+  buildTables(); render();
+  sys('Today');
+  say({ you: true, text: 'Working on the seating chart for the reception. Any notes before I send it to the venue?' });
+  await playRound(0);
+}
+start();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About The Seating Chart</h2>
+<p>Plan the wedding reception seating chart while the family group chat adds one new demand per round. Aunt Deb will not sit with Uncle Ray.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/turboball/">Turbo Ball</a>: Side-view car soccer. Boost, jump, flip, drive up the walls and hit an enormous ball into a goal.</li>
+<li><a href="/unsubscribe/">Unsubscribe</a>: Try to unsubscribe from The Daily Spoon, a newsletter about spoons. One wrong click and you are resubscribed to everything.</li>
+<li><a href="/piano/">Virtual Piano</a>: Play music on a virtual piano keyboard</li>
+<li><a href="/whosaidit/">Who Said It?</a>: A fortune cookie, a horoscope, a cat calendar, or a LinkedIn thought leader? Seven quotes a day. Guess who said it.</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

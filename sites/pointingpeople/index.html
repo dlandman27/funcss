@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Pointing People</title>
+    <meta name="description" content="Stop your cursor anywhere. Someone will point at it.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/pointingpeople/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/pointingpeople/">
+    <meta property="og:title" content="Pointing People">
+    <meta property="og:description" content="Stop your cursor anywhere. Someone will point at it.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/pointingpeople.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pointing People">
+    <meta name="twitter:description" content="Stop your cursor anywhere. Someone will point at it.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/pointingpeople.png">
+    <!-- rsotw:og:end -->
+    <style>
+        :root {
+            --ink: #201a17;
+            --paper: #f2ede2;
+            --cream: #fff8ef;
+            --gold: #f7c948;
+            --coral: #f0563e;
+        }
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            background-image: radial-gradient(rgba(32, 26, 23, .09) 1.2px, transparent 1.4px);
+            background-size: 22px 22px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: var(--ink);
+        }
+        canvas { position: fixed; inset: 0; display: block; }
+
+        .badge {
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            z-index: 3;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .title {
+            font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(20px, 4.2vw, 34px);
+            line-height: 1;
+            color: var(--gold);
+            -webkit-text-stroke: 7px var(--ink);
+            paint-order: stroke fill;
+            text-shadow: 4px 4px 0 var(--ink);
+            transform: rotate(-4deg);
+            letter-spacing: .5px;
+            margin: 0;
+        }
+        .count {
+            font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 13px;
+            text-transform: uppercase;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 5px 12px 4px;
+            transform: rotate(2deg);
+            letter-spacing: .3px;
+        }
+        .count b { color: var(--coral); }
+        .count.pop { animation: pop .38s cubic-bezier(.3, 1.6, .5, 1); }
+        @keyframes pop {
+            0% { transform: rotate(2deg) scale(.6); }
+            70% { transform: rotate(2deg) scale(1.15); }
+            100% { transform: rotate(2deg) scale(1); }
+        }
+
+        .hint {
+            position: fixed;
+            left: 50%;
+            bottom: max(22px, env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            font-style: italic;
+            font-size: 17px;
+            opacity: .65;
+            z-index: 3;
+            pointer-events: none;
+            transition: opacity 1.2s ease;
+            white-space: nowrap;
+        }
+        .hint.gone { opacity: 0; }
+
+        .bubble {
+            position: fixed;
+            z-index: 2;
+            pointer-events: none;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            box-shadow: 3px 3px 0 var(--ink);
+            padding: 6px 12px 7px;
+            font-style: italic;
+            font-size: 17px;
+            white-space: nowrap;
+            transform-origin: 50% 100%;
+            animation: bubbleIn .34s cubic-bezier(.3, 1.6, .5, 1) both;
+        }
+        .bubble.out { animation: bubbleOut .18s ease-in both; }
+        @keyframes bubbleIn {
+            0% { transform: rotate(var(--r)) scale(.2); opacity: 0; }
+            100% { transform: rotate(var(--r)) scale(1); opacity: 1; }
+        }
+        @keyframes bubbleOut {
+            to { transform: rotate(var(--r)) scale(.6); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bubble, .bubble.out, .count.pop { animation-duration: .01s; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <div class="badge">
+        <h1 class="title">Pointing People</h1>
+        <div class="count" id="count">pointed at: <b id="n">0</b> things</div>
+    </div>
+    <div class="hint" id="hint">move your cursor. then stop.</div>
+
+<script>
+(() => {
+    const INK = '#201a17';
+    const CREAM = '#fff8ef';
+    const HOUSE = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948'];
+    const SKIN = ['#f6d2b4', '#ecbf98', '#d39a6c', '#a86d45', '#7a4b2e', '#5a3720'];
+    const HAIR = [INK, '#5a3a22', '#8a5530', '#f7c948', '#b9b2a8', '#f47b28', '#a98fd0', '#ff7fa5', '#2fb0a3'];
+    const PANTS = ['#4a5d7e', '#3d3531', '#5aa0db', '#2fb0a3', '#a98fd0', '#8a6a4a'];
+    const CAPTIONS = ['there.', 'that one.', 'found it.', "you're welcome.", 'right there, yeah.', 'this.', 'look.', 'see?', 'over here.', 'ah. there.'];
+    const SECOND = ['I see it too.', 'yep. that.', 'confirmed.', 'same.'];
+    const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Arm geometry (figure units; a figure is 100 units from feet to crown)
+    const L1 = 23, L2 = 21, ARM = L1 + L2;
+    const TOOLS = { finger: 7, foam: 15, stick: 62 };
+
+    function mulberry32(a) {
+        return () => {
+            a |= 0; a = a + 0x6D2B79F5 | 0;
+            let t = Math.imul(a ^ a >>> 15, 1 | a);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+    const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
+
+    // ---------- the cast: 40 people built from parts ----------
+    function makePerson(i) {
+        const r = mulberry32(i * 7919 + 13);
+        const hat = r() < 0.42 ? pick(r, ['beanie', 'cap', 'top', 'party', 'bucket']) : null;
+        const p = {
+            skin: pick(r, SKIN),
+            hairColor: pick(r, HAIR),
+            hair: pick(r, ['bald', 'short', 'short', 'spiky', 'bun', 'afro', 'long', 'side', 'pony']),
+            hat,
+            hatColor: pick(r, HOUSE),
+            shirt: pick(r, HOUSE),
+            pattern: pick(r, ['plain', 'plain', 'stripes', 'buttons', 'pocket']),
+            pants: pick(r, PANTS),
+            w: pick(r, [20, 24, 28, 32]),
+            round: r() < 0.3,
+            head: 11 + r() * 3,
+            expr: pick(r, ['smile', 'smile', 'flat', 'o', 'smug', 'grin']),
+            sleeves: r() < 0.35 ? 'short' : 'long',
+            glasses: r() < 0.3,
+            mustache: r() < 0.2,
+            scarf: r() < 0.18,
+            bowtie: r() < 0.14,
+            blush: r() < 0.4,
+            hold: r() < 0.16 ? 'balloon' : r() < 0.2 ? 'briefcase' : null,
+            balloon: pick(r, HOUSE)
+        };
+        if (p.shirt === p.hatColor) p.hatColor = HOUSE[(HOUSE.indexOf(p.shirt) + 3) % HOUSE.length];
+        if (p.scarf && p.bowtie) p.bowtie = false;
+        return p;
+    }
+    const CAST = Array.from({ length: 40 }, (_, i) => makePerson(i));
+
+    // ---------- canvas ----------
+    const cv = document.getElementById('c');
+    const ctx = cv.getContext('2d');
+    let W = 0, H = 0, DPR = 1;
+    function resize() {
+        DPR = Math.min(2, window.devicePixelRatio || 1);
+        W = innerWidth; H = innerHeight;
+        cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+        cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    }
+    resize();
+
+    // ---------- drawing primitives (sticker style) ----------
+    let LW = 1;         // outline width in current local units
+    let SHADOW = false; // when true everything is drawn in ink (the hard offset shadow pass)
+
+    function blob(path, color, noStroke) {
+        ctx.beginPath(); path();
+        ctx.fillStyle = SHADOW ? INK : color; ctx.fill();
+        if (noStroke) return;
+        ctx.lineWidth = LW; ctx.lineJoin = 'round'; ctx.strokeStyle = INK; ctx.stroke();
+    }
+    function limb(pts, width, color) {
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = INK; ctx.lineWidth = width + LW * 2; ctx.stroke();
+        if (SHADOW) return;
+        ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+    }
+    function line(pts, width) {
+        if (SHADOW) return;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = INK; ctx.lineWidth = width || LW; ctx.stroke();
+    }
+    const circ = (x, y, r) => () => ctx.arc(x, y, r, 0, Math.PI * 2);
+    const ell = (x, y, rx, ry, rot) => () => ctx.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2);
+    const rrect = (x, y, w, h, rad) => () => ctx.roundRect(x, y, w, h, rad);
+    const poly = pts => () => { ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); };
+
+    // ---------- a person, feet at (0,0), up is -y ----------
+    // opts: { side, target (local point or null), tool, atYou, upright, kidOnShoulders }
+    function drawPerson(p, o) {
+        const side = o.side;
+        const hw = p.w / 2;
+        const hy = -88, hr = p.head;
+        const S = [side * (hw - 2), -71];         // pointing shoulder
+        const F = [-side * (hw - 2), -71];        // free shoulder
+
+        // where the eyes look
+        let look = [0, 0];
+        if (o.target && !o.atYou) {
+            const dx = o.target[0], dy = o.target[1] - hy, d = Math.hypot(dx, dy) || 1;
+            look = [dx / d, dy / d];
+        }
+
+        // back hair
+        if (p.hair === 'afro' && p.hat !== 'top' && p.hat !== 'party') blob(circ(0, hy - 3, hr + 7), p.hairColor);
+        if (p.hair === 'long') blob(rrect(-hr - 3, hy - 6, hr * 2 + 6, 30, 7), p.hairColor);
+        if (p.hair === 'pony') blob(ell(-side * (hr + 3), hy + 2, 4.5, 9, side * 0.3), p.hairColor);
+
+        // balloon (only when the balloon would float up in the world)
+        const holdBalloon = p.hold === 'balloon' && o.upright && !o.kidOnShoulders;
+        const FH = holdBalloon ? [-side * (hw + 7), -60] : o.kidOnShoulders ? [-side * (hw + 1), -96] : [-side * (hw + 3), -44];
+        if (holdBalloon) {
+            const B = [-side * (hw + 18), -126];
+            line([FH, [B[0] + side * 3, B[1] + 18], [B[0], B[1] + 14]], LW * 0.8);
+            blob(ell(B[0], B[1], 11, 13.5), p.balloon);
+            blob(poly([[B[0] - 2.5, B[1] + 16], [B[0] + 2.5, B[1] + 16], [B[0], B[1] + 12.5]]), p.balloon);
+            if (!SHADOW) blob(ell(B[0] - 4, B[1] - 5, 2.4, 3.6, -0.4), CREAM, true);
+        }
+
+        // legs + shoes
+        limb([[-6, -38], [-7, -4]], 9, p.pants);
+        limb([[6, -38], [7, -4]], 9, p.pants);
+        blob(ell(-9, -3, 6.5, 3.6), '#3d3531');
+        blob(ell(9, -3, 6.5, 3.6), '#3d3531');
+
+        // torso
+        if (p.round) blob(ell(0, -54, hw + 3, 22), p.shirt);
+        else blob(rrect(-hw, -76, p.w, 42, 9), p.shirt);
+        if (!SHADOW) {
+            if (p.pattern === 'stripes') for (const y of [-64, -55, -46]) line([[-hw + 3, y], [hw - 3, y]], LW * 0.9);
+            if (p.pattern === 'buttons') for (const y of [-66, -57, -48]) blob(circ(0, y, 1.2), INK, true);
+            if (p.pattern === 'pocket') blob(rrect(-side * (hw - 10) - 3.5, -66, 7, 7, 1.5), p.shirt);
+        }
+
+        // scarf / bowtie
+        if (p.scarf) {
+            blob(rrect(-hw * 0.75, -78, hw * 1.5, 6, 3), p.hatColor);
+            blob(rrect(-side * hw * 0.35 - 3, -75, 6, 15, 2), p.hatColor);
+        }
+
+        // head
+        blob(circ(-hr + 0.5, hy + 1, 3), p.skin);
+        blob(circ(hr - 0.5, hy + 1, 3), p.skin);
+        blob(circ(0, hy, hr), p.skin);
+
+        // face
+        const ex = 4.4, ey = hy - 1;
+        if (p.blush && !SHADOW) {
+            ctx.globalAlpha = 0.35;
+            blob(ell(-7.5, hy + 4, 2.6, 1.6), '#ff7fa5', true);
+            blob(ell(7.5, hy + 4, 2.6, 1.6), '#ff7fa5', true);
+            ctx.globalAlpha = 1;
+        }
+        for (const s of [-1, 1]) {
+            blob(circ(s * ex, ey, 2.9), '#ffffff');
+            if (!SHADOW) blob(circ(s * ex + look[0] * 1.2, ey + look[1] * 1.2, 1.55), INK, true);
+        }
+        if (p.glasses) {
+            ctx.beginPath(); ctx.arc(-ex, ey, 4.1, 0, Math.PI * 2); ctx.moveTo(ex + 4.1, ey); ctx.arc(ex, ey, 4.1, 0, Math.PI * 2);
+            ctx.lineWidth = LW * 0.9; ctx.strokeStyle = INK; ctx.stroke();
+            line([[-ex + 4.1, ey], [ex - 4.1, ey]], LW * 0.9);
+        }
+        const my = hy + 6;
+        if (!SHADOW) {
+            ctx.lineWidth = LW * 0.9; ctx.strokeStyle = INK; ctx.lineCap = 'round';
+            ctx.beginPath();
+            if (p.expr === 'smile') ctx.arc(0, my - 2.5, 3.2, 0.25 * Math.PI, 0.75 * Math.PI);
+            else if (p.expr === 'flat') { ctx.moveTo(-2.6, my); ctx.lineTo(2.6, my); }
+            else if (p.expr === 'smug') { ctx.moveTo(-2.6, my + 0.4); ctx.quadraticCurveTo(1, my + 0.8, 3.2, my - 1.4); }
+            if (p.expr !== 'o' && p.expr !== 'grin') ctx.stroke();
+            if (p.expr === 'o') blob(ell(0, my + 0.5, 1.6, 2), INK, true);
+            if (p.expr === 'grin') {
+                blob(() => { ctx.moveTo(-3.6, my - 1); ctx.lineTo(3.6, my - 1); ctx.arc(0, my - 1, 3.6, 0, Math.PI); }, '#ffffff');
+            }
+        }
+        if (p.mustache) {
+            blob(() => {
+                ctx.moveTo(0, my - 2.6);
+                ctx.quadraticCurveTo(-3, my - 4.4, -5.6, my - 1.2);
+                ctx.quadraticCurveTo(-2.6, my - 1.8, 0, my - 1.6);
+                ctx.quadraticCurveTo(2.6, my - 1.8, 5.6, my - 1.2);
+                ctx.quadraticCurveTo(3, my - 4.4, 0, my - 2.6);
+            }, p.hairColor === '#b9b2a8' ? p.hairColor : INK);
+        }
+
+        // hair top / hats
+        const top = hy - hr;
+        const cap = () => ctx.arc(0, hy, hr + 1, Math.PI * 1.04, Math.PI * 1.96);
+        if (!p.hat) {
+            if (p.hair === 'short' || p.hair === 'long' || p.hair === 'bun' || p.hair === 'pony') blob(() => { cap(); ctx.closePath(); }, p.hairColor);
+            if (p.hair === 'bun') blob(circ(0, top - 4, 5.5), p.hairColor);
+            if (p.hair === 'side') blob(() => {
+                ctx.arc(0, hy, hr + 1, Math.PI * 1.02, Math.PI * 1.98);
+                ctx.quadraticCurveTo(side * 2, hy - hr * 0.2, -side * 3, hy - hr * 0.55);
+                ctx.closePath();
+            }, p.hairColor);
+            if (p.hair === 'spiky') {
+                const pts = [];
+                for (let i = 0; i <= 8; i++) {
+                    const a = Math.PI * (1.02 + 0.96 * i / 8);
+                    const rr = hr + (i % 2 ? 6 : 1);
+                    pts.push([Math.cos(a) * rr, hy + Math.sin(a) * rr]);
+                }
+                blob(poly(pts), p.hairColor);
+            }
+            if (p.hair === 'bald' && !SHADOW) blob(ell(-4, top + 3.5, 2.6, 1.3, -0.3), CREAM, true);
+        } else if (o.kidOnShoulders) {
+            blob(() => { cap(); ctx.closePath(); }, p.hairColor);
+        } else if (p.hat === 'beanie') {
+            blob(() => { ctx.arc(0, hy - 4, hr + 1.5, Math.PI, Math.PI * 2); ctx.closePath(); }, p.hatColor);
+            blob(rrect(-hr - 2, hy - 6.5, hr * 2 + 4, 5, 2), p.hatColor);
+            blob(circ(0, top - 5, 3.6), CREAM);
+        } else if (p.hat === 'cap') {
+            blob(() => { ctx.arc(0, hy - 4, hr + 1, Math.PI, Math.PI * 2); ctx.closePath(); }, p.hatColor);
+            blob(ell(side * (hr * 0.75), hy - 4.5, hr * 0.8, 2.6), p.hatColor);
+        } else if (p.hat === 'top') {
+            blob(rrect(-hr - 5, top + 1, hr * 2 + 10, 4, 2), INK);
+            blob(rrect(-hr + 2, top - 18, hr * 2 - 4, 20, 2), '#3d3531');
+            blob(rrect(-hr + 2, top - 3, hr * 2 - 4, 4, 0), p.hatColor);
+        } else if (p.hat === 'party') {
+            blob(poly([[-hr * 0.75, top + 3], [hr * 0.75, top + 3], [side * 2, top - 20]]), p.hatColor);
+            if (!SHADOW) {
+                line([[-hr * 0.45, top - 3], [hr * 0.5, top - 1]], LW);
+                line([[-hr * 0.2, top - 10], [hr * 0.3, top - 8]], LW);
+            }
+            blob(circ(side * 2, top - 21, 3), CREAM);
+        } else if (p.hat === 'bucket') {
+            blob(poly([[-hr + 1, top + 4], [hr - 1, top + 4], [hr - 4, top - 6], [-hr + 4, top - 6]]), p.hatColor);
+            blob(ell(0, top + 4, hr + 6, 3), p.hatColor);
+        }
+
+        if (p.bowtie) {
+            blob(poly([[0, -74], [-5, -77.5], [-5, -70.5]]), INK);
+            blob(poly([[0, -74], [5, -77.5], [5, -70.5]]), INK);
+        }
+
+        // free arm
+        const sleeve = p.sleeves === 'short';
+        const FE = [(F[0] + FH[0]) / 2 - side * 2, (F[1] + FH[1]) / 2];
+        if (sleeve) { limb([F, FE], 7.5, p.shirt); limb([FE, FH], 5.5, p.skin); }
+        else limb([F, FE, FH], 7, p.shirt);
+        if (p.hold === 'briefcase' && o.upright && !o.kidOnShoulders) {
+            blob(rrect(FH[0] - 9, FH[1] + 3, 18, 13, 2.5), '#a0663a');
+            line([[FH[0] - 3, FH[1] + 3], [FH[0] - 3, FH[1] + 0.5], [FH[0] + 3, FH[1] + 0.5], [FH[0] + 3, FH[1] + 3]], LW);
+        }
+        blob(circ(FH[0], FH[1], 3.8), p.skin);
+
+        // pointing arm
+        if (o.atYou) {
+            const E = [side * (hw + 4), -58];
+            const Hd = [side * 3, -63];
+            if (sleeve) { limb([S, E], 7.5, p.shirt); limb([E, Hd], 6, p.skin); }
+            else limb([S, E, Hd], 7.5, p.shirt);
+            blob(circ(Hd[0], Hd[1], 7.5), p.skin);
+            line([[Hd[0] - 4, Hd[1] + 1], [Hd[0] - 1, Hd[1] + 3]], LW * 0.8);
+            blob(circ(Hd[0] - side * 1.5, Hd[1] - 2.5, 4.4), p.skin);
+            blob(ell(Hd[0] - side * 1.5, Hd[1] - 3.6, 2.3, 1.7), '#fbe6d6');
+            return;
+        }
+        if (!o.target) return;
+        drawArm(S, o.target, o.tool, p, sleeve, o.gap);
+    }
+
+    // IK arm from shoulder S to target T (fingertip stops `gap` units short)
+    function drawArm(S, T, tool, p, sleeve, gap) {
+        let ux = T[0] - S[0], uy = T[1] - S[1];
+        const dist = Math.hypot(ux, uy) || 1;
+        ux /= dist; uy /= dist;
+        const tl = TOOLS[tool];
+        const tip = [T[0] - ux * gap, T[1] - uy * gap];
+        let Hd = [tip[0] - ux * tl, tip[1] - uy * tl];
+        let D = Math.hypot(Hd[0] - S[0], Hd[1] - S[1]);
+        if (D > ARM - 0.01) { // cannot reach: stretch straight
+            D = ARM - 0.01;
+            Hd = [S[0] + ux * D, S[1] + uy * D];
+        }
+        const a = (L1 * L1 - L2 * L2 + D * D) / (2 * D);
+        const h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+        const bx = (Hd[0] - S[0]) / D, by = (Hd[1] - S[1]) / D;
+        const P = [S[0] + a * bx, S[1] + a * by];
+        let E = [P[0] - by * h, P[1] + bx * h];
+        const E2 = [P[0] + by * h, P[1] - bx * h];
+        if (E2[1] > E[1]) E = E2; // elbow bends downward
+        if (sleeve) { limb([S, E], 7.5, p.shirt); limb([E, Hd], 5.8, p.skin); }
+        else limb([S, E, Hd], 7, p.shirt);
+
+        const realTip = [Hd[0] + ux * tl, Hd[1] + uy * tl];
+        if (tool === 'stick') {
+            limb([[Hd[0] - ux * 5, Hd[1] - uy * 5], realTip], 2, '#f47b28');
+            blob(circ(realTip[0], realTip[1], 1.6), INK, true);
+            hand(Hd, ux, uy, p.skin);
+        } else if (tool === 'foam') {
+            limb([Hd, realTip], 7, p.hatColor === p.shirt ? '#f7c948' : p.hatColor);
+            blob(ell(Hd[0], Hd[1], 9, 7.5, Math.atan2(uy, ux)), p.hatColor === p.shirt ? '#f7c948' : p.hatColor);
+            if (!SHADOW) line([[Hd[0] - uy * 4 + ux * 2, Hd[1] + ux * 4 + uy * 2], [Hd[0] - uy * 4 - ux * 4, Hd[1] + ux * 4 - uy * 4]], LW * 0.8);
+        } else {
+            limb([Hd, realTip], 2.9, p.skin);
+            hand(Hd, ux, uy, p.skin);
+        }
+    }
+    function hand(Hd, ux, uy, skin) {
+        blob(circ(Hd[0], Hd[1], 4.1), skin);
+        // curled knuckles hint
+        if (!SHADOW) line([[Hd[0] - uy * 2 + ux * 1.2, Hd[1] + ux * 2 + uy * 1.2], [Hd[0] - uy * 3 - ux * 1.5, Hd[1] + ux * 3 - uy * 1.5]], LW * 0.75);
+    }
+
+    // giant hand on a sleeve, coming in from off-screen; local: shoulder at 0,0
+    function drawGiantArm(p, T, gap) {
+        const d = Math.hypot(T[0], T[1]) || 1;
+        const ux = T[0] / d, uy = T[1] / d;
+        const tip = [T[0] - ux * gap, T[1] - uy * gap];
+        const Hd = [tip[0] - ux * 8, tip[1] - uy * 8];
+        const C = [Hd[0] - ux * 10, Hd[1] - uy * 10];
+        limb([[-ux * 30, -uy * 30], C], 12, p.shirt);
+        blob(ell(C[0], C[1], 3.2, 7.5, Math.atan2(uy, ux)), CREAM);
+        limb([Hd, tip], 3.3, p.skin);
+        blob(ell(Hd[0], Hd[1], 6.2, 5.2, Math.atan2(uy, ux)), p.skin);
+        if (!SHADOW) {
+            const px = -uy, py = ux;
+            for (const k of [-1.6, 0.6, 2.8]) line([[Hd[0] + px * k + ux * 1, Hd[1] + py * k + uy * 1], [Hd[0] + px * k + ux * 3.4, Hd[1] + py * k + uy * 3.4]], LW * 0.7);
+            limb([[Hd[0] - px * 3, Hd[1] - py * 3], [Hd[0] - px * 5.5 + ux * 2.5, Hd[1] - py * 5.5 + uy * 2.5]], 2.6, p.skin);
+        }
+    }
+
+    // ---------- geometry ----------
+    const rot2 = (x, y, c, s) => [c * x - s * y, s * x + c * y];
+    function toLocal(rig, P) {
+        const c = Math.cos(rig.rot), s = Math.sin(rig.rot);
+        const dx = P.x - rig.A.x, dy = P.y - rig.A.y;
+        return [(c * dx + s * dy) / rig.s, (-s * dx + c * dy) / rig.s];
+    }
+    function toWorld(rig, x, y) {
+        const c = Math.cos(rig.rot), s = Math.sin(rig.rot);
+        const [rx, ry] = rot2(x * rig.s, y * rig.s, c, s);
+        return { x: rig.A.x + rx, y: rig.A.y + ry };
+    }
+
+    // find the smallest rig scale where the pointing shoulder is within reach of T
+    function solve(A, rot, fig, T, sMin, sMax) {
+        const c = Math.cos(rot), sn = Math.sin(rot);
+        const dx = T.x - A.x, dy = T.y - A.y;
+        const lx = c * dx + sn * dy, ly = -sn * dx + c * dy;
+        const side = lx >= fig.off[0] * sMin ? 1 : -1;
+        const vx = fig.off[0] + fig.fs * side * (fig.p.w / 2 - 2);
+        const vy = fig.off[1] + fig.fs * -71;
+        const k = fig.fs * (0.86 * ARM + TOOLS[fig.tool]);
+        const f = s => Math.hypot(lx - s * vx, ly - s * vy) - k * s;
+        let lo = sMin, s = sMin;
+        if (f(s) > 0) {
+            for (;;) {
+                lo = s; s *= 1.04;
+                if (s > sMax) return null;
+                if (f(s) <= 0) break;
+            }
+            let hi = s;
+            for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (f(m) <= 0) hi = m; else lo = m; }
+            s = hi;
+        }
+        // reject targets inside the body, or far below the shoulder
+        const rx = lx - s * vx, ry = ly - s * vy;
+        if (Math.hypot(rx, ry) < 0.45 * k * s) return null;
+        if (ry > 0.5 * k * s) return null;
+        return { s, side };
+    }
+
+    // ---------- actors ----------
+    const actors = [];
+    let raf = 0;
+    const easeBack = t => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+    const easeIn = t => t * t;
+
+    function figure(p, tool, off, fs, point) {
+        return { p, tool, off: off || [0, 0], fs: fs || 1, point: point !== false };
+    }
+
+    // standing at the bottom edge
+    function standing(T, r, figs, dir, extra) {
+        const scaleBoost = figs.length > 1 ? 1.45 : 1;
+        const off = extra && extra.shoulders
+            ? (H - T.y) * (0.06 + r() * 0.1) + 12
+            : Math.max(36, Math.min(W * 0.38, (H - T.y) * (0.3 + r() * 0.35) + 30));
+        const ax = T.x + dir * off;
+        if (ax < 24 || ax > W - 24) return null;
+        const A = { x: ax, y: H + 3 };
+        const rot = (r() - 0.5) * 0.1;
+        const pf = figs.find(f => f.point);
+        const sol = solve(A, rot, pf, T, Math.max(0.85, Math.min(W, H) / 640), H * 1.45 / (100 * scaleBoost));
+        if (!sol) return null;
+        // keep the whole body on screen sideways
+        const half = sol.s * (Math.max(...figs.map(f => f.p.w)) / 2 + 12);
+        if (ax - half < 0 || ax + half > W) return null;
+        return Object.assign({ A, rot, s: sol.s, side: sol.side, figs, slide: sol.s * 120 * scaleBoost, upright: true }, extra);
+    }
+    // place a rig so the target sits exactly at a comfortable reach from the shoulder
+    function place(T, rot, fig, s, alpha, side) {
+        const k = 0.8 * (0.86 * ARM + TOOLS[fig.tool]);
+        const lx = side * (fig.p.w / 2 - 2) + side * Math.sin(alpha) * k;
+        const ly = -71 - Math.cos(alpha) * k;
+        const c = Math.cos(rot), sn = Math.sin(rot);
+        return { x: T.x - s * (c * lx - sn * ly), y: T.y - s * (sn * lx + c * ly) };
+    }
+    const edgeScale = r => Math.max(1.7, Math.min(3.4, Math.min(W, H) / 260)) * (0.9 + r() * 0.3);
+    function leaning(T, r, fig, fromLeft) {
+        const side = fromLeft ? 1 : -1;
+        const s0 = edgeScale(r);
+        const alpha = (35 + r() * 35) * Math.PI / 180;
+        for (const s of [s0, s0 * 1.3, s0 * 1.7]) {
+            for (let deg = 25; deg <= 85; deg += 5) {
+                const rot = side * deg * Math.PI / 180;
+                const A = place(T, rot, fig, s, alpha, side);
+                const hx = A.x + s * 88 * Math.sin(rot), hy = A.y - s * 88 * Math.cos(rot);
+                const headIn = hx > 20 && hx < W - 20 && hy > 20 && hy < H - 20;
+                if ((fromLeft ? A.x <= -6 : A.x >= W + 6) && A.y >= T.y - 10 && headIn) {
+                    return { A, rot, s, side, figs: [fig], slide: s * 120, upright: Math.cos(rot) > 0.6 };
+                }
+            }
+        }
+        return null;
+    }
+    function hanging(T, r, fig) {
+        const s = edgeScale(r);
+        const rot = Math.PI + (r() - 0.5) * 0.1;
+        const sides = r() < 0.5 ? [1, -1] : [-1, 1];
+        for (const side of sides) {
+            for (let deg = 120; deg >= 30; deg -= 10) {
+                const A = place(T, rot, fig, s, deg * Math.PI / 180, side);
+                if (A.y <= -4 && A.x > 16 && A.x < W - 16) {
+                    return { A, rot, s, side, figs: [fig], slide: s * 120, upright: false, hang: true };
+                }
+            }
+        }
+        return null;
+    }
+    function giant(T, r, p, edge) {
+        let E;
+        const s = Math.max(3, Math.min(7, Math.min(W, H) / 110));
+        const out = 12 * s;
+        // come in at a diagonal so a good length of sleeve is on screen
+        const sw = (r() < 0.5 ? -1 : 1) * (0.3 + r() * 0.3);
+        const along = (v, len) => { let a = v + sw * len; if (a < -out || a > len + out) a = v - sw * len; return Math.min(len + out, Math.max(-out, a)); };
+        if (edge === 'left' || edge === 'right') {
+            // a target hugging a side edge gets an arm sweeping in from the bottom/top instead
+            const x = T.x + (edge === 'left' ? 1 : -1) * (0.25 + r() * 0.25) * W;
+            E = { x, y: T.y > H / 2 ? H + out : -out };
+        }
+        else if (edge === 'top') E = { x: along(T.x, W), y: -out };
+        else E = { x: along(T.x, W), y: H + out };
+        const rot = Math.atan2(T.x - E.x, -(T.y - E.y));
+        return { A: E, rot, s, side: 1, figs: [{ p, giant: true, off: [0, 0], fs: 1 }], slide: Math.hypot(T.x - E.x, T.y - E.y) + 40, upright: false, giant: true };
+    }
+    function nearestEdge(T) {
+        const d = { left: T.x, right: W - T.x, top: T.y, bottom: H - T.y };
+        return Object.keys(d).sort((a, b) => d[a] - d[b])[0];
+    }
+
+    let stopN = 0, lastChar = -1;
+    const BASE = Math.floor(Math.random() * 1e6);
+    function nextChar(skip) {
+        let i = (BASE + stopN * 7) % 40;
+        while (i === lastChar || i === skip) i = (i + 1) % 40;
+        lastChar = i;
+        return i;
+    }
+
+    function spawn(T) {
+        stopN++;
+        const r = mulberry32(BASE * 31 + stopN * 977);
+        const ci = nextChar();
+        const p = CAST[ci];
+        let rigs = [], captions = [];
+        let realT = T;
+        const roll = r();
+        const fig = (tool) => figure(p, tool || 'finger');
+
+        // secrets
+        if (roll < 0.022) {
+            const s = Math.max(1.2, H * 0.72 / 100);
+            const A = { x: Math.min(W - s * 30, Math.max(s * 30, W / 2 + (r() - 0.5) * W * 0.3)), y: H + s * 4 };
+            rigs.push({ A, rot: 0, s, side: 1, figs: [Object.assign(fig(), { atYou: true })], slide: s * 120, upright: true });
+            captions.push('no, you.');
+        } else if (roll < 0.045 && Math.abs(W - 2 * T.x) > W * 0.3) {
+            T = { x: W - T.x, y: Math.min(H * 0.8, Math.max(H * 0.15, T.y)) };
+            captions.push('wait, wrong one.');
+        }
+
+        if (!rigs.length) {
+            const edge = nearestEdge(T);
+            const edgeDist = Math.min(T.x, W - T.x, T.y, H - T.y);
+            const nearEdge = edgeDist < Math.min(W, H) * 0.16;
+            const dirs = r() < 0.5 ? [-1, 1] : [1, -1];
+            const tries = [];
+            const tryStanding = (figsFn) => () => { for (const d of dirs) { const rg = standing(T, r, figsFn(), d); if (rg) return [rg]; } return null; };
+            const tryLean = () => { const L = T.x < W / 2; return [leaning(T, r, fig(), L) || leaning(T, r, fig(), !L)].filter(Boolean); };
+            const tryHang = () => [hanging(T, r, fig())].filter(Boolean);
+            const tryGiant = (e) => () => [giant(T, r, p, e || edge)];
+            const tryTwo = () => {
+                const p2 = CAST[nextChar(ci)];
+                const a = standing(T, r, [figure(p, 'finger')], -1);
+                const b = standing(T, r, [figure(p2, r() < 0.5 ? 'finger' : 'foam')], 1);
+                if (!a || !b) return null;
+                captions.push(pick(r, CAPTIONS), pick(r, SECOND));
+                return [a, b];
+            };
+            const tryShoulders = () => {
+                const kid = CAST[nextChar(ci)];
+                const parent = figure(p, 'finger', [0, 0], 1, false);
+                const k = figure(kid, 'finger', [0, -73.2], 0.6, true);
+                k.kid = true;
+                for (const d of dirs) {
+                    const rg = standing(T, r, [parent, k], d, { shoulders: true });
+                    if (rg) return [rg];
+                }
+                return null;
+            };
+
+            if (edge === 'top' && nearEdge) tries.push(r() < 0.6 ? tryHang : tryGiant('top'), tryHang, tryGiant('top'));
+            else if ((edge === 'left' || edge === 'right') && nearEdge) {
+                const q = r();
+                tries.push(q < 0.3 ? tryLean : q < 0.6 ? tryGiant(edge) : tryStanding(() => [fig(r() < 0.3 ? 'stick' : 'finger')]), tryStanding(() => [fig()]), tryGiant(edge));
+            }
+            else if (edge === 'bottom' && nearEdge) tries.push(r() < 0.5 ? tryLean : tryGiant('bottom'), tryStanding(() => [fig()]), tryLean);
+            else {
+                const menu = [
+                    tryStanding(() => [fig()]), tryStanding(() => [fig()]), tryStanding(() => [fig()]),
+                    tryStanding(() => [fig('stick')]), tryStanding(() => [fig('foam')]),
+                    tryShoulders, tryTwo, tryGiant(), tryLean, tryHang
+                ];
+                const first = menu[Math.floor(r() * menu.length)];
+                tries.push(first, tryStanding(() => [fig()]), tryStanding(() => [fig('stick')]), tryLean, tryHang);
+            }
+            for (const t of tries) { const res = t(); if (res && res.length) { rigs = res; break; } }
+            if (!rigs.length) rigs = tryGiant()();
+        }
+        while (captions.length < rigs.length) captions.push(pick(r, CAPTIONS));
+
+        const now = performance.now();
+        const group = { born: now, out: false, rigs, bubbles: [], T: realT, pointT: T };
+        rigs.forEach((rig, i) => {
+            rig.t0 = now + i * 120;
+            // precompute local targets
+            const L = toLocal(rig, T);
+            for (const f of rig.figs) {
+                if (f.giant) { f.T = L; continue; }
+                f.T = [(L[0] - f.off[0]) / f.fs, (L[1] - f.off[1]) / f.fs];
+                f.side = rig.side;
+            }
+            rig.caption = captions[i];
+        });
+        actors.push(group);
+        bump();
+        wake();
+        setTimeout(() => { if (!group.out) showBubbles(group); }, REDUCED ? 60 : 380 + (rigs.length - 1) * 120);
+    }
+
+    // ---------- speech bubbles ----------
+    function headPoint(rig) {
+        if (rig.giant) {
+            const L = rig.figs[0].T;
+            return toWorld(rig, L[0] * 0.35, L[1] * 0.35);
+        }
+        const f = rig.figs.find(f => f.point) || rig.figs[0];
+        const hy = -88 - f.p.head - (f.p.hat ? 14 : 4);
+        return toWorld(rig, f.off[0], f.off[1] + hy * f.fs);
+    }
+    function showBubbles(g) {
+        g.rigs.forEach((rig, i) => {
+            const el = document.createElement('div');
+            el.className = 'bubble';
+            el.textContent = rig.caption;
+            el.style.setProperty('--r', ((i % 2 ? 1 : -1) * (1 + Math.random() * 3)).toFixed(1) + 'deg');
+            document.body.appendChild(el);
+            const bw = el.offsetWidth, bh = el.offsetHeight;
+            const hp = headPoint(rig);
+            let x = hp.x - bw / 2, y = rig.hang ? hp.y + 14 : hp.y - bh - 10;
+            if (rig.giant) { x = hp.x - bw / 2; y = hp.y - bh / 2; }
+            x = Math.max(10, Math.min(W - bw - 10, x));
+            y = Math.max(70, Math.min(H - bh - 50, y));
+            // never cover the target
+            const T = g.T;
+            if (T.x > x - 14 && T.x < x + bw + 14 && T.y > y - 14 && T.y < y + bh + 14) {
+                y = T.y > H / 2 ? T.y - bh - 30 : T.y + 30;
+            }
+            el.style.left = x + 'px'; el.style.top = y + 'px';
+            g.bubbles.push(el);
+        });
+    }
+
+    function dismissAll() {
+        const now = performance.now();
+        for (const g of actors) {
+            if (g.out) continue;
+            g.out = true; g.outT = now;
+            for (const b of g.bubbles) { b.classList.add('out'); setTimeout(() => b.remove(), 220); }
+        }
+        marker = null;
+        wake();
+    }
+
+    // ---------- render ----------
+    let marker = null;
+    const IN_MS = REDUCED ? 120 : 460, OUT_MS = REDUCED ? 120 : 240;
+
+    function drawRig(rig, e, alpha) {
+        const c = Math.cos(rig.rot), s = Math.sin(rig.rot);
+        const push = REDUCED ? 0 : (1 - e) * rig.slide;
+        const ax = rig.A.x - s * push, ay = rig.A.y + c * push;
+        // unit "down" in local is (0,1) -> world (-s, c)
+        const wlw = Math.max(2, Math.min(4, 1.2 * rig.s + 0.8));
+        ctx.globalAlpha = alpha;
+        for (const pass of [true, false]) {
+            SHADOW = pass;
+            ctx.save();
+            if (pass) ctx.translate(Math.max(2.5, wlw), Math.max(2.5, wlw));
+            ctx.translate(ax, ay);
+            ctx.rotate(rig.rot);
+            ctx.scale(rig.s, rig.s);
+            const order = rig.shoulders ? [rig.figs[1], rig.figs[0]] : rig.figs;
+            for (const f of order) {
+                ctx.save();
+                ctx.translate(f.off[0], f.off[1]);
+                ctx.scale(f.fs, f.fs);
+                LW = wlw / (rig.s * f.fs);
+                const gap = 5 / (rig.s * f.fs);
+                if (f.giant) drawGiantArm(f.p, f.T, gap);
+                else drawPerson(f.p, {
+                    side: f.side, target: f.point ? f.T : [f.side * 20, -150], tool: f.tool, atYou: f.atYou, gap,
+                    upright: rig.upright, kidOnShoulders: rig.shoulders && !f.kid
+                });
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+        SHADOW = false;
+        ctx.globalAlpha = 1;
+    }
+
+    function drawMarker(m, now) {
+        const t = Math.min(1, (now - m.t) / 260);
+        const sc = REDUCED ? 1 : easeBack(t);
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        ctx.scale(sc, sc);
+        ctx.lineWidth = 2.5; ctx.strokeStyle = INK;
+        for (const [ox, oy, col] of [[2.5, 2.5, INK], [0, 0, '#f0563e']]) {
+            ctx.beginPath(); ctx.arc(ox, oy, 11, 0, Math.PI * 2);
+            ctx.fillStyle = col; ctx.fill(); if (col !== INK) ctx.stroke();
+        }
+        ctx.beginPath(); ctx.arc(0, 0, 4.5, 0, Math.PI * 2); ctx.fillStyle = CREAM; ctx.fill(); ctx.stroke();
+        ctx.restore();
+        return t < 1;
+    }
+
+    function frame(now) {
+        raf = 0;
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        let busy = false;
+        if (marker) busy = drawMarker(marker, now) || busy;
+        for (let i = actors.length - 1; i >= 0; i--) {
+            const g = actors[i];
+            if (g.out && now - g.outT > OUT_MS) { actors.splice(i, 1); continue; }
+        }
+        for (const g of actors) {
+            for (const rig of g.rigs) {
+                let e, a = 1;
+                if (g.out) {
+                    const t = Math.min(1, (now - g.outT) / OUT_MS);
+                    e = 1 - easeIn(t); a = 1 - t * 0.6; busy = true;
+                } else {
+                    const t = Math.max(0, Math.min(1, (now - rig.t0) / IN_MS));
+                    e = REDUCED ? 1 : easeBack(t);
+                    if (REDUCED) a = t;
+                    if (t < 1) busy = true;
+                }
+                if (e <= 0.001 && !g.out && now < rig.t0) continue;
+                drawRig(rig, e, a);
+            }
+        }
+        if (busy) raf = requestAnimationFrame(frame);
+    }
+    function wake() { if (!raf) raf = requestAnimationFrame(frame); }
+
+    // ---------- counter + hint ----------
+    const nEl = document.getElementById('n'), countEl = document.getElementById('count');
+    let total = 0;
+    try { total = parseInt(localStorage.getItem('pointingpeople:count') || '0', 10) || 0; } catch (e) {}
+    const fmt = n => n.toLocaleString();
+    nEl.textContent = fmt(total);
+    countEl.lastChild.textContent = total === 1 ? ' thing' : ' things';
+    function bump() {
+        total++;
+        try { localStorage.setItem('pointingpeople:count', String(total)); } catch (e) {}
+        nEl.textContent = fmt(total);
+        countEl.lastChild.textContent = total === 1 ? ' thing' : ' things';
+        countEl.classList.remove('pop'); void countEl.offsetWidth; countEl.classList.add('pop');
+        hideHint();
+    }
+    const hint = document.getElementById('hint');
+    if (matchMedia('(pointer: coarse)').matches) hint.textContent = 'tap somewhere. wait.';
+    function hideHint() { hint.classList.add('gone'); }
+    setTimeout(hideHint, 10000);
+
+    // ---------- input ----------
+    let stillTimer = 0, last = null;
+    function pointNow(x, y) {
+        if (x < 0 || y < 0 || x > W || y > H) return;
+        spawn({ x, y });
+    }
+    addEventListener('pointermove', e => {
+        if (e.pointerType === 'touch') return;
+        const x = e.clientX, y = e.clientY;
+        if (last && Math.hypot(x - last.x, y - last.y) < 2) return;
+        last = { x, y };
+        if (actors.some(g => !g.out)) dismissAll();
+        clearTimeout(stillTimer);
+        stillTimer = setTimeout(() => pointNow(x, y), 600);
+    }, { passive: true });
+    addEventListener('pointerdown', e => {
+        if (e.pointerType === 'mouse') return;
+        const x = e.clientX, y = e.clientY;
+        dismissAll();
+        marker = { x, y, t: performance.now() };
+        wake();
+        clearTimeout(stillTimer);
+        stillTimer = setTimeout(() => pointNow(x, y), 380);
+    });
+    document.addEventListener('mouseleave', () => clearTimeout(stillTimer));
+
+    let rt = 0;
+    addEventListener('resize', () => {
+        clearTimeout(rt);
+        rt = setTimeout(() => {
+            resize();
+            for (const g of actors) for (const b of g.bubbles) b.remove();
+            actors.length = 0; marker = null;
+            wake();
+        }, 150);
+    });
+
+    // test hook
+    window.__pp = { spawn: (x, y) => spawn({ x, y }), dismissAll, actors, CAST };
+})();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About Pointing People</h2>
+<p>Stop your cursor anywhere. Someone will point at it.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/psychadelics/">Psychedelic Waves</a>: Paint into a living chemical culture and watch it bloom, crawl, and divide</li>
+<li><a href="/pullthecord/">Pull the Cord</a>: A bulb, a cord, a room. Yank the cord — it clicks, springs back, and the lights go out everywhere.</li>
+<li><a href="/qr-wall/">QR Wall</a>: An infinite wall of QR codes. Drag to wander, tap any one, and it takes you somewhere real.</li>
+<li><a href="/rubegoldberg/">Rube Goldberg Machine</a>: Click START and watch a 10-step chain reaction of satisfying canvas animations</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who Said It?</title>
+<meta name="description" content="A fortune cookie, a horoscope, a cat calendar, or a LinkedIn thought leader? Seven quotes a day. Guess who said it.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/whosaidit/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/whosaidit/">
+    <meta property="og:title" content="Who Said It?">
+    <meta property="og:description" content="A fortune cookie, a horoscope, a cat calendar, or a LinkedIn thought leader? Seven quotes a day. Guess who said it.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/whosaidit.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Who Said It?">
+    <meta name="twitter:description" content="A fortune cookie, a horoscope, a cat calendar, or a LinkedIn thought leader? Seven quotes a day. Guess who said it.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/whosaidit.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root {
+    --bg: #f4efe6;
+    --ink: #1f1b18;
+    --muted: #7a7168;
+    --card: #fffdf8;
+    --line: #e2d9cb;
+    --good: #2f9e5b;
+    --bad: #d2483a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.45 Georgia, "Times New Roman", serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .wrap { width: 100%; max-width: 640px; padding: 18px 16px 40px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  h1 {
+    margin: 0;
+    font: 900 26px/1 "Arial Black", "Arial Bold", Arial, sans-serif;
+    letter-spacing: -.01em;
+  }
+  h1 span { color: var(--bad); }
+  .meta { color: var(--muted); font-style: italic; font-size: 14px; white-space: nowrap; }
+  .dots { display: flex; gap: 6px; margin: 0 0 14px; }
+  .dot { flex: 1; height: 6px; border-radius: 3px; background: var(--line); transition: background .3s; }
+  .dot.good { background: var(--good); }
+  .dot.bad { background: var(--bad); }
+  .dot.now { background: var(--ink); }
+
+  /* the quote */
+  .quote {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 34px 28px 26px;
+    box-shadow: 0 1px 0 #fff inset, 0 10px 30px rgba(60, 40, 20, .08);
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+  }
+  .quote::before {
+    content: "\201C";
+    position: absolute;
+    top: -6px; left: 16px;
+    font: 700 84px/1 Georgia, serif;
+    color: var(--line);
+  }
+  .quote p {
+    position: relative;
+    margin: 0;
+    font-size: clamp(20px, 4.6vw, 27px);
+    line-height: 1.3;
+  }
+  .quote.pop { animation: pop .35s cubic-bezier(.3, 1.4, .5, 1); }
+  @keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+  .ask { text-align: center; color: var(--muted); font-style: italic; margin: 18px 0 10px; font-size: 15px; }
+
+  /* answers: each one dressed like its source */
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .choice {
+    position: relative;
+    min-height: 64px;
+    padding: 12px 12px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1.15;
+    text-align: center;
+    transition: transform .12s ease, box-shadow .12s ease, opacity .3s;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, .12);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .choice:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0, 0, 0, .14); }
+  .choice:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+  .choice:disabled { cursor: default; }
+  .choice.dim { opacity: .35; }
+  .choice.right { outline: 4px solid var(--good); outline-offset: 2px; }
+  .choice.wrong { outline: 4px solid var(--bad); outline-offset: 2px; animation: shake .35s; }
+  @keyframes shake { 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-3px); } }
+
+  .s-fortune { background: #fff; color: #c0392b; border-color: #f0d6d0; font: italic 16px/1.15 Georgia, serif; border-radius: 3px; transform: rotate(-1deg); }
+  .s-fortune::after { content: "4 8 15 16"; position: absolute; right: 8px; bottom: 4px; font: 9px monospace; color: #e0a49b; font-style: normal; }
+  .s-linkedin { background: #fff; color: #23384f; border-color: #d4dde8; border-left: 6px solid #2f6fb5; font: 600 15px/1.15 system-ui, -apple-system, "Segoe UI", sans-serif; text-align: left; padding-left: 14px; }
+  .s-horoscope {
+    color: #f6e7b0; border-color: #2b2f5e;
+    background:
+      radial-gradient(1.5px 1.5px at 18% 30%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 70% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 84% 70%, #f6e7b0 50%, transparent 51%),
+      radial-gradient(1px 1px at 35% 78%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 55% 50%, #c9c3ff 50%, transparent 51%),
+      linear-gradient(135deg, #1c1f45, #3a2d63);
+    font: italic 16px/1.15 Georgia, serif; letter-spacing: .02em;
+  }
+  .s-cat { background: #ffd9e2; color: #8a2f4d; border-color: #ffb8c9; font: 700 15px/1.15 "Trebuchet MS", system-ui, sans-serif; border-radius: 22px; }
+  .s-wellness { background: #e3ebdc; color: #4f6447; border-color: #cbd8c1; font: 400 14px/1.15 "Helvetica Neue", Arial, sans-serif; letter-spacing: .14em; text-transform: lowercase; border-radius: 40px; }
+  .s-poster { background: #111; color: #fff; border: 6px double #555; font: 400 14px/1.15 "Times New Roman", serif; letter-spacing: .18em; text-transform: uppercase; border-radius: 2px; }
+  .s-founder { background: #15171a; color: #7ee787; border-color: #2b3036; font: 13px/1.2 ui-monospace, Menlo, Consolas, monospace; text-align: left; }
+  .s-founder::before { content: "$ "; color: #6e7681; }
+  .s-mom { background: #efe4ff; color: #5b2a86; border-color: #dccaf7; font: 700 15px/1.15 "Comic Sans MS", "Comic Sans", "Chalkboard SE", cursive; }
+
+  /* reveal */
+  .reveal { min-height: 92px; margin-top: 16px; text-align: center; }
+  .verdict { font: 900 15px/1 "Arial Black", Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .verdict.good { color: var(--good); }
+  .verdict.bad { color: var(--bad); }
+  .detail { margin: 6px 0 12px; font-style: italic; color: #4a423b; }
+  .btn {
+    font: 800 15px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 13px 22px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--ink);
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+  .btn:hover { filter: brightness(1.15); }
+
+  /* end screen */
+  .end { text-align: center; }
+  .end .score { font: 900 76px/1 "Arial Black", Arial, sans-serif; margin: 6px 0 2px; }
+  .end .score small { font-size: 32px; color: var(--muted); }
+  .end .title { font: italic 22px/1.2 Georgia, serif; margin: 4px 0 16px; }
+  .grid { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; }
+  .grid i { width: 26px; height: 26px; border-radius: 6px; background: var(--bad); }
+  .grid i.ok { background: var(--good); }
+  .share {
+    background: var(--card); border: 1px dashed #cdbfa9; border-radius: 12px;
+    padding: 12px; margin: 0 auto 14px; max-width: 360px;
+    font: 14px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; text-align: left;
+  }
+  .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .stats { display: flex; justify-content: center; gap: 22px; margin: 22px 0 6px; }
+  .stat b { display: block; font: 900 24px/1 "Arial Black", Arial, sans-serif; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  .next { color: var(--muted); font-style: italic; font-size: 14px; margin-top: 12px; }
+  .hidden { display: none !important; }
+
+  @media (max-width: 440px) {
+    .quote { padding: 30px 20px 22px; }
+    .choice { min-height: 58px; font-size: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .quote.pop, .choice.wrong { animation: none; }
+    .choice { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Who Said It<span>?</span></h1>
+    <span class="meta" id="meta"></span>
+  </header>
+
+  <section id="game">
+    <div class="dots" id="dots"></div>
+    <div class="quote" id="quote"><p id="qtext"></p></div>
+    <div class="ask">Who said it?</div>
+    <div class="choices" id="choices"></div>
+    <div class="reveal" id="reveal"></div>
+  </section>
+
+  <section id="end" class="end hidden">
+    <div class="score"><span id="score">0</span><small>/7</small></div>
+    <div class="title" id="rank"></div>
+    <div class="grid" id="grid"></div>
+    <div class="share" id="share"></div>
+    <div class="row">
+      <button class="btn" id="copy" type="button">Copy result</button>
+      <button class="btn ghost" id="more" type="button">Keep going</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="next" id="next"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  // ---- sources ---------------------------------------------------------
+  const SOURCES = {
+    fortune:  { name: 'Fortune Cookie', the: 'a Fortune Cookie' },
+    linkedin: { name: 'LinkedIn Thought Leader', the: 'a LinkedIn Thought Leader' },
+    horoscope:{ name: 'Horoscope', the: 'your Horoscope' },
+    cat:      { name: 'Cat Calendar', the: 'the Cat Calendar' },
+    wellness: { name: 'Wellness Influencer', the: 'a Wellness Influencer' },
+    poster:   { name: 'Office Poster', the: 'a Motivational Office Poster' },
+    founder:  { name: 'Founder at 2am', the: 'a Startup Founder at 2am' },
+    mom:      { name: "Your Mom's Facebook", the: "your Mom's Facebook" },
+  };
+  const KEYS = Object.keys(SOURCES);
+
+  // every line is original; none are real quotes from real people
+  const QUOTES = {
+    fortune: [
+      "A pleasant surprise is waiting for you. It is not in this cookie.",
+      "You will soon be asked to make a decision. Choose the soup.",
+      "The road to success is paved. Watch for potholes.",
+      "Someone is thinking of you. Probably about the money.",
+      "A closed mouth gathers no feet.",
+      "Your hard work will soon pay off. Not today.",
+      "You are about to enter a period of snacks.",
+      "Good things come to those who order the combo.",
+      "Your shoes will make you happy today.",
+      "Plan for many pleasures ahead. Also some errands.",
+      "You will receive a message. Ignore it for three days.",
+      "Today is a good day to say yes to something small.",
+      "Fortune favors the brave. It does not favor the guy in 4B.",
+      "You have a quiet strength. Use it to open this jar.",
+      "Luck is coming. It is stuck in traffic.",
+      "Every flower blooms at its own pace. Be the flower.",
+      "Do not fear the unknown. Fear the known. You've seen it.",
+      "An old friend will reappear. Have your excuse ready.",
+    ],
+    linkedin: [
+      "My daughter dropped her ice cream today. Here's what it taught me about B2B sales.",
+      "I don't hire résumés. I hire hunger.",
+      "Rejection is just redirection with worse lighting.",
+      "Nobody talks about this, but meetings are just emails with faces.",
+      "Be the CEO of your morning.",
+      "Your network is your net worth.",
+      "Stop waiting for permission. Start sending calendar invites.",
+      "I cried in the parking lot. Then I closed the deal. Both can be true.",
+      "Leadership isn't a title. It's a vibe you protect.",
+      "Grateful. Humbled. Thrilled. Hiring.",
+      "Failure is a data point. So is lunch.",
+      "Culture eats strategy. Then it asks for the dessert menu.",
+      "I asked a barista what success means. She said \"oat or whole?\" I've never been the same.",
+      "Be so busy improving yourself that you forget to reply.",
+      "Here's the uncomfortable truth: everyone is a stakeholder.",
+      "Agree? Repost. Disagree? Also repost.",
+      "I took a nap at 2pm. My revenue went up. Coincidence? I don't think so.",
+      "The best leaders listen. Then they post about listening.",
+    ],
+    horoscope: [
+      "Mercury is in retrograde, so do not text anyone named after a month.",
+      "A door you thought was closed is actually a pull door.",
+      "Someone from your past wants to return something. Let them keep it.",
+      "Your energy is magnetic this week. Stay away from credit cards.",
+      "The stars suggest a nap. The moon agrees.",
+      "Today, trust your gut. Unless it's about tacos.",
+      "A financial opportunity arrives on Thursday. It's a coupon.",
+      "Venus asks you to stop checking their story.",
+      "You are entering a season of letting go. Start with the tupperware.",
+      "Avoid big decisions until the 14th. Small ones too, honestly.",
+      "Someone close to you is hiding a gift. Or a grudge. Same box.",
+      "Your ruling planet is tired. Be gentle.",
+      "The universe is rearranging things in your favor. Please hold.",
+      "A conversation you've been avoiding wants to happen in a grocery store.",
+      "This is a powerful week for hydration.",
+      "Expect a sign. It might be literal. Read it.",
+      "Romance is in the air. So is pollen.",
+      "Saturn wants you to finish one thing. Any thing.",
+    ],
+    cat: [
+      "Naps are not lazy. They are maintenance.",
+      "Knock it off the table and see who comes running.",
+      "Some days you're the cat. Some days you're the box.",
+      "I didn't ask for this sweater, but I'm wearing it with dignity.",
+      "Purrsevere.",
+      "Be curious. Mostly about the fridge.",
+      "Sunbeams don't wait. Neither should you.",
+      "Happiness is a warm laptop.",
+      "I am not ignoring you. I am pacing myself.",
+      "Ignore the dog. He is in marketing.",
+      "Life is short. Sit on the important paperwork.",
+      "Every 3am is an opportunity to sprint.",
+      "Not all who wander are lost. Some just want back inside.",
+      "Make biscuits, not war.",
+      "Today's goal: be a loaf.",
+      "Stretch first. Judge later.",
+      "Whatever you're doing, the bag is better.",
+      "If they wanted you off the counter, they'd make it less fun.",
+    ],
+    wellness: [
+      "Your body is literally asking you for celery.",
+      "I don't drink water anymore. I invite it.",
+      "Protect your peace. Mute the group chat.",
+      "Healing isn't linear. Neither is my 5:12am cold plunge.",
+      "Gratitude is free. My journal is $48. Link in bio.",
+      "Sometimes the most productive thing is lying on the floor.",
+      "Your gut is your second brain. Feed it like you love it.",
+      "Boundaries are just love with a fence.",
+      "I said no to something today and my skin cleared.",
+      "Breathe in for four. Hold for four. Use code BREATHE20.",
+      "Rest is a radical act. Especially on a Tuesday.",
+      "Not everyone deserves access to your energy. Or your oat milk.",
+      "Romanticize the laundry.",
+      "Put your bare feet on grass and your phone in a drawer.",
+      "You can't pour from an empty cup. Pour from a pitcher.",
+      "Inhale confidence. Exhale group projects.",
+      "Your inner child wants a snack.",
+      "Slow mornings are a form of rebellion.",
+    ],
+    poster: [
+      "TEAMWORK: Together, everyone achieves more meetings.",
+      "Excellence is not a destination. It's a quarterly target.",
+      "The printer is jammed. You are not.",
+      "There is no I in team. There is one in invoice.",
+      "Aim for the moon. Submit the expense report either way.",
+      "Opportunity is often disguised as a reply-all.",
+      "Success is a journey. Mileage is reimbursable.",
+      "COMMITMENT: Showing up, even on Casual Friday.",
+      "Climb every mountain. Then update the spreadsheet.",
+      "Quality means doing it right the first time, in the second round of revisions.",
+      "Dream big. Park in the back.",
+      "Think outside the box. Then return the box to the supply closet.",
+      "The harder you work, the luckier the break room gets.",
+      "SYNERGY: When two departments blame each other at once.",
+      "You miss 100% of the meetings you decline. Decline anyway.",
+      "VISION: Seeing the forest. Approving the trees.",
+      "Soar like an eagle. Use the stairwell during drills.",
+      "Attitude is a little thing that makes a big difference to the thermostat.",
+    ],
+    founder: [
+      "We're not a toaster company. We're a breakfast platform.",
+      "Sleep is a feature we haven't shipped yet.",
+      "Every no is just a yes that hasn't seen the deck.",
+      "What if Uber, but for apologies.",
+      "Our burn rate is a sign of passion.",
+      "Nobody understands the vision yet. That's how you know it's the vision.",
+      "We pivoted. Then we pivoted back. Now we're a circle.",
+      "Just told my cofounder I love him. He's asleep. Ship it.",
+      "Revenue is a lagging indicator of belief.",
+      "We're pre-product, pre-revenue, and pre-coffee.",
+      "The market isn't ready. That's the moat.",
+      "If you're not embarrassed by v1, you shipped too late. I am very embarrassed.",
+      "Hiring rockstars. Equity only. Vibes guaranteed.",
+      "AI, but for the AI.",
+      "Fundraising is just dating where they ask about your churn.",
+      "Our users don't know they need us yet. Neither do we.",
+      "The real product was the Slack channels we made along the way.",
+      "Rest when you exit.",
+    ],
+    mom: [
+      "Thinking of everyone today. Call me back.",
+      "Copy and paste this if you love your daughter. I'll know who didn't.",
+      "Does anyone know a good plumber? Not Gary.",
+      "Happy birthday to my son who never visits!!! Love you",
+      "Beautiful sunset tonight. Please excuse the finger.",
+      "Who is this? It says you're my friend.",
+      "Proud of my kids even when they don't call. Especially then.",
+      "Remember to drink water and text your mother.",
+      "Prayers for my tomatoes. Long story.",
+      "Made Grandma's recipe. Not as good. Never will be.",
+      "Be kind. You never know what someone is going through. Except Linda, she told everyone.",
+      "Can't believe it's already Thursday!!!",
+      "I don't know how to turn off the caps but HAPPY FRIDAY",
+      "The dog misses you. So do I but mostly the dog.",
+      "Has anyone else's phone been doing the thing",
+      "Sharing this because it touched my heart. Also I liked the font.",
+      "Smile today. Someone is watching. It's me, I'm at the window.",
+      "Life is short. Wear the nice sweater.",
+    ],
+  };
+
+  // flatten: [text, source, id]
+  const ALL = [];
+  for (const k of KEYS) QUOTES[k].forEach((t, i) => ALL.push({ text: t, src: k, id: k + i }));
+
+  // ---- seeded randomness ------------------------------------------------
+  function hash(str) {
+    let h = 1779033703 ^ str.length;
+    for (let i = 0; i < str.length; i++) {
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  }
+  function mulberry32(a) {
+    return () => {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
+  function shuffle(rng, arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+
+  // ---- today ---------------------------------------------------------------
+  const now = new Date();
+  const dayKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  const EPOCH = Date.UTC(2026, 10, 6);
+  const dayNum = Math.max(1, Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - EPOCH) / 864e5) + 1);
+
+  // seven quotes, never two from the same source in a row
+  function dailySet() {
+    const rng = mulberry32(hash('whosaidit:' + dayKey));
+    const order = shuffle(rng, ALL);
+    const out = [];
+    for (const q of order) {
+      if (out.length === 7) break;
+      if (out.length && out[out.length - 1].src === q.src) continue;
+      if (out.filter(o => o.src === q.src).length >= 2) continue;
+      out.push(q);
+    }
+    return out;
+  }
+  function choicesFor(q, seedStr) {
+    const rng = mulberry32(hash(seedStr + q.id));
+    const others = shuffle(rng, KEYS.filter(k => k !== q.src)).slice(0, 3);
+    return shuffle(rng, [q.src, ...others]);
+  }
+
+  // a deadpan provenance line per source, stable per quote
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const CATS = ['a tabby in a box', 'a grey cat in a sink', 'a kitten in a teacup', 'an orange cat on a keyboard', 'a black cat in a sweater', 'a cat wearing a tiny hat', 'two kittens in a basket', 'a cat glaring at a cucumber', 'a fat cat in a sunbeam'];
+  const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+  const AUNTS = ['Aunt Carol', 'Aunt Debbie', 'Linda', 'your cousin Mike', 'Pastor Jim', 'Aunt Barb'];
+  const PLACES = ['next to the copier', 'in the break room', 'above the water cooler', 'in the elevator', 'outside HR', 'by the broken microwave'];
+  function detail(q) {
+    const r = mulberry32(hash('d' + q.id));
+    switch (q.src) {
+      case 'fortune': {
+        const n = shuffle(r, Array.from({ length: 49 }, (_, i) => i + 1)).slice(0, 5).sort((a, b) => a - b);
+        return 'Lucky numbers ' + n.join(', ') + '.';
+      }
+      case 'linkedin': return (Math.floor(r() * 9000) + 400).toLocaleString('en-US') + ' reactions, ' + Math.floor(r() * 600 + 40) + ' reposts, 1 comment that just says "This."';
+      case 'horoscope': return pick(r, SIGNS) + ', this week.';
+      case 'cat': return pick(r, MONTHS) + ', ' + pick(r, CATS) + '.';
+      case 'wellness': return 'Posted at 5:' + String(Math.floor(r() * 50) + 10) + 'am. Link in bio.';
+      case 'poster': return 'Framed, ' + pick(r, PLACES) + '.';
+      case 'founder': { const m = String(Math.floor(r() * 50) + 10); return 'Posted 2:' + m + 'am. Edited 2:' + m + 'am.'; }
+      case 'mom': return (Math.floor(r() * 4) + 2) + ' likes, all from ' + pick(r, AUNTS) + '.';
+    }
+  }
+
+  const RANKS = ['Your Mom Liked This', 'Currently Pivoting', 'Shared Without Reading', 'Cat Calendar Intern', 'Mercury in Retrograde', 'Mid-Level Thought Leader', 'Certified Fortune Cookie', 'Oracle of Nonsense'];
+
+  // ---- storage ---------------------------------------------------------------
+  const STORE = 'whosaidit:v1';
+  function loadStore() {
+    try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; }
+  }
+  function saveStore() {
+    try { localStorage.setItem(STORE, JSON.stringify(store)); } catch {}
+  }
+  const store = loadStore();
+  store.stats = store.stats || { played: 0, streak: 0, best: 0, last: null };
+  if (!store.day || store.day.key !== dayKey) store.day = { key: dayKey, answers: [] };
+
+  // ---- elements ----------------------------------------------------------------
+  const $ = id => document.getElementById(id);
+  const gameEl = $('game'), endEl = $('end');
+  const quoteEl = $('quote'), qtext = $('qtext'), choicesEl = $('choices'), revealEl = $('reveal'), dotsEl = $('dots'), metaEl = $('meta');
+
+  const DAILY = dailySet();
+  let mode = 'daily';          // or 'endless'
+  let current = null;
+  let endless = { right: 0, total: 0, seen: new Set() };
+
+  function renderDots() {
+    dotsEl.innerHTML = '';
+    if (mode !== 'daily') { dotsEl.classList.add('hidden'); return; }
+    dotsEl.classList.remove('hidden');
+    for (let i = 0; i < 7; i++) {
+      const d = document.createElement('div');
+      const a = store.day.answers[i];
+      d.className = 'dot' + (a === undefined ? (i === store.day.answers.length ? ' now' : '') : a.ok ? ' good' : ' bad');
+      dotsEl.appendChild(d);
+    }
+  }
+
+  function show(q, seed) {
+    current = q;
+    qtext.textContent = q.text;
+    quoteEl.classList.remove('pop'); void quoteEl.offsetWidth; quoteEl.classList.add('pop');
+    revealEl.innerHTML = '';
+    choicesEl.innerHTML = '';
+    for (const k of choicesFor(q, seed)) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'choice s-' + k;
+      b.textContent = SOURCES[k].name;
+      b.dataset.k = k;
+      b.addEventListener('click', () => answer(k));
+      choicesEl.appendChild(b);
+    }
+    if (mode === 'daily') metaEl.textContent = '#' + dayNum + ' · ' + (store.day.answers.length + 1) + ' of 7';
+    else metaEl.textContent = 'keep going · ' + endless.right + '/' + endless.total;
+    renderDots();
+  }
+
+  function answer(k) {
+    const ok = k === current.src;
+    for (const b of choicesEl.children) {
+      b.disabled = true;
+      if (b.dataset.k === current.src) b.classList.add('right');
+      else if (b.dataset.k === k) b.classList.add('wrong');
+      else b.classList.add('dim');
+    }
+    if (mode === 'daily') {
+      store.day.answers.push({ id: current.id, ok });
+      saveStore();
+      renderDots();
+    } else {
+      endless.total++; if (ok) endless.right++;
+      metaEl.textContent = 'keep going · ' + endless.right + '/' + endless.total;
+    }
+    const last = mode === 'daily' && store.day.answers.length === 7;
+    revealEl.innerHTML =
+      '<div class="verdict ' + (ok ? 'good' : 'bad') + '">' + (ok ? 'Correct' : 'Nope') + '</div>' +
+      '<p class="detail">It was ' + SOURCES[current.src].the + '. (' + detail(current) + ')</p>' +
+      '<button class="btn" type="button" id="nextBtn">' + (last ? 'See results' : 'Next quote') + '</button>';
+    $('nextBtn').addEventListener('click', next);
+    $('nextBtn').focus({ preventScroll: true });
+  }
+
+  function next() {
+    if (mode === 'daily') {
+      if (store.day.answers.length >= 7) return finish();
+      show(DAILY[store.day.answers.length], dayKey);
+    } else {
+      showEndless();
+    }
+  }
+
+  function finish() {
+    const score = store.day.answers.filter(a => a.ok).length;
+    if (!store.day.done) {
+      store.day.done = true;
+      const s = store.stats;
+      const y = new Date(now); y.setDate(y.getDate() - 1);
+      const yKey = y.getFullYear() + '-' + String(y.getMonth() + 1).padStart(2, '0') + '-' + String(y.getDate()).padStart(2, '0');
+      s.played++;
+      s.streak = s.last === yKey ? s.streak + 1 : 1;
+      s.best = Math.max(s.best, s.streak);
+      s.last = dayKey;
+      saveStore();
+    }
+    gameEl.classList.add('hidden');
+    endEl.classList.remove('hidden');
+    metaEl.textContent = '#' + dayNum + ' · done';
+    $('score').textContent = score;
+    $('rank').textContent = RANKS[score];
+    const squares = store.day.answers.map(a => a.ok ? '\u{1F7E9}' : '\u{1F7E5}').join('');
+    $('grid').innerHTML = store.day.answers.map(a => '<i class="' + (a.ok ? 'ok' : '') + '"></i>').join('');
+    const text = 'Who Said It? #' + dayNum + ' ' + score + '/7\n' + squares + '\nrandomsitesontheweb.com/whosaidit/';
+    $('share').textContent = text;
+    $('copy').onclick = async () => {
+      try { await navigator.clipboard.writeText(text); $('copy').textContent = 'Copied'; }
+      catch { const r = document.createRange(); r.selectNodeContents($('share')); getSelection().removeAllRanges(); getSelection().addRange(r); $('copy').textContent = 'Selected. Copy it.'; }
+      setTimeout(() => { $('copy').textContent = 'Copy result'; }, 1800);
+    };
+    const s = store.stats;
+    $('stats').innerHTML =
+      '<div class="stat"><b>' + s.played + '</b><span>played</span></div>' +
+      '<div class="stat"><b>' + s.streak + '</b><span>streak</span></div>' +
+      '<div class="stat"><b>' + s.best + '</b><span>best streak</span></div>';
+    tickNext();
+  }
+
+  function tickNext() {
+    const t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - new Date();
+    const h = Math.max(0, Math.floor(t / 36e5)), m = Math.max(0, Math.floor(t / 6e4) % 60);
+    $('next').textContent = 'New quotes in ' + h + 'h ' + m + 'm. They will be equally confusing.';
+  }
+
+  function showEndless() {
+    const daily = new Set(DAILY.map(q => q.id));
+    let pool = ALL.filter(q => !daily.has(q.id) && !endless.seen.has(q.id) && q !== current);
+    if (!pool.length) { endless.seen.clear(); pool = ALL.filter(q => q !== current); }
+    const q = pool[Math.floor(Math.random() * pool.length)];
+    endless.seen.add(q.id);
+    show(q, 'endless:' + endless.total + ':');
+  }
+
+  $('more').addEventListener('click', () => {
+    mode = 'endless';
+    endEl.classList.add('hidden');
+    gameEl.classList.remove('hidden');
+    showEndless();
+  });
+
+  // ---- start (resume today's progress) ---------------------------------------------
+  if (store.day.answers.length >= 7) finish();
+  else show(DAILY[store.day.answers.length], dayKey);
+})();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About Who Said It?</h2>
+<p>A fortune cookie, a horoscope, a cat calendar, or a LinkedIn thought leader? Seven quotes a day. Guess who said it.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/bouncehigher/">Winter Bells</a>: Steer a snow bunny up an endless winter sky. Every bell you touch bounces you higher — chain them for combos and climb as high as you can before you fall.</li>
+<li><a href="/snake/">3D Snake</a>: Play a 3D version of the classic snake game with improved graphics and physics</li>
+<li><a href="/balancethestick/">Balance the Stick</a>: A stick, a cart, and your one job: keep it upright. The wind disagrees.</li>
+<li><a href="/binary-sudoku/">Binary Sudoku</a>: Sudoku with only 0s and 1s. The hardest mode is a 2×2 grid. You will win.</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

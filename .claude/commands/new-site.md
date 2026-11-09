@@ -35,8 +35,12 @@ Example: `/new-site typeracer "Type Racer" "Race against the clock to type a ran
    - Responsive — must look good on mobile
    - Creative and fun — make it genuinely interesting, not generic
    - Smooth animations and interactions where appropriate
-   - **Read `.claude/commands/site-style.md` first and follow it** — the sticker-comic design
-     language, interaction feel, voice, and tech checklist for every site
+   - **The look is up to the site.** The sticker-comic style in `.claude/commands/site-style.md`
+     is optional — one look among many, not a house uniform. Pick whatever fits the idea
+     (a plain gray web form, a 90s GeoCities page, a terminal, a bank portal, anything);
+     imperfect and off-brand is fine, often better. Sites should NOT all look alike.
+     Still follow the "Tech checklist" section of site-style.md (global.js, viewport,
+     pinned CDN versions, idle rAF, localStorage in try/catch).
 
 3. **Register the site in `catalog.json`** — the homepage is GENERATED from the catalog;
    never edit `index.html` by hand. Append to the `sites` array:

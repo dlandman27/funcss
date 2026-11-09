@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Group Photo</title>
+<meta name="description" content="Arrange the family for the wedding photo while the group chat adds one new demand per round. Tall people in back. Grandma's good side is her right.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/groupphoto/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/groupphoto/">
+    <meta property="og:title" content="The Group Photo">
+    <meta property="og:description" content="Arrange the family for the wedding photo while the group chat adds one new demand per round. Tall people in back. Grandma’s good side is her right.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/groupphoto.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Group Photo">
+    <meta name="twitter:description" content="Arrange the family for the wedding photo while the group chat adds one new demand per round. Tall people in back. Grandma’s good side is her right.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/groupphoto.png">
+    <!-- rsotw:og:end -->
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --bg: #f1efec;
+    --card: #fff;
+    --line: #e0dcd5;
+    --ink: #222;
+    --muted: #7a746c;
+    --ok: #2f8a4c;
+    --bad: #c8463b;
+    --you: #2f7cf6;
+    --view: #26282b;
+    --accent: #e8b44a;
+  }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink); min-height: 100vh;
+    font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  .app { max-width: 1080px; margin: 0 auto; padding: 22px 16px 40px; display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+  header { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
+  header .sub { color: var(--muted); font-size: 14px; }
+  .board { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  /* viewfinder */
+  .viewfinder { position: relative; background: var(--view); border-radius: 14px; padding: 34px 18px 22px; overflow: hidden; }
+  .viewfinder::before, .viewfinder::after { content: ''; position: absolute; width: 22px; height: 22px; border: 2px solid rgba(255,255,255,.55); }
+  .viewfinder::before { left: 10px; top: 10px; border-right: 0; border-bottom: 0; }
+  .viewfinder::after { right: 10px; bottom: 10px; border-left: 0; border-top: 0; }
+  .vf-label { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); font: 600 11px ui-monospace, Menlo, monospace; color: rgba(255,255,255,.6); letter-spacing: .12em; white-space: nowrap; }
+  .vf-label i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #e34b3f; margin-right: 6px; font-style: normal; vertical-align: 1px; }
+  .rowlabel { font: 11px ui-monospace, Menlo, monospace; color: rgba(255,255,255,.45); margin: 0 0 4px 2px; letter-spacing: .08em; }
+  .row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .row.back { margin-bottom: 12px; }
+  .row.front { padding: 0 4%; }
+  .slot {
+    aspect-ratio: 3 / 4; border: 1.5px dashed rgba(255,255,255,.25); border-radius: 10px; display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .slot.hover { border-color: var(--accent); background: rgba(232,180,74,.12); }
+  .slot.target { border-style: solid; border-color: rgba(232,180,74,.6); }
+  .slot.closed { border: 1.5px solid rgba(255,255,255,.08); background: repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 6px, transparent 6px 12px); }
+  .slot.closed::after { content: 'out of frame'; font: 10px ui-monospace, Menlo, monospace; color: rgba(255,255,255,.35); text-align: center; }
+
+  .chip {
+    background: #fff; border: 1px solid #d8d2c8; border-radius: 10px; padding: 4px 10px 4px 4px; cursor: grab; touch-action: none;
+    display: inline-flex; flex-direction: row; align-items: center; gap: 6px; line-height: 1.15; position: relative;
+  }
+  .chip .pic { width: 38px; height: 46px; flex: none; background: #efe9df; border-radius: 7px; overflow: hidden; }
+  .chip .pic svg { width: 100%; height: 100%; display: block; }
+  .chip .txt { display: flex; flex-direction: column; }
+  .chip b { font-size: 14px; font-weight: 600; }
+  .chip small { font-size: 11px; color: var(--muted); }
+  .chip .ht { font: 11px ui-monospace, Menlo, monospace; color: #5d574f; }
+  .chip.sel { box-shadow: 0 0 0 3px var(--accent); }
+  .slot .chip { position: absolute; left: 3px; right: 3px; bottom: 3px; top: auto; padding: 0 0 4px; flex-direction: column; gap: 2px; border-radius: 8px; overflow: hidden; }
+  .slot .chip .pic { width: 100%; height: auto; flex: 1; min-height: 0; border-radius: 7px 7px 0 0; }
+  .slot .chip .txt { align-items: center; }
+  .slot .chip b { font-size: 13px; }
+  .slot .chip small { display: none; }
+    .chip.ghost { position: fixed; pointer-events: none; z-index: 50; transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+  .chip.lifted { opacity: .3; }
+  .chip.new { animation: arrive .45s ease-out; }
+  @keyframes arrive { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .posebar { display: none; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 14px; color: #fff; font-size: 13px; }
+  .posebar.show { display: flex; }
+  .posebar button { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; cursor: pointer; }
+  .posebar button.on { background: var(--accent); border-color: var(--accent); color: #222; font-weight: 600; }
+
+  .flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 70; }
+  .flash.go { animation: flash .6s ease-out; }
+  @keyframes flash { 0% { opacity: .95; } 100% { opacity: 0; } }
+
+  .side-label { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: -8px; }
+  .lobby { background: var(--card); border: 1px dashed #cfc8bd; border-radius: 12px; padding: 12px; min-height: 70px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
+  .lobby.hover { border-color: var(--accent); background: #fbf4e4; }
+  .lobby .empty { color: var(--muted); font-size: 13px; }
+
+  .notes { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .notes:empty { display: none; }
+  .notes h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; display: flex; justify-content: space-between; }
+  .notes h2 span { text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .note { display: flex; gap: 8px; align-items: baseline; font-size: 13px; padding: 3px 0; }
+  .note::before { content: ''; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--bad); transform: translateY(1px); }
+  .note.ok::before { background: var(--ok); }
+  .note b { font-weight: 600; white-space: nowrap; }
+  .note.bad span { color: var(--bad); }
+  .note.retired { color: #b3ada5; text-decoration: line-through; }
+  .note.retired::before { background: #d6d0c8; }
+
+  /* chat */
+  .chat { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 110px); min-height: 440px; position: sticky; top: 16px; }
+  .chat-head { padding: 10px 14px; border-bottom: 1px solid #eee; text-align: center; }
+  .chat-head b { display: block; font-size: 14px; }
+  .chat-head span { font-size: 12px; color: var(--muted); }
+  .feed { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { max-width: 86%; }
+  .msg .who { font-size: 11px; color: var(--muted); margin: 0 0 2px 10px; }
+  .bubble { background: #ececf0; border-radius: 16px; padding: 8px 12px; font-size: 14px; position: relative; }
+  .msg.you { align-self: flex-end; }
+  .msg.you .bubble { background: var(--you); color: #fff; }
+  .msg.rule .bubble { padding-right: 30px; }
+  .msg.rule .bubble::after { content: ''; position: absolute; right: 9px; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; background: var(--bad); }
+  .msg.rule.ok .bubble::after { background: var(--ok); }
+  .msg.you.rule .bubble::after { border: 2px solid #fff; }
+  .msg.rule.retired .bubble { text-decoration: line-through; opacity: .5; }
+  .msg.rule.retired .bubble::after { background: #ccc; }
+  .sys { align-self: center; font-size: 12px; color: var(--muted); text-align: center; }
+  .typing { align-self: flex-start; background: #ececf0; border-radius: 16px; padding: 10px 14px; display: flex; gap: 4px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: #999; animation: blink 1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .chat-foot { border-top: 1px solid #eee; padding: 10px; }
+  .send { width: 100%; font: inherit; font-weight: 600; padding: 11px; border: 0; border-radius: 999px; background: #222; color: #fff; cursor: pointer; }
+  .send:disabled { background: #d9d9de; color: #888; cursor: default; }
+  .status { font-size: 12px; color: var(--muted); text-align: center; margin-top: 6px; min-height: 16px; }
+
+  /* end: the polaroid */
+  .end { position: fixed; inset: 0; background: rgba(20,20,20,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 60; }
+  .end.show { display: flex; }
+  .polaroid { background: #fbfaf7; padding: 14px 14px 18px; width: min(420px, 100%); box-shadow: 0 20px 50px rgba(0,0,0,.35); transform: rotate(-2deg); text-align: center; }
+  .print { background: #3a3631; padding: 14px 10px; border-radius: 2px; }
+  .print .prow { display: flex; justify-content: center; gap: 4px; margin: 4px 0; }
+  .print .prow { align-items: flex-end; height: 92px; }
+  .print .p { flex: 1; max-width: 62px; display: flex; flex-direction: column; justify-content: flex-end; }
+  .print .p svg { width: 100%; display: block; }
+  .print .p.none { visibility: hidden; }
+  .caption { font: italic 20px "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive; margin: 12px 0 4px; color: #333; }
+  .polaroid p { margin: 4px 0; font-size: 13px; color: var(--muted); }
+  .polaroid button { margin-top: 10px; font: inherit; padding: 8px 18px; border-radius: 999px; border: 1px solid #222; background: #fff; cursor: pointer; }
+
+  @media (max-width: 820px) {
+    .app { grid-template-columns: 1fr; padding-top: 14px; }
+    .chat { position: static; height: 290px; min-height: 0; grid-row: 2; }
+    .viewfinder { padding: 30px 8px 16px; }
+    .row { gap: 4px; }
+    .slot .chip b { font-size: 11px; }
+    .slot .chip .ht { display: none; }
+    .chip .ht { font-size: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .typing i, .chip.new, .flash.go { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>The Group Photo</h1>
+    <span class="sub" id="roundLabel">Round 1</span>
+  </header>
+
+  <section class="board">
+    <div class="viewfinder">
+      <div class="vf-label"><i></i>FAMILY PHOTO · 24MM</div>
+      <div class="rowlabel">BACK ROW · STANDING</div>
+      <div class="row back" id="row0"></div>
+      <div class="rowlabel">FRONT ROW</div>
+      <div class="row front" id="row1"></div>
+      <div class="posebar" id="posebar"></div>
+    </div>
+    <div class="side-label">Waiting off to the side</div>
+    <div class="lobby" id="lobby"></div>
+    <div class="notes" id="notes"></div>
+  </section>
+
+  <aside class="chat">
+    <div class="chat-head"><b>Wedding Photo</b><span id="members">group chat</span></div>
+    <div class="feed" id="feed"></div>
+    <div class="chat-foot">
+      <button class="send" id="send" disabled>Take the photo</button>
+      <div class="status" id="status"></div>
+    </div>
+  </aside>
+</div>
+<div class="flash" id="flash"></div>
+
+<div class="end" id="end">
+  <div class="polaroid">
+    <div class="print" id="print"></div>
+    <div class="caption">the family. finally.</div>
+    <p id="endStats"></p>
+    <p>Grandma blinked. We are not retaking it.</p>
+    <button id="again">Take another one</button>
+  </div>
+</div>
+
+<script>
+/* GAME:start */
+const COLS = 6;
+const ROW_NAMES = ['back', 'front'];
+const PEOPLE = {
+  you:   { name: 'You',     role: 'the bride',          height: 66 },
+  alex:  { name: 'Alex',    role: 'the groom',          height: 70 },
+  mom:   { name: 'Mom',     role: 'your mom',           height: 64 },
+  dad:   { name: 'Dad',     role: 'your dad',           height: 70 },
+  june:  { name: 'Grandma', role: 'Grandma June',       height: 59 },
+  ray:   { name: 'Ray',     role: 'Uncle Ray',          height: 75 },
+  deb:   { name: 'Deb',     role: 'Aunt Deb',           height: 65 },
+  morty: { name: 'Morty',   role: 'great-uncle',        height: 68 },
+  linda: { name: 'Linda',   role: 'Dad’s new wife',     height: 67 },
+  kyle:  { name: 'Kyle',    role: 'cousin',             height: 72 },
+  kayla: { name: 'Kayla',   role: 'cousin, Lily’s mom', height: 63 },
+  lily:  { name: 'Lily',    role: 'flower girl, 6',     height: 45 },
+  tyler: { name: 'Tyler',   role: 'your ex',            height: 74 },
+};
+const START_PEOPLE = ['you', 'alex', 'mom', 'dad', 'june', 'ray', 'deb', 'morty'];
+const POSES = ['left', 'front', 'right']; // which way they're turned, from the camera's view
+
+// `h` answers questions about the photo. pos(g) = [row, col]; row 0 is the back row.
+// Columns run left to right as the camera sees them.
+function makeHelper(posOf, poseOf, isOpen) {
+  const P = g => posOf(g);
+  const h = {
+    placed: g => !!P(g),
+    row: g => (P(g) || [-1])[0],
+    col: g => (P(g) || [0, -1])[1],
+    front: g => h.row(g) === 1,
+    back: g => h.row(g) === 0,
+    adj: (a, b) => { const A = P(a), B = P(b); return !!(A && B && A[0] === B[0] && Math.abs(A[1] - B[1]) === 1); },
+    behind: (a, b) => { const A = P(a), B = P(b); return !!(A && B && A[0] === 0 && B[0] === 1 && A[1] === B[1]); }, // a directly behind b
+    touching: (a, b) => h.adj(a, b) || h.behind(a, b) || h.behind(b, a),
+    // on the end = no open spot beyond them in their row, on one side
+    end: g => { const A = P(g); if (!A) return false; const open = c => c >= 0 && c < COLS && isOpen(A[0], c); let l = false, r = false; for (let c = A[1] - 1; c >= 0; c--) if (open(c)) l = true; for (let c = A[1] + 1; c < COLS; c++) if (open(c)) r = true; return !l || !r; },
+    pose: g => poseOf(g),
+    height: g => PEOPLE[g].height,
+  };
+  return h;
+}
+// everyone in the back row is taller than whoever stands in front of them
+const tallInBack = (h, people) => people.every(a => !h.back(a) || people.every(b => !h.behind(a, b) || h.height(a) > h.height(b)));
+// the couple's spots, and which side of them someone is on
+const coupleCenter = h => (h.col('you') + h.col('alex')) / 2;
+
+const ROUNDS = [
+  { rules: [
+    { id: 'couple', g: ['you', 'alex'], who: 'Photographer', text: 'Bride and groom: front row, the two middle spots, next to each other.', check: h => h.front('you') && h.front('alex') && h.adj('you', 'alex') && [2, 3].includes(h.col('you')) && [2, 3].includes(h.col('alex')) },
+  ]},
+  { rules: [
+    { id: 'june-front', g: ['june'], who: 'Grandma June', text: 'Front row for me, sweetheart. My knees.', check: h => h.front('june') },
+  ]},
+  { rules: [
+    { id: 'deb-ray', g: ['deb', 'ray'], who: 'Aunt Deb', text: 'I am not touching Ray. Not next to him, not in front, not behind.', check: h => h.placed('deb') && h.placed('ray') && !h.touching('deb', 'ray') },
+  ]},
+  { rules: [
+    { id: 'tall', g: '*', who: 'Photographer', text: 'Tall people in back. Nobody in the back row can be shorter than the person in front of them.', check: (h, all) => tallInBack(h, all) },
+  ]},
+  { arrive: ['linda'], sys: 'Dad added Linda to the group', rules: [
+    { id: 'dad-linda', g: ['dad', 'linda'], who: 'Dad', text: 'Linda’s here!! Put her right next to me.', check: h => h.adj('dad', 'linda') },
+  ]},
+  { rules: [
+    { id: 'mom-linda', g: ['mom', 'linda'], who: 'Mom', text: 'Linda and I are not in the same row. I don’t care which.', check: h => h.placed('mom') && h.placed('linda') && h.row('mom') !== h.row('linda') },
+  ]},
+  { rules: [
+    { id: 'june-pose', g: ['june'], who: 'Grandma June', text: 'And get my good side. Turn me to the right.', check: h => h.pose('june') === 'right' },
+  ]},
+  { arrive: ['kyle', 'kayla', 'lily'], sys: 'Mom added Kyle, Kayla and Lily to the group', rules: [
+    { id: 'lily-kayla', g: ['lily', 'kayla'], who: 'Kayla', text: 'Lily stands right in front of me. She bolts.', check: h => h.behind('kayla', 'lily') },
+  ]},
+  { rules: [
+    { id: 'morty-end', g: ['morty'], who: 'Great-uncle Morty', text: 'PUT ME ON THE END. I’M LEAVING RIGHT AFTER.', check: h => h.end('morty') },
+  ]},
+  { rules: [
+    { id: 'twins', g: ['kyle', 'kayla'], who: 'Kyle', text: 'Not next to Kayla. We fought in the car.', check: h => h.placed('kyle') && h.placed('kayla') && !h.adj('kyle', 'kayla') },
+  ]},
+  { leave: ['morty'], arrive: ['tyler'], sys: 'Morty left the group · Mom added Tyler to the group', pre: [{ who: 'Mom', text: 'Morty went home. Tyler can take his spot! He’s family basically.' }], rules: [
+    { id: 'tyler-end', g: ['tyler'], who: 'You', you: true, text: 'Tyler goes on the end. Easier to crop.', check: h => h.end('tyler') },
+  ]},
+  { rules: [
+    { id: 'ray-you', g: ['ray', 'you'], who: 'Uncle Ray', text: 'I want to be right behind the bride. Best spot in the house.', check: h => h.behind('ray', 'you') },
+  ]},
+  { rules: [
+    { id: 'face-couple', g: '*', who: 'Photographer', text: 'Everyone turn toward the couple. Bride and groom face the camera.', check: (h, all) => all.every(g => {
+      if (g === 'you' || g === 'alex') return h.pose(g) === 'front';
+      const c = coupleCenter(h);
+      return h.col(g) < c ? h.pose(g) === 'right' : h.pose(g) === 'left';
+    }) },
+  ]},
+  { rules: [
+    { id: 'june-alex', g: ['june', 'alex'], who: 'Alex', text: 'Can Grandma June be next to me? She’s the only one who likes me.', check: h => h.adj('june', 'alex') },
+  ]},
+  { leave: ['tyler'], close: ['1-5'], sys: 'Tyler left the group', pre: [{ who: 'Photographer', text: 'Switching lenses. I lose the far-right spot in the front row.' }], rules: [
+    { id: 'lily-end', g: ['lily'], who: 'Lily', text: 'i want to be on the end like tyler was', check: h => h.end('lily') },
+  ]},
+  { rules: [
+    { id: 'dad-end', g: ['dad'], who: 'Dad', text: 'Put me on the end. I’m paying for this whole thing.', check: h => h.end('dad') },
+  ]},
+];
+/* GAME:end */
+
+
+// ---- portraits: a little bust of each person, front or in profile ----
+const LOOKS = {
+  you:   { skin: '#f3cba9', hair: 'bun',      hc: '#6b4226', outfit: '#fbfaf7', fit: 'dress', veil: true, blush: true },
+  alex:  { skin: '#c68a5e', hair: 'short',    hc: '#1f1a17', outfit: '#25324d', fit: 'suit', tie: '#8a2b3d', beard: 'stubble' },
+  mom:   { skin: '#f2c9a8', hair: 'bob',      hc: '#d9b26a', outfit: '#9d86c4', fit: 'dress' },
+  dad:   { skin: '#e7b08a', hair: 'receding', hc: '#a29d97', outfit: '#3d3f44', fit: 'suit', tie: '#3c6e9e', mustache: true },
+  june:  { skin: '#f3d3bb', hair: 'curly',    hc: '#ece8e2', outfit: '#3f8f8a', fit: 'dress', glasses: true, old: true, pearls: true },
+  ray:   { skin: '#dfa47c', hair: 'sides',    hc: '#7a5a40', outfit: '#7e2e35', fit: 'shirt', beard: 'full' },
+  deb:   { skin: '#f0c09a', hair: 'bigcurly', hc: '#b3472a', outfit: '#4f8a4a', fit: 'dress' },
+  morty: { skin: '#e8bc9a', hair: 'sides',    hc: '#d8d5d0', outfit: '#7a5c3e', fit: 'shirt', glasses: true, old: true, bigEars: true, mouth: 'flat' },
+  linda: { skin: '#f6d6bd', hair: 'long',     hc: '#eddcae', outfit: '#c8343a', fit: 'dress' },
+  kyle:  { skin: '#8d5a3b', hair: 'buzz',     hc: '#1b1512', outfit: '#7d8288', fit: 'suit', tie: '#222' },
+  kayla: { skin: '#8d5a3b', hair: 'ponytail', hc: '#1b1512', outfit: '#e7b84a', fit: 'dress' },
+  lily:  { skin: '#96603f', hair: 'pigtails', hc: '#1b1512', outfit: '#f29bb6', fit: 'dress', crown: true, blush: true },
+  tyler: { skin: '#efc29d', hair: 'swoop',    hc: '#7b4a26', outfit: '#1f1f22', fit: 'jacket', mouth: 'smirk' },
+};
+const INK = '#2b2220', LIP = '#7a3a32';
+const curls = (cx, cy, rx, ry, from, to, n, r, c) => {
+  let out = '';
+  for (let i = 0; i <= n; i++) { const a = (from + (to - from) * i / n) * Math.PI / 180; out += `<circle cx="${(cx + rx * Math.cos(a)).toFixed(1)}" cy="${(cy + ry * Math.sin(a)).toFixed(1)}" r="${r}" fill="${c}"/>`; }
+  return out;
+};
+
+function frontParts(L) {
+  const hc = L.hc;
+  let back = '', top = '';
+  const cap = `<path d="M29 50 C28 28 40 24 50 24 C62 24 73 30 71 50 C68 37 60 32 50 32 C41 32 33 37 29 50Z" fill="${hc}"/>`;
+  const parted = `<path d="M29 52 C28 28 42 23 50 24 C60 23 73 30 71 52 C68 40 62 34 54 32 C48 36 38 38 29 52Z" fill="${hc}"/>`;
+  switch (L.hair) {
+    case 'short': top = cap; break;
+    case 'buzz': top = `<path d="M30 47 C30 30 40 26 50 26 C60 26 70 30 70 47 C66 36 58 31 50 31 C42 31 34 36 30 47Z" fill="${hc}" opacity=".9"/>`; break;
+    case 'swoop': top = `<path d="M29 50 C27 26 45 20 58 24 C70 27 74 38 71 50 C66 40 58 35 44 37 C38 38 32 43 29 50Z" fill="${hc}"/><path d="M38 33 C50 24 64 28 68 40 C60 33 50 32 38 36Z" fill="${hc}"/>`; break;
+    case 'receding': top = `<path d="M30 49 C30 35 36 29 43 27 C40 33 39 38 35 42 C33 45 31 47 30 49Z" fill="${hc}"/><path d="M70 49 C70 35 64 29 57 27 C60 33 61 38 65 42 C67 45 69 47 70 49Z" fill="${hc}"/><path d="M44 28 C48 26 52 26 56 28 C53 29 47 29 44 28Z" fill="${hc}"/>`; break;
+    case 'sides': top = `<path d="M29.5 58 C28.5 50 30 45 33 43 L34 59Z" fill="${hc}"/><path d="M70.5 58 C71.5 50 70 45 67 43 L66 59Z" fill="${hc}"/>`; break;
+    case 'long': back = `<path d="M27 50 C25 24 75 24 73 50 L77 98 C66 103 34 103 23 98Z" fill="${hc}"/>`; top = parted; break;
+    case 'bob': back = `<path d="M27 50 C25 24 75 24 73 50 L75 75 C66 80 34 80 25 75Z" fill="${hc}"/>`; top = parted; break;
+    case 'bun': back = `<circle cx="50" cy="22" r="9" fill="${hc}"/>`; top = cap; break;
+    case 'ponytail': top = `<path d="M29 50 C29 28 42 24 50 24 C58 24 71 28 71 50 C68 36 58 30 50 30 C42 30 32 36 29 50Z" fill="${hc}"/>`; break;
+    case 'pigtails': back = `<circle cx="25" cy="58" r="8" fill="${hc}"/><circle cx="75" cy="58" r="8" fill="${hc}"/>`; top = cap; break;
+    case 'curly': top = curls(50, 48, 21, 22, 180, 360, 9, 6.5, hc); break;
+    case 'bigcurly': back = curls(50, 52, 26, 30, 150, 390, 13, 8.5, hc); top = curls(50, 46, 20, 20, 190, 350, 6, 6, hc); break;
+  }
+  if (L.veil) back = `<path d="M32 26 C20 50 13 92 10 120 L90 120 C87 92 80 50 68 26Z" fill="#fff" opacity=".6"/>` + back;
+  return { back, top };
+}
+
+function profileParts(L) {
+  const hc = L.hc;
+  let back = '', top = '';
+  const cap = `<path d="M28 52 C26 34 38 25 52 26 C62 27 68 34 67 42 C60 36 50 35 44 39 C38 43 36 50 35 58 C31 58 29 56 28 52Z" fill="${hc}"/>`;
+  switch (L.hair) {
+    case 'short': top = cap; break;
+    case 'buzz': top = `<path d="M29 50 C28 35 38 27 52 28 C61 29 66 35 65 41 C58 37 50 36 44 40 C39 44 37 51 36 57 C32 56 30 54 29 50Z" fill="${hc}" opacity=".9"/>`; break;
+    case 'swoop': top = cap + `<path d="M46 29 C60 24 71 30 71 40 C64 35 56 34 48 36Z" fill="${hc}"/>`; break;
+    case 'receding': top = `<path d="M28 54 C26 41 32 32 42 30 C40 37 38 45 37 58 C32 58 29 57 28 54Z" fill="${hc}"/>`; break;
+    case 'sides': top = `<path d="M28.5 54 C28 47 30 43 33 42 C35 47 36 54 37 62 C33 61 29.5 58 28.5 54Z" fill="${hc}"/>`; break;
+    case 'long': back = `<path d="M29 48 C28 30 42 25 54 27 C62 29 66 34 66 40 L44 40 C40 52 42 72 47 98 L21 98 C21 80 26 62 29 48Z" fill="${hc}"/>`; top = cap; break;
+    case 'bob': back = `<path d="M29 48 C28 30 42 25 54 27 C62 29 66 34 66 40 L44 40 C41 52 42 64 45 76 L24 76 C24 66 27 56 29 48Z" fill="${hc}"/>`; top = cap; break;
+    case 'bun': back = `<circle cx="33" cy="31" r="9" fill="${hc}"/>`; top = cap; break;
+    case 'ponytail': back = `<path d="M31 44 C17 50 15 72 21 88 C26 74 28 62 35 53Z" fill="${hc}"/>`; top = cap; break;
+    case 'pigtails': back = `<circle cx="29" cy="60" r="8" fill="${hc}"/>`; top = cap; break;
+    case 'curly': top = curls(46, 49, 20, 22, 160, 300, 8, 6.5, hc); break;
+    case 'bigcurly': back = curls(44, 54, 24, 30, 100, 300, 11, 8.5, hc); top = curls(47, 47, 19, 20, 190, 300, 5, 6, hc); break;
+  }
+  if (L.veil) back = `<path d="M42 28 C24 42 16 82 12 120 L62 120 C54 92 48 62 50 30Z" fill="#fff" opacity=".6"/>` + back;
+  return { back, top };
+}
+
+function outfit(L, view) {
+  const shirtV = view === 'front' ? `<path d="M44 88 L50 104 L56 88Z" fill="#fff"/>` : `<path d="M55 88 L61 98 L60 88Z" fill="#fff"/>`;
+  const tie = L.tie ? (view === 'front' ? `<path d="M48.5 92 L51.5 92 L52.5 104 L50 108 L47.5 104Z" fill="${L.tie}"/>` : `<path d="M58 91 L60 92 L61 100 L59 101Z" fill="${L.tie}"/>`) : '';
+  const body = view === 'front'
+    ? `<path d="M13 120 C13 97 29 88 50 88 C71 88 87 97 87 120Z" fill="${L.outfit}"/>`
+    : `<path d="M25 120 C25 98 36 88 50 88 C64 88 74 98 76 120Z" fill="${L.outfit}"/>`;
+  const line = L.outfit === '#fbfaf7' ? `<path d="${view === 'front' ? 'M13 120 C13 97 29 88 50 88 C71 88 87 97 87 120' : 'M25 120 C25 98 36 88 50 88 C64 88 74 98 76 120'}" fill="none" stroke="#ddd6cc" stroke-width="1.2"/>` : '';
+  let extra = '';
+  if (L.fit === 'suit' || L.fit === 'jacket') extra = shirtV + tie;
+  if (L.fit === 'jacket') extra = view === 'front' ? `<path d="M44 88 L50 100 L56 88Z" fill="#555"/>` : `<path d="M55 88 L60 96 L60 88Z" fill="#555"/>`;
+  if (L.fit === 'shirt') extra = view === 'front' ? `<path d="M43 88 L50 96 L57 88Z" fill="${L.skin}"/>` : '';
+  if (L.fit === 'dress') extra = view === 'front' ? `<path d="M40 88 C44 98 56 98 60 88Z" fill="${L.skin}"/>` : '';
+  if (L.pearls) extra += view === 'front' ? curls(50, 88, 11, 9, 20, 160, 8, 1.4, '#fffaf0') : '';
+  return body + line + extra;
+}
+
+function portraitSVG(g, pose, { blink = false, fill = false } = {}) {
+  const L = LOOKS[g];
+  const view = pose === 'front' ? 'front' : 'profile';
+  const sk = L.skin;
+  let svg = '';
+  if (view === 'front') {
+    const { back, top } = frontParts(L);
+    const ear = L.bigEars ? 'rx="6" ry="8"' : 'rx="4" ry="6"';
+    svg += back + outfit(L, 'front');
+    svg += `<rect x="43" y="68" width="14" height="24" rx="5" fill="${sk}"/><rect x="43" y="68" width="14" height="24" rx="5" fill="#000" opacity=".07"/>`;
+    svg += `<ellipse cx="30" cy="54" ${ear} fill="${sk}"/><ellipse cx="70" cy="54" ${ear} fill="${sk}"/>`;
+    svg += `<ellipse cx="50" cy="52" rx="20.5" ry="24.5" fill="${sk}"/>`;
+    if (L.beard === 'full') svg += `<path d="M30 54 C31 73 40 81 50 81 C60 81 69 73 70 54 C66 65 60 70 50 70 C40 70 34 65 30 54Z" fill="${L.hc}"/>`;
+    if (L.beard === 'stubble') svg += `<path d="M31 56 C32 72 40 77 50 77 C60 77 68 72 69 56 C66 65 60 69 50 69 C40 69 34 65 31 56Z" fill="${L.hc}" opacity=".28"/>`;
+    if (L.blush) svg += `<circle cx="38" cy="60" r="3.5" fill="#e8737a" opacity=".3"/><circle cx="62" cy="60" r="3.5" fill="#e8737a" opacity=".3"/>`;
+    const brow = L.hair === 'sides' || L.hair === 'receding' || L.old ? L.hc : INK;
+    svg += `<path d="M38.5 45.5 Q43 43.5 46.5 45.5" stroke="${brow}" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M53.5 45.5 Q57 43.5 61.5 45.5" stroke="${brow}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    svg += blink ? `<path d="M40.5 52 Q43 54 45.5 52 M54.5 52 Q57 54 59.5 52" stroke="${INK}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`
+                 : `<circle cx="43" cy="51.5" r="2.2" fill="${INK}"/><circle cx="57" cy="51.5" r="2.2" fill="${INK}"/>`;
+    if (L.old) svg += `<path d="M34 50 l-2.5 -1.5 M34 53 l-2.5 1.2 M66 50 l2.5 -1.5 M66 53 l2.5 1.2 M43 38 q7 -2 14 0" stroke="#000" stroke-opacity=".18" stroke-width="1" fill="none"/>`;
+    svg += `<path d="M50 52 Q47.5 59.5 51 60.5" stroke="#000" stroke-opacity=".25" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+    if (L.mustache) svg += `<path d="M42.5 64.5 Q50 59.5 57.5 64.5 Q50 63 42.5 64.5Z" fill="${L.hc}" stroke="${L.hc}" stroke-width="1.5" stroke-linejoin="round"/>`;
+    const mouth = L.mouth === 'flat' ? 'M45 67 L55 67' : L.mouth === 'smirk' ? 'M45 67 Q52 69.5 57 64.5' : 'M44 65.5 Q50 71 56 65.5';
+    svg += `<path d="${mouth}" stroke="${LIP}" stroke-width="1.9" fill="none" stroke-linecap="round"/>`;
+    svg += top;
+    if (L.glasses) svg += `<circle cx="43" cy="51.5" r="5.5" fill="none" stroke="#333" stroke-width="1.4"/><circle cx="57" cy="51.5" r="5.5" fill="none" stroke="#333" stroke-width="1.4"/><path d="M48.5 51 L51.5 51 M37.5 50.5 L30 49 M62.5 50.5 L70 49" stroke="#333" stroke-width="1.3"/>`;
+    if (L.crown) svg += ['#f7d14a', '#f2729a', '#fff', '#9fd47b', '#f2729a', '#f7d14a'].map((c, i) => `<circle cx="${34 + i * 6.4}" cy="${29 - Math.sin(i / 5 * Math.PI) * 4}" r="3" fill="${c}" stroke="#d96c8c" stroke-width=".6"/>`).join('');
+  } else {
+    const { back, top } = profileParts(L);
+    svg += back + outfit(L, 'profile');
+    svg += `<rect x="42" y="66" width="14" height="26" rx="5" fill="${sk}"/><rect x="42" y="66" width="14" height="26" rx="5" fill="#000" opacity=".07"/>`;
+    svg += `<path d="M50 27 C36 27 28 38 28 50 C28 62 31 69 36 72 C42 77 48 79 54 79 C58 79 62 78 63 75 L64 71 L66.5 69.5 L64.5 67.5 L66.5 65.5 L66 62 L71.5 58 L67 50 C68 40 64 28 50 27Z" fill="${sk}"/>`;
+    svg += `<ellipse cx="43" cy="54" ${L.bigEars ? 'rx="6" ry="8.5"' : 'rx="4" ry="6"'} fill="${sk}"/><path d="M43 50 q2.5 4 0 8" stroke="#000" stroke-opacity=".15" stroke-width="1.2" fill="none"/>`;
+    if (L.beard === 'full') svg += `<path d="M40 60 C41 71 47 79 55 80 C60 80 63 78 64 74 L64.5 68 C58 70 52 68 48 62 C45 58 42 58 40 60Z" fill="${L.hc}"/>`;
+    if (L.beard === 'stubble') svg += `<path d="M42 62 C43 71 48 77 55 78 C60 78 63 76 63.5 73 L64 68 C58 70 52 68 48 63Z" fill="${L.hc}" opacity=".28"/>`;
+    if (L.blush) svg += `<circle cx="58" cy="60" r="3.5" fill="#e8737a" opacity=".3"/>`;
+    const brow = L.hair === 'sides' || L.hair === 'receding' || L.old ? L.hc : INK;
+    svg += `<path d="M57 45 Q61.5 43.5 65 45.5" stroke="${brow}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    svg += blink ? `<path d="M59.5 51 Q61.5 53 63.5 51" stroke="${INK}" stroke-width="1.6" fill="none" stroke-linecap="round"/>` : `<circle cx="61.5" cy="50.5" r="2.1" fill="${INK}"/>`;
+    if (L.old) svg += `<path d="M57.5 50 l-3 -1 M57.5 52.5 l-3 1" stroke="#000" stroke-opacity=".18" stroke-width="1"/>`;
+    if (L.mustache) svg += `<path d="M59.5 63.5 Q65 62 67 64.8 Q62.5 65.8 59.5 65Z" fill="${L.hc}"/>`;
+    const mouth = L.mouth === 'flat' ? 'M60 68 L64.5 68' : L.mouth === 'smirk' ? 'M59.5 68.5 Q62.5 69 64.8 66.8' : 'M59 67.5 Q62 70 64.8 67.8';
+    svg += `<path d="${mouth}" stroke="${LIP}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    svg += top;
+    if (L.glasses) svg += `<circle cx="61.5" cy="50.5" r="5" fill="none" stroke="#333" stroke-width="1.4"/><path d="M56.5 50 L44 52" stroke="#333" stroke-width="1.3"/>`;
+    if (L.crown) svg += ['#f7d14a', '#f2729a', '#fff', '#9fd47b', '#f2729a'].map((c, i) => `<circle cx="${36 + i * 6}" cy="${32 - i * 1.2}" r="3" fill="${c}" stroke="#d96c8c" stroke-width=".6"/>`).join('');
+  }
+  // profiles are drawn facing right; mirror for left
+  if (pose === 'left') svg = `<g transform="translate(100 0) scale(-1 1)">${svg}</g>`;
+  // `fill` frames head and shoulders tighter, for the spots in the photo
+  return `<svg viewBox="${fill ? '12 12 76 92' : '0 0 100 120'}" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${svg}</svg>`;
+}
+
+// ---- state ----
+const key = (r, c) => `${r}-${c}`;
+let spots = {};   // slot key -> person
+let poses = {};   // person -> 'left' | 'front' | 'right'
+let closed = new Set();
+let present = [], round = 0, moves = 0, selected = null, accepting = false, announced = [], fresh = new Set();
+
+const where = g => { for (const k in spots) if (spots[k] === g) return k; return null; };
+const helper = () => makeHelper(g => { const k = where(g); return k ? k.split('-').map(Number) : null; }, g => poses[g] || 'front', (r, c) => !closed.has(key(r, c)));
+const retiredIds = () => {
+  const past = ROUNDS.slice(0, round + 1);
+  const left = new Set(past.flatMap(r => r.leave || []));
+  const ids = new Set(past.flatMap(r => r.retire || []));
+  past.flatMap(r => r.rules).forEach(r => { if (Array.isArray(r.g) && r.g.some(g => left.has(g))) ids.add(r.id); });
+  return ids;
+};
+const activeRules = () => { const ret = retiredIds(); return ROUNDS.slice(0, round + 1).flatMap(r => r.rules).filter(r => !ret.has(r.id)); };
+const ruleOk = (r, h) => !!r.check(h, present.filter(g => where(g)));
+
+// ---- board ----
+const $ = s => document.querySelector(s);
+const feed = $('#feed'), sendBtn = $('#send'), statusEl = $('#status'), lobbyEl = $('#lobby'), poseBar = $('#posebar');
+const ft = inches => `${Math.floor(inches / 12)}′${inches % 12}″`;
+
+function buildRows() {
+  for (let r = 0; r < 2; r++) {
+    const row = $('#row' + r);
+    row.replaceChildren();
+    for (let c = 0; c < COLS; c++) {
+      const s = document.createElement('div');
+      s.className = 'slot'; s.dataset.slot = key(r, c);
+      row.append(s);
+    }
+  }
+}
+
+function chip(g, inSlot) {
+  const c = document.createElement('div');
+  c.className = 'chip' + (selected === g ? ' sel' : '') + (fresh.has(g) ? ' new' : '');
+  c.dataset.person = g;
+  c.title = `${PEOPLE[g].name} (${PEOPLE[g].role}), ${ft(PEOPLE[g].height)}`;
+  const pose = inSlot ? (poses[g] || 'front') : 'front';
+  c.innerHTML = `<div class="pic">${portraitSVG(g, pose, { fill: inSlot })}</div><div class="txt"><b>${PEOPLE[g].name}</b><small>${PEOPLE[g].role}</small><span class="ht">${ft(PEOPLE[g].height)}</span></div>`;
+  return c;
+}
+
+function render() {
+  document.querySelectorAll('.slot').forEach(s => {
+    const k = s.dataset.slot, g = spots[k], isClosed = closed.has(k);
+    s.classList.toggle('closed', isClosed);
+    if (g) { const c = chip(g, true); c.style.height = `calc(${Math.min(100, PEOPLE[g].height / 76 * 100).toFixed(1)}% - 6px)`; s.replaceChildren(c); }
+    else s.replaceChildren();
+    s.classList.toggle('target', !!selected && !g && !isClosed);
+  });
+  const waiting = present.filter(g => !where(g));
+  lobbyEl.replaceChildren(...waiting.map(g => chip(g, false)));
+  if (!waiting.length) lobbyEl.innerHTML = '<span class="empty">Everyone’s in the shot.</span>';
+  fresh.clear();
+  renderPoseBar();
+  evaluate();
+}
+
+// tap someone in the photo to turn them
+function renderPoseBar() {
+  const g = selected && where(selected) ? selected : null;
+  poseBar.classList.toggle('show', !!g);
+  if (!g) { poseBar.replaceChildren(); return; }
+  const label = document.createElement('span');
+  label.textContent = `Turn ${PEOPLE[g].name}:`;
+  const btn = (p, txt) => {
+    const b = document.createElement('button');
+    b.textContent = txt; b.className = (poses[g] || 'front') === p ? 'on' : '';
+    b.addEventListener('click', e => { e.stopPropagation(); poses[g] = p; moves++; render(); });
+    return b;
+  };
+  const out = document.createElement('button');
+  out.textContent = 'Step out';
+  out.addEventListener('click', e => { e.stopPropagation(); move(g, null); });
+  poseBar.replaceChildren(label, btn('left', '← Left'), btn('front', 'Camera'), btn('right', 'Right →'), out);
+}
+
+function evaluate() {
+  const h = helper();
+  let broken = 0;
+  for (const r of activeRules()) {
+    const ok = ruleOk(r, h);
+    if (!ok) broken++;
+    const el = feed.querySelector(`[data-rule="${r.id}"]`);
+    if (el) el.classList.toggle('ok', ok);
+  }
+  renderNotes(h);
+  const out = present.filter(g => !where(g)).length;
+  sendBtn.disabled = accepting || out > 0 || broken > 0;
+  statusEl.textContent = accepting ? '' : out ? `${out} ${out > 1 ? 'people' : 'person'} not in the shot` : broken ? `${broken} note${broken > 1 ? 's' : ''} not handled` : 'Everyone is smiling. For now.';
+}
+
+function renderNotes(h) {
+  const byId = Object.fromEntries(ROUNDS.flatMap(r => r.rules).map(r => [r.id, r]));
+  const retired = retiredIds();
+  const notesEl = $('#notes');
+  if (!announced.length) { notesEl.replaceChildren(); return; }
+  const state = id => retired.has(id) ? 'retired' : ruleOk(byId[id], h) ? 'ok' : 'bad';
+  const rank = { bad: 0, ok: 1, retired: 2 };
+  const live = announced.filter(id => !retired.has(id));
+  const head = document.createElement('h2');
+  head.innerHTML = `Notes from the family <span>${live.filter(id => state(id) === 'ok').length} of ${live.length} handled</span>`;
+  // unhandled notes float to the top, crossed-off ones sink
+  const rows = announced.slice().sort((a, b) => rank[state(a)] - rank[state(b)]).map(id => {
+    const row = document.createElement('div');
+    row.className = 'note ' + state(id);
+    row.innerHTML = '<b></b><span></span>';
+    row.querySelector('b').textContent = byId[id].who + ':';
+    row.querySelector('span').textContent = byId[id].text;
+    return row;
+  });
+  notesEl.replaceChildren(head, ...rows);
+}
+
+function move(g, k) {
+  const from = where(g);
+  if (k === from || (k && closed.has(k))) { selected = null; render(); return; }
+  if (from) delete spots[from];
+  if (k) {
+    const other = spots[k];
+    if (other) { if (from) spots[from] = other; else delete spots[k]; }
+    spots[k] = g;
+  }
+  moves++;
+  selected = k ? g : null; // keep them selected so you can turn them right away
+  render();
+}
+
+// ---- chat ----
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const scroll = () => { feed.scrollTop = feed.scrollHeight; };
+function say({ who, text, you, rule }) {
+  const m = document.createElement('div');
+  m.className = 'msg' + (you ? ' you' : '') + (rule ? ' rule' : '');
+  if (rule) { m.dataset.rule = rule; announced.push(rule); }
+  m.innerHTML = (you ? '' : '<div class="who"></div>') + '<div class="bubble"></div>';
+  if (!you) m.querySelector('.who').textContent = who;
+  m.querySelector('.bubble').textContent = text;
+  feed.append(m); scroll();
+}
+function sys(text) { const d = document.createElement('div'); d.className = 'sys'; d.textContent = text; feed.append(d); scroll(); }
+async function typing(ms = 900) {
+  const t = document.createElement('div'); t.className = 'typing'; t.innerHTML = '<i></i><i></i><i></i>';
+  feed.append(t); scroll(); await wait(ms); t.remove();
+}
+
+async function playRound(i) {
+  accepting = true; selected = null; evaluate();
+  const r = ROUNDS[i];
+  $('#roundLabel').textContent = `Round ${i + 1} of ${ROUNDS.length}`;
+  if (r.sys) sys(r.sys);
+  (r.leave || []).forEach(g => { const k = where(g); if (k) delete spots[k]; present = present.filter(x => x !== g); });
+  (r.arrive || []).forEach(g => { present.push(g); fresh.add(g); });
+  $('#members').textContent = `${present.length} people`;
+  render();
+  for (const p of r.pre || []) { if (p.you) await wait(400); else await typing(); say(p); }
+  for (const k of r.close || []) { closed.add(k); if (spots[k]) delete spots[k]; } // whoever stood there is out of frame now
+  for (const id of retiredIds()) { const el = feed.querySelector(`[data-rule="${id}"]`); if (el) el.classList.add('retired'); }
+  render();
+  for (const rule of r.rules) {
+    if (rule.you) await wait(400); else await typing(700 + rule.text.length * 12);
+    say({ who: rule.who, text: rule.text, you: rule.you, rule: rule.id });
+  }
+  accepting = false;
+  render();
+}
+
+const REPLIES = ['Okay everyone say cheese', 'Taking it!', 'One more!', 'Okay. Again.', 'Smile please.', 'Last one I swear.', 'Hold still.', 'CHEESE.'];
+sendBtn.addEventListener('click', async () => {
+  if (sendBtn.disabled) return;
+  const f = $('#flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  say({ you: true, text: REPLIES[round % REPLIES.length] });
+  if (round === ROUNDS.length - 1) {
+    accepting = true; selected = null; render();
+    await typing(1200);
+    say({ who: 'Mom', text: 'Beautiful!! Can we do one with just the bride’s side?' });
+    await wait(1100);
+    sys('The photographer left the group');
+    await wait(900);
+    finish();
+    return;
+  }
+  round++;
+  playRound(round);
+});
+
+function finish() {
+  const print = $('#print');
+  print.replaceChildren();
+  for (let r = 0; r < 2; r++) {
+    const row = document.createElement('div'); row.className = 'prow';
+    for (let c = 0; c < COLS; c++) {
+      const g = spots[key(r, c)];
+      const p = document.createElement('div');
+      p.className = 'p' + (g ? '' : ' none');
+      p.style.height = g ? `${Math.round(PEOPLE[g].height / 76 * 100)}%` : '';
+      if (g) p.innerHTML = portraitSVG(g, poses[g] || 'front', { blink: g === 'june' }); // of course
+      row.append(p);
+    }
+    print.append(row);
+  }
+  let best = null;
+  try { best = +localStorage.getItem('groupphoto:best') || null; if (!best || moves < best) localStorage.setItem('groupphoto:best', moves); } catch {}
+  $('#endStats').textContent = `${moves} moves across ${ROUNDS.length} takes.` + (best && best < moves ? ` Your best is ${best}.` : '');
+  $('#end').classList.add('show');
+}
+$('#again').addEventListener('click', () => { $('#end').classList.remove('show'); start(); });
+
+// ---- input: drag, or tap someone then tap a spot ----
+let drag = null;
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest('.chip');
+  if (!c || accepting || c.classList.contains('ghost')) return;
+  drag = { g: c.dataset.person, x: e.clientX, y: e.clientY, el: c, ghost: null };
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.ghost && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) {
+    drag.ghost = chip(drag.g, false); drag.ghost.classList.add('ghost'); document.body.append(drag.ghost);
+    drag.el.classList.add('lifted');
+  }
+  if (drag.ghost) {
+    drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px';
+    document.querySelectorAll('.hover').forEach(x => x.classList.remove('hover'));
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const t = under && (under.closest('.slot') || under.closest('.lobby'));
+    if (t) t.classList.add('hover');
+  }
+});
+document.addEventListener('pointerup', e => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  document.querySelectorAll('.hover').forEach(x => x.classList.remove('hover'));
+  if (d.ghost) {
+    d.ghost.remove();
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const slot = under && under.closest('.slot');
+    if (slot) move(d.g, slot.dataset.slot);
+    else if (under && under.closest('.lobby')) move(d.g, null);
+    else render();
+    return;
+  }
+  // a tap: select, or swap places with whoever is selected
+  if (selected && selected !== d.g && where(d.g)) { move(selected, where(d.g)); return; }
+  selected = selected === d.g ? null : d.g;
+  render();
+});
+document.addEventListener('pointercancel', () => { if (drag && drag.ghost) drag.ghost.remove(); drag = null; render(); });
+document.addEventListener('click', e => {
+  if (!selected || accepting || e.target.closest('.chip') || e.target.closest('.posebar')) return;
+  const slot = e.target.closest('.slot');
+  if (slot) { move(selected, slot.dataset.slot); return; }
+  if (e.target.closest('.lobby')) { move(selected, null); return; }
+  selected = null; render();
+});
+
+async function start() {
+  spots = {}; poses = {}; closed = new Set();
+  round = 0; moves = 0; selected = null; announced = [];
+  present = START_PEOPLE.slice();
+  START_PEOPLE.forEach(g => fresh.add(g));
+  feed.replaceChildren();
+  $('#members').textContent = `${present.length} people`;
+  buildRows(); render();
+  sys('Today');
+  say({ who: 'Photographer', text: 'Hi all! Family photo in 10 minutes by the fountain. Bride is organizing.' });
+  say({ you: true, text: 'I’m organizing. Any requests?' });
+  await playRound(0);
+}
+start();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About The Group Photo</h2>
+<p>Arrange the family for the wedding photo while the group chat adds one new demand per round. Tall people in back. Grandma’s good side is her right.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/grouptrip/">The Group Trip</a>: Plan the friend group trip — dates and destination — while the group chat adds one new demand per round. Sam is not flying.</li>
+<li><a href="/puzzle/">The Restoration</a>: The museum's daily painting arrived in pieces. Slide it back together.</li>
+<li><a href="/seatingchart/">The Seating Chart</a>: Plan the wedding reception seating chart while the family group chat adds one new demand per round. Aunt Deb will not sit with Uncle Ray.</li>
+<li><a href="/turboball/">Turbo Ball</a>: Side-view car soccer. Boost, jump, flip, drive up the walls and hit an enormous ball into a goal.</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

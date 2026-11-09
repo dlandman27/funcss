@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Endless Giraffe</title>
+<meta name="description" content="A giraffe. Mostly neck. Scroll down and see how far it goes.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/endlessgiraffe/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/endlessgiraffe/">
+    <meta property="og:title" content="Endless Giraffe">
+    <meta property="og:description" content="A giraffe. Mostly neck. Scroll down and see how far it goes.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/endlessgiraffe.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Endless Giraffe">
+    <meta name="twitter:description" content="A giraffe. Mostly neck. Scroll down and see how far it goes.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/endlessgiraffe.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root{--ink:#201a17;--paper:#f2ede2;--cream:#fff8ef;--gold:#f7c948;--coral:#f0563e}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);overflow-x:hidden}
+  canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;pointer-events:none;z-index:0}
+  #track{position:relative;width:100%;height:30000px;z-index:1}
+  header{position:absolute;top:22px;left:0;right:0;text-align:center;z-index:2;pointer-events:none}
+  h1{margin:0;display:inline-block;font:900 clamp(30px,6.4vw,58px)/1 'Arial Black',Arial,sans-serif;text-transform:uppercase;letter-spacing:-1px;color:var(--gold);-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;text-shadow:4px 4px 0 var(--ink);transform:rotate(-3deg)}
+  header p{margin:12px 0 0;font:italic 16px Georgia,'Times New Roman',serif}
+  #hint{position:absolute;z-index:2;font:italic 19px Georgia,'Times New Roman',serif;pointer-events:none;transition:opacity 1.2s}
+  #hint.gone{opacity:0}
+  .counter{position:fixed;left:16px;bottom:16px;z-index:3;background:var(--gold);border:2px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:7px 13px 8px;transform:rotate(-3deg);pointer-events:none;min-width:150px}
+  .counter b{display:block;font:900 19px/1.1 'Arial Black',Arial,sans-serif;text-transform:uppercase;letter-spacing:-.3px}
+  .counter span{display:block;font:italic 12px Georgia,'Times New Roman',serif;margin-top:2px}
+  @media (prefers-reduced-motion:reduce){#hint{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<div id="track">
+  <header><h1>Endless Giraffe</h1><p>a giraffe. mostly neck.</p></header>
+  <div id="hint">scroll.</div>
+</div>
+<div class="counter" aria-live="off"><b id="len">NECK: 0 M</b><span id="best">deepest: nobody yet</span></div>
+<script>
+(() => {
+  'use strict';
+  const INK = '#201a17', CREAM = '#fff8ef', CORAL = '#f0563e', SKY = '#5aa0db', LIME = '#b7ce3c',
+        PURPLE = '#a98fd0', ORANGE = '#f47b28', PINK = '#ff7fa5', TEAL = '#2fb0a3', GOLD = '#f7c948', BROWN = '#c48a52';
+  const TAU = Math.PI * 2;
+  const cv = document.getElementById('c'), c = cv.getContext('2d');
+  const track = document.getElementById('track'), hint = document.getElementById('hint');
+  const lenEl = document.getElementById('len'), bestEl = document.getElementById('best');
+
+  // ---- seeded randomness ----
+  function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const rngFor = (i, salt = 0) => mulberry32(Math.imul(i + 1013, 2654435761) ^ salt);
+
+  // ---- landmarks (neck length, measured from under the chin) ----
+  const SP = 850; // px between landmarks
+  const ANCHORS = [
+    { m: 0 },
+    { m: 5.5, name: 'Average adult giraffe', note: 'we are past that.' },
+    { m: 7, name: 'Two-story house', note: 'the neighbors have noticed.' },
+    { m: 93, name: 'Statue of Liberty (with pedestal)', note: 'she is not impressed.' },
+    { m: 330, name: 'Eiffel Tower', note: 'antenna included.' },
+    { m: 828, name: 'Burj Khalifa', note: 'tallest building. was.' },
+    { m: 8849, name: 'Mount Everest', note: 'the neck did not need oxygen.' },
+    { m: 10700, name: 'Cruising altitude', note: 'please return your neck to its upright position.' },
+    { m: 100000, name: 'Kármán line', note: 'technically space.' },
+    { m: 408000, name: 'International Space Station', note: 'they waved.' },
+    { m: 35786000, name: 'Geostationary orbit', note: 'the neck is now interfering with television.' },
+    { m: 384400000, name: 'The Moon', note: 'one small step.' },
+    { m: 1.496e11, name: 'The Sun', note: 'hot. moving on.' },
+    { m: 4.5e12, name: 'Neptune', note: 'last planet. sorry, Pluto.' },
+    { m: 4.0e16, name: 'Proxima Centauri', note: 'nearest star. 4.2 light-years of neck.' },
+    { m: 1.0e18, knot: true },
+    { m: 9.5e20, name: 'The Milky Way, across', note: 'yes. still neck.' },
+    { m: 2.4e22, name: 'Andromeda', note: 'it is coming toward us anyway.' },
+    { m: 4.4e26, name: 'Edge of the observable universe', note: 'nothing to report.' },
+  ];
+  const LAST = ANCHORS.length - 1;
+  const DEEP = [
+    ['Nothing out here', 'we checked. still neck.'],
+    ['Still neck', 'the neck continues.'],
+    ['Marker intentionally left blank', ''],
+    ['No further landmarks', 'the department of landmarks has gone home.'],
+    ['Neck', 'neck.'],
+    ['Another universe, probably', 'it also has a giraffe in it.'],
+  ];
+  const SCALE_LINES = ['scale is now 1px ≈ X. don\'t ask.', 'scale adjusted: 1px ≈ X.', '1px ≈ X. we had to.', 'scale: 1px ≈ X. sorry.'];
+
+  function metersAt(p) { // p = px below the chin
+    if (p <= 0) return 0;
+    const f = p / SP, i = Math.floor(f), t = f - i;
+    if (i === 0) return ANCHORS[1].m * t;
+    if (i >= LAST) return ANCHORS[LAST].m * Math.pow(10, f - LAST);
+    const a = ANCHORS[i].m, b = ANCHORS[i + 1].m;
+    return a * Math.pow(b / a, t);
+  }
+  const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  const sup = n => String(n).split('').map(d => d === '-' ? '⁻' : SUP[+d]).join('');
+  const commas = n => Math.round(n).toLocaleString('en-US');
+  function fmt(m, short) {
+    if (!isFinite(m) || m > 1e300) return 'too much';
+    if (m < 1000) return (m < 10 ? m.toFixed(1) : Math.round(m)) + ' m';
+    if (m < 1e13) { const k = m / 1000; return (k < 10 ? k.toFixed(1) : commas(k)) + ' km'; }
+    const ly = m / 9.461e15, unit = short ? ' ly' : ' light-years';
+    if (ly < 1e6) return (ly < 10 ? ly.toFixed(1) : commas(ly)) + unit;
+    const e = Math.floor(Math.log10(ly));
+    return (ly / Math.pow(10, e)).toFixed(1) + ' × 10' + sup(e) + unit;
+  }
+
+  // ---- layout ----
+  let w = 0, vh = 0, dpr = 1, W = 100, S = 1.6, HEAD_Y = 320, NECK0 = 380, trackH = 30000;
+  let KNOT_Y = 1e9, KNOT_R = 80;
+  const yOfA = i => NECK0 + i * SP;
+  function cx(y) {
+    const k = Math.min(1, Math.max(0, (y - HEAD_Y) / 700));
+    const kd = (y - KNOT_Y) / 700, bump = Math.abs(kd) < 3 ? Math.exp(-kd * kd) : 0;
+    return w / 2 + k * (Math.sin(y / 530) * W * 0.12 + Math.sin(y / 1370 + 1) * W * 0.09) * (1 - bump) - bump * KNOT_R;
+  }
+  function resize() {
+    w = innerWidth; vh = innerHeight; dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(vh * dpr);
+    W = Math.max(80, Math.min(140, w * 0.22));
+    S = W / 62;
+    const hb = document.querySelector('header').getBoundingClientRect().bottom + scrollY;
+    HEAD_Y = Math.max(Math.round(hb + 106 * S + 18), Math.round(vh * 0.43));
+    NECK0 = HEAD_Y + Math.round(40 * S);
+    KNOT_Y = NECK0 + 15 * SP; KNOT_R = Math.max(W * .62, Math.min(W * 1.05, (w - 22 - W - 30) / 2));
+    hint.style.top = (NECK0 + 70) + 'px';
+    hint.style.left = (w / 2 + W / 2 + 30) + 'px';
+    request();
+  }
+
+  // ---- drawing helpers ----
+  function sticker(path, fill, lw = 2.5, off = 3) {
+    c.save(); c.translate(off, off); path(); c.fillStyle = INK; c.fill(); c.restore();
+    path(); c.fillStyle = fill; c.fill();
+    c.lineWidth = lw; c.lineJoin = 'round'; c.strokeStyle = INK; c.stroke();
+  }
+  // union of several shapes with one outer outline (stroke wide, fill over)
+  function blob(path, fill, lw = 2.5, off = 3) {
+    c.save(); c.translate(off, off); path(); c.fillStyle = INK; c.fill(); c.restore();
+    path(); c.lineWidth = lw * 2; c.lineJoin = 'round'; c.strokeStyle = INK; c.stroke();
+    c.fillStyle = fill; c.fill();
+  }
+  const ell = (x, y, rx, ry, r = 0) => { c.moveTo(x + rx * Math.cos(r), y + rx * Math.sin(r)); c.ellipse(x, y, rx, ry, r, 0, TAU); };
+  function wobbly(x, y, rx, ry, rnd, n = 7) {
+    const pts = [];
+    const a0 = rnd() * TAU;
+    for (let k = 0; k < n; k++) { const a = a0 + k / n * TAU + (rnd() - .5) * .5, r = .78 + rnd() * .34; pts.push([x + Math.cos(a) * rx * r, y + Math.sin(a) * ry * r]); }
+    c.beginPath();
+    const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    let m = mid(pts[n - 1], pts[0]); c.moveTo(m[0], m[1]);
+    for (let k = 0; k < n; k++) { const p = pts[k], q = mid(p, pts[(k + 1) % n]); c.quadraticCurveTo(p[0], p[1], q[0], q[1]); }
+    c.closePath();
+  }
+  function loud(text, x, y, size, fill = GOLD, align = 'center', lw) {
+    c.font = `900 ${size}px 'Arial Black', Arial, sans-serif`;
+    c.textAlign = align; c.textBaseline = 'middle'; c.lineJoin = 'round';
+    c.lineWidth = lw || Math.max(3, size / 5); c.strokeStyle = INK; c.strokeText(text, x, y);
+    c.fillStyle = fill; c.fillText(text, x, y);
+  }
+  function wrap(text, maxW) {
+    const words = text.split(' '), lines = []; let line = '';
+    for (const wd of words) { const t = line ? line + ' ' + wd : wd; if (c.measureText(t).width > maxW && line) { lines.push(line); line = wd; } else line = t; }
+    if (line) lines.push(line);
+    return lines;
+  }
+  function mix(a, b, t) {
+    const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    const ch = s => Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t);
+    return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+  }
+  const BG = [[-1, '#f2ede2'], [3, '#e7eef0'], [6, '#c4ddef'], [7.3, '#93c0e4'], [8, '#3d416e'], [8.7, '#1e1b35'], [16, '#21183a'], [19, '#170f22']];
+  function bgAt(ai) {
+    if (ai <= BG[0][0]) return BG[0][1];
+    for (let k = 0; k < BG.length - 1; k++) {
+      const [a, ca] = BG[k], [b, cb] = BG[k + 1];
+      if (ai <= b) return mix(ca, cb, (ai - a) / (b - a));
+    }
+    return BG[BG.length - 1][1];
+  }
+  const aiOf = y => (y - NECK0) / SP;
+  const darkness = ai => Math.max(0, Math.min(1, (ai - 7.6) / 0.8));
+
+  // ---- the giraffe ----
+  function head(x, y, s, rot = 0) {
+    c.save(); c.translate(x, y); c.rotate(rot); c.scale(s, s);
+    // ossicones
+    for (const d of [-1, 1]) {
+      c.lineCap = 'round';
+      const stick = () => { c.beginPath(); c.moveTo(d * 15, -58); c.lineTo(d * 21, -94); };
+      c.save(); c.translate(2, 2); stick(); c.strokeStyle = INK; c.lineWidth = 13; c.stroke(); c.restore();
+      stick(); c.strokeStyle = INK; c.lineWidth = 13; c.stroke();
+      stick(); c.strokeStyle = GOLD; c.lineWidth = 8; c.stroke();
+      sticker(() => { c.beginPath(); c.arc(d * 21, -97, 9, 0, TAU); }, ORANGE, 2.5, 2);
+    }
+    // ears
+    for (const d of [-1, 1]) {
+      sticker(() => { c.beginPath(); ell(d * 50, -50, 23, 10, -d * 0.42); }, GOLD, 2.5, 2);
+      c.beginPath(); ell(d * 52, -51, 13, 5, -d * 0.42); c.fillStyle = PINK; c.fill(); c.lineWidth = 1.5; c.strokeStyle = INK; c.stroke();
+    }
+    // skull + muzzle as one sticker
+    const shape = () => { c.beginPath(); ell(0, -34, 44, 40); ell(0, 10, 36, 32); };
+    blob(shape, GOLD, 2.8, 3);
+    // forehead spots
+    c.save(); c.beginPath(); ell(0, -34, 43, 39); c.clip();
+    const r = mulberry32(7);
+    for (const [px, py, rr] of [[-20, -58, 11], [17, -64, 9], [36, -50, 6]]) { wobbly(px, py, rr, rr * .85, r, 6); c.fillStyle = ORANGE; c.fill(); c.lineWidth = 1.8; c.strokeStyle = INK; c.stroke(); }
+    c.restore();
+    // muzzle tint
+    c.beginPath(); ell(0, 16, 28, 21); c.fillStyle = '#fbe4a6'; c.fill(); c.lineWidth = 1.6; c.strokeStyle = INK; c.stroke();
+    // cheeks
+    c.fillStyle = 'rgba(255,127,165,.75)';
+    for (const d of [-1, 1]) { c.beginPath(); c.arc(d * 26, -2, 6, 0, TAU); c.fill(); }
+    // deadpan eyes
+    for (const d of [-1, 1]) {
+      const ex = d * 19, ey = -28;
+      c.beginPath(); c.arc(ex, ey, 10, 0, TAU); c.fillStyle = CREAM; c.fill(); c.lineWidth = 2.5; c.strokeStyle = INK; c.stroke();
+      c.beginPath(); c.arc(ex + d * 1.5, ey + 4, 4.6, 0, TAU); c.fillStyle = INK; c.fill();
+      c.beginPath(); c.moveTo(ex - 11.2, ey + .5); c.arc(ex, ey + .5, 11.2, Math.PI, TAU); c.closePath(); c.fillStyle = GOLD; c.fill();
+      c.beginPath(); c.moveTo(ex - 10.5, ey + .5); c.lineTo(ex + 10.5, ey + .5); c.lineWidth = 2.5; c.stroke();
+      c.beginPath(); c.arc(ex, ey, 10, Math.PI, TAU); c.stroke();
+    }
+    // nostrils + flat mouth
+    c.fillStyle = INK;
+    for (const d of [-1, 1]) { c.beginPath(); ell(d * 10, 12, 3.2, 4.6, d * .3); c.fill(); }
+    c.beginPath(); c.moveTo(-13, 30); c.lineTo(11, 28.5); c.lineWidth = 2.6; c.lineCap = 'round'; c.stroke();
+    c.restore();
+  }
+
+  function neck(y0, y1) {
+    const top = Math.max(y0, HEAD_Y), step = 16;
+    if (top >= y1) return;
+    const ys = [];
+    for (let y = Math.floor(top / step) * step; y <= y1 + step; y += step) ys.push(Math.max(y, HEAD_Y));
+    const L = y => cx(y) - W / 2, R = y => cx(y) + W / 2;
+    const poly = (dx = 0) => {
+      c.beginPath(); ys.forEach((y, i) => i ? c.lineTo(L(y) + dx, y) : c.moveTo(L(y) + dx, y));
+      for (let i = ys.length - 1; i >= 0; i--) c.lineTo(R(ys[i]) + dx, ys[i]);
+      c.closePath();
+    };
+    // mane (zigzag strip on the left)
+    const mw = W * 0.17, ms = 14;
+    const mane = (dx = 0) => {
+      c.beginPath();
+      const a = Math.floor(Math.max(top, HEAD_Y + 34 * S) / ms), b = Math.ceil((y1 + 20) / ms);
+      c.moveTo(L(a * ms) + 4 + dx, a * ms);
+      for (let i = a; i <= b; i++) { const y = i * ms; c.lineTo(L(y) - (i % 2 ? mw : mw * .45) + dx, y); }
+      c.lineTo(L(b * ms) + 4 + dx, b * ms); c.closePath();
+    };
+    c.save(); c.translate(4, 0); mane(); c.fillStyle = INK; c.fill(); c.restore();
+    mane(); c.fillStyle = CORAL; c.fill(); c.lineWidth = 2.5; c.lineJoin = 'round'; c.strokeStyle = INK; c.stroke();
+    // body
+    poly(6); c.fillStyle = INK; c.fill();
+    poly(); c.fillStyle = GOLD; c.fill();
+    // patches
+    c.save(); poly(); c.clip();
+    const T = 240, t0 = Math.floor((top - 60) / T), t1 = Math.floor((y1 + 60) / T);
+    for (let t = t0; t <= t1; t++) {
+      const r = rngFor(t, 99);
+      for (let row = 0; row < 3; row++) {
+        const y = t * T + 40 + row * 80 + (r() - .5) * 10;
+        const shift = ((t * 3 + row) % 2) * 0.17;
+        for (const u of [-0.5, -0.17, 0.16, 0.49]) {
+          const ux = u + shift - 0.08 + (r() - .5) * .06;
+          const rx = W * (.12 + r() * .04), ry = 26 + r() * 9;
+          wobbly(cx(y) + ux * W, y, rx, ry, r);
+          c.fillStyle = ORANGE; c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+        }
+      }
+    }
+    c.restore();
+    // edges
+    c.lineWidth = 3.5; c.strokeStyle = INK; c.lineJoin = 'round';
+    for (const E of [L, R]) { c.beginPath(); ys.forEach((y, i) => i ? c.lineTo(E(y), y) : c.moveTo(E(y), y)); c.stroke(); }
+  }
+
+  // ---- scenery ----
+  function cloud(x, y, s) {
+    blob(() => { c.beginPath(); ell(x, y, 34 * s, 22 * s); ell(x - 30 * s, y + 8 * s, 22 * s, 15 * s); ell(x + 32 * s, y + 6 * s, 24 * s, 16 * s); ell(x + 6 * s, y - 14 * s, 22 * s, 18 * s); }, CREAM, 2.3, 3);
+  }
+  function nest(x, y) {
+    for (const [ex, ey] of [[8, -8], [22, -12], [36, -7]]) {
+      sticker(() => { c.beginPath(); ell(x + ex, y + ey, 7.5, 10); }, CREAM, 2, 1.5);
+      c.fillStyle = SKY; for (const [dx, dy] of [[-2, -3], [2, 2], [-1, 4]]) { c.beginPath(); c.arc(x + ex + dx, y + ey + dy, 1.4, 0, TAU); c.fill(); }
+    }
+    sticker(() => { c.beginPath(); c.moveTo(x - 10, y - 4); c.quadraticCurveTo(x + 22, y + 34, x + 56, y - 4); c.quadraticCurveTo(x + 22, y + 6, x - 10, y - 4); c.closePath(); }, BROWN, 2.5, 3);
+    c.strokeStyle = INK; c.lineWidth = 1.4;
+    for (let k = 0; k < 6; k++) { c.beginPath(); c.moveTo(x - 4 + k * 9, y + 1 + (k % 2) * 4); c.lineTo(x + 6 + k * 9, y + 6 - (k % 2) * 3); c.stroke(); }
+  }
+  function bird(x, y, s) {
+    c.save(); c.translate(x, y); c.scale(s, s); c.rotate(-0.25);
+    sticker(() => { c.beginPath(); c.moveTo(-6, 0); c.lineTo(-24, -26); c.lineTo(8, -4); c.closePath(); }, PURPLE, 2.2, 2);
+    sticker(() => { c.beginPath(); ell(0, 0, 18, 12); }, SKY, 2.4, 2);
+    sticker(() => { c.beginPath(); c.moveTo(16, -4); c.lineTo(29, 0); c.lineTo(16, 4); c.closePath(); }, GOLD, 2, 1.5);
+    c.beginPath(); c.arc(8, -4, 4.6, 0, TAU); c.fillStyle = CREAM; c.fill(); c.lineWidth = 1.8; c.strokeStyle = INK; c.stroke();
+    c.beginPath(); c.arc(8.6, -4, 1.8, 0, TAU); c.fillStyle = INK; c.fill();
+    c.restore();
+    loud('!', x + 8 * s, y - 34 * s, 26 * s, GOLD);
+    for (const [fx, fy, fr] of [[-30, 26, .6], [-12, 44, -.4]]) sticker(() => { c.beginPath(); ell(x + fx * s, y + fy * s, 7 * s, 3 * s, fr); }, SKY, 1.6, 1.5);
+  }
+  function plane(x, y, s) {
+    c.save(); c.translate(x, y); c.scale(s, s);
+    sticker(() => { c.beginPath(); c.moveTo(40, -6); c.lineTo(62, -34); c.lineTo(74, -34); c.lineTo(66, -4); c.closePath(); }, CORAL, 2.4, 2);
+    sticker(() => { c.beginPath(); c.moveTo(-58, 0); c.quadraticCurveTo(-58, -13, -40, -13); c.lineTo(66, -13); c.quadraticCurveTo(76, -13, 76, 0); c.quadraticCurveTo(76, 13, 62, 13); c.lineTo(-40, 13); c.quadraticCurveTo(-58, 13, -58, 0); c.closePath(); }, CREAM, 2.5, 3);
+    sticker(() => { c.beginPath(); c.moveTo(-6, 4); c.lineTo(28, 4); c.lineTo(6, 34); c.lineTo(-10, 34); c.closePath(); }, PURPLE, 2.4, 2);
+    for (let k = 0; k < 6; k++) { c.beginPath(); c.arc(-30 + k * 14, -3, 3.4, 0, TAU); c.fillStyle = SKY; c.fill(); c.lineWidth = 1.5; c.strokeStyle = INK; c.stroke(); }
+    c.restore();
+  }
+  function astronaut(x, y, s, tx) {
+    // tether to the neck
+    c.beginPath(); c.moveTo(x + 10 * s, y + 6 * s); c.bezierCurveTo(x + 50 * s, y + 70 * s, tx - 40, y + 40, tx, y + 18);
+    c.lineWidth = 4.5; c.strokeStyle = INK; c.stroke(); c.lineWidth = 2; c.strokeStyle = CREAM; c.stroke();
+    c.save(); c.translate(x, y); c.scale(s, s); c.rotate(0.15);
+    c.lineCap = 'round';
+    const limb = (ax, ay, bx, by) => { c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.lineWidth = 13; c.strokeStyle = INK; c.stroke(); c.lineWidth = 8; c.strokeStyle = CREAM; c.stroke(); };
+    limb(-8, 26, -12, 46); limb(8, 26, 12, 46);
+    limb(-14, 6, -28, -16); limb(14, 6, 26, 22);
+    sticker(() => { c.beginPath(); c.roundRect(-17, -2, 34, 34, 9); }, CREAM, 2.5, 2);
+    sticker(() => { c.beginPath(); c.roundRect(-8, 6, 16, 10, 3); }, CORAL, 1.8, 0);
+    sticker(() => { c.beginPath(); c.arc(0, -16, 18, 0, TAU); }, CREAM, 2.5, 2);
+    c.beginPath(); ell(2, -16, 12, 9); c.fillStyle = GOLD; c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+    c.beginPath(); ell(-2, -19, 4, 2.4, -.4); c.fillStyle = CREAM; c.fill();
+    c.restore();
+  }
+  function satellite(x, y, s) {
+    c.save(); c.translate(x, y); c.scale(s, s); c.rotate(-0.3);
+    c.beginPath(); c.moveTo(-56, 0); c.lineTo(56, 0); c.lineWidth = 3; c.strokeStyle = INK; c.stroke();
+    for (const d of [-1, 1]) {
+      sticker(() => { c.beginPath(); c.rect(d > 0 ? 22 : -70, -13, 48, 26); }, SKY, 2.4, 2);
+      c.lineWidth = 1.2; for (let k = 1; k < 4; k++) { const gx = (d > 0 ? 22 : -70) + k * 12; c.beginPath(); c.moveTo(gx, -13); c.lineTo(gx, 13); c.stroke(); }
+      c.beginPath(); c.moveTo(d > 0 ? 22 : -70, 0); c.lineTo(d > 0 ? 70 : -22, 0); c.stroke();
+    }
+    sticker(() => { c.beginPath(); c.rect(-15, -15, 30, 30); }, GOLD, 2.5, 2);
+    c.beginPath(); c.moveTo(0, -15); c.lineTo(0, -28); c.lineWidth = 2.5; c.stroke();
+    sticker(() => { c.beginPath(); c.arc(0, -31, 5, 0, TAU); }, CORAL, 2, 1);
+    c.restore();
+  }
+  function moon(x, y, r) {
+    sticker(() => { c.beginPath(); c.arc(x, y, r, 0, TAU); }, '#e6dfcf', 3, 5);
+    c.save(); c.beginPath(); c.arc(x, y, r - 1, 0, TAU); c.clip();
+    for (const [dx, dy, cr] of [[-.35, -.3, .2], [.3, -.1, .14], [-.05, .38, .17], [.42, .4, .09], [-.5, .2, .08]]) {
+      c.beginPath(); c.arc(x + dx * r, y + dy * r, cr * r, 0, TAU); c.fillStyle = '#cfc5b0'; c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+    }
+    c.restore();
+  }
+  function sun(x, y, r) {
+    for (let k = 0; k < 12; k++) {
+      const a = k / 12 * TAU;
+      sticker(() => { c.beginPath(); c.moveTo(x + Math.cos(a - .14) * r * 1.08, y + Math.sin(a - .14) * r * 1.08); c.lineTo(x + Math.cos(a) * r * 1.5, y + Math.sin(a) * r * 1.5); c.lineTo(x + Math.cos(a + .14) * r * 1.08, y + Math.sin(a + .14) * r * 1.08); c.closePath(); }, ORANGE, 2.2, 2);
+    }
+    sticker(() => { c.beginPath(); c.arc(x, y, r, 0, TAU); }, GOLD, 3, 4);
+  }
+  function planet(x, y, r) {
+    sticker(() => { c.beginPath(); c.arc(x, y, r, 0, TAU); }, SKY, 2.6, 4);
+    c.save(); c.beginPath(); c.arc(x, y, r - 1, 0, TAU); c.clip();
+    for (const [dy, h] of [[-.45, .14], [.05, .2], [.5, .12]]) { c.beginPath(); c.rect(x - r, y + dy * r, r * 2, h * r); c.fillStyle = TEAL; c.fill(); c.lineWidth = 1.6; c.strokeStyle = INK; c.stroke(); }
+    c.restore();
+    c.beginPath(); c.arc(x, y, r, 0, TAU); c.lineWidth = 2.6; c.strokeStyle = INK; c.stroke();
+  }
+  function sparkle(x, y, r, fill, lw = 2) {
+    const path = () => { c.beginPath(); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU - Math.PI / 2, rr = k % 2 ? r * .32 : r; k ? c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr) : c.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } c.closePath(); };
+    path(); c.fillStyle = fill; c.fill(); c.lineWidth = lw; c.lineJoin = 'round'; c.strokeStyle = INK; c.stroke();
+  }
+  function stars(y0, y1) {
+    const T = 240;
+    for (let t = Math.floor(y0 / T); t <= Math.floor(y1 / T); t++) {
+      const d = darkness(aiOf(t * T)); if (d <= 0) continue;
+      const r = rngFor(t, 5);
+      c.globalAlpha = d;
+      for (let k = 0; k < 7; k++) {
+        const x = r() * w, y = t * T + r() * T, s = 3 + r() * 6;
+        if (Math.abs(x - cx(y)) < W) continue;
+        if (s > 6.5) sparkle(x, y, s + 3, k % 3 ? CREAM : GOLD, 1.5);
+        else { c.beginPath(); c.arc(x, y, s * .4, 0, TAU); c.fillStyle = CREAM; c.fill(); }
+      }
+      if (aiOf(t * T) > 16 && r() < .25) { // the odd faraway planet
+        const x = r() < .5 ? r() * (w / 2 - W) : w / 2 + W + r() * (w / 2 - W - 30), y = t * T + r() * T, pr = 8 + r() * 10;
+        sticker(() => { c.beginPath(); c.arc(x, y, pr, 0, TAU); }, [PURPLE, PINK, LIME, TEAL][Math.floor(r() * 4)], 2, 2);
+        c.beginPath(); ell(x, y, pr * 1.7, pr * .45, -.3); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+      }
+      c.globalAlpha = 1;
+    }
+  }
+
+  function ambient(y0, y1) {
+    const T = 420;
+    for (let t = Math.floor((y0 - 200) / T); t <= Math.floor((y1 + 200) / T); t++) {
+      const y = t * T + 200, ai = aiOf(y);
+      if (ai < 0.4 || ai > 7.6) continue;
+      const r = rngFor(t, 17), roll = r(), d = r() < .5 ? -1 : 1;
+      const edge = d > 0 ? w / 2 + W / 2 + 70 : 70, span = (w - W) / 2 - 160;
+      const x = edge + Math.max(0, span) * r();
+      if (roll < .3) cloud(x, y, (.45 + r() * .3) * Math.min(1, w / 760));
+      else if (roll < .42 && ai < 5) { // a small, unbothered bird
+        const s = .55 * Math.min(1, w / 760) + .1;
+        c.save(); c.translate(x, y); c.scale(d * s, s);
+        sticker(() => { c.beginPath(); c.moveTo(-4, 0); c.lineTo(-18, -18); c.lineTo(6, -3); c.closePath(); }, PURPLE, 2.2, 2);
+        sticker(() => { c.beginPath(); ell(0, 0, 15, 10); }, SKY, 2.4, 2);
+        sticker(() => { c.beginPath(); c.moveTo(13, -3); c.lineTo(24, 0); c.lineTo(13, 3); c.closePath(); }, GOLD, 2, 1.5);
+        c.beginPath(); c.arc(6, -3, 1.8, 0, TAU); c.fillStyle = INK; c.fill();
+        c.restore();
+      }
+    }
+  }
+
+  // ---- the knot: the neck loops over itself once (a vertical trochoid) ----
+  function knotGeom() {
+    const K = KNOT_Y, r = KNOT_R, a = r * .5;
+    const yA = K - a * Math.PI, yB = K + a * Math.PI;
+    return { K, r, a, yA, yB, xA: cx(yA), xB: cx(yB) };
+  }
+  function knotPt(g, th) {
+    const t = (th + Math.PI) / TAU;
+    return [g.xA + (g.xB - g.xA) * t + g.r * (Math.cos(th) + 1), g.K + g.a * th - g.r * Math.sin(th)];
+  }
+  function knotPath(g, t0, t1, dx = 0) {
+    c.beginPath();
+    for (let i = 0; i <= 60; i++) { const [x, y] = knotPt(g, t0 + (t1 - t0) * i / 60); i ? c.lineTo(x + dx, y) : c.moveTo(x + dx, y); }
+  }
+  function knotHalf(g, t0, t1) {
+    c.lineCap = 'butt'; c.lineJoin = 'round';
+    knotPath(g, t0, t1); c.lineWidth = W + 7; c.strokeStyle = INK; c.stroke();
+    knotPath(g, t0, t1); c.lineWidth = W; c.strokeStyle = GOLD; c.stroke();
+  }
+  function knotSpots(g, t0, t1) {
+    const N = 18, rnd = mulberry32(42);
+    for (let k = 1; k < N; k++) {
+      const th = -Math.PI + TAU * k / N, r1 = rnd(), r2 = rnd();
+      if (th < t0 || th >= t1) continue;
+      const [x, y] = knotPt(g, th), [x2, y2] = knotPt(g, th + .01), nx = -(y2 - y), ny = x2 - x, nl = Math.hypot(nx, ny) || 1;
+      const off = (k % 2 ? .22 : -.2) * W;
+      wobbly(x + nx / nl * off, y + ny / nl * off, W * (.11 + r1 * .04), W * (.1 + r2 * .04), mulberry32(k * 31), 6);
+      c.fillStyle = ORANGE; c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+    }
+  }
+  function knot(g) {
+    c.lineCap = 'butt';
+    knotPath(g, -Math.PI, Math.PI, 6); c.lineWidth = W + 7; c.strokeStyle = INK; c.stroke();
+    knotHalf(g, -Math.PI, 0);
+    knotSpots(g, -Math.PI, -1.2);
+    knotHalf(g, 0, Math.PI);
+    knotPath(g, -0.25, 0.02); c.lineWidth = W; c.strokeStyle = GOLD; c.stroke(); // hide the seam
+    knotSpots(g, -1.2, Math.PI);
+  }
+
+  // ---- landmark cards ----
+  function card(i, y, name, note, meters) {
+    const side = i % 2 ? 1 : -1;
+    const space = (w - W) / 2 - 50;
+    const cw = Math.max(118, Math.min(240, space));
+    const nx = side > 0 ? cx(y) + W / 2 : cx(y) - W / 2;
+    const x = side > 0 ? Math.min(nx + 30, w - 34 - cw) : Math.max(nx - 30 - cw, 10);
+    const pad = 12, inner = cw - pad * 2;
+    c.font = `900 12px 'Arial Black', Arial, sans-serif`; const nameL = name ? wrap(name.toUpperCase(), inner) : [];
+    c.font = 'italic 13px Georgia, serif'; const noteL = note ? wrap(note, inner) : [];
+    let scaleL = [];
+    if (i >= 3) {
+      const per = metersAt(y - NECK0 + 1) - metersAt(y - NECK0);
+      c.font = 'italic 11px Georgia, serif'; scaleL = wrap(SCALE_LINES[i % SCALE_LINES.length].replace('X', fmt(per, true)), inner);
+    }
+    const value = fmt(meters, cw < 200);
+    let valSize = cw < 150 ? 17 : 21;
+    for (;;) { c.font = `900 ${valSize}px 'Arial Black', Arial, sans-serif`; if (c.measureText(value).width <= inner - 4 || valSize <= 11) break; valSize--; }
+    const h = pad + valSize + 6 + nameL.length * 15 + (noteL.length ? 4 + noteL.length * 16 : 0) + (scaleL.length ? 4 + scaleL.length * 14 : 0) + pad - 2;
+    const top = y - h / 2;
+    // leader
+    const ex = side > 0 ? x : x + cw;
+    c.beginPath(); c.moveTo(ex, y); c.lineTo(nx, y); c.setLineDash([5, 5]); c.lineWidth = 2; c.strokeStyle = INK; c.stroke(); c.setLineDash([]);
+    c.beginPath(); c.moveTo(nx - 9, y); c.lineTo(nx + 9, y); c.lineWidth = 3.5; c.stroke();
+    c.save(); c.translate(x + cw / 2, y); c.rotate(side * 0.025); c.translate(-(x + cw / 2), -y);
+    sticker(() => { c.beginPath(); c.roundRect(x, top, cw, h, 10); }, CREAM, 2.5, 4);
+    let ty = top + pad + valSize / 2;
+    loud(value, x + pad, ty, valSize, CORAL, 'left', 4);
+    ty += valSize / 2 + 6;
+    c.fillStyle = INK; c.textAlign = 'left'; c.textBaseline = 'top';
+    c.font = `900 12px 'Arial Black', Arial, sans-serif`; for (const l of nameL) { c.fillText(l, x + pad, ty); ty += 15; }
+    if (noteL.length) { ty += 4; c.font = 'italic 13px Georgia, serif'; for (const l of noteL) { c.fillText(l, x + pad, ty); ty += 16; } }
+    if (scaleL.length) { ty += 4; c.globalAlpha = .62; c.font = 'italic 11px Georgia, serif'; for (const l of scaleL) { c.fillText(l, x + pad, ty); ty += 14; } c.globalAlpha = 1; }
+    c.restore();
+  }
+
+  function ruler(y0, y1, sy) {
+    const x0 = w - 22;
+    c.fillStyle = CREAM; c.fillRect(x0, 0, 22, vh);
+    c.beginPath(); c.moveTo(x0, 0); c.lineTo(x0, vh); c.lineWidth = 2.5; c.strokeStyle = INK; c.stroke();
+    c.lineWidth = 1.5;
+    for (let y = Math.ceil(Math.max(y0, NECK0) / 50) * 50; y <= y1; y += 50) {
+      const big = y % 250 === 0, sy2 = y - sy;
+      c.beginPath(); c.moveTo(x0, sy2); c.lineTo(x0 + (big ? 11 : 6), sy2); c.stroke();
+      if (y % 500 === 0) {
+        c.save(); c.translate(x0 + 15, sy2 - 4); c.rotate(-Math.PI / 2);
+        c.font = `900 9px 'Arial Black', Arial, sans-serif`; c.fillStyle = INK; c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillText(fmt(metersAt(y - NECK0), true).toUpperCase(), 0, 0); c.restore();
+      }
+    }
+  }
+
+  // ---- secret ----
+  const secret = (() => { const r = Math.random(); if (r > 0.05) return null; return { kind: r < 0.025 ? 'peek' : 'note', ai: 3.5 + Math.random() * 3 }; })();
+
+  const near = (y, y0, y1, m = 260) => y > y0 - m && y < y1 + m;
+
+  // ---- frame ----
+  let raf = 0;
+  function request() { if (!raf) raf = requestAnimationFrame(draw); }
+  function draw() {
+    raf = 0;
+    const sy = scrollY, y0 = sy, y1 = sy + vh;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const g = c.createLinearGradient(0, 0, 0, vh);
+    for (let k = 0; k <= 4; k++) g.addColorStop(k / 4, bgAt(aiOf(y0 + vh * k / 4)));
+    c.fillStyle = g; c.fillRect(0, 0, w, vh);
+    c.save(); c.translate(0, -sy);
+
+    stars(y0, y1);
+    ambient(y0, y1);
+    const side = d => d > 0 ? (w / 2 + W / 2 + w - 22) / 2 : (w / 2 - W / 2) / 2;
+    const sc = Math.min(1, w / 760) * 0.95 + 0.05;
+    // scenery behind the neck
+    if (near(HEAD_Y, y0, y1, 400)) { cloud(w * 0.16, HEAD_Y - 90, sc * .9); cloud(w * 0.83, HEAD_Y + 40, sc * .75); }
+    [[4.55, 1, 1], [5.4, -1, .8], [6.25, 1, 1.1], [6.55, -1, .9], [7.45, 1, .85]].forEach(([a, d, s]) => {
+      const y = yOfA(a); if (near(y, y0, y1)) cloud(side(d) + (d > 0 ? -10 : 10), y, sc * s);
+    });
+    const ym = yOfA(11); if (near(ym, y0, y1, 200)) moon(side(-1), ym, Math.min(80, (w / 2 - W / 2) * .36));
+    const ys = yOfA(12); if (near(ys, y0, y1, 200)) sun(side(1), ys, Math.min(64, (w / 2 - W / 2) * .26));
+    const yn = yOfA(13); if (near(yn, y0, y1)) planet(side(-1), yn, Math.min(48, (w / 2 - W / 2) * .26));
+    const yp = yOfA(14); if (near(yp, y0, y1)) sparkle(side(1), yp, Math.min(46, (w / 2 - W / 2) * .26), GOLD, 2.6);
+
+    const kg = knotGeom(), knotVis = near(kg.K, y0, y1, kg.yB - kg.K + 60);
+    if (knotVis) {
+      c.save(); c.beginPath(); c.rect(0, y0 - 100, w, kg.yA + 2 - (y0 - 100)); c.rect(0, kg.yB - 2, w, y1 + 100 - kg.yB + 2); c.clip();
+      neck(y0 - 40, y1 + 40); c.restore();
+      knot(kg);
+      const sw = 170, sy0 = kg.yA - 70, sx = Math.min(cx(sy0) + W / 2 + 26, w - 40 - sw);
+      c.save(); c.translate(sx, sy0); c.rotate(-0.08);
+      sticker(() => { c.beginPath(); c.roundRect(0, -24, sw, 48, 10); }, CORAL, 2.5, 4);
+      loud('PLEASE STOP', sw / 2, 1, 19, CREAM, 'center', 4);
+      c.restore();
+    } else neck(y0 - 40, y1 + 40);
+
+    // things on the neck
+    const yNest = yOfA(1.6); if (near(yNest, y0, y1)) nest(cx(yNest) + W / 2 - 14, yNest);
+    if (secret && secret.kind === 'note') {
+      const y = yOfA(secret.ai);
+      if (near(y, y0, y1)) {
+        c.save(); c.translate(cx(y), y); c.rotate(0.07);
+        sticker(() => { c.beginPath(); c.rect(-W * .36, -W * .3, W * .72, W * .6); }, PINK, 2, 3);
+        c.fillStyle = INK; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `italic ${Math.round(W * .12)}px Georgia, serif`;
+        c.fillText("you're doing", 0, -W * .07); c.fillText('great.', 0, W * .1);
+        c.restore();
+      }
+    }
+    // head
+    if (y0 < HEAD_Y + 200 * S) head(cx(HEAD_Y), HEAD_Y, S);
+
+    // passers-by
+    const yb = yOfA(2.55); if (near(yb, y0, y1)) bird(side(1) - 10, yb, sc);
+    const ypl = yOfA(7); if (near(ypl, y0, y1)) plane(side(-1), ypl + 10, sc * .85);
+    const ya = yOfA(9); if (near(ya, y0, y1)) astronaut(side(-1), ya + 10, sc, cx(ya) - W / 2);
+    const ysat = yOfA(10); if (near(ysat, y0, y1)) satellite(side(1), ysat + 20, sc * .9);
+    if (secret && secret.kind === 'peek') {
+      const y = yOfA(secret.ai);
+      if (near(y, y0, y1, 300)) head(w - 22 - 45 * S, y, S * .9, Math.PI / 2 - 0.15);
+    }
+
+    // landmark cards
+    const iA = Math.max(1, Math.floor(aiOf(y0 - 200))), iB = Math.ceil(aiOf(y1 + 200));
+    for (let i = iA; i <= iB; i++) {
+      const y = yOfA(i);
+      if (i <= LAST) { const A = ANCHORS[i]; if (!A.knot) card(i, y, A.name, A.note, A.m); }
+      else { const [n, note] = DEEP[(i - LAST - 1) % DEEP.length]; card(i, y, n, note, metersAt(i * SP)); }
+    }
+    c.restore();
+    ruler(y0, y1, sy);
+    stats(sy);
+  }
+
+  // ---- counter / best ----
+  let best = 0, saveT = 0, lastLen = '';
+  try { best = Number(localStorage.getItem('endlessgiraffe-best')) || 0; } catch (e) {}
+  function showBest() { bestEl.textContent = best > 0 ? 'deepest: ' + fmt(best, true) : 'deepest: nobody yet'; }
+  showBest();
+  function stats(sy) {
+    const m = metersAt(sy + vh / 2 - NECK0);
+    const t = 'NECK: ' + fmt(m, true).toUpperCase();
+    if (t !== lastLen) { lenEl.textContent = t; lastLen = t; }
+    if (m > best) {
+      best = m; showBest();
+      clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem('endlessgiraffe-best', String(best)); } catch (e) {} }, 800);
+    }
+  }
+
+  // ---- input ----
+  let hintGone = false;
+  const killHint = () => { if (!hintGone) { hintGone = true; hint.classList.add('gone'); } };
+  setTimeout(killHint, 10000);
+  addEventListener('scroll', () => {
+    if (scrollY > 40) killHint();
+    if (scrollY + innerHeight * 4 > trackH) { trackH += 30000; track.style.height = trackH + 'px'; }
+    request();
+  }, { passive: true });
+  let rt = 0;
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(resize, 120); });
+  resize();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(request);
+})();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About Endless Giraffe</h2>
+<p>A giraffe. Mostly neck. Scroll down and see how far it goes.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/etchasketch/">Etch A Sketch</a>: Twist the knobs to drag one unbroken line across the silver screen — then shake it clean. Diagonals are a two-handed negotiation.</li>
+<li><a href="/every-day-is-a-holiday/">Every Day Is A Holiday</a>: A curated year-long calendar of real, mostly-invented novelty holidays — browse the whole year, or jump straight to today.</li>
+<li><a href="/eyechart/">Eye Chart</a>: A perfectly normal vision test — until the rows you squint at stop being letters and start being about you.</li>
+<li><a href="/eyesonme/">Eyes on Me</a>: Use your imagination on this one!</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

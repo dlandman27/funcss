@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dominoes</title>
+<meta name="description" content="Draw a line and dominoes stand up along it. Flick the first one and watch the whole thing go.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/dominoes/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/dominoes/">
+    <meta property="og:title" content="Dominoes">
+    <meta property="og:description" content="Draw a line and dominoes stand up along it. Flick the first one and watch the whole thing go.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/dominoes.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Dominoes">
+    <meta name="twitter:description" content="Draw a line and dominoes stand up along it. Flick the first one and watch the whole thing go.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/dominoes.png">
+    <!-- rsotw:og:end -->
+<style>
+  :root { --cream: #f6efdd; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #5a341c; }
+  body {
+    font: 15px/1.4 Georgia, "Times New Roman", serif;
+    color: var(--cream);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #bg { z-index: 0; }
+  #c { z-index: 1; touch-action: none; cursor: crosshair; }
+  header {
+    position: fixed; top: 14px; left: 16px; right: 16px; z-index: 2;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    pointer-events: none;
+  }
+  h1 { margin: 0; font: 700 20px/1 Georgia, "Times New Roman", serif; text-shadow: 0 1px 0 rgba(0, 0, 0, .55); }
+  .count { font-style: italic; opacity: .88; text-shadow: 0 1px 0 rgba(0, 0, 0, .55); white-space: nowrap; }
+  .count b { font-style: normal; font-variant-numeric: tabular-nums; }
+  .hint {
+    position: fixed; left: 16px; right: 16px; bottom: 86px; z-index: 2;
+    text-align: center; font-style: italic; font-size: 17px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+    pointer-events: none; transition: opacity .8s ease;
+  }
+  .hint.gone { opacity: 0; }
+  .pill {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 3;
+    display: flex; gap: 4px; padding: 6px;
+    border-radius: 999px;
+    background: rgba(24, 13, 6, .55);
+    border: 1px solid rgba(246, 239, 221, .14);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: opacity .4s ease;
+  }
+  .pill.quiet { opacity: .22; }
+  .pill:hover { opacity: 1; }
+  .pill button {
+    font: 600 14px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--cream); background: none; border: 0; border-radius: 999px;
+    padding: 10px 16px; cursor: pointer;
+  }
+  .pill button:hover { background: rgba(246, 239, 221, .12); }
+  .pill button:active { background: rgba(246, 239, 221, .22); }
+  @media (prefers-reduced-motion: reduce) { .hint, .pill { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<canvas id="c" aria-label="A wooden table. Drag to stand dominoes up along your line, then tap one to knock it over."></canvas>
+<header>
+  <h1>Dominoes</h1>
+  <span class="count">dominoes toppled: <b id="count">0</b></span>
+</header>
+<div class="hint" id="hint">draw a line. then flick the first one.</div>
+<div class="pill" id="pill">
+  <button type="button" id="undo">Undo</button>
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="clear">Clear</button>
+</div>
+
+<script>
+(() => {
+  // ---- domino geometry (CSS px)
+  const H = 34;                   // height: how far a domino reaches when it falls
+  const W = 16;                   // width, across the line
+  const T = 6;                    // thickness, along the line
+  const S = Math.round(H * 0.6);  // spacing along a drawn line
+  const REACH = H * 0.97;         // a face-to-face gap bigger than this stops the chain
+  const MIN_GAP = 9;              // closest two dominoes may stand
+  const HALF_PI = Math.PI / 2;
+  const LEAN = 72 * Math.PI / 180; // resting angle when it lands on the next one
+  const KX = 0.42, KY = 0.55;     // shadow offset per px of height (light from the top left)
+  const MAX = 3000;
+
+  const bg = document.getElementById('bg');
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const countEl = document.getElementById('count');
+  const hint = document.getElementById('hint');
+  const pill = document.getElementById('pill');
+
+  let dpr = 1, vw = 0, vh = 0;
+  let doms = [];
+  let strokes = [];
+  const active = new Set();       // falling or rising
+  let fallCounter = 0, secretDepth = -1, tidyAfterReset = false;
+
+  // ---- lifetime counter
+  let toppled = 0, countDirty = false, lastSave = 0;
+  try { toppled = +localStorage.getItem('dominoes:toppled') || 0; } catch {}
+  const fmt = n => n.toLocaleString('en-US');
+  countEl.textContent = fmt(toppled);
+  function saveCount(now) {
+    if (!countDirty) return;
+    countEl.textContent = fmt(toppled);
+    if (now - lastSave < 400 && active.size) return;
+    lastSave = now; countDirty = false;
+    try { localStorage.setItem('dominoes:toppled', String(toppled)); } catch {}
+  }
+
+  // ---- spatial grid
+  const CELL = 40;
+  const grid = new Map();
+  const key = (gx, gy) => gx * 65537 + gy;
+  const cellOf = d => key(Math.floor(d.x / CELL), Math.floor(d.y / CELL));
+  function gAdd(d) { const k = cellOf(d); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(d); }
+  function gDel(d) { const a = grid.get(cellOf(d)); if (!a) return; const i = a.indexOf(d); if (i >= 0) a.splice(i, 1); }
+  function near(x, y, r, fn) {
+    const x0 = Math.floor((x - r) / CELL), x1 = Math.floor((x + r) / CELL);
+    const y0 = Math.floor((y - r) / CELL), y1 = Math.floor((y + r) / CELL);
+    for (let gx = x0; gx <= x1; gx++) for (let gy = y0; gy <= y1; gy++) {
+      const a = grid.get(key(gx, gy));
+      if (a) for (let i = 0; i < a.length; i++) fn(a[i]);
+    }
+  }
+  function free(x, y) {
+    let ok = true;
+    near(x, y, MIN_GAP, d => { if (ok && (d.x - x) ** 2 + (d.y - y) ** 2 < MIN_GAP * MIN_GAP) ok = false; });
+    return ok;
+  }
+  function hitUp(x, y) {
+    let best = null, bd = 14 * 14;
+    near(x, y, 14, d => {
+      const dd = (d.x - x) ** 2 + (d.y - y) ** 2;
+      if (d.state === 0 && dd < bd) { bd = dd; best = d; }
+    });
+    return best;
+  }
+
+  // ---- sound: a short filtered noise clack plus a woody tok
+  let ac = null, master = null, noise = null, lastClick = 0, lastTick = 0;
+  function unlockAudio() {
+    if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+    try {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      master = ac.createDynamicsCompressor();
+      master.connect(ac.destination);
+      const len = Math.floor(ac.sampleRate * 0.04);
+      noise = ac.createBuffer(1, len, ac.sampleRate);
+      const ch = noise.getChannelData(0);
+      for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    } catch { ac = null; }
+  }
+  function clack(vol) {
+    if (!ac || ac.state !== 'running') return;
+    const t = ac.currentTime;
+    const src = ac.createBufferSource();
+    src.buffer = noise;
+    src.playbackRate.value = 0.8 + Math.random() * 0.5;
+    const bp = ac.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 1700 + Math.random() * 1500; bp.Q.value = 2.2;
+    const g = ac.createGain(); g.gain.value = 0.55 * vol;
+    src.connect(bp).connect(g).connect(master);
+    src.start(t);
+    const o = ac.createOscillator(), og = ac.createGain();
+    o.frequency.value = 650 + Math.random() * 350;
+    og.gain.setValueAtTime(0.18 * vol, t);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+    o.connect(og).connect(master);
+    o.start(t); o.stop(t + 0.035);
+  }
+  function click() {
+    if (!ac) return;
+    const t = ac.currentTime;
+    if (t - lastClick < 0.013) return; // long chains: don't stack a hundred clicks into one frame
+    lastClick = t;
+    clack(1);
+  }
+  function tick() {
+    if (!ac) return;
+    const t = ac.currentTime;
+    if (t - lastTick < 0.045) return;
+    lastTick = t;
+    clack(0.16);
+  }
+
+  // ---- placing
+  const r6 = () => Math.floor(Math.random() * 7);
+  function place(x, y, a, stroke) {
+    if (doms.length >= MAX) return null;
+    const d = {
+      x, y, a, stroke, state: 0, th: 0, dir: 1, t0: 0, dur: 0, fi: 0,
+      final: HALF_PI, targets: null, ti: 0, depth: 0, wob: 0, from: 0,
+      pips: [r6(), r6()], born: performance.now(), dead: false, links: [],
+    };
+    doms.push(d); gAdd(d); stroke.list.push(d);
+    // a line started right next to another one is a fork: wire its first domino to the nearest one there
+    if (stroke.list.length === 1 && stroke.anchor && !stroke.anchor.dead) { d.links.push(stroke.anchor); stroke.anchor.links.push(d); }
+    addStanding(d);
+    tick();
+    wake();
+    return d;
+  }
+
+  // ---- toppling
+  function topple(d, dir, depth, now) {
+    if (d.state !== 0 || d.dead) return;
+    d.state = 1; d.dir = dir; d.depth = depth; d.fi = ++fallCounter;
+    d.dur = 115 * Math.max(0.36, Math.pow(0.965, depth)); // long chains pick up speed
+    d.t0 = now; d.wob = 0;
+    if (depth > 0 && depth === secretDepth) { d.wob = now; d.t0 = now + 950; secretDepth = -1; }
+    computeTargets(d);
+    active.add(d);
+    repairStanding(d.x, d.y);
+    toppled++; countDirty = true;
+    click();
+    wake();
+  }
+  function computeTargets(d) {
+    const phi = d.a + (d.dir < 0 ? Math.PI : 0);
+    const fx = Math.cos(phi), fy = Math.sin(phi);
+    const list = [];
+    let support = false;
+    near(d.x, d.y, REACH + T + W, b => {
+      if (b === d || b.dead) return;
+      const vx = b.x - d.x, vy = b.y - d.y;
+      const along = vx * fx + vy * fy;
+      if (along <= T * 0.5) return;
+      // does our top sweep across any of it? its half-extent sideways depends on how it's turned
+      const bc = Math.cos(b.a), bs = Math.sin(b.a);
+      const side = (W / 2) * Math.abs(-bs * -fy + bc * fx) + (T / 2) * Math.abs(bc * -fy + bs * fx);
+      if (Math.abs(-vx * fy + vy * fx) > W * 0.45 + side) return;
+      const gap = along - T;
+      if (gap > REACH) return;
+      support = true;
+      if (b.state !== 0) return;
+      const c = Math.cos(b.a) * fx + Math.sin(b.a) * fy;
+      if (Math.abs(c) < 0.15) return; // hit square on the side: it just stops us
+      list.push({ b, s: c >= 0 ? 1 : -1, th: Math.asin(Math.max(0, Math.min(1, gap / H))) });
+    });
+    for (const b of d.links) {
+      if (b.dead || list.some(t => t.b === b)) continue;
+      const vx = b.x - d.x, vy = b.y - d.y;
+      if (vx * fx + vy * fy <= 0) continue;
+      const gap = Math.hypot(vx, vy) - T;
+      if (gap > REACH) continue;
+      support = true;
+      if (b.state !== 0) continue;
+      const c = Math.cos(b.a) * fx + Math.sin(b.a) * fy;
+      if (Math.abs(c) < 0.15) continue;
+      list.push({ b, s: c >= 0 ? 1 : -1, th: Math.asin(Math.max(0, Math.min(1, gap / H))) });
+    }
+    list.sort((p, q) => p.th - q.th);
+    d.targets = list; d.ti = 0;
+    d.final = support ? LEAN + (Math.random() - 0.5) * 0.08 : HALF_PI;
+  }
+  function stepFall(d, now) {
+    if (now < d.t0) {
+      if (d.wob) { const k = now - d.wob; d.th = 0.1 * Math.abs(Math.sin(k / 65)) * Math.max(0, 1 - k / 1100); }
+      return true;
+    }
+    const p = (now - d.t0) / d.dur;
+    const th = Math.min(d.final, HALF_PI * p * p); // gravity: ease-in
+    d.th = th;
+    while (d.ti < d.targets.length && th >= d.targets[d.ti].th) {
+      const t = d.targets[d.ti++];
+      topple(t.b, t.s, d.depth + 1, now);
+    }
+    if (th >= d.final) { d.state = 2; addSettled(d); return false; }
+    return true;
+  }
+  function rise(d, delay, now) {
+    d.state = 3; d.from = d.th; d.t0 = now + delay; d.dur = 140; d.wob = 0;
+    active.add(d);
+  }
+  function stepRise(d, now) {
+    if (now < d.t0) return true;
+    const p = Math.min(1, (now - d.t0) / d.dur);
+    d.th = d.from * Math.pow(1 - p, 3);
+    if (p >= 1) { d.state = 0; d.th = 0; d.targets = null; addStanding(d); return false; }
+    return true;
+  }
+
+  function flick(d, tx, ty) {
+    const along = (tx - d.x) * Math.cos(d.a) + (ty - d.y) * Math.sin(d.a);
+    let dir;
+    if (Math.abs(along) > 2) dir = along < 0 ? 1 : -1; // pushed from behind
+    else { const list = d.stroke.list; dir = list.indexOf(d) < list.length / 2 ? 1 : -1; }
+    secretDepth = Math.random() < 0.04 ? 6 + Math.floor(Math.random() * 30) : -1;
+    topple(d, dir, 0, performance.now());
+  }
+
+  // ---- drawing with the pointer
+  let ptr = null;
+  const posOf = e => ({ x: e.clientX, y: e.clientY });
+  cv.addEventListener('pointerdown', e => {
+    if (ptr) return;
+    unlockAudio();
+    const p = posOf(e);
+    ptr = { id: e.pointerId, x0: p.x, y0: p.y, moved: false, cand: hitUp(p.x, p.y), stroke: null, lp: null };
+    try { cv.setPointerCapture(e.pointerId); } catch {}
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!ptr || e.pointerId !== ptr.id) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+    for (const ev of (evs.length ? evs : [e])) feed(posOf(ev));
+  });
+  function feed(p) {
+    if (!ptr.moved) {
+      if (Math.hypot(p.x - ptr.x0, p.y - ptr.y0) < 8) return;
+      ptr.moved = true;
+      const stroke = { list: [], anchor: null };
+      let bd = (S * 1.4) ** 2;
+      near(ptr.x0, ptr.y0, S * 1.4, d => { const dd = (d.x - ptr.x0) ** 2 + (d.y - ptr.y0) ** 2; if (dd < bd) { bd = dd; stroke.anchor = d; } });
+      strokes.push(stroke);
+      ptr.stroke = stroke;
+      ptr.lp = { x: ptr.x0, y: ptr.y0 };
+      if (free(ptr.x0, ptr.y0)) place(ptr.x0, ptr.y0, Math.atan2(p.y - ptr.y0, p.x - ptr.x0), stroke);
+    }
+    let dx = p.x - ptr.lp.x, dy = p.y - ptr.lp.y, dist = Math.hypot(dx, dy);
+    while (dist >= S) {
+      const ux = dx / dist, uy = dy / dist, a = Math.atan2(dy, dx);
+      // a crossing or a crowded spot: slide the next domino a little closer or farther instead of leaving a hole
+      let placedAt = null;
+      for (const off of [0, -3, 3, -6, 6, -9, 9]) {
+        const x = ptr.lp.x + ux * (S + off), y = ptr.lp.y + uy * (S + off);
+        if (free(x, y)) { placedAt = { x, y }; break; }
+      }
+      if (placedAt) {
+        const list = ptr.stroke.list;
+        const d = place(placedAt.x, placedAt.y, a, ptr.stroke);
+        if (d && list.length >= 2) {
+          const prev = list[list.length - 2], pp = list[list.length - 3];
+          if (prev.state === 0) prev.a = pp ? Math.atan2(d.y - pp.y, d.x - pp.x) : Math.atan2(d.y - prev.y, d.x - prev.x);
+          if (list.length === 2 && prev.state === 0) prev.a = Math.atan2(d.y - prev.y, d.x - prev.x);
+        }
+        ptr.lp = placedAt;
+      } else {
+        ptr.lp = { x: ptr.lp.x + ux * S, y: ptr.lp.y + uy * S };
+      }
+      dx = p.x - ptr.lp.x; dy = p.y - ptr.lp.y; dist = Math.hypot(dx, dy);
+    }
+  }
+  function end(e, cancelled) {
+    if (!ptr || e.pointerId !== ptr.id) return;
+    if (!ptr.moved && !cancelled) {
+      if (ptr.cand && ptr.cand.state === 0) flick(ptr.cand, ptr.x0, ptr.y0);
+      else if (free(ptr.x0, ptr.y0)) {
+        // a tap on bare table stands up one domino, lined up with whatever is nearby
+        let a = 0, bd = 70 * 70;
+        near(ptr.x0, ptr.y0, 70, d => { const dd = (d.x - ptr.x0) ** 2 + (d.y - ptr.y0) ** 2; if (dd < bd) { bd = dd; a = d.a; } });
+        const stroke = { list: [] };
+        strokes.push(stroke);
+        place(ptr.x0, ptr.y0, a, stroke);
+      }
+    }
+    if (ptr.stroke && !ptr.stroke.list.length) strokes.splice(strokes.indexOf(ptr.stroke), 1);
+    if (doms.length >= 2) hint.classList.add('gone');
+    ptr = null;
+  }
+  cv.addEventListener('pointerup', e => end(e, false));
+  cv.addEventListener('pointercancel', e => end(e, true));
+
+  // ---- buttons
+  function undo() {
+    const stroke = strokes.pop();
+    if (!stroke) return;
+    for (const d of stroke.list) { d.dead = true; gDel(d); active.delete(d); }
+    doms = doms.filter(d => !d.dead);
+    rebuildLayers();
+    render();
+  }
+  function reset() {
+    const down = doms.filter(d => d.state !== 0).sort((a, b) => b.fi - a.fi);
+    if (!down.length) return;
+    const now = performance.now();
+    const stagger = Math.min(6, 700 / down.length);
+    down.forEach((d, i) => rise(d, i * stagger, now));
+    clearLayer(sctx);
+    tidyAfterReset = true;
+    secretDepth = -1;
+    wake();
+  }
+  function clear() {
+    for (const d of doms) d.dead = true;
+    doms = []; strokes = []; grid.clear(); active.clear();
+    rebuildLayers();
+    render();
+  }
+  document.getElementById('undo').addEventListener('click', undo);
+  document.getElementById('reset').addEventListener('click', reset);
+  document.getElementById('clear').addEventListener('click', clear);
+  addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+  });
+
+  // ---- rendering
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const shade = (c0, c1) => Array.from({ length: 33 }, (_, i) => {
+    const t = i / 32;
+    return `rgb(${lerp(c0[0], c1[0], t) | 0},${lerp(c0[1], c1[1], t) | 0},${lerp(c0[2], c1[2], t) | 0})`;
+  });
+  const FACE = shade([150, 134, 106], [248, 241, 224]); // the pip face, darker while it still faces sideways
+  const EDGE = shade([244, 236, 216], [184, 168, 138]); // the top edge, bright when it faces up
+  const PIPS = {
+    0: [], 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]],
+    4: [[-1, -1], [-1, 1], [1, -1], [1, 1]], 5: [[-1, -1], [-1, 1], [0, 0], [1, -1], [1, 1]],
+    6: [[-1, -1], [0, -1], [1, -1], [-1, 1], [0, 1], [1, 1]],
+  };
+  const hasRound = typeof ctx.roundRect === 'function';
+
+  // convex hull (monotone chain) of a few points, appended to g's current path
+  function hullPath(g, pts) {
+    pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+    const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lo = [], up = [];
+    for (const p of pts) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+    for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+    lo.pop(); up.pop();
+    const h = lo.concat(up);
+    if (h.length < 3) return;
+    g.moveTo(h[0][0], h[0][1]);
+    for (let i = 1; i < h.length; i++) g.lineTo(h[i][0], h[i][1]);
+    g.closePath();
+  }
+  // ox/oy shift the drawing (used when painting into the small scratch canvas)
+  function shadowPath(g, d, ox = 0, oy = 0) {
+    const s = Math.sin(d.th), c = Math.cos(d.th);
+    const phi = d.a + (d.dir < 0 ? Math.PI : 0), cs = Math.cos(phi), sn = Math.sin(phi);
+    const hw = W / 2, xb0 = T / 2 - T * c, xb1 = xb0 + H * s, xt = xb1 + T * c * 0.5;
+    const z = H * c + T * s;
+    const P = (x, y, lift) => [d.x + ox + x * cs - y * sn + lift * KX, d.y + oy + x * sn + y * cs + lift * KY];
+    hullPath(g, [P(xb0, -hw, 0), P(xb0, hw, 0), P(T / 2, -hw, 0), P(T / 2, hw, 0), P(xt, -hw, z), P(xt, hw, z)]);
+  }
+  const SHADOW = 'rgba(30,12,2,.34)';
+  function drawBody(g, d, ox = 0, oy = 0) {
+    const s = Math.sin(d.th), c = Math.cos(d.th);
+    const phi = d.a + (d.dir < 0 ? Math.PI : 0), cs = Math.cos(phi), sn = Math.sin(phi);
+    g.setTransform(dpr * cs, dpr * sn, -dpr * sn, dpr * cs, dpr * (d.x + ox), dpr * (d.y + oy));
+    const hw = W / 2, xb0 = T / 2 - T * c, xb1 = xb0 + H * s, xe = xb1 + T * c, len = xe - xb0;
+    g.beginPath();
+    if (hasRound) g.roundRect(xb0, -hw, len, W, Math.min(2.5, len / 2)); else g.rect(xb0, -hw, len, W);
+    g.fillStyle = FACE[Math.round(s * 32)];
+    g.fill();
+    if (T * c > 0.4) {
+      g.fillStyle = EDGE[Math.round(s * 32)];
+      g.fillRect(xb1, -hw + 0.7, T * c, W - 1.4);
+    }
+    g.lineWidth = 1;
+    g.strokeStyle = 'rgba(40,24,10,.85)';
+    g.stroke();
+    if (s >= 0.3) {
+      // the face: a divider, a brass pin, two halves of pips
+      const xm = xb0 + H * 0.5 * s;
+      g.beginPath();
+      g.moveTo(xm, -hw + 2.6); g.lineTo(xm, hw - 2.6);
+      g.strokeStyle = 'rgba(92,76,54,.9)';
+      g.stroke();
+      g.beginPath();
+      for (let h = 0; h < 2; h++) {
+        for (const [iu, iv] of PIPS[d.pips[h]]) {
+          const u = h * H / 2 + H / 4 + iu * H * 0.135, v = iv * W * 0.27, x = xb0 + u * s;
+          g.moveTo(x + 1.55 * s, v);
+          g.ellipse(x, v, 1.55 * s, 1.55, 0, 0, Math.PI * 2);
+        }
+      }
+      g.fillStyle = '#1e1711';
+      g.fill();
+      g.beginPath();
+      g.ellipse(xm, 0, 1.3 * s, 1.3, 0, 0, Math.PI * 2);
+      g.fillStyle = '#b8893c';
+      g.fill();
+    }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // Layers, so a table with thousands of dominoes only redraws what moves:
+  //   standing: every upright domino (patched locally when one tips over)
+  //   settled:  every fallen one; each new one slides UNDER the earlier ones, which lean on it
+  const upL = document.createElement('canvas'), uctx = upL.getContext('2d');
+  const stL = document.createElement('canvas'), sctx = stL.getContext('2d');
+  const scratch = document.createElement('canvas'), xctx = scratch.getContext('2d');
+  const SR = 60; // scratch half-size in CSS px: a lying domino plus its shadow fits
+  function clearLayer(g) { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, g.canvas.width, g.canvas.height); g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function paintStanding(g, list) {
+    g.beginPath();
+    for (const d of list) shadowPath(g, d);
+    g.fillStyle = SHADOW; g.fill();
+    for (const d of list) drawBody(g, d);
+  }
+  function addStanding(d) { paintStanding(uctx, [d]); }
+  function repairStanding(x, y) {
+    const R = 52, list = [];
+    near(x, y, R + 44, d => { if (d.state === 0 && !d.dead) list.push(d); });
+    uctx.save();
+    uctx.setTransform(1, 0, 0, 1, 0, 0);
+    uctx.beginPath();
+    uctx.rect((x - R) * dpr, (y - R) * dpr, 2 * R * dpr, 2 * R * dpr);
+    uctx.clip();
+    uctx.clearRect((x - R) * dpr, (y - R) * dpr, 2 * R * dpr, 2 * R * dpr);
+    uctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    paintStanding(uctx, list);
+    uctx.restore();
+  }
+  function addSettled(d) {
+    clearLayer(xctx);
+    const ox = SR - d.x, oy = SR - d.y;
+    xctx.beginPath(); shadowPath(xctx, d, ox, oy); xctx.fillStyle = SHADOW; xctx.fill();
+    drawBody(xctx, d, ox, oy);
+    sctx.save();
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.globalCompositeOperation = 'destination-over';
+    sctx.drawImage(scratch, Math.round((d.x - SR) * dpr), Math.round((d.y - SR) * dpr));
+    sctx.restore();
+  }
+  function rebuildLayers() {
+    clearLayer(uctx); clearLayer(sctx);
+    paintStanding(uctx, doms.filter(d => d.state === 0));
+    for (const d of doms.filter(d => d.state === 2).sort((a, b) => a.fi - b.fi)) addSettled(d);
+  }
+  function render() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(upL, 0, 0);
+    if (active.size) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const moving = [...active].sort((a, b) => b.fi - a.fi); // the first to fall lies on top of the next
+      ctx.beginPath();
+      for (const d of moving) shadowPath(ctx, d);
+      ctx.fillStyle = SHADOW; ctx.fill();
+      for (const d of moving) drawBody(ctx, d);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    ctx.drawImage(stL, 0, 0);
+  }
+
+  // ---- loop: sleeps when nothing moves
+  let raf = 0;
+  function wake() { if (!raf) raf = requestAnimationFrame(frame); }
+  function frame(now) {
+    raf = 0;
+    for (const d of active) {
+      const keep = d.state === 1 ? stepFall(d, now) : stepRise(d, now);
+      if (!keep) active.delete(d);
+    }
+    // repaint the standing layer cleanly once everything is back up
+    if (tidyAfterReset && !active.size) { tidyAfterReset = false; rebuildLayers(); }
+    render();
+    saveCount(now);
+    pill.classList.toggle('quiet', active.size > 0);
+    if (active.size) raf = requestAnimationFrame(frame);
+  }
+
+  // ---- the table
+  function mulberry32(a) {
+    return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  function paintTable() {
+    const g = bg.getContext('2d');
+    bg.width = Math.round(vw * dpr); bg.height = Math.round(vh * dpr);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const rnd = mulberry32(1951);
+    const base = g.createLinearGradient(0, 0, vw, vh);
+    base.addColorStop(0, '#80502c'); base.addColorStop(1, '#6a3e21');
+    g.fillStyle = base; g.fillRect(0, 0, vw, vh);
+    const P = 140;
+    for (let py = -rnd() * P; py < vh; py += P) {
+      g.fillStyle = rnd() < 0.5 ? `rgba(255,220,170,${0.02 + rnd() * 0.05})` : `rgba(40,16,4,${0.03 + rnd() * 0.07})`;
+      g.fillRect(0, py, vw, P);
+      for (let i = 0; i < 34; i++) {
+        const y0 = py + rnd() * P, f = 0.002 + rnd() * 0.006, ph = rnd() * 6.28, a1 = 1 + rnd() * 5, a2 = rnd() * 2;
+        g.beginPath();
+        for (let x = -20; x <= vw + 40; x += 30) {
+          const y = y0 + Math.sin(x * f + ph) * a1 + Math.sin(x * f * 3.7 + ph * 2) * a2;
+          if (x < 0) g.moveTo(x, y); else g.lineTo(x, y);
+        }
+        g.strokeStyle = rnd() < 0.75 ? `rgba(45,20,5,${0.05 + rnd() * 0.1})` : `rgba(255,214,160,${0.03 + rnd() * 0.05})`;
+        g.lineWidth = 0.5 + rnd() * 1.4;
+        g.stroke();
+      }
+      g.fillStyle = 'rgba(30,12,2,.45)'; g.fillRect(0, py, vw, 1.5);
+      g.fillStyle = 'rgba(255,225,180,.08)'; g.fillRect(0, py + 1.5, vw, 1);
+    }
+    const vig = g.createRadialGradient(vw / 2, vh / 2, Math.min(vw, vh) * 0.25, vw / 2, vh / 2, Math.hypot(vw, vh) * 0.6);
+    vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(10,4,0,.5)');
+    g.fillStyle = vig; g.fillRect(0, 0, vw, vh);
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    vw = innerWidth; vh = innerHeight;
+    cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+    upL.width = stL.width = cv.width; upL.height = stL.height = cv.height;
+    scratch.width = scratch.height = Math.ceil(2 * SR * dpr);
+    paintTable();
+    rebuildLayers();
+    render();
+  }
+  let resizeTimer = 0;
+  addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 150); });
+  resize();
+})();
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About Dominoes</h2>
+<p>Draw a line and dominoes stand up along it. Flick the first one and watch the whole thing go.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/dontpressthebutton/">Don't Press The Button</a>: A button, a form on file, and a department that keeps minutes. Do not press it.</li>
+<li><a href="/duplicate/">Duplicate</a>: Watch text exponentially duplicate from 1 'a' to infinity</li>
+<li><a href="/endlessgiraffe/">Endless Giraffe</a>: A giraffe. Mostly neck. Scroll down and see how far it goes.</li>
+<li><a href="/etchasketch/">Etch A Sketch</a>: Twist the knobs to drag one unbroken line across the silver screen — then shake it clean. Diagonals are a two-handed negotiation.</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

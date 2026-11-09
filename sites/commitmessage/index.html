@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script defer src="https://randomsitesontheweb.com/globals/global.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Commit Message</title>
+<meta name="description" content="Write one commit message that passes every check. The linter adds a new rule after every push. Eventually it has to be a haiku.">
+    <!-- rsotw:og:start -->
+    <link rel="canonical" href="https://randomsitesontheweb.com/commitmessage/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://randomsitesontheweb.com/commitmessage/">
+    <meta property="og:title" content="The Commit Message">
+    <meta property="og:description" content="Write one commit message that passes every check. The linter adds a new rule after every push. Eventually it has to be a haiku.">
+    <meta property="og:image" content="https://randomsitesontheweb.com/og/commitmessage.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Commit Message">
+    <meta name="twitter:description" content="Write one commit message that passes every check. The linter adds a new rule after every push. Eventually it has to be a haiku.">
+    <meta name="twitter:image" content="https://randomsitesontheweb.com/og/commitmessage.png">
+    <!-- rsotw:og:end -->
+<style>
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  :root {
+    --fg: #1f2328;
+    --muted: #59636e;
+    --border: #d1d9e0;
+    --border-muted: #d1d9e0b3;
+    --canvas: #ffffff;
+    --subtle: #f6f8fa;
+    --accent: #0969da;
+    --success: #1a7f37;
+    --success-btn: #1f883d;
+    --danger: #d1242f;
+    --attention: #9a6700;
+    --done: #8250df;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --accent-muted: #ddf4ff;
+    --badge: #eff2f5;
+    --merge-off: #94d3a2;
+    --diff-add: #dafbe1; --diff-del: #ffebe9; --diff-add-n: #aceebb; --diff-del-n: #ffcecb;
+    --syn-k: #cf222e; --syn-s: #0a3069; --syn-c: #59636e; --syn-f: #6639ba; --syn-n: #0550ae;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --fg: #f0f6fc; --muted: #9198a1; --border: #3d444d; --border-muted: #3d444db3;
+    --canvas: #0d1117; --subtle: #151b23; --accent: #4493f8; --accent-muted: #388bfd26;
+    --success: #3fb950; --success-btn: #238636; --danger: #f85149; --attention: #d29922; --done: #ab7df8;
+    --badge: #212830; --merge-off: #105823; --diff-add: #2ea04326; --diff-del: #f8514926; --diff-add-n: #3fb9504d; --diff-del-n: #f851494d;
+    --syn-k: #ff7b72; --syn-s: #a5d6ff; --syn-c: #9198a1; --syn-f: #d2a8ff; --syn-n: #79c0ff;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fg: #f0f6fc; --muted: #9198a1; --border: #3d444d; --border-muted: #3d444db3;
+      --canvas: #0d1117; --subtle: #151b23; --accent: #4493f8; --accent-muted: #388bfd26;
+      --success: #3fb950; --success-btn: #238636; --danger: #f85149; --attention: #d29922; --done: #ab7df8;
+      --badge: #212830; --merge-off: #105823; --diff-add: #2ea04326; --diff-del: #f8514926; --diff-add-n: #3fb9504d; --diff-del-n: #f851494d;
+    --syn-k: #ff7b72; --syn-s: #a5d6ff; --syn-c: #9198a1; --syn-f: #d2a8ff; --syn-n: #79c0ff;
+      color-scheme: dark;
+    }
+  }
+  html, body { margin: 0; }
+  body {
+    background: var(--canvas); color: var(--fg);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  }
+  svg { vertical-align: text-bottom; }
+  a { color: var(--accent); text-decoration: none; }
+
+  /* top bar */
+  .topbar { background: var(--subtle); border-bottom: 1px solid var(--border); }
+  .topbar-inner { max-width: 1280px; margin: 0 auto; padding: 12px 24px 0; }
+  .crumbs { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; }
+  .mark { width: 32px; height: 32px; border-radius: 50%; background: var(--fg); display: flex; align-items: center; justify-content: center; color: var(--canvas); }
+  .theme { margin-left: auto; font: inherit; font-size: 12px; color: var(--fg); background: var(--canvas); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+  .crumbs b { font-weight: 600; }
+  .crumbs .sep { color: var(--muted); }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  .tab { display: flex; align-items: center; gap: 6px; padding: 8px 10px; color: var(--fg); border-bottom: 2px solid transparent; white-space: nowrap; font-size: 14px; }
+  .tab.on { border-bottom-color: #fd8c73; font-weight: 600; }
+  .tab .ct { background: #818b981f; border-radius: 999px; padding: 0 6px; font-size: 12px; font-weight: 500; }
+
+  .page { max-width: 1280px; margin: 0 auto; padding: 24px; }
+  .pr-title { font-size: 32px; font-weight: 400; margin: 0 0 8px; line-height: 1.25; }
+  .pr-title span { color: var(--muted); font-weight: 300; }
+  .pr-title .pr-name { color: var(--fg); font-weight: 400; cursor: text; }
+  .title-row { display: flex; align-items: flex-start; gap: 12px; }
+  .btn-edit, .btn-cancel { font: 500 12px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--subtle); color: var(--fg); cursor: pointer; flex: none; }
+  .btn-edit { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; margin-left: 8px; position: relative; top: -3px; }
+  .btn-edit:hover, .btn-cancel:hover { border-color: var(--muted); }
+  .btn-cancel { margin: 0; font-size: 14px; padding: 5px 16px; }
+  .title-edit { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .title-edit input { flex: 1; min-width: 220px; font: 16px var(--mono); padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); outline: none; }
+  .title-edit input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+  .pr-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .state { display: inline-flex; align-items: center; gap: 4px; background: var(--success-btn); color: #fff; border-radius: 999px; padding: 5px 12px; font-weight: 500; }
+  .state.merged { background: var(--done); }
+  .branch { font-family: var(--mono); font-size: 12px; background: var(--accent-muted); color: var(--accent); padding: 0 6px; border-radius: 6px; }
+  .prtabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin: 16px 0 24px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  .prtabs::-webkit-scrollbar, .tabs::-webkit-scrollbar { display: none; }
+  .prtab { padding: 8px 16px; border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; color: var(--muted); white-space: nowrap; display: flex; gap: 6px; align-items: center; }
+  .prtab.on { box-shadow: 0 1px 0 var(--canvas); }
+  .prtab.on { border-color: var(--border); background: var(--canvas); color: var(--fg); }
+  .prtab .ct { background: #818b981f; border-radius: 999px; padding: 0 6px; font-size: 12px; }
+  button.prtab { font: inherit; background: none; cursor: pointer; }
+  button.prtab:hover:not(.on) { color: var(--fg); }
+  .avatar { overflow: hidden; background: none !important; }
+  .avatar svg, .person svg, .cmeta svg { display: block; width: 100%; height: 100%; }
+  .person .pic { width: 20px; height: 20px; flex: none; border-radius: 50%; overflow: hidden; }
+  .person .pic.bot { border-radius: 5px; }
+  .muted { color: var(--muted); font-weight: 400; }
+  .mono { font-family: var(--mono); font-size: 13px; }
+  .cv-head { font-size: 14px; color: var(--muted); margin: 0 0 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .crow { display: flex; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--border-muted); align-items: flex-start; }
+  .crow:first-child { border-top: 0; }
+  .cmain { flex: 1; min-width: 0; }
+  .ctitle { font: 600 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--fg); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; word-break: break-word; }
+  .ctitle:hover { color: var(--accent); text-decoration: underline; }
+  .cmeta { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; margin-top: 4px; flex-wrap: wrap; }
+  .cmeta .mini { width: 18px; height: 18px; border-radius: 50%; overflow: hidden; flex: none; }
+  .cmeta .tag { border: 1px solid var(--border); border-radius: 999px; padding: 0 6px; }
+  .cmeta .tag.latest { color: var(--success); border-color: var(--success); }
+  .cfull { margin: 8px 0 0; padding: 10px 12px; background: var(--subtle); border: 1px solid var(--border-muted); border-radius: 6px; font: 12px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; }
+  .csha { font: 12px var(--mono); color: var(--accent); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; flex: none; }
+  .diffstat { font: 600 12px var(--mono); display: inline-flex; gap: 4px; align-items: center; }
+  .diffstat .a { color: var(--success); } .diffstat .d { color: var(--danger); }
+  .sq { display: inline-flex; gap: 1px; margin-left: 2px; }
+  .sq i { width: 8px; height: 8px; border-radius: 2px; background: var(--badge); outline: 1px solid var(--border-muted); outline-offset: -1px; }
+  .sq i.a { background: var(--success-btn); outline: 0; } .sq i.d { background: var(--danger); outline: 0; }
+  .grow { flex: 1; }
+  .btn-sm { font: 500 12px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 2px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--subtle); color: var(--fg); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+  .btn-sm:hover { border-color: var(--muted); }
+  .btn-sm.primary { background: var(--success-btn); color: #fff; border-color: #1f232826; }
+  .icon-btn { background: none; border: 0; color: var(--muted); padding: 4px; border-radius: 6px; cursor: pointer; display: inline-flex; }
+  .icon-btn:hover { background: var(--badge); color: var(--fg); }
+  .icon-btn.flip svg { transform: rotate(-90deg); }
+
+  /* files changed */
+  .ftool { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .viewed-prog { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+  .viewed-prog svg { transform: rotate(-90deg); }
+  .files-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
+  .ftree { position: sticky; top: 12px; }
+  .ffilter { display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; color: var(--muted); margin-bottom: 8px; background: var(--canvas); }
+  .ffilter input { border: 0; outline: 0; background: none; color: var(--fg); font: inherit; width: 100%; min-width: 0; }
+  .ffilter:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+  .trow { display: flex; gap: 6px; align-items: center; padding: 4px 8px; border-radius: 6px; color: var(--fg); cursor: pointer; }
+  .trow svg { color: var(--muted); flex: none; }
+  .trow.dir svg.fold { color: #54aeff; }
+  .trow.indent { padding-left: 28px; }
+  .trow.on { background: var(--badge); }
+  .trow:hover { background: var(--badge); }
+  .fbox { border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+  .fhead { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 4px; background: var(--subtle); border-radius: 6px 6px 0 0; flex-wrap: wrap; }
+  .fbox.open .fhead { border-bottom: 1px solid var(--border); }
+  .fbox:not(.open) .fhead { border-radius: 6px; }
+  .fhead code { font: 600 12px var(--mono); color: var(--fg); }
+  .cbx { width: 14px; height: 14px; border: 1px solid var(--muted); border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; }
+  .viewed.on { background: var(--accent-muted); border-color: var(--accent); }
+  .viewed.on .cbx { background: var(--accent); border-color: var(--accent); }
+  .viewed.on .cbx::after { content: ''; width: 7px; height: 4px; border: 2px solid #fff; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+  table.dt { width: 100%; border-collapse: collapse; font: 12px/20px var(--mono); table-layout: fixed; }
+  .dt col.n { width: 44px; }
+  .dt td { padding: 0; vertical-align: top; }
+  .dt td.n { text-align: right; padding: 0 8px; color: var(--muted); user-select: none; }
+  .dt td.t { white-space: pre-wrap; word-break: break-all; padding: 0 16px 0 24px; position: relative; color: var(--fg); }
+  .dt td.t::before { content: attr(data-m); position: absolute; left: 8px; }
+  .dt tr.add td { background: var(--diff-add); } .dt tr.add td.n { background: var(--diff-add-n); color: var(--fg); }
+  .dt tr.del td { background: var(--diff-del); } .dt tr.del td.n { background: var(--diff-del-n); color: var(--fg); }
+  .dt tr.hunk td { background: var(--accent-muted); color: var(--muted); padding: 4px 16px; }
+  .dt tr:last-child td { border-radius: 0 0 6px 6px; }
+  .none { padding: 24px 16px; color: var(--muted); text-align: center; }
+  .k { color: var(--syn-k); } .s { color: var(--syn-s); } .c { color: var(--syn-c); } .f { color: var(--syn-f); } .num { color: var(--syn-n); }
+
+  /* edit file page */
+  #main.editing > :not(#editView) { display: none !important; }
+  .ed-top { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .ed-crumbs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 16px; flex: 1 1 auto; min-width: 0; }
+  .ed-crumbs a { font-weight: 600; cursor: default; }
+  .ed-crumbs .sep { color: var(--muted); }
+  .ed-crumbs input { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); width: 150px; outline: 0; }
+  .ed-crumbs input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+  .ed-crumbs .muted { font-size: 14px; }
+  .ed-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { font: 500 14px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 5px 16px; border-radius: 6px; border: 1px solid var(--border); background: var(--subtle); color: var(--fg); cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--success-btn); color: #fff; border-color: #1f232826; }
+  .btn.primary:disabled { background: var(--merge-off); color: #ffffffb3; cursor: not-allowed; }
+  .panel { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--canvas); }
+  .panel-head { display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--subtle); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .seg { display: inline-flex; background: var(--badge); border-radius: 6px; }
+  .seg button { font: 500 12px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 2px 12px; border: 1px solid transparent; background: none; border-radius: 6px; color: var(--fg); cursor: pointer; }
+  .seg button.on { background: var(--canvas); border-color: var(--border); }
+  .panel-head select { font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--subtle); color: var(--fg); }
+  .cm { display: flex; background: var(--canvas); font: 12px/20px var(--mono); min-height: 320px; }
+  .cm-gut { margin: 0; padding: 8px 16px; text-align: right; color: var(--muted); user-select: none; flex: none; font: inherit; min-width: 48px; }
+  .cm-area { flex: 1; min-width: 0; overflow-x: auto; }
+  .cm-inner { position: relative; min-width: 100%; }
+  .cm-inner pre { position: absolute; inset: 0; margin: 0; padding: 8px 16px; font: inherit; white-space: pre; pointer-events: none; color: var(--fg); tab-size: var(--tab, 2); }
+  #code { position: relative; display: block; margin: 0; padding: 8px 16px; min-height: 0; width: 100%; border: 0; font: inherit; white-space: pre; tab-size: var(--tab, 2); color: transparent; -webkit-text-fill-color: transparent; caret-color: var(--fg); background: transparent; resize: none; overflow: hidden; outline: none; }
+  #code::selection { background: #54aeff55; }
+  .cm-help { padding: 7px 10px; font-size: 13px; line-height: 16px; color: var(--muted); background: var(--subtle); border-top: 1px solid var(--border); }
+  .cm-help kbd { font: 11px var(--mono); padding: 1px 4px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 6px; background: var(--canvas); color: var(--fg); }
+
+  /* commit dialog */
+  dialog.cdlg { border: 1px solid var(--border); border-radius: 12px; padding: 0; width: min(480px, calc(100vw - 32px)); background: var(--canvas); color: var(--fg); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+  dialog.cdlg::backdrop { background: rgba(31,35,40,.5); }
+  .dlg-head { display: flex; align-items: center; padding: 8px 8px 8px 16px; }
+  .dlg-head h2 { font-size: 14px; font-weight: 600; margin: 0; flex: 1; }
+  .dlg-body { padding: 8px 16px 16px; }
+  .dlg-body > label { display: block; font-weight: 600; margin: 8px 0 6px; }
+  .dlg-body input[type=text], .dlg-body textarea { width: 100%; font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); outline: 0; }
+  .dlg-body textarea { min-height: 90px; resize: vertical; }
+  .dlg-body input:focus, .dlg-body textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+  .radio { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; }
+  .radio input { margin-top: 4px; }
+  .radio small { display: block; color: var(--muted); }
+  .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px; border-top: 1px solid var(--border); }
+  @media (max-width: 900px) { .files-layout { grid-template-columns: 1fr; } .ftree { display: none; } }
+  .check .go { font-size: 12px; margin-left: 6px; cursor: pointer; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 256px; gap: 24px; }
+  .timeline { position: relative; padding-left: 56px; }
+  .timeline::before { content: ''; position: absolute; left: 76px; top: 0; bottom: 0; width: 2px; background: var(--border); z-index: 0; }
+
+  /* comments */
+  .item { position: relative; margin-bottom: 16px; z-index: 1; }
+  .avatar { position: absolute; left: -56px; top: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 16px; }
+  .avatar.bot { border-radius: 8px; }
+  .box { border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+  .box-head { background: var(--subtle); border-bottom: 1px solid var(--border); border-radius: 6px 6px 0 0; padding: 8px 16px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .box-head b { color: var(--fg); font-weight: 600; }
+  .label-bot { border: 1px solid var(--border); border-radius: 999px; font-size: 12px; padding: 0 7px; color: var(--muted); }
+  .role { margin-left: auto; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; padding: 0 7px; }
+  .box-body { padding: 12px 16px; }
+  .box-body { white-space: pre-line; }
+  .box-body code, .check .desc code { font-family: var(--mono); font-size: 85%; background: #818b9833; padding: .15em .35em; border-radius: 6px; }
+  .event { display: flex; gap: 8px; align-items: center; color: var(--muted); padding: 4px 0 4px 6px; margin: 0 0 16px -2px; position: relative; z-index: 1; }
+  .event .badge { width: 32px; height: 32px; border-radius: 50%; background: var(--badge); border: 2px solid var(--canvas); display: flex; align-items: center; justify-content: center; color: var(--muted); flex: none; margin-left: 2px; }
+  .event b { color: var(--fg); }
+  .event code { font-family: var(--mono); font-size: 12px; background: none; color: var(--muted); }
+  .new-item { animation: slide .35s ease-out; }
+  @keyframes slide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* editor */
+  .ruler { font: 12px var(--mono); color: var(--muted); padding: 6px 16px; border-top: 1px dashed var(--border); display: flex; gap: 16px; flex-wrap: wrap; }
+  .ruler .bad { color: var(--danger); }
+  .squash { padding: 16px; border-bottom: 1px solid var(--border-muted); }
+  .squash label { display: block; font-weight: 600; margin: 0 0 6px; }
+  .squash label + input { margin-bottom: 12px; }
+  .squash input, .squash textarea { width: 100%; font: 14px var(--mono); padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); outline: 0; }
+  .squash textarea { min-height: 150px; resize: vertical; font: 13px/1.6 var(--mono); }
+  .squash input:focus, .squash textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+  .squash .ruler { border: 0; padding: 6px 0 0; }
+  .tl-commit { flex-wrap: wrap; row-gap: 6px; }
+  .tl-commit .mini { width: 20px; height: 20px; border-radius: 50%; overflow: hidden; flex: none; }
+  .tl-commit .mini svg { display: block; width: 100%; height: 100%; }
+  .tl-commit .ctl { font: 12px var(--mono); color: var(--muted); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .tl-commit .ellip { font: 12px/1 var(--mono); padding: 1px 5px 4px; border: 0; border-radius: 4px; background: var(--badge); color: var(--fg); cursor: pointer; }
+  .tl-commit .ellip:hover { background: var(--accent-muted); }
+  .tl-commit .sha2 { font: 12px var(--mono); color: var(--muted); }
+  .tl-commit pre { flex-basis: 100%; margin: 0 0 0 42px; color: var(--muted); font: 12px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* sticky header that slides in once the title scrolls away */
+  .sticky { position: fixed; top: 0; left: 0; right: 0; z-index: 40; background: var(--canvas); border-bottom: 1px solid var(--border); box-shadow: 0 1px 3px #1f232826; transform: translateY(-100%); transition: transform .18s ease; }
+  .sticky.show { transform: none; }
+  .sticky-inner { max-width: 1280px; margin: 0 auto; padding: 8px 24px; display: flex; gap: 10px; align-items: center; }
+  .sticky .state { padding: 3px 10px; font-size: 13px; flex: none; }
+  .sticky-text { min-width: 0; flex: 1; }
+  .sticky-title { display: flex; gap: 6px; font-weight: 600; font-size: 14px; }
+  .sticky-title a { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sticky-title span { color: var(--muted); font-weight: 400; flex: none; }
+  .sticky-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sticky-sub b { color: var(--fg); }
+  @media (max-width: 600px) { .sticky-inner { padding: 8px 16px; } }
+  @media (prefers-reduced-motion: reduce) { .sticky { transition: none; } }
+
+  /* merge box */
+  .mergebox { border: 1px solid var(--border); border-radius: 6px; margin-top: 8px; background: var(--canvas); position: relative; }
+  .mb-sec { display: flex; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border-muted); }
+  .mb-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; flex: none; }
+  .mb-sec h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .mb-sec p { margin: 2px 0 0; color: var(--muted); }
+  .mb-sec .grow { flex: 1; min-width: 0; }
+  .mb-sec.mb-click { cursor: pointer; }
+  .mb-sec.mb-click:hover { background: var(--subtle); }
+  .mb-sec .chev { color: var(--muted); align-self: center; transition: transform .15s; display: inline-flex; }
+  .mb-sec .chev.open { transform: rotate(90deg); }
+  .mb-ring { width: 32px; height: 32px; flex: none; }
+  .mb-ring svg { display: block; }
+  .checks { border-bottom: 1px solid var(--border-muted); max-height: 420px; overflow-y: auto; }
+  .check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 16px; border-top: 1px solid var(--border-muted); }
+  .check:first-child { border-top: 0; }
+  .check .ic { flex: none; padding-top: 2px; }
+  .check .name { font-weight: 600; }
+  .check .name small { font-weight: 400; color: var(--muted); }
+  .check .desc { color: var(--muted); font-size: 12px; }
+  .check .req { margin-left: auto; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; padding: 0 7px; color: var(--muted); flex: none; }
+  .check.retired { opacity: .55; }
+  .check.retired .name { text-decoration: line-through; }
+  .mb-foot { background: var(--subtle); padding: 16px; border-radius: 0 0 6px 6px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .btn-merge {
+    font: inherit; font-weight: 500; padding: 5px 16px; border-radius: 6px; border: 1px solid #1f232826; background: var(--success-btn); color: #fff; cursor: pointer;
+  }
+  .btn-merge:disabled { background: var(--subtle); color: var(--muted); border-color: var(--border); cursor: not-allowed; }
+  .mb-foot span { color: var(--muted); font-size: 12px; }
+
+  /* sidebar */
+  .side { font-size: 12px; color: var(--muted); }
+  .side-sec { padding: 0 0 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border-muted); }
+  .side-sec h4 { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 600; }
+  .person { display: flex; align-items: center; gap: 6px; color: var(--fg); margin-bottom: 6px; }
+  .person i { width: 20px; height: 20px; border-radius: 50%; display: inline-block; flex: none; }
+  .person .st { margin-left: auto; }
+  .lbl { display: inline-block; border-radius: 999px; padding: 0 7px; font-weight: 500; margin: 0 4px 4px 0; border: 1px solid; }
+  .lbl.y { color: var(--attention); border-color: color-mix(in srgb, var(--attention) 55%, transparent); background: color-mix(in srgb, var(--attention) 14%, transparent); }
+  .lbl.r { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .lbl.b { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+  /* end */
+  .end { position: fixed; inset: 0; background: rgba(31,35,40,.5); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  .end.show { display: flex; }
+  .end .box { max-width: 440px; width: 100%; }
+  .end .box-body p { margin: 0 0 10px; }
+  .end button { font: inherit; padding: 5px 16px; border-radius: 6px; border: 1px solid var(--border); background: var(--subtle); cursor: pointer; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .side { display: none; }
+  }
+  @media (max-width: 600px) {
+    .page { padding: 16px; }
+    .topbar-inner { padding: 10px 16px 0; }
+    .pr-title { font-size: 24px; }
+    .timeline { padding-left: 0; }
+    .timeline::before { display: none; }
+    .avatar { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .new-item { animation: none; } }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="crumbs">
+      <span class="mark" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="4" cy="3.5" r="2"/><circle cx="4" cy="12.5" r="2"/><circle cx="12" cy="6.5" r="2"/><path d="M3.3 5h1.4v6H3.3zM11.3 8.4c-.2 2.3-2.3 3.1-6.6 3.1v-1.4c3.8 0 5-.5 5.2-1.9z"/></svg></span>
+      <span>you</span><span class="sep">/</span><b>side-project</b>
+      <button class="theme" id="theme" type="button"></button>
+    </div>
+    <nav class="tabs">
+      <span class="tab">Code</span>
+      <span class="tab">Issues <span class="ct">0</span></span>
+      <span class="tab on">Pull requests <span class="ct">1</span></span>
+      <span class="tab">Actions</span>
+      <span class="tab">Settings</span>
+    </nav>
+  </div>
+</div>
+
+<div class="sticky" id="sticky" aria-hidden="true">
+  <div class="sticky-inner">
+    <span class="state" id="stickyState"></span>
+    <div class="sticky-text">
+      <div class="sticky-title"><a href="#top" id="stickyTitle"></a><span>#1337</span></div>
+      <div class="sticky-sub"><b>you</b> wants to merge <span id="stickyCount">1 commit</span> into <span class="branch">main</span> from <span class="branch">patch-1</span></div>
+    </div>
+  </div>
+</div>
+<main class="page" id="main">
+  <div id="editView" hidden>
+    <div class="ed-top">
+      <div class="ed-crumbs"><a>side-project</a><span class="sep">/</span><a>src</a><span class="sep">/</span><input id="edName" type="text" value="greet.js" aria-label="File name" spellcheck="false"><span class="muted">in</span><span class="branch">patch-1</span></div>
+      <div class="ed-actions"><button class="btn" id="edCancel" type="button">Cancel changes</button><button class="btn primary" id="edCommit" type="button" disabled>Commit changes...</button></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="seg" role="group" aria-label="Edit mode"><button class="on" type="button" data-ed="edit">Edit</button><button type="button" data-ed="preview">Preview</button></div>
+        <span class="grow"></span>
+        <select id="edMode" aria-label="Indent mode"><option value="spaces">Spaces</option><option value="tab">Tabs</option></select>
+        <select id="edSize" aria-label="Indent size"><option>2</option><option>4</option><option>8</option></select>
+      </div>
+      <div class="cm" id="cm"><pre class="cm-gut" id="cmGut" aria-hidden="true"></pre><div class="cm-area"><div class="cm-inner"><pre id="cmHl" aria-hidden="true"></pre><textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="Editing greet.js file contents"></textarea></div></div></div>
+      <div id="edPreview" hidden></div>
+      <div class="cm-help"><kbd>Tab</kbd> indents. Checks only read committed code, so hit <b>Commit changes...</b> when you're done.</div>
+    </div>
+  </div>
+  <div class="title-row" id="titleView">
+    <h1 class="pr-title"><span id="prTitle" class="pr-name">The Commit Message</span> <span>#1337</span>
+      <button class="btn-edit" id="editTitle" type="button" aria-label="Edit title"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.01 1.43a1.75 1.75 0 0 1 2.48 0l1.08 1.08a1.75 1.75 0 0 1 0 2.48l-8.61 8.61a1.7 1.7 0 0 1-.75.44l-3.25.93a.75.75 0 0 1-.93-.93l.93-3.25c.08-.29.24-.55.44-.76Zm.18 4.82L9.75 4.81l-6.29 6.29a.25.25 0 0 0-.06.1l-.56 1.96 1.96-.56a.25.25 0 0 0 .1-.06Zm1.24-3.76a.25.25 0 0 0-.36 0L10.81 3.75l1.44 1.44 1.26-1.26a.25.25 0 0 0 0-.36Z"/></svg> Edit</button>
+    </h1>
+  </div>
+  <form class="title-edit" id="titleEdit" hidden>
+    <input id="titleInput" type="text" autocomplete="off" spellcheck="false" aria-label="Title">
+    <button class="btn-merge" type="submit">Save</button>
+    <button class="btn-cancel" type="button" id="cancelTitle">Cancel</button>
+  </form>
+  <div class="pr-meta">
+    <span class="state" id="state"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="4" cy="3.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="4" cy="12.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4 5.2v5.6M12 10.8V6a2 2 0 0 0-2-2H8.5" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M9.5 2.5 7.8 4l1.7 1.5z"/></svg> <span id="stateText">Open</span></span>
+    <span><b style="color:var(--fg)">you</b> wants to merge 1 commit into <span class="branch">main</span> from <span class="branch">patch-1</span></span>
+  </div>
+  <div class="prtabs">
+    <button class="prtab on" data-view="conv">Conversation <span class="ct" id="convCount">1</span></button>
+    <button class="prtab" data-view="commits">Commits <span class="ct" id="commitCount">1</span></button>
+    <button class="prtab" data-view="checks">Checks <span class="ct" id="checkCount">0</span></button>
+    <button class="prtab" data-view="files">Files changed <span class="ct" id="fileCount">1</span></button>
+  </div>
+
+  <div class="layout">
+    <section>
+      <div id="commitsView" hidden>
+        <div class="cv-head">Commits on <span id="cvDate"></span> <span class="muted">· including force-pushed history</span></div>
+        <div class="box" id="commitList"></div>
+      </div>
+      <div id="filesView" hidden>
+        <div class="ftool">
+          <button class="btn-sm" type="button" data-goto="commits"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 14A1.75 1.75 0 0 1 6 12.25v-8.5C6 2.78 6.78 2 7.75 2h6.5c.97 0 1.75.78 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14Zm-.25-1.75c0 .14.11.25.25.25h6.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-6.5a.25.25 0 0 0-.25.25ZM4.9 3.51a.75.75 0 0 1-.27 1.02.25.25 0 0 0-.13.22v6.5c0 .09.05.17.13.22a.75.75 0 0 1-.76 1.3A1.75 1.75 0 0 1 3 11.25v-6.5c0-.65.35-1.21.87-1.52a.75.75 0 0 1 1.03.28Z"/></svg> All commits <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="m4.43 7.43 3.4 3.4a.25.25 0 0 0 .35 0l3.4-3.4A.25.25 0 0 0 11.4 7H4.6a.25.25 0 0 0-.17.43Z"/></svg></button>
+          <span class="viewed-prog"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="var(--border)" stroke-width="2"/><circle id="vRing" cx="8" cy="8" r="6" fill="none" stroke="var(--done)" stroke-width="2" stroke-dasharray="38" stroke-dashoffset="38" stroke-linecap="round" style="transition:stroke-dashoffset .35s"/></svg><span id="vProg">0 / 1 viewed</span></span>
+          <button class="btn-sm primary" type="button" data-goto="checks">Submit review <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="m4.43 7.43 3.4 3.4a.25.25 0 0 0 .35 0l3.4-3.4A.25.25 0 0 0 11.4 7H4.6a.25.25 0 0 0-.17.43Z"/></svg></button>
+        </div>
+        <div class="files-layout">
+          <nav class="ftree" aria-label="File tree">
+            <label class="ffilter"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.92-8.98 6 6 0 0 1 8.98 7.92l3.04 3.04a.75.75 0 0 1-1.06 1.06ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/></svg><input id="fFilter" type="text" placeholder="Filter files…" autocomplete="off" spellcheck="false"></label>
+            <div id="treeRows">
+              <div class="trow dir"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 1 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg><svg class="fold" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M.51 1.51A1.75 1.75 0 0 1 1.75 1h3.5c.55 0 1.07.26 1.4.7l.9 1.2a.25.25 0 0 0 .2.1H13a1 1 0 0 1 1 1v.5H2.75a.75.75 0 0 0 0 1.5h11.98a1 1 0 0 1 .99 1.12L15 13.25A1.75 1.75 0 0 1 13.25 15H1.75A1.75 1.75 0 0 1 0 13.25V2.75c0-.46.18-.91.51-1.24Z"/></svg>src</div>
+              <div class="trow indent on" id="treeFile"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 1.75C1 .78 1.78 0 2.75 0h7.59c.46 0 .9.18 1.23.51l2.92 2.92c.33.33.51.77.51 1.23v9.59A1.75 1.75 0 0 1 13.25 16H2.75A1.75 1.75 0 0 1 1 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .14.11.25.25.25h10.5a.25.25 0 0 0 .25-.25V4.66a.25.25 0 0 0-.07-.18l-2.92-2.91a.25.25 0 0 0-.17-.07ZM8 3.25a.75.75 0 0 1 .75.75v1.5h1.5a.75.75 0 0 1 0 1.5h-1.5v1.5a.75.75 0 0 1-1.5 0V7h-1.5a.75.75 0 0 1 0-1.5h1.5V4A.75.75 0 0 1 8 3.25Zm-3 8a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z"/></svg>greet.js</div>
+            </div>
+          </nav>
+          <div class="fbox open" id="fileBox">
+            <div class="fhead">
+              <button class="icon-btn" id="fCollapse" type="button" aria-label="Collapse file"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 1 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg></button>
+              <code>src/greet.js</code>
+              <span class="diffstat" id="fStat"></span>
+              <span class="grow"></span>
+              <button class="btn-sm viewed" id="fViewed" type="button"><span class="cbx"></span>Viewed</button>
+              <button class="icon-btn" id="fEdit" type="button" aria-label="Edit file" title="Edit file"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.01 1.43a1.75 1.75 0 0 1 2.48 0l1.08 1.08a1.75 1.75 0 0 1 0 2.48l-8.61 8.61a1.7 1.7 0 0 1-.75.44l-3.25.93a.75.75 0 0 1-.93-.93l.93-3.25c.08-.29.24-.55.44-.76Zm.18 4.82L9.75 4.81l-6.29 6.29a.25.25 0 0 0-.06.1l-.56 1.96 1.96-.56a.25.25 0 0 0 .1-.06Zm1.24-3.76a.25.25 0 0 0-.36 0L10.81 3.75l1.44 1.44 1.26-1.26a.25.25 0 0 0 0-.36Z"/></svg></button>
+            </div>
+            <div id="fBody"></div>
+          </div>
+        </div>
+      </div>
+      <div id="convView">
+      <div class="timeline" id="timeline">
+        <div class="event"><span class="badge" id="openIcon"></span><span><b>you</b> opened this pull request</span></div>
+        <div id="feed"></div>
+      </div>
+      <div class="timeline">
+        <div class="item" id="mergeItem">
+          <div class="mergebox">
+            <div class="mb-sec">
+              <div class="mb-icon" id="revIcon"></div>
+              <div class="grow"><h3 id="revTitle"></h3><p id="revSub"></p></div>
+            </div>
+            <div class="mb-sec mb-click" id="checksHead" role="button" tabindex="0" aria-expanded="true">
+              <div class="mb-ring" id="mbRing"></div>
+              <div class="grow"><h3 id="mbTitle"></h3><p id="mbSub"></p></div>
+              <span class="chev open" id="checksChev"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"/></svg></span>
+            </div>
+            <div class="checks" id="checks"></div>
+            <div class="mb-sec">
+              <div class="mb-icon" id="mbIcon"></div>
+              <div class="grow"><h3 id="mergeTitle"></h3><p id="mergeSub"></p></div>
+            </div>
+            <div class="squash">
+              <label for="msgTitle">Commit message</label>
+              <input id="msgTitle" type="text" spellcheck="false" autocomplete="off" value="updated stuff">
+              <label for="msgBody">Extended description</label>
+              <textarea id="msgBody" spellcheck="false" autocomplete="off" placeholder="Add an optional extended description…"></textarea>
+              <div class="ruler" id="ruler"></div>
+            </div>
+            <div class="mb-foot">
+              <button class="btn-merge" id="merge" disabled>Squash and merge</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="side-sec">
+        <h4>Reviewers</h4>
+        <div id="reviewers"></div>
+      </div>
+      <div class="side-sec">
+        <h4>Labels</h4>
+        <span class="lbl y">needs work</span>
+        <span class="lbl r">blocked</span>
+        <span class="lbl b">small</span>
+      </div>
+      <div class="side-sec">
+        <h4>Milestone</h4>
+        <div style="color:var(--fg)" id="roundLabel">Round 1</div>
+      </div>
+      <div class="side-sec" style="border:0">
+        <h4>Development</h4>
+        Successfully merging this pull request may close nothing.
+      </div>
+    </aside>
+  </div>
+</main>
+
+<dialog class="cdlg" id="commitDlg" aria-labelledby="dlgTitle">
+  <form id="commitForm">
+    <div class="dlg-head"><h2 id="dlgTitle">Commit changes</h2><button class="icon-btn" type="button" id="dlgClose" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg></button></div>
+    <div class="dlg-body">
+      <label for="cMsg">Commit message</label>
+      <input id="cMsg" type="text" autocomplete="off" spellcheck="false">
+      <label for="cDesc">Extended description</label>
+      <textarea id="cDesc" placeholder="Add an optional extended description.."></textarea>
+      <div class="radio"><input type="radio" name="br" id="r1" checked><label for="r1">Commit directly to the <span class="branch">patch-1</span> branch</label></div>
+      <div class="radio"><input type="radio" name="br" id="r2" disabled><label for="r2" class="muted">Create a <b>new branch</b> for this commit and start a pull request<small>Disabled by commit-cop. One pull request is plenty.</small></label></div>
+    </div>
+    <div class="dlg-foot"><button class="btn" type="button" id="dlgCancel">Cancel</button><button class="btn primary" type="submit">Commit changes</button></div>
+  </form>
+</dialog>
+<div class="end" id="end">
+  <div class="box">
+    <div class="box-head"><b id="endTitle">Pull request successfully merged and closed</b></div>
+    <div class="box-body">
+      <p id="endText"></p>
+      <p id="endStats" style="color:var(--muted)"></p>
+      <button id="again">Open a new pull request</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* GAME:start */
+const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+const NOW = new Date();
+const TODAY = DAYS[NOW.getDay()];
+// today's release ticket, like NOV-5
+const DATE_TICKET = `${NOW.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}-${NOW.getDate()}`;
+
+// words are whatever sits between spaces, so the count is never a judgment call
+const words = line => line.split(/\s+/).filter(Boolean).length;
+
+// the one file in this pull request. You can edit it in Files changed.
+const FILE_NAME = 'src/greet.js';
+const ORIGINAL_CODE = `function greet(name) {
+  console.log("greeting " + name)
+  return "hello " + name + "!"
+}
+
+function welcome(name) {
+  return greet(name).toUpperCase()
+}
+`;
+const fnNames = code => [...code.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]);
+
+// the commit sha is a hash of the message and the code, so every edit rolls a new one
+function shaOf(msg, code) {
+  let h = 0x811c9dc5, g = 0x9e3779b9;
+  for (const ch of `${msg}\u0000${code}`) {
+    const c = ch.codePointAt(0);
+    h = Math.imul(h ^ c, 0x01000193) >>> 0;
+    g = Math.imul(g ^ c, 0x85ebca6b) >>> 0;
+  }
+  return (h.toString(16).padStart(8, '0') + g.toString(16).padStart(8, '0')).slice(0, 7);
+}
+
+// lines changed between two versions of the file (LCS diff)
+function lineDiff(a, b) {
+  const n = a.length, m = b.length, L = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const out = []; let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) { out.push([' ', a[i]]); i++; j++; }
+    else if (L[i + 1][j] >= L[i][j + 1]) out.push(['-', a[i++]]);
+    else out.push(['+', b[j++]]);
+  }
+  while (i < n) out.push(['-', a[i++]]);
+  while (j < m) out.push(['+', b[j++]]);
+  return out;
+}
+const splitLines = c => c.replace(/\s+$/, '').split('\n');
+const changedLines = code => lineDiff(splitLines(ORIGINAL_CODE), splitLines(code)).filter(x => x[0] !== ' ').length;
+
+// split a message into subject, body lines and trailers. Any "Something-by: ..."
+// line is a trailer wherever it sits, so it never counts toward the body.
+const isTrailer = l => /^\s*[A-Za-z]+(-[A-Za-z]+)+:\s*\S/.test(l);
+function parse(msg, code = ORIGINAL_CODE) {
+  const lines = msg.replace(/\r/g, '').split('\n');
+  const subject = lines[0] || '';
+  const rest = lines.slice(1);
+  const trailers = rest.filter(isTrailer).map(l => l.trim());
+  const body = rest.filter(l => l.trim() !== '' && !isTrailer(l)).map(l => l.trim());
+  return { msg, lines, subject, body, trailers, code, hasBlank: lines.length > 1 && lines[1].trim() === '' };
+}
+
+const TYPES = 'feat|fix|chore|docs|refactor|test|perf|style|build|ci';
+const ticketRe = /\b([A-Za-z]{2,})-(\d+)\b/g; // PROJ-12 or proj-12, any case
+const tickets = s => [...s.matchAll(ticketRe)].map(m => m[2]);
+const digitSum = d => [...d].reduce((s, c) => s + +c, 0);
+const KEYWORDS = new Set(['function', 'if', 'for', 'while', 'return', 'switch', 'catch', 'typeof', 'new']);
+
+// each rule: who says it, what the check is called, and how to judge the message.
+// A round with `reset` turns off every earlier rule except the ids it lists.
+const ROUNDS = [
+  { by: 'commit-cop', text: 'Commit messages must follow Conventional Commits: `type(scope): description`. Allowed types: feat, fix, chore, docs, refactor, test, perf, style, build, ci.', rule: {
+    id: 'conv', name: 'commitlint / type', check: p => {
+      if (new RegExp(`^(${TYPES})(\\(([a-z0-9-]+|[A-Za-z]{2,}-\\d+)\\))?!?: \\S`).test(p.subject)) return 'ok';
+      const m = p.subject.match(/^([A-Za-z]+)(\(([^)]*)\))?!?(:?)( ?)/);
+      if (!m || !new RegExp(`^(${TYPES})$`).test(m[1])) return `Start with a type: ${TYPES.split('|').join(', ')}`;
+      if (m[2] && !/^([a-z0-9-]+|[A-Za-z]{2,}-\d+)$/.test(m[3])) return `Scope \`(${m[3]})\` must be lowercase, like \`(ui)\`, or a ticket, like \`(ABC-123)\``;
+      if (!m[4]) return 'Missing `:` after the type';
+      return 'Put a space after the colon, then the description';
+    } } },
+  { by: 'commit-cop', text: 'The commit title is limited to 50 characters.', rule: {
+    id: 'len', name: 'commitlint / subject-max-length', check: p => p.subject.length <= 50 ? `${p.subject.length}/50` : `Title is ${p.subject.length} characters (max 50)` } },
+  { by: 'pm', text: 'Every commit needs a ticket in the title, like `feat(PROJ-12): …` or anywhere in the title. How else will I make a dashboard.', rule: {
+    id: 'ticket', name: 'tracker / ticket-reference', check: p => tickets(p.subject).length ? 'ok' : 'No ticket like `ABC-123` in the title' } },
+  { by: 'commit-cop', text: 'The title must not end with a period.', rule: {
+    id: 'period', name: 'commitlint / subject-full-stop', check: p => p.subject.trimEnd().endsWith('.') ? 'Title ends with a period' : 'ok' } },
+  { by: 'senior-dev', text: 'Use the imperative mood. "add", not "added" or "adding". The first word after the colon gives it away.', rule: {
+    id: 'mood', name: 'style / imperative-mood', check: p => {
+      const w = (p.subject.split(/:\s*/)[1] || '').split(/\s+/)[0] || '';
+      return w && /(ed|ing)$/i.test(w) ? `"${w}" is not imperative` : 'ok';
+    } } },
+  { by: 'lint-bot', text: 'I also lint the code now. No `console.log` anywhere in the diff. Open Files changed, hit the pencil on `src/greet.js`, then commit.', rule: {
+    id: 'nolog', name: 'eslint / no-console', code: true, check: p => {
+      const i = p.code.split('\n').findIndex(l => /console\.log\b/.test(l));
+      return i < 0 ? 'ok' : `\`console.log\` on line ${i + 1} of ${FILE_NAME}`;
+    } } },
+  { by: 'senior-dev', text: 'A commit with no body is a commit with no soul. Fill in the extended description and explain yourself.', rule: {
+    id: 'body', name: 'commitlint / body-required', check: p => p.body.length ? 'ok' : 'Extended description is empty (trailers like Signed-off-by don\'t count)' } },
+  { by: 'legal-bot', text: 'All commits must be signed off. Add `Signed-off-by: Your Name <you@example.com>` as the last line of the extended description.', rule: {
+    id: 'dco', name: 'legal / DCO', check: p => {
+      if (p.trailers.some(t => /^Signed-off-by: .+ <[^@\s<>]+@[^@\s<>]+\.[a-z]{2,}>$/i.test(t))) return 'ok';
+      const line = p.lines.find(l => /signed-off-by/i.test(l));
+      if (!line) return 'Missing `Signed-off-by: Name <email>` at the end of the message';
+      if (!/^Signed-off-by: /.test(line.trim())) return 'Write it exactly `Signed-off-by: ` (capital S, then a space)';
+      if (!/<[^<>]+>/.test(line)) return 'Put the email in angle brackets: `<you@example.com>`';
+      if (!/ <[^@\s<>]+@[^@\s<>]+\.[a-z]{2,}>$/i.test(line.trim())) return 'Needs a name, then a real-looking email in brackets, at the end of the line';
+      return 'The sign-off must be on its own line at the end of the extended description';
+    } } },
+  { by: 'senior-dev', text: 'Not the message this time, the code. We do not glue strings together with `+` in this house. In `src/greet.js`, change `"hello " + name + "!"` to a template literal: `` `hello ${name}!` `` (backticks, not quotes). Files changed, pencil, commit.', rule: {
+    id: 'template', name: 'eslint / prefer-template', code: true, check: p => {
+      const i = p.code.split('\n').findIndex(l => /(["'`])\s*\+|\+\s*["'`]/.test(l));
+      return i < 0 ? 'ok' : `Line ${i + 1} of ${FILE_NAME} joins strings with +: \`${p.code.split('\n')[i].trim()}\``;
+    } } },
+  { by: 'tech-lead', text: 'We are banning the word "fix" after the incident. Anywhere. Do not ask about the incident.', rule: {
+    id: 'nofix', name: 'policy / no-fix', check: p => /fix/i.test(p.lines.join('\n')) ? 'Message contains "fix"' : 'ok' } },
+  { by: 'commit-cop', text: 'No line may exceed 72 characters.', rule: {
+    id: 'wrap', name: 'commitlint / max-line-length', check: p => { const i = p.lines.findIndex(l => l.length > 72); return i < 0 ? 'ok' : i === 0 ? `The title is ${p.lines[0].length} characters` : `Description line ${i - 1} is ${p.lines[i].length} characters`; } } },
+  { by: 'pm', text: 'Please mention which day you shipped this. Today, I mean. For the retro.', rule: {
+    id: 'day', name: 'retro / ship-day', check: p => {
+      const text = p.lines.join(' ').toLowerCase();
+      if (text.includes(TODAY)) return 'ok';
+      // today's date also counts, in the usual formats
+      const m = NOW.getMonth() + 1, day = NOW.getDate(), y = NOW.getFullYear();
+      const pad = n => String(n).padStart(2, '0');
+      const mon = NOW.toLocaleDateString('en-US', { month: 'short' }).toLowerCase();
+      const forms = [`${m}/${day}/${y}`, `${pad(m)}/${pad(day)}/${y}`, `${m}/${day}`, `${pad(m)}/${pad(day)}`, `${y}-${pad(m)}-${pad(day)}`, `${mon} ${day}`];
+      if (forms.some(f => new RegExp(`(^|[^0-9/-])${f.replace(/[/-]/g, '\\$&')}($|[^0-9])`).test(text))) return 'ok';
+      const name = TODAY[0].toUpperCase() + TODAY.slice(1);
+      if (/\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b|\b\d{4}-\d{2}-\d{2}\b/.test(text)) return `That date isn’t today. Write ${name} or ${m}/${day}/${y}`;
+      return `Mention today: ${name} or ${m}/${day}/${y}`;
+    } } },
+  { by: 'design-bot', text: 'Titles need a gitmoji shortcode now. Something like `:sparkles:`. Brand voice.', rule: {
+    id: 'emoji', name: 'brand / gitmoji', check: p => /:[a-z_]+:/.test(p.subject) ? 'ok' : 'No `:shortcode:` in the title' } },
+  { by: 'docs-bot', text: 'Every function needs a JSDoc comment directly above it. `/** Like this. */`', rule: {
+    id: 'jsdoc', name: 'docs / require-jsdoc', code: true, check: p => {
+      const lines = p.code.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const m = lines[i].match(/function\s+([A-Za-z_$][\w$]*)\s*\(/);
+        if (!m) continue;
+        let j = i - 1; while (j >= 0 && lines[j].trim() === '') j--;
+        if (j < 0 || !/\*\/\s*$/.test(lines[j])) return `\`${m[1]}\` (line ${i + 1}) has no \`/** … */\` above it`;
+      }
+      return 'ok';
+    } } },
+  { by: 'tech-lead', text: 'The title should say which function you changed. Name it.', rule: {
+    id: 'fnname', name: 'review / title-names-function', check: p => {
+      const names = fnNames(p.code);
+      return names.some(n => p.subject.includes(n)) ? 'ok' : `Mention a function from ${FILE_NAME} in the title: ${names.map(n => '`' + n + '`').join(' or ') || 'none found'}`;
+    } } },
+  { by: 'design-bot', text: 'Brand refresh. The letter "e" is overused and looks tired. Titles may not contain it. Any of it.', rule: {
+    id: 'noe', name: 'brand / no-e', check: p => {
+      const bad = p.subject.split(/\s+/).filter(w => /e/i.test(w));
+      return bad.length ? `"e" in the title: ${bad.map(w => '`' + w + '`').join(', ')}` : 'ok';
+    } } },
+  { by: 'lint-bot', text: 'Did somebody rename something? Every function you call has to exist. I check.', rule: {
+    id: 'undef', name: 'eslint / no-undef', code: true, check: p => {
+      const defined = new Set(fnNames(p.code));
+      const calls = [...p.code.matchAll(/(^|[^.\w$])([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[2]).filter(n => !KEYWORDS.has(n) && !defined.has(n));
+      return calls.length ? `\`${calls[0]}()\` is called but never defined in ${FILE_NAME}` : 'ok';
+    } } },
+  { by: 'pm', text: 'The tracker only accepts tickets whose digits add up to 10. It is a long story. Pick a better ticket.', rule: {
+    id: 'sum', name: 'tracker / checksum', check: p => {
+      const t = tickets(p.subject);
+      if (!t.length) return 'No ticket to check';
+      return t.some(d => digitSum(d) === 10) ? 'ok' : `Digits of ${t.join(', ')} add up to ${t.map(digitSum).join(', ')}`;
+    } } },
+  { by: 'pm', text: `New process: release tickets are named after the day they ship. Today that is \`${DATE_TICKET}\`. Put it in the title. The checksum rule still applies.`, rule: {
+    id: 'dateticket', name: 'tracker / release-ticket', check: p => new RegExp(`\\b${DATE_TICKET}\\b`, 'i').test(p.subject) ? 'ok' : `No \`${DATE_TICKET}\` in the title` } },
+  { by: 'commit-cop', text: 'Shas that start with a number break the release tooling. The commit sha must start with a letter (a to f). The sha is a hash of your message and your code, so any change rolls a new one.', rule: {
+    id: 'sha', name: 'release / sha-prefix', check: p => {
+      const s = shaOf(p.msg, p.code);
+      return /^[a-f]/.test(s) ? 'ok' : `sha \`${s}\` starts with a number. Change anything to roll a new one`;
+    } } },
+  { by: 'lint-bot', text: 'I have been very helpful. Credit me: `Co-authored-by: lint-bot`', rule: {
+    id: 'coauthor', name: 'lint-bot / credit', check: p => p.trailers.some(t => /^Co-authored-by: lint-bot\b/.test(t)) ? 'ok' : 'Missing `Co-authored-by: lint-bot` trailer' } },
+  { by: 'tech-lead', text: 'Effort should match the description. The title must be exactly 5 characters per line you changed in the code. Not more, not less.', rule: {
+    id: 'ratio', name: 'review / effort-ratio', check: p => {
+      const want = changedLines(p.code) * 5;
+      return p.subject.length === want ? 'ok' : `${changedLines(p.code)} changed line${changedLines(p.code) === 1 ? '' : 's'} × 5 = ${want} characters. Title has ${p.subject.length}`;
+    } } },
+  { by: 'haiku-ci', text: 'New team norm. The extended description must be a haiku, by word count: three lines of exactly 5, 7 and 5 words. Trailers do not count.', rule: {
+    id: 'haiku', name: 'haiku-ci / 5-7-5', check: p => {
+      const c = p.body.map(words);
+      return c.length === 3 && c[0] === 5 && c[1] === 7 && c[2] === 5 ? '5 / 7 / 5' : `Description has ${c.length} line${c.length === 1 ? '' : 's'}: ${c.join(' / ') || 'none'} words`;
+    } } },
+  { by: 'tech-lead', final: 'wip', reset: [], text: 'Okay this is taking forever. Commit message `wip`. Empty description. Squash it. I need to deploy.', rule: {
+    id: 'wip', name: 'tech-lead / just-ship-it', check: p => p.lines.join('\n').trim() === 'wip' ? 'ok' : 'Message must be exactly `wip`' } },
+  { by: 'sre-bot', final: 'hotfix', reset: ['nolog'], text: 'Production is down and the greeting is silent. The health check needs `src/greet.js` to write to the console. Hotfix it.', rule: {
+    id: 'logs', name: 'sre / health-check', code: true, check: p => /console\.\w+\s*\(/.test(p.code) ? 'ok' : `Nothing in ${FILE_NAME} writes to the console` } },
+];
+/* GAME:end */
+
+const PEOPLE = {
+  'lint-bot':   { color: '#6e7781', bot: true, role: 'Bot' },
+  'pm':         { color: '#bc4c00', role: 'Member' },
+  'senior-dev': { color: '#0969da', role: 'Member' },
+  'legal-bot':  { color: '#4d2d00', bot: true, role: 'Bot' },
+  'tech-lead':  { color: '#8250df', role: 'Owner' },
+  'design-bot': { color: '#bf3989', bot: true, role: 'Bot' },
+  'haiku-ci':   { color: '#1a7f37', bot: true, role: 'Bot' },
+  'docs-bot':   { color: '#0550ae', bot: true, role: 'Bot' },
+  'commit-cop': { color: '#24292f', bot: true, role: 'Bot' },
+  'sre-bot':    { color: '#cf222e', bot: true, role: 'Bot' },
+  'you':        { color: '#d4a72c', role: 'Author' },
+};
+
+// little fake profile pictures. People get faces, bots get robot heads with a tell.
+function avatarSVG(who) {
+  const P = PEOPLE[who];
+  if (P.bot) {
+    const extra = {
+      'lint-bot':   '<circle cx="29" cy="29" r="4" fill="none" stroke="#fff" stroke-width="2"/><path d="M32 32l4 4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>',
+      'commit-cop': '<path d="M9 12.5h22l-2.5-5.5h-17z" fill="#0969da"/><rect x="9" y="11.5" width="22" height="2.2" fill="#1f2328"/><circle cx="20" cy="9.2" r="1.6" fill="#ffd33d"/>',
+      'legal-bot':  '<path d="M14 31l6 2.5-6 2.5zM26 31l-6 2.5 6 2.5z" fill="#e5534b"/><circle cx="20" cy="33.5" r="1.6" fill="#e5534b"/>',
+      'design-bot': '<ellipse cx="17" cy="11.5" rx="9" ry="3.6" fill="#e5534b"/><circle cx="17" cy="7.8" r="1.4" fill="#e5534b"/>',
+      'haiku-ci':   '<g fill="#ff9bce"><circle cx="20" cy="3.6" r="2"/><circle cx="17.7" cy="5.4" r="2"/><circle cx="22.3" cy="5.4" r="2"/><circle cx="18.6" cy="8" r="2"/><circle cx="21.4" cy="8" r="2"/></g><circle cx="20" cy="6" r="1.3" fill="#ffd33d"/>',
+      'sre-bot':    '<path d="M8 12.5a12 9 0 0 1 24 0z" fill="#ffd33d"/><rect x="7" y="11.5" width="26" height="2.4" rx="1.2" fill="#d4a72c"/>',
+      'docs-bot':   '<circle cx="24.5" cy="19" r="4.2" fill="none" stroke="#d4a72c" stroke-width="1.6"/><path d="M28.6 20.5q2 6-1 10" stroke="#d4a72c" stroke-width="1.2" fill="none"/>',
+    }[who] || '';
+    const antenna = who === 'haiku-ci' ? '<line x1="20" y1="8" x2="20" y2="11" stroke="#fff" stroke-width="2"/>'
+      : (who === 'design-bot' || who === 'commit-cop' || who === 'sre-bot') ? '' : '<line x1="20" y1="6" x2="20" y2="11" stroke="#fff" stroke-width="2"/><circle cx="20" cy="5.5" r="2.4" fill="#fff"/>';
+    return `<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="8" fill="${P.color}"/>${antenna}
+      <rect x="9" y="11" width="22" height="18" rx="5" fill="#f0f3f6"/>
+      <circle cx="15.5" cy="19" r="2.3" fill="#1f2328"/><circle cx="24.5" cy="19" r="2.3" fill="#1f2328"/>
+      <rect x="15" y="24" width="10" height="2" rx="1" fill="#1f2328"/>${extra}</svg>`;
+  }
+  const look = {
+    'pm':         { skin: '#f1c27d', shirt: '#fff8c5', hair: '<path d="M11.4 18c0-6.4 3.8-10 8.6-10s8.6 3.6 8.6 10c-2-3.4-5-5-8.6-5s-6.6 1.6-8.6 5z" fill="#5a3825"/><circle cx="20" cy="7.6" r="3.6" fill="#5a3825"/>',
+                    extra: '<path d="M10.6 19a9.4 9.4 0 0 1 18.8 0" stroke="#24292f" stroke-width="1.6" fill="none"/><rect x="9" y="17.5" width="3" height="5" rx="1.2" fill="#24292f"/><path d="M10.6 22.5q1 4.2 6 4.3" stroke="#24292f" stroke-width="1.2" fill="none"/>' },
+    'senior-dev': { skin: '#e0ac69', shirt: '#24292f', hair: '<path d="M11.6 17c.4-5.6 4-8.6 8.4-8.6s8 3 8.4 8.6c-1.6-2.2-4.4-3.4-8.4-3.4s-6.8 1.2-8.4 3.4z" fill="#8c959f"/>',
+                    extra: '<path d="M12.2 20.5c.6 5 3.8 6.8 7.8 6.8s7.2-1.8 7.8-6.8c-1.6 1.6-3.6 2-7.8 2s-6.2-.4-7.8-2z" fill="#6e5440"/><g fill="none" stroke="#24292f" stroke-width="1.2"><circle cx="16.6" cy="18.2" r="2.6"/><circle cx="23.4" cy="18.2" r="2.6"/><path d="M19.2 18.2h1.6"/></g>' },
+    'tech-lead':  { skin: '#a8714a', shirt: '#8250df', hair: '<path d="M11.8 16.4c.6-5 3.8-7.6 8.2-7.6s7.6 2.6 8.2 7.6c-2-1.4-4.6-2.2-8.2-2.2s-6.2.8-8.2 2.2z" fill="#1f2328" opacity=".85"/>',
+                    extra: '<path d="M17.5 31l-1 5M22.5 31l1 5" stroke="#fff" stroke-width="1" opacity=".7"/>' },
+    'you':        { skin: '#f3c9a3', shirt: '#0969da', hair: '<path d="M11.4 18c-.4-6.4 3.6-10.4 9-10.4 4 0 7.6 2.4 8.2 7.6-3.4-.6-7.6-2-10.2-4.4-.8 3-3.6 5.2-7 7.2z" fill="#b5651d"/>', extra: '' },
+  }[who];
+  return `<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="${P.color}"/>
+    <path d="M5 40c1.2-8 7-11.4 15-11.4S33.8 32 35 40z" fill="${look.shirt}"/>
+    <circle cx="20" cy="18.6" r="8.6" fill="${look.skin}"/>${look.hair}
+    <circle cx="16.8" cy="18.4" r="1.1" fill="#1f2328"/><circle cx="23.2" cy="18.4" r="1.1" fill="#1f2328"/>
+    <path d="M17.6 22.6q2.4 1.8 4.8 0" stroke="#1f2328" stroke-width="1.1" fill="none" stroke-linecap="round"/>${look.extra}</svg>`;
+}
+
+const ICON = {
+  ok: '<svg width="16" height="16" viewBox="0 0 16 16"><path style="fill:var(--success)" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 1 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>',
+  bad: '<svg width="16" height="16" viewBox="0 0 16 16"><path style="fill:var(--danger)" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>',
+  skip: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" style="stroke:var(--muted)" stroke-width="1.5"/><path d="M4 12 12 4" style="stroke:var(--muted)" stroke-width="1.5"/></svg>',
+  commit: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.93 8.5a4 4 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4 4 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5Zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"/></svg>',
+  eye: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 3c3 0 5.5 2.2 6.6 4.5a1.2 1.2 0 0 1 0 1C13.5 10.8 11 13 8 13s-5.5-2.2-6.6-4.5a1.2 1.2 0 0 1 0-1C2.5 5.2 5 3 8 3Zm0 1.5c-2.2 0-4.2 1.6-5.1 3.5.9 1.9 2.9 3.5 5.1 3.5s4.2-1.6 5.1-3.5c-.9-1.9-2.9-3.5-5.1-3.5ZM8 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>',
+  merge: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M5.45 5.15A2.25 2.25 0 1 0 3.75 6.4v3.2a2.25 2.25 0 1 0 1.5 0V8.1a4.75 4.75 0 0 0 4.1 2.5 2.25 2.25 0 1 0 0-1.5 3.25 3.25 0 0 1-3.9-3.95ZM4.5 4.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM3.75 12.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm8.5-2.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>',
+  alert: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.46 1.05c.66-1.23 2.42-1.23 3.08 0l6.08 11.38A1.75 1.75 0 0 1 14.08 15H1.92a1.75 1.75 0 0 1-1.54-2.57ZM8 5a.75.75 0 0 0-.75.75v2.5a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8 5Zm1 6a1 1 0 1 0-2 0 1 1 0 0 0 2 0Z"/></svg>',
+};
+
+// ---- state ----
+let round = 0, pushes = 0, keystrokes = 0, busy = false;
+const $ = s => document.querySelector(s);
+const titleEl = $('#msgTitle'), bodyEl = $('#msgBody'), feed = $('#feed');
+// the commit message is the title field, a blank line, then the extended description
+const msgEl = {
+  get value() { const b = bodyEl.value.replace(/\s+$/, ''); return b.trim() ? `${titleEl.value}\n\n${b}` : titleEl.value; },
+  set value(v) { const [t, ...rest] = v.split('\n'); titleEl.value = t; bodyEl.value = rest.join('\n').replace(/^\s*\n/, ''); },
+};
+
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// `code`, plus ``code with `backticks` inside`` like real markdown
+const md = s => esc(s).replace(/``\s?(.+?)\s?``|`([^`]+)`/g, (m, a, b) => `<code>${a ?? b}</code>`);
+
+// the latest round with `reset` switches off everything before it, except the ids it revives
+const resetAt = () => { for (let i = round; i >= 0; i--) if (ROUNDS[i].reset) return i; return -1; };
+const activeRules = () => {
+  const k = resetAt();
+  const before = k < 0 ? [] : ROUNDS.slice(0, k).map(r => r.rule).filter(r => ROUNDS[k].reset.includes(r.id));
+  return [...before, ...ROUNDS.slice(Math.max(k, 0), round + 1).map(r => r.rule)];
+};
+const retiredRules = () => { const live = new Set(activeRules()); return ROUNDS.slice(0, round + 1).map(r => r.rule).filter(r => !live.has(r)); };
+
+function judge(rule, p) {
+  const d = rule.check(p);
+  const ok = d === 'ok' || /^\d+\/\d+$/.test(d) || d === '5 / 7 / 5';
+  return { ok, detail: d === 'ok' ? 'Successful' : d };
+}
+
+// GitHub-style progress ring: green for passing, red for failing, gray for skipped
+function ring(ok, bad, skip) {
+  const C = 2 * Math.PI * 13, tot = ok + bad + skip || 1;
+  let off = 0;
+  const seg = (n, col) => {
+    if (!n) return '';
+    const len = C * n / tot, gap = n < tot ? 3 : 0;
+    const c = `<circle cx="16" cy="16" r="13" fill="none" stroke="${col}" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${Math.max(len - gap, 0.1)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 16 16)"/>`;
+    off += len;
+    return c;
+  };
+  return `<svg width="32" height="32" viewBox="0 0 32 32">${seg(ok, 'var(--success)')}${seg(bad, 'var(--danger)')}${seg(skip, 'var(--muted)')}</svg>`;
+}
+
+function syncSticky() {
+  $('#stickyState').className = $('#state').className;
+  $('#stickyState').innerHTML = $('#state').innerHTML.replace(' id="stateText"', '');
+  $('#stickyTitle').textContent = $('#prTitle').textContent;
+  const n = typeof commits === 'undefined' ? 1 : commits.length;
+  $('#stickyCount').textContent = `${n} commit${n === 1 ? '' : 's'}`;
+}
+
+function render() {
+  const p = parse(msgEl.value, committedCode);
+  const live = activeRules().map(r => ({ r, ...judge(r, p) }));
+  const failing = live.filter(x => !x.ok);
+
+  // checks list: failing first, then passing, then retired
+  const rows = [...failing, ...live.filter(x => x.ok)].map(x =>
+    `<div class="check"><span class="ic">${x.ok ? ICON.ok : ICON.bad}</span><div><div class="name">${esc(x.r.name)} <small>— ${x.ok ? 'Successful' : 'Failing'}</small>${x.r.code ? '<a class="go" data-goto="edit">Edit file</a>' : ''}</div><div class="desc">${md(x.detail)}</div></div><span class="req">Required</span></div>`);
+  retiredRules().forEach(r => rows.push(`<div class="check retired"><span class="ic">${ICON.skip}</span><div><div class="name">${esc(r.name)}</div><div class="desc">Skipped by an administrator</div></div></div>`));
+  $('#checks').innerHTML = rows.join('');
+
+  const allOk = !failing.length;
+  const skipped = retiredRules().length;
+  const owner = r => ROUNDS.find(x => x.rule === r).by;
+  const blockers = [...new Set(failing.map(x => owner(x.r)))];
+  const white = svg => svg.replace(/fill:var\(--(success|danger)\)/, 'fill:#fff');
+
+  // reviews: every bot whose check fails has requested changes
+  $('#revIcon').style.background = busy ? 'var(--attention)' : allOk ? 'var(--success-btn)' : 'var(--danger)';
+  $('#revIcon').innerHTML = busy ? ICON.eye.replace('fill="currentColor"', 'fill="#fff"') : white(allOk ? ICON.ok : ICON.bad);
+  $('#revTitle').textContent = busy ? 'Review in progress' : allOk ? 'Changes approved' : 'Changes requested';
+  $('#revSub').textContent = busy ? 'A reviewer is typing…'
+    : allOk ? `${new Set(activeRules().map(owner)).size} approving review${activeRules().length > 1 ? 's' : ''} by reviewers with write access.`
+    : `${blockers.join(', ')} requested changes.`;
+
+  // checks: GitHub's ring, then the collapsible list
+  $('#mbRing').innerHTML = ring(live.length - failing.length, failing.length, skipped);
+  $('#mbTitle').textContent = allOk ? 'All checks have passed' : 'Some checks were not successful';
+  $('#mbSub').textContent = [skipped && `${skipped} skipped`, `${live.length - failing.length} successful`, failing.length && `${failing.length} failing`].filter(Boolean).join(', ') + ` check${live.length + skipped === 1 ? '' : 's'}`;
+
+  // merge state
+  $('#merge').disabled = busy || !allOk;
+  $('#mbIcon').style.background = allOk && !busy ? 'var(--success-btn)' : 'var(--danger)';
+  $('#mbIcon').innerHTML = allOk && !busy ? white(ICON.ok) : ICON.alert;
+  $('#mergeTitle').textContent = allOk && !busy ? 'No conflicts with base branch' : 'Merging is blocked';
+  $('#mergeSub').textContent = allOk && !busy ? 'Merging can be performed automatically.'
+    : busy ? 'Waiting on a reviewer.'
+    : `Waiting on ${blockers.join(', ')}. ${failing.length} required check${failing.length > 1 ? 's are' : ' is'} failing.`;
+  $('#checkCount').textContent = live.length;
+
+  // ruler under the fields: title length, description, trailers, word counts and the sha
+  const haikuLive = live.some(x => x.r.id === 'haiku');
+  // spell out how the message was read: title on line 1, then body, then trailers
+  const bits = [`<span class="${p.subject.length > 50 ? 'bad' : ''}">title: ${p.subject.length}/50</span>`, `<span>description: ${p.body.length} line${p.body.length === 1 ? '' : 's'}</span>`, `<span>trailers: ${p.trailers.length}</span>`];
+  if (haikuLive) bits.push(`<span>words: ${p.body.map(words).join(' / ') || '—'}</span>`);
+  if (live.some(x => x.r.id === 'ratio')) bits.push(`<span class="${p.subject.length === changedLines(committedCode) * 5 ? '' : 'bad'}">needs: ${changedLines(committedCode) * 5}</span>`);
+  const shaNow = shaOf(msgEl.value, committedCode);
+  bits.push(`<span class="${live.some(x => x.r.id === 'sha') && !/^[a-f]/.test(shaNow) ? 'bad' : ''}">sha: ${shaNow}</span>`);
+  $('#ruler').innerHTML = bits.join('');
+
+  // the pull request title is line 1 of your message, live
+  $('#prTitle').textContent = p.subject.trim() || 'The Commit Message';
+  syncSticky();
+}
+
+// show the compact header once the PR title and branch line have scrolled off screen
+const prMeta = $('.pr-meta');
+let stickyShown = false;
+const updateSticky = () => {
+  const show = prMeta.getBoundingClientRect().bottom < 0 && !mainEl.classList.contains('editing');
+  if (show === stickyShown) return;
+  stickyShown = show;
+  $('#sticky').classList.toggle('show', show);
+  $('#sticky').setAttribute('aria-hidden', !show);
+};
+addEventListener('scroll', updateSticky, { passive: true });
+$('#stickyTitle').addEventListener('click', e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+const toggleChecks = () => {
+  const open = $('#checks').hidden;
+  $('#checks').hidden = !open;
+  $('#checksChev').classList.toggle('open', open);
+  $('#checksHead').setAttribute('aria-expanded', open);
+};
+$('#checksHead').addEventListener('click', toggleChecks);
+$('#checksHead').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleChecks(); } });
+[titleEl, bodyEl].forEach(el => el.addEventListener('input', () => { keystrokes++; render(); }));
+titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); bodyEl.focus(); } });
+
+// ---- timeline ----
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function comment(who, text) {
+  const P = PEOPLE[who];
+  const d = document.createElement('div');
+  d.className = 'item new-item';
+  d.innerHTML = `<div class="avatar${P.bot ? ' bot' : ''}">${avatarSVG(who)}</div>
+    <div class="box"><div class="box-head"><b>${who}${P.bot ? '' : ''}</b>${P.bot ? '<span class="label-bot">bot</span>' : ''} commented just now<span class="role">${P.role}</span></div>
+    <div class="box-body">${md(text)}</div></div>`;
+  feed.append(d);
+  $('#convCount').textContent = feed.querySelectorAll('.box').length + 1;
+  return d;
+}
+function commitEvent(c) {
+  const [title, ...rest] = c.msg.split('\n');
+  const body = rest.join('\n').trim();
+  const d = document.createElement('div');
+  d.className = 'event tl-commit new-item';
+  d.innerHTML = `<span class="badge">${ICON.commit}</span><span class="mini">${avatarSVG('you')}</span><code class="ctl">${esc(title) || '(no title)'}</code>${body ? '<button class="ellip" type="button" aria-label="Commit message body">…</button>' : ''}<code class="sha2">${c.sha}</code>${body ? `<pre hidden>${esc(body)}</pre>` : ''}`;
+  const btn = d.querySelector('.ellip');
+  if (btn) btn.addEventListener('click', () => { const pre = d.querySelector('pre'); pre.hidden = !pre.hidden; });
+  feed.append(d);
+}
+function event(html, icon = ICON.commit) {
+  const d = document.createElement('div');
+  d.className = 'event new-item';
+  d.innerHTML = `<span class="badge">${icon}</span><span>${html}</span>`;
+  feed.append(d);
+}
+
+function renderReviewers() {
+  const seen = [...new Set(ROUNDS.slice(0, round + 1).map(r => r.by))];
+  $('#reviewers').innerHTML = seen.map(w => `<div class="person"><span class="pic${PEOPLE[w].bot ? ' bot' : ''}">${avatarSVG(w)}</span>${w}<span class="st">${ICON.eye}</span></div>`).join('');
+  $('#roundLabel').textContent = `Round ${round + 1} of ${ROUNDS.length}`;
+}
+
+async function playRound(i) {
+  busy = true; render();
+  const r = ROUNDS[i];
+  await wait(700);
+  // if the current message already satisfies the new rule, say so
+  const already = !r.final && judge(r.rule, parse(msgEl.value, committedCode)).ok;
+  const el = comment(r.by, r.text + (already ? '\n\nYour current message already passes this one. Squash and merge again.' : ''));
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  renderReviewers();
+  busy = false;
+  render();
+}
+
+
+// ---- tabs ----
+function showView(v) {
+  const view = v === 'checks' ? 'conv' : v;
+  document.querySelectorAll('.prtab').forEach(t => t.classList.toggle('on', t.dataset.view === v));
+  $('#convView').hidden = view !== 'conv';
+  $('#commitsView').hidden = view !== 'commits';
+  $('#filesView').hidden = view !== 'files';
+  if (view === 'commits') renderCommits();
+  if (view === 'files') renderFile();
+  if (v === 'checks') $('#mergeItem').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+document.querySelectorAll('.prtab').forEach(t => t.addEventListener('click', () => showView(t.dataset.view)));
+document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) { e.preventDefault(); g.dataset.goto === 'edit' ? openEditor() : showView(g.dataset.goto); } });
+
+// ---- commits: every version you pushed, newest first ----
+let commits = [];
+function recordCommit(note) {
+  commits.push({ msg: msgEl.value, sha: shaOf(msgEl.value, committedCode), round: round + 1, note, stat: diffStat() });
+  $('#commitCount').textContent = commits.length;
+}
+function renderCommits() {
+  $('#cvDate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  $('#commitList').innerHTML = commits.slice().reverse().map((c, i) => {
+    const subject = c.msg.split('\n')[0].trim() || '(no title)';
+    return `<div class="crow"><div class="cmain">
+      <button class="ctitle">${esc(subject)}</button>
+      <div class="cmeta"><span class="mini">${avatarSVG('you')}</span><b style="color:var(--fg)">you</b> ${c.note} · round ${c.round}
+        <span class="diffstat"><span class="a">+${c.stat.a}</span> <span class="d">−${c.stat.d}</span></span>
+        ${i === 0 ? '<span class="tag latest">latest</span>' : '<span class="tag">force-pushed over</span>'}</div>
+      <pre class="cfull" hidden>${esc(c.msg)}</pre></div><code class="csha">${c.sha}</code></div>`;
+  }).join('');
+}
+$('#commitList').addEventListener('click', e => {
+  const b = e.target.closest('.ctitle'); if (!b) return;
+  const pre = b.parentElement.querySelector('.cfull'); pre.hidden = !pre.hidden;
+});
+
+// ---- files changed: the committed file as a diff against main ----
+let committedCode = ORIGINAL_CODE, viewed = false, collapsed = false;
+const codeEl = $('#code');
+function diffStat(from = ORIGINAL_CODE, to = committedCode) {
+  const d = lineDiff(splitLines(from), splitLines(to));
+  return { a: d.filter(x => x[0] === '+').length, d: d.filter(x => x[0] === '-').length, lines: d };
+}
+// tiny JS highlighter, one line at a time (doc-comment lines are all comment)
+const TOK = /(\/\/.*$|\/\*.*?(?:\*\/|$))|("(?:[^"\\]|\\.)*"?|'(?:[^'\\]|\\.)*'?|`(?:[^`\\]|\\.)*`?)|\b(function|return|const|let|var|if|else|new|for|while|of|in)\b|\b(\d+)\b|([A-Za-z_$][\w$]*)(?=\s*\()/g;
+function hlLine(l) {
+  if (/^\s*(\/\*|\*)/.test(l)) return `<span class="c">${esc(l)}</span>`;
+  let out = '', last = 0;
+  l.replace(TOK, (m, c, str, k, n, f, i) => {
+    out += esc(l.slice(last, i)) + `<span class="${c ? 'c' : str ? 's' : k ? 'k' : n ? 'num' : 'f'}">${esc(m)}</span>`;
+    last = i + m.length;
+  });
+  return out + esc(l.slice(last));
+}
+const statHTML = st => {
+  const t = st.a + st.d;
+  let na = st.a, nd = st.d;
+  if (t > 5) { na = Math.round(5 * st.a / t); nd = 5 - na; }
+  const sq = Array.from({ length: 5 }, (_, i) => `<i class="${i < na ? 'a' : i < na + nd ? 'd' : ''}"></i>`).join('');
+  return `<span class="a">+${st.a}</span><span class="d">-${st.d}</span><span class="sq" aria-hidden="true">${sq}</span>`;
+};
+function diffTable(from, to) {
+  const d = lineDiff(splitLines(from), splitLines(to));
+  const oc = d.filter(x => x[0] !== '+').length, nc = d.filter(x => x[0] !== '-').length;
+  let o = 0, n = 0;
+  const rows = d.map(([sg, t]) => {
+    if (sg !== '+') o++;
+    if (sg !== '-') n++;
+    return `<tr class="${sg === '+' ? 'add' : sg === '-' ? 'del' : ''}"><td class="n">${sg !== '+' ? o : ''}</td><td class="n">${sg !== '-' ? n : ''}</td><td class="t" data-m="${sg === ' ' ? '' : sg}">${hlLine(t) || ' '}</td></tr>`;
+  }).join('');
+  return `<table class="dt"><colgroup><col class="n"><col class="n"><col></colgroup><tr class="hunk"><td colspan="3">@@ -1,${oc} +1,${nc} @@ ${esc(fnNames(from)[0] ? 'function ' + fnNames(from)[0] + '(name)' : '')}</td></tr>${rows}</table>`;
+}
+function renderFile() {
+  const st = diffStat();
+  $('#fStat').innerHTML = statHTML(st);
+  $('#fBody').innerHTML = st.a + st.d ? diffTable(ORIGINAL_CODE, committedCode)
+    : `<div class="none">No changes committed yet. Hit the ${'<b>pencil</b>'} to edit this file.</div>`;
+  $('#fBody').hidden = collapsed;
+  $('#fileBox').classList.toggle('open', !collapsed);
+  $('#fCollapse').classList.toggle('flip', collapsed);
+  $('#fViewed').classList.toggle('on', viewed);
+  $('#vProg').textContent = `${viewed ? 1 : 0} / 1 viewed`;
+  $('#vRing').style.strokeDashoffset = viewed ? 0 : 38;
+}
+$('#fCollapse').addEventListener('click', () => { collapsed = !collapsed; renderFile(); });
+$('#fViewed').addEventListener('click', () => { viewed = !viewed; collapsed = viewed; renderFile(); });
+$('#treeFile').addEventListener('click', () => { collapsed = false; renderFile(); $('#fileBox').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+$('#fFilter').addEventListener('input', e => { $('#treeRows').hidden = !'src/greet.js'.includes(e.target.value.trim().toLowerCase()); });
+$('#fEdit').addEventListener('click', () => openEditor());
+
+// ---- edit file page ----
+const mainEl = $('#main');
+const indentStr = () => $('#edMode').value === 'tab' ? '\t' : ' '.repeat(+$('#edSize').value);
+function syncEditor() {
+  const v = codeEl.value, lines = v.split('\n');
+  const size = +$('#edSize').value;
+  $('#cmGut').textContent = lines.map((_, i) => i + 1).join('\n');
+  $('#cmHl').innerHTML = lines.map(hlLine).join('\n') + '\n';
+  mainEl.style.setProperty('--tab', size);
+  const cols = Math.max(...lines.map(l => l.replace(/\t/g, ' '.repeat(size)).length));
+  codeEl.style.height = `${lines.length * 20 + 16}px`;
+  codeEl.style.width = `max(100%, calc(${cols + 1}ch + 32px))`;
+  $('#edCommit').disabled = v === committedCode;
+}
+function edMode(m) {
+  document.querySelectorAll('[data-ed]').forEach(b => b.classList.toggle('on', b.dataset.ed === m));
+  $('#cm').hidden = m !== 'edit';
+  $('#edPreview').hidden = m !== 'preview';
+  if (m === 'preview') $('#edPreview').innerHTML = codeEl.value === committedCode
+    ? '<div class="none">No changes to show.</div>' : diffTable(committedCode, codeEl.value);
+}
+function openEditor() {
+  codeEl.value = committedCode;
+  $('#edName').value = 'greet.js';
+  mainEl.classList.add('editing'); $('#editView').hidden = false;
+  document.querySelectorAll('.tabs .tab').forEach((t, i) => t.classList.toggle('on', i === 0));
+  edMode('edit'); syncEditor();
+  window.scrollTo(0, 0);
+  codeEl.focus(); codeEl.setSelectionRange(0, 0);
+}
+function closeEditor() {
+  mainEl.classList.remove('editing'); $('#editView').hidden = true;
+  document.querySelectorAll('.tabs .tab').forEach((t, i) => t.classList.toggle('on', i === 2));
+  showView('files');
+}
+document.querySelectorAll('[data-ed]').forEach(b => b.addEventListener('click', () => edMode(b.dataset.ed)));
+codeEl.addEventListener('input', () => { keystrokes++; syncEditor(); });
+codeEl.addEventListener('keydown', e => {
+  if (e.key !== 'Tab' || e.shiftKey) return;
+  e.preventDefault();
+  codeEl.setRangeText(indentStr(), codeEl.selectionStart, codeEl.selectionEnd, 'end');
+  codeEl.dispatchEvent(new Event('input'));
+});
+$('#edSize').addEventListener('change', syncEditor);
+$('#edCancel').addEventListener('click', closeEditor);
+
+// ---- commit dialog ----
+const dlg = $('#commitDlg');
+$('#edCommit').addEventListener('click', () => {
+  $('#cMsg').value = `Update ${$('#edName').value.trim() || 'greet.js'}`;
+  $('#cDesc').value = '';
+  dlg.showModal();
+  $('#cMsg').select();
+});
+$('#dlgClose').addEventListener('click', () => dlg.close());
+$('#dlgCancel').addEventListener('click', () => dlg.close());
+$('#commitForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const m = $('#cMsg').value.trim() || `Update ${$('#edName').value.trim() || 'greet.js'}`;
+  const desc = $('#cDesc').value.trim();
+  committedCode = codeEl.value;
+  const cmsg = m + (desc ? `\n\n${desc}` : '');
+  commits.push({ msg: cmsg, sha: shaOf(cmsg, committedCode), round: round + 1, note: 'committed', stat: diffStat() });
+  $('#commitCount').textContent = commits.length;
+  commitEvent(commits[commits.length - 1]);
+  viewed = false; collapsed = false;
+  dlg.close();
+  closeEditor();
+  render();
+});
+
+// editing the PR title rewrites the squash commit title
+const titleView = $('#titleView'), titleEdit = $('#titleEdit'), titleInput = $('#titleInput');
+function openTitleEdit() {
+  titleInput.value = msgEl.value.split('\n')[0];
+  titleView.hidden = true; titleEdit.hidden = false;
+  titleInput.focus(); titleInput.select();
+}
+function closeTitleEdit() { titleEdit.hidden = true; titleView.hidden = false; }
+$('#editTitle').addEventListener('click', openTitleEdit);
+$('#prTitle').addEventListener('click', openTitleEdit);
+$('#cancelTitle').addEventListener('click', closeTitleEdit);
+titleEdit.addEventListener('submit', e => {
+  e.preventDefault();
+  const lines = msgEl.value.split('\n');
+  lines[0] = titleInput.value.replace(/\n/g, ' ');
+  msgEl.value = lines.join('\n');
+  keystrokes++;
+  closeTitleEdit();
+  render();
+});
+titleInput.addEventListener('keydown', e => { if (e.key === 'Escape') closeTitleEdit(); });
+$('#merge').addEventListener('click', async () => {
+  if ($('#merge').disabled) return;
+  const p = parse(msgEl.value, committedCode);
+  pushes++;
+  recordCommit('squash attempt');
+  if (ROUNDS[round].final === 'hotfix') return finish();
+  if (ROUNDS[round].final === 'wip') return deployFail();
+  // you really do try to squash and merge into main; a reviewer blocks it at the last second
+  busy = true; render();
+  event('<b>you</b> started a squash and merge into <span class="branch">main</span>', ICON.merge);
+  commitEvent(commits[commits.length - 1]);
+  await wait(600);
+  round++;
+  event(`<b>${ROUNDS[round].by}</b> blocked the merge and added a required check`, ICON.alert);
+  playRound(round);
+});
+
+async function deployFail() {
+  busy = true; render();
+  $('#state').classList.add('merged'); $('#stateText').textContent = 'Merged'; syncSticky();
+  event('<b>you</b> merged commit <code>wip</code> into <span class="branch">main</span>', ICON.merge);
+  commitEvent(commits[commits.length - 1]);
+  await wait(900);
+  event('<b>deploy</b> started rolling out <code>wip</code> to production', ICON.commit);
+  await wait(1100);
+  event('<b>deploy</b> failed: health check timed out waiting for the greeting to log anything', ICON.alert);
+  await wait(700);
+  $('#state').classList.remove('merged'); $('#stateText').textContent = 'Open'; syncSticky();
+  event('<b>sre-bot</b> rolled back <span class="branch">main</span> and reopened this pull request', ICON.alert);
+  round++;
+  playRound(round);
+}
+
+async function finish() {
+  busy = true; render();
+  $('#state').classList.add('merged'); $('#stateText').textContent = 'Merged'; syncSticky();
+  event('<b>you</b> merged into <span class="branch">main</span>', ICON.merge);
+  commitEvent(commits[commits.length - 1]);
+  await wait(900);
+  event('<b>deploy</b> health check passed. Production is up', ICON.commit);
+  await wait(800);
+  comment('lint-bot', 'I see what you did there.');
+  await wait(900);
+  $('#endText').textContent = `${ROUNDS.length - 2} required checks satisfied, then skipped. The commit that shipped was called "wip". Production is up, held together by whatever you wrote to the console.`;
+  $('#endStats').textContent = `${pushes} pushes · ${keystrokes} keystrokes`;
+  try { localStorage.setItem('commitmessage:done', String(+(localStorage.getItem('commitmessage:done') || 0) + 1)); } catch {}
+  $('#end').classList.add('show');
+}
+
+$('#again').addEventListener('click', () => {
+  $('#end').classList.remove('show');
+  round = 0; pushes = 0; keystrokes = 0;
+  feed.replaceChildren();
+  $('#state').classList.remove('merged'); $('#stateText').textContent = 'Open'; syncSticky();
+  msgEl.value = 'updated stuff';
+  committedCode = ORIGINAL_CODE; viewed = false; collapsed = false;
+  mainEl.classList.remove('editing'); $('#editView').hidden = true;
+  commits = []; recordCommit('committed'); commitEvent(commits[0]);
+  showView('conv');
+  playRound(0);
+});
+
+document.getElementById('openIcon').innerHTML = ICON.commit;
+recordCommit('committed');
+commitEvent(commits[0]);
+renderFile();
+const themeBtn = document.getElementById('theme');
+const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+const paintTheme = () => { themeBtn.textContent = isDark() ? 'Light mode' : 'Dark mode'; };
+try { const t = localStorage.getItem('commitmessage:theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+themeBtn.addEventListener('click', () => {
+  const next = isDark() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('commitmessage:theme', next); } catch {}
+  paintTheme();
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme);
+paintTheme();
+render();
+playRound(0);
+</script>
+<!-- rsotw:about:start -->
+<aside id="rsotw-about" hidden style="display:none" aria-labelledby="rsotw-about-title">
+<h2 id="rsotw-about-title">About The Commit Message</h2>
+<p>Write one commit message that passes every check. The linter adds a new rule after every push. Eventually it has to be a haiku.</p>
+<h3>More like this</h3>
+<ul>
+<li><a href="/groupphoto/">The Group Photo</a>: Arrange the family for the wedding photo while the group chat adds one new demand per round. Tall people in back. Grandma’s good side is her right.</li>
+<li><a href="/grouptrip/">The Group Trip</a>: Plan the friend group trip — dates and destination — while the group chat adds one new demand per round. Sam is not flying.</li>
+<li><a href="/puzzle/">The Restoration</a>: The museum's daily painting arrived in pieces. Slide it back together.</li>
+<li><a href="/seatingchart/">The Seating Chart</a>: Plan the wedding reception seating chart while the family group chat adds one new demand per round. Aunt Deb will not sit with Uncle Ray.</li>
+</ul>
+<p><a href="/">Browse all 215 random sites</a></p>
+</aside>
+<!-- rsotw:about:end -->
+</body>
+</html>

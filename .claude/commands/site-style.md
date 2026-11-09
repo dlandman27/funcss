@@ -1,8 +1,9 @@
 # Site Style
 
-The design language for randomsitesontheweb. Load this before building or restyling any site
-(`/new-site` and `/refactor-site` should follow it). It exists so every site feels like it came
-from the same hand: bold, tactile, a little deadpan.
+An OPTIONAL design language for randomsitesontheweb — the sticker-comic look the homepage
+uses. New sites do not have to use it: when every site wears it they start to feel
+repetitive, and part of the fun is that each site looks like its own weird thing. Reach for
+it only when it fits the idea. The **Tech checklist** at the bottom still applies to every site.
 
 ---
 

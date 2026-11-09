@@ -32,12 +32,40 @@ test('renderCard emits expected markup', () => {
   assert.match(html, /<div class="category">Educational<\/div>/);
 });
 
-test('renderSections groups by section, skips invisible, keeps order', () => {
+test('renderSections creates one alphabetical catalog and skips invisible sites', () => {
   const html = renderSections(CATALOG);
-  assert.match(html, /<h2 class="category-title educational">Educational<\/h2>/);
-  assert.match(html, /<h2 class="category-title fun">Fun &amp; Interactive<\/h2>/);
-  assert.ok(!html.includes('hidden-one'), 'invisible site must not render');
-  assert.ok(html.indexOf('educational') < html.indexOf('doodle'), 'section order preserved');
+  assert.ok(html.includes('aria-label="Jump to letter"'));
+  assert.ok(html.includes('id="letter-D"'));
+  assert.ok(html.includes('id="letter-P"'));
+  assert.ok(!html.includes('category-title'));
+  assert.ok(!html.includes('hidden-one'));
+  const names = [...html.matchAll(/<h2>(.*?)<\/h2>/g)].map(m => m[1]);
+  assert.deepEqual(names, [...names].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })));
+});
+
+test('renderCard uses available artwork with an accessible name and load-error fallback', () => {
+  const html = renderCard({ ...CATALOG.sites[0], slug: 'silk', name: 'Silk' }, 'Art');
+  assert.match(html, /site-card has-image/);
+  assert.match(html, /src="\/public\/site-images\/silk-square\.(webp|jpg|png)"/);
+  assert.match(html, /alt="Silk"/);
+  assert.match(html, /loading="lazy"/);
+  assert.match(html, /decoding="async"/);
+  assert.match(html, /width="512" height="512"/);
+  assert.match(html, /classList\.remove\('has-image'\)/);
+});
+
+test('renderCard keeps the original card when artwork is missing', () => {
+  const html = renderCard({ ...CATALOG.sites[0], slug: 'missing-artwork-test-fixture' }, 'Educational');
+  assert.ok(!html.includes('site-image'));
+  assert.ok(!html.includes('has-image'));
+  assert.match(html, /<h2>Prefix &amp; Suffix<\/h2>/);
+  assert.match(html, /<p>Practice prefixes<\/p>/);
+});
+
+test('renderCard provides a separately labelled description button', () => {
+  const html = renderCard(CATALOG.sites[0], 'Educational');
+  assert.match(html, /<button type="button" class="card-preview-trigger" aria-label="About Prefix &amp; Suffix"/);
+  assert.ok(html.indexOf('card-preview-trigger') > html.indexOf('</a>'), 'description button must not navigate the site link');
 });
 
 test('renderFolders includes only random:true, catalog order, /slug/ format', () => {
@@ -84,12 +112,17 @@ test('generated homepage includes the new-site badge logic', () => {
   const path = require('path');
   const root = path.join(__dirname, '..');
   const template = fs.readFileSync(path.join(root, 'templates', 'home.html'), 'utf8');
-  const html = generateHtml(template, clone(CATALOG));
+  const catalog = clone(CATALOG);
+  catalog.sites[0].pick = true;
+  const html = generateHtml(template, catalog);
   assert.ok(html.includes("badge.className = 'new-badge'"), 'homepage should render .new-badge elements');
   assert.ok(html.includes('data-created'), 'cards should carry data-created');
-  assert.ok(html.includes('value="newest"'), 'sort dropdown should offer Newest First');
+  assert.ok(html.includes('aria-label="Filter by category"'), 'catalog should offer a category filter');
   assert.ok(html.includes("buildRail('railNew'"), 'homepage should build the New rail');
-  assert.ok(html.includes("buildRail('railHot'"), 'homepage should build the Hottest rail');
+  assert.ok(html.includes("buildRail('railTrending'"), 'homepage should build the Trending rail');
+  assert.ok(html.includes("buildRail('railPicks'"), 'homepage should build the Top picks rail');
+  assert.ok(html.includes('<div id="featured"></div>'), 'the shelves need their #featured container');
+  assert.ok(html.includes('data-pick="1"'), 'picked sites should carry data-pick');
   assert.ok(html.includes("chip.className = 'hot-badge'"), 'homepage should render .hot-badge chips');
 });
 
@@ -289,6 +322,90 @@ test('generated homepage includes the play-counts fetch', () => {
   const root = path.join(__dirname, '..');
   const template = fs.readFileSync(path.join(root, 'templates', 'home.html'), 'utf8');
   const html = generateHtml(template, clone(CATALOG));
-  assert.ok(html.includes("fetch('/api/counts')"), 'homepage should fetch /api/counts');
+  assert.ok(html.includes("getCounts('/api/counts')"), 'homepage should fetch /api/counts');
+  assert.ok(html.includes("getCounts('/api/counts?range=week')"), 'homepage should fetch weekly counts for Trending');
   assert.ok(html.includes("el.className = 'plays'"), 'homepage should render .plays elements');
+});
+
+test('generateLlmsTxt is Markdown with an H1, links, and only visible toys', () => {
+  const { generateLlmsTxt } = require('../scripts/build.js');
+  const txt = generateLlmsTxt(CATALOG);
+  assert.match(txt, /^# Random Sites On the Web\n/);
+  assert.match(txt, /\[[^\]]+\]\(https:\/\/randomsitesontheweb\.com\/prefixsuffix\/\)/);
+  assert.ok(!txt.includes('/hidden-one/'), 'invisible toys must be excluded');
+});
+
+test('versionGlobals fingerprints existing /globals/ assets only', () => {
+  const { versionGlobals } = require('../scripts/build.js');
+  const out = versionGlobals('<script src="/globals/global.js"></script><script src="/globals/nope.js"></script>');
+  assert.match(out, /\/globals\/global\.js\?v=[0-9a-f]{10}"/);
+  assert.ok(out.includes('"/globals/nope.js"'), 'missing files are left untouched');
+});
+
+test('ogMetaBlock includes a canonical link to the clean toy URL', () => {
+  const { ogMetaBlock } = require('../scripts/build.js');
+  assert.ok(ogMetaBlock(CATALOG.sites[0]).includes(
+    '<link rel="canonical" href="https://randomsitesontheweb.com/prefixsuffix/">'));
+});
+
+test('validateCatalog checks optional seoTitle and about fields', () => {
+  const bad = clone(CATALOG);
+  bad.sites[0].about = ['ok', ''];
+  assert.throws(() => validateCatalog(bad), /about must be/);
+  const badTitle = clone(CATALOG);
+  badTitle.sites[0].seoTitle = '  ';
+  assert.throws(() => validateCatalog(badTitle), /seoTitle must be/);
+});
+
+test('applySeoTitle replaces the title only when one is set', () => {
+  const { applySeoTitle } = require('../scripts/build.js');
+  const html = '<head><title>Old</title></head>';
+  assert.equal(applySeoTitle(html, undefined), html);
+  assert.equal(applySeoTitle(html, 'New & <Better>'), '<head><title>New &amp; &lt;Better&gt;</title></head>');
+});
+
+test('relatedSites picks visible same-section peers after this one, wrapping', () => {
+  const { relatedSites } = require('../scripts/build.js');
+  const cat = clone(CATALOG);
+  cat.sites.push(
+    { slug: 'apple', name: 'Apple', description: 'a', section: 'fun', visible: true, random: true, created: '2025-01-01' },
+    { slug: 'zebra', name: 'Zebra', description: 'z', section: 'fun', visible: true, random: true, created: '2025-01-01' },
+  );
+  const doodle = cat.sites.find((s) => s.slug === 'doodle');
+  assert.deepEqual(relatedSites(doodle, cat).map((s) => s.slug), ['zebra', 'apple']);
+});
+
+test('injectAboutBlock adds hidden copy and related links before </body>, idempotently', () => {
+  const { injectAboutBlock } = require('../scripts/build.js');
+  const site = { ...CATALOG.sites[0], about: ['First <para>.', 'Second.'] };
+  const once = injectAboutBlock('<body><main></main></body>', site, CATALOG);
+  assert.match(once, /<aside id="rsotw-about" hidden[^>]*>[\s\S]*<\/aside>\n<!-- rsotw:about:end -->\n<\/body>$/);
+  assert.ok(once.includes('<p>First &lt;para&gt;.</p>'));
+  assert.ok(once.includes('Browse all 2 random sites'));
+  assert.equal(injectAboutBlock(once, site, CATALOG), once);
+  const fallback = injectAboutBlock('<body></body>', CATALOG.sites[2], CATALOG);
+  assert.ok(fallback.includes('<p>Draw things</p>'), 'falls back to the catalog description');
+});
+
+test('stripLegacySocialMeta removes og/twitter tags outside the managed block only', () => {
+  const { stripLegacySocialMeta } = require('../scripts/build.js');
+  const html = [
+    '<head>',
+    '    <!-- rsotw:og:start -->',
+    '<meta property="og:image" content="https://randomsitesontheweb.com/og/x.png">',
+    '    <!-- rsotw:og:end -->',
+    '    <!-- Open Graph / Facebook -->',
+    '    <meta property="og:image" content="https://randomsitesontheweb.com/og-image.jpg">',
+    '    <!-- Twitter -->',
+    "    <meta name='twitter:card' content='summary'>",
+    '    <meta name="keywords" content="k">',
+    '</head>',
+  ].join('\n');
+  const out = stripLegacySocialMeta(html);
+  assert.ok(out.includes('/og/x.png'), 'managed block is kept');
+  assert.ok(!out.includes('og-image.jpg'));
+  assert.ok(!out.includes('twitter:card'));
+  assert.ok(!out.includes('Open Graph / Facebook'));
+  assert.ok(out.includes('name="keywords"'));
+  assert.equal(stripLegacySocialMeta(out), out);
 });

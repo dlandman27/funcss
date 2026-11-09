@@ -26,6 +26,19 @@ test('vercel.json rewrites /<slug>/<asset> to /sites/<slug>/<asset>', () => {
   );
 });
 
+// With "framework": null, @vercel/static-build still guesses a framework from
+// package.json dependencies/devDependencies. Listing express there makes it
+// apply the Express preset's catch-all (/(.*) -> /), so every unknown URL
+// served the homepage with a 200 (soft 404). express only runs the local dev
+// server, so it lives in optionalDependencies, which detection ignores.
+test('package.json does not trigger Vercel framework detection', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+  assert.ok(!deps.express, 'express must stay out of dependencies/devDependencies');
+  assert.ok(pkg.optionalDependencies && pkg.optionalDependencies.express,
+    'express must remain installable for app.js');
+});
+
 // ---- app.js: local dev must match production ----
 
 const PORT = 3499;
