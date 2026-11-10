@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banner Gallery</title>
+<style>
+  /* Live view of public/site-banners while they're being made; polls every 8s */
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 16px 60px; background: #fbf7ee; color: #201a17; font-family: system-ui, sans-serif; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 20px; margin-bottom: 20px; }
+  h1 { margin: 0; font-size: 1.6rem; }
+  .count { font-weight: 700; }
+  .bar { flex: 1 1 200px; height: 10px; border: 2px solid #201a17; border-radius: 99px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: #b7ce3c; transition: width .4s; }
+  label { font-size: .9rem; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+  figure { margin: 0; }
+  .card { position: relative; aspect-ratio: 8 / 3; border: 3px solid #201a17; border-radius: 14px; overflow: hidden; background: #eee6d3; }
+  .card img, .card iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  .card iframe { width: 800px; height: 300px; transform-origin: 0 0; pointer-events: none; }
+  .card.pending { display: grid; place-items: center; border-style: dashed; opacity: .45; font-size: .85rem; }
+  .card.fresh { box-shadow: 0 0 0 4px #f7c948; }
+  figcaption { margin-top: 6px; font-size: .8rem; opacity: .7; }
+  .hide-pending .pending-fig { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Banners</h1>
+    <span class="count" id="count">…</span>
+    <div class="bar"><i id="bar"></i></div>
+    <label><input type="checkbox" id="onlyDone" checked> hide unfinished</label>
+  </header>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+  const grid = document.getElementById('grid');
+  const figs = new Map();
+  let sites = [];
+  let first = true;
+
+  function stamp() { return Date.now(); }
+
+  async function exists(slug) {
+    const r = await fetch(`/public/site-banners/${slug}.webp?t=${stamp()}`, { method: 'HEAD', cache: 'no-store' });
+    return r.ok ? r.headers.get('last-modified') : null;
+  }
+
+  function figFor(site) {
+    let f = figs.get(site.slug);
+    if (f) return f;
+    f = document.createElement('figure');
+    f.className = 'pending-fig';
+    f.innerHTML = `<div class="card pending">${site.name}</div><figcaption>${site.name} · ${site.section}</figcaption>`;
+    // hover plays the live banner
+    f.addEventListener('mouseenter', () => {
+      const card = f.querySelector('.card');
+      if (card.classList.contains('pending') || card.querySelector('iframe')) return;
+      const fr = document.createElement('iframe');
+      fr.src = `/banners/${site.slug}.html?live&t=${stamp()}`;
+      fr.style.transform = `scale(${card.clientWidth / 800})`;
+      card.appendChild(fr);
+    });
+    f.addEventListener('mouseleave', () => f.querySelector('iframe')?.remove());
+    grid.appendChild(f);
+    figs.set(site.slug, f);
+    return f;
+  }
+
+  async function poll() {
+    if (!sites.length) {
+      const c = await (await fetch('/catalog.json', { cache: 'no-store' })).json();
+      sites = c.sites.filter(s => s.visible).sort((a, b) => a.name.localeCompare(b.name));
+    }
+    let done = 0;
+    await Promise.all(sites.map(async site => {
+      const f = figFor(site);
+      const mod = await exists(site.slug);
+      if (!mod) return;
+      done++;
+      if (f.dataset.mod === mod) return;
+      const changed = !!f.dataset.mod || !first;
+      f.dataset.mod = mod;
+      f.className = '';
+      const card = f.querySelector('.card');
+      card.className = 'card' + (changed ? ' fresh' : '');
+      card.innerHTML = `<img src="/public/site-banners/${site.slug}.webp?t=${stamp()}" alt="${site.name}">`;
+      if (changed) setTimeout(() => card.classList.remove('fresh'), 6000);
+    }));
+    first = false;
+    document.getElementById('count').textContent = `${done} / ${sites.length}`;
+    document.getElementById('bar').style.width = (done / sites.length * 100) + '%';
+    setTimeout(poll, 8000);
+  }
+
+  const onlyDone = document.getElementById('onlyDone');
+  const sync = () => grid.classList.toggle('hide-pending', onlyDone.checked);
+  onlyDone.addEventListener('change', sync);
+  sync();
+  poll();
+</script>
+</body>
+</html>

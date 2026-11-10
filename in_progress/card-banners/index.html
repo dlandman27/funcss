@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Banners Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* Prototype: neal.fun-style wide banners, each drawn in its own site's CSS */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 16px 80px;
+    background: #fbf7ee;
+    color: #201a17;
+    font-family: system-ui, sans-serif;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  h1 { font-family: 'Fredoka', sans-serif; font-size: 2rem; margin: 0 0 4px; }
+  .note { margin: 0 0 28px; opacity: .65; }
+  h2 { font-family: 'Fredoka', sans-serif; margin: 44px 0 14px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+  /* shared frame — only the inside varies */
+  .banner {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 8 / 3;
+    overflow: hidden;
+    border: 3px solid #201a17;
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .12s ease, box-shadow .12s ease;
+    container-type: inline-size;
+  }
+  .banner:hover { transform: translate(-3px, -3px); box-shadow: 6px 6px 0 #201a17; }
+
+  .old { display: grid; grid-template-columns: repeat(9, 1fr); gap: 10px; }
+  .old img { width: 100%; border: 3px solid #201a17; border-radius: 12px; display: block; }
+  @media (max-width: 900px) { .old { grid-template-columns: repeat(5, 1fr); } }
+
+  /* ── Checkbox Grid: plain Arial, real checkboxes ───────────── */
+  .b-checkbox { background: #f0f0f0; font-family: Arial, sans-serif; }
+  .b-checkbox .boxes {
+    position: absolute; inset: 0;
+    display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; padding: 6px;
+    opacity: .9;
+  }
+  .b-checkbox .boxes i {
+    border: 1.5px solid #999; border-radius: 3px; background: #fff;
+  }
+  .b-checkbox .boxes i.on { background: #2f6fde; border-color: #2f6fde; }
+  .b-checkbox .label {
+    position: relative; display: flex; align-items: center; gap: 4cqi;
+    background: #fff; border: 2px solid #bbb; border-radius: 8px;
+    padding: 2.5cqi 5cqi; box-shadow: 0 2px 10px rgba(0,0,0,.15);
+    font-size: 7.5cqi; color: #222;
+  }
+  .b-checkbox .tick {
+    width: 8cqi; height: 8cqi; border-radius: 4px; background: #2f6fde;
+    display: grid; place-items: center; color: #fff; font-size: 6cqi; font-weight: 700;
+  }
+
+  /* ── Pong: black field, white Courier ──────────────────────── */
+  .b-pong { background: #000; color: #fff; font-family: 'Courier New', monospace; }
+  .b-pong::before {
+    content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 0;
+    border-left: 1.2cqi dashed #fff; opacity: .5;
+  }
+  .b-pong .paddle { position: absolute; width: 2.2cqi; height: 16cqi; background: #fff; }
+  .b-pong .p1 { left: 5cqi; top: 8cqi; }
+  .b-pong .p2 { right: 5cqi; bottom: 6cqi; }
+  .b-pong .ball { position: absolute; width: 3cqi; height: 3cqi; background: #fff; left: 70%; top: 22%; }
+  .b-pong .word { position: relative; font-size: 15cqi; font-weight: 700; letter-spacing: 3cqi; background: #000; padding: 0 2cqi; }
+  .b-pong .score { position: absolute; top: 3cqi; left: 0; right: 0; display: flex; justify-content: center; gap: 22cqi; font-size: 6cqi; opacity: .8; }
+
+  /* ── CSS Test: neon Press Start on black ───────────────────── */
+  .b-css { background: #000; font-family: 'Press Start 2P', monospace; }
+  .b-css .code {
+    position: absolute; inset: 0; padding: 3cqi 4cqi; font-size: 2.4cqi; line-height: 1.8;
+    color: #0f0; opacity: .22; text-align: left; white-space: pre;
+  }
+  .b-css .word { position: relative; font-size: 9cqi; line-height: 1.25; text-align: center;
+    color: #fff; text-shadow: .7cqi .7cqi 0 #ff00ea, -.7cqi -.7cqi 0 #00ffff; }
+  .b-css .word span { color: #0f0; }
+
+  /* ── Static: TV snow + Press Start ─────────────────────────── */
+  .b-static { background: #111; font-family: 'Press Start 2P', monospace; }
+  .b-static canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  .b-static::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 2px, transparent 2px 4px);
+  }
+  .b-static .word {
+    position: relative; z-index: 1; font-size: 10cqi; color: #fff;
+    background: #000; padding: 2.5cqi 4cqi; border: .6cqi solid #fff;
+  }
+
+  /* ── LocalStorage Terminal: green-on-black prompt ──────────── */
+  .b-term { background: #1e1e1e; font-family: monospace; color: #00ff00; place-items: center start; }
+  .b-term .bar { position: absolute; top: 0; left: 0; right: 0; height: 7cqi; background: #333;
+    display: flex; align-items: center; gap: 1.6cqi; padding-left: 3cqi; }
+  .b-term .bar i { width: 2.4cqi; height: 2.4cqi; border-radius: 50%; background: #ff5f56; }
+  .b-term .bar i:nth-child(2) { background: #ffbd2e; } .b-term .bar i:nth-child(3) { background: #27c93f; }
+  .b-term .lines { padding: 9cqi 6cqi 0; font-size: 6.4cqi; line-height: 1.35; }
+  .b-term .dim { color: #00aa00; font-size: 4.4cqi; }
+  .b-term .cursor { display: inline-block; width: 3.4cqi; height: 6.4cqi; background: #00ff00;
+    vertical-align: -1cqi; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── Morse Code: red telegraph, Courier ────────────────────── */
+  .b-morse { background: #f8f8f8; font-family: 'Courier New', monospace; color: #b91d19; }
+  .b-morse .dots { position: absolute; left: 0; right: 0; top: 7cqi; text-align: center;
+    font-size: 6cqi; letter-spacing: 1.4cqi; color: #e3342f; opacity: .55; font-weight: 700; }
+  .b-morse .dots.b { top: auto; bottom: 6cqi; }
+  .b-morse .word { font-size: 11cqi; font-weight: 700; letter-spacing: .5cqi; }
+  .b-morse .word small { display: block; text-align: center; font-size: 4.2cqi; letter-spacing: 1.2cqi; color: #555; font-weight: 400; }
+
+  /* ── Fireflies: night meadow, Georgia ──────────────────────── */
+  .b-fire { background: radial-gradient(ellipse at 50% 120%, #1b3a16, #081009 55%, #04070c); font-family: Georgia, serif; }
+  .b-fire .grass { position: absolute; left: 0; right: 0; bottom: 0; height: 22%;
+    background: repeating-linear-gradient(100deg, transparent 0 6px, #0f2a0c 6px 8px), linear-gradient(transparent, #050b04); }
+  .b-fire .fly { position: absolute; width: 1.4cqi; height: 1.4cqi; border-radius: 50%;
+    background: #f9f3a0; box-shadow: 0 0 2cqi 1cqi rgba(249, 243, 160, .7); animation: glow 3s ease-in-out infinite; }
+  @keyframes glow { 50% { opacity: .15; } }
+  .b-fire .word { position: relative; font-size: 12cqi; font-style: italic; color: #f3eecb;
+    text-shadow: 0 0 3cqi rgba(249, 243, 160, .45); }
+
+  /* ── DVD Bounce: the logo, in mid-bounce ───────────────────── */
+  .b-dvd { background: #000; font-family: 'Arial Black', Arial, sans-serif; }
+  .b-dvd .logo { position: relative; text-align: center; color: #ff00ff; transform: skewX(-12deg); }
+  .b-dvd .logo b { display: block; font-size: 17cqi; line-height: .9; letter-spacing: -1cqi; font-style: italic; }
+  .b-dvd .logo .disc { display: block; margin: 1cqi auto 0; width: 34cqi; height: 5cqi; border-radius: 50%;
+    background: currentColor; position: relative; }
+  .b-dvd .logo .disc::after { content: 'BOUNCE'; position: absolute; inset: 0; display: grid; place-items: center;
+    color: #000; font-size: 3.4cqi; letter-spacing: 1cqi; }
+  .b-dvd .ghost { position: absolute; color: #00ffff; opacity: .25; font-size: 7cqi; font-style: italic; transform: skewX(-12deg); }
+
+  /* ── Breathe: calm teal circle, Georgia ────────────────────── */
+  .b-breathe { background: #f2ede2; font-family: Georgia, serif; color: #201a17; }
+  .b-breathe .orb { position: absolute; width: 46cqi; height: 46cqi; border-radius: 50%;
+    background: radial-gradient(circle, rgba(47, 176, 163, .35), rgba(47, 176, 163, .08) 70%);
+    animation: breathe 6s ease-in-out infinite; }
+  @keyframes breathe { 50% { transform: scale(1.25); } }
+  .b-breathe .word { position: relative; font-size: 11cqi; letter-spacing: 2.6cqi; font-weight: 400; }
+  .b-breathe .word small { display: block; text-align: center; font-size: 3.4cqi; letter-spacing: 1cqi; color: #2fb0a3; margin-top: 1cqi; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Card banner test</h1>
+  <p class="note">Wide banners, one shared frame, each drawn in its own site's fonts &amp; colors.</p>
+
+  <div class="grid">
+    <a class="banner b-checkbox" href="/checkboxgrid/">
+      <div class="boxes" id="boxes"></div>
+      <div class="label"><span class="tick">✓</span>Checkbox Grid</div>
+    </a>
+
+    <a class="banner b-pong" href="/pong/">
+      <div class="score"><span>3</span><span>7</span></div>
+      <div class="paddle p1"></div><div class="paddle p2"></div><div class="ball"></div>
+      <div class="word">PONG</div>
+    </a>
+
+    <a class="banner b-css" href="/csstest/">
+<div class="code">.card {
+  rotate: 4deg;
+  color: #0f0;
+}
+h1 { font: 2P; }
+* { chaos: true; }</div>
+      <div class="word">CSS<br><span>TEST</span></div>
+    </a>
+
+    <a class="banner b-static" href="/static/">
+      <canvas id="snow" width="160" height="60"></canvas>
+      <div class="word">STATIC</div>
+    </a>
+
+    <a class="banner b-term" href="/localstorage-terminal/">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="lines">
+        <div class="dim">$ localStorage.setItem()</div>
+        <div>&gt; LocalStorage</div>
+        <div>&gt; Terminal<span class="cursor"></span></div>
+      </div>
+    </a>
+
+    <a class="banner b-morse" href="/morse-code/">
+      <div class="dots">-- --- .-. ... .</div>
+      <div class="word">Morse Code<small>· – TRAINER – ·</small></div>
+      <div class="dots b">-.-. --- -.. .</div>
+    </a>
+
+    <a class="banner b-fire" href="/fireflies/">
+      <div class="grass"></div>
+      <span id="flies"></span>
+      <div class="word">Fireflies</div>
+    </a>
+
+    <a class="banner b-dvd" href="/dvd/">
+      <span class="ghost" style="left:6%;top:10%">DVD</span>
+      <span class="ghost" style="right:8%;bottom:12%;color:#ffff00">DVD</span>
+      <div class="logo"><b>DVD</b><span class="disc"></span></div>
+    </a>
+
+    <a class="banner b-breathe" href="/breathe/">
+      <div class="orb"></div>
+      <div class="word">Breathe<small>in · hold · out</small></div>
+    </a>
+  </div>
+
+  <h2>Same nine, current art</h2>
+  <div class="old">
+    <img src="/public/site-images/checkboxgrid-square-200.webp" alt="">
+    <img src="/public/site-images/pong-square-200.webp" alt="">
+    <img src="/public/site-images/csstest-square-200.webp" alt="">
+    <img src="/public/site-images/static-square-200.webp" alt="">
+    <img src="/public/site-images/localstorage-terminal-square-200.webp" alt="">
+    <img src="/public/site-images/morse-code-square-200.webp" alt="">
+    <img src="/public/site-images/fireflies-square-200.webp" alt="">
+    <img src="/public/site-images/dvd-square-200.webp" alt="">
+    <img src="/public/site-images/breathe-square-200.webp" alt="">
+  </div>
+</div>
+
+<script>
+  // checkbox field: a few ticked, like someone's been at it
+  const boxes = document.getElementById('boxes');
+  for (let i = 0; i < 24 * 9; i++) {
+    const b = document.createElement('i');
+    if (Math.random() < 0.18) b.className = 'on';
+    boxes.appendChild(b);
+  }
+  // fireflies
+  const flies = document.getElementById('flies');
+  for (let i = 0; i < 22; i++) {
+    const f = document.createElement('i');
+    f.className = 'fly';
+    f.style.left = Math.random() * 100 + '%';
+    f.style.top = 10 + Math.random() * 75 + '%';
+    f.style.animationDelay = (-Math.random() * 3) + 's';
+    flies.appendChild(f);
+  }
+  // TV snow
+  const c = document.getElementById('snow'), g = c.getContext('2d');
+  const img = g.createImageData(c.width, c.height);
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function snow() {
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = Math.random() * 255;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    if (!still) setTimeout(() => requestAnimationFrame(snow), 70);
+  })();
+</script>
+</body>
+</html>
