@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Powder Toy: pixel sand sandbox + the material chip bar ──── */
+  .b-sand { background: #f2ede2; color: #201a17; font-family: 'Silkscreen', monospace; place-items: start center; }
+  .b-sand canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  .b-sand .word { position: relative; margin-top: 4.5cqi; font-size: 10cqi; font-weight: 400; line-height: 1; letter-spacing: -.02em; }
+  .b-sand .bar { position: absolute; top: 17.5cqi; display: flex; gap: .8cqi; padding: .8cqi; border-radius: 99px;
+    background: rgba(28,23,20,.85); font-family: Arial, sans-serif; }
+  .b-sand .bar i { font-style: normal; font-size: 1.7cqi; font-weight: 700; padding: .5cqi 1.4cqi; border-radius: 99px; color: #201a17; }
+  .b-sand .bar i.sel { box-shadow: 0 0 0 .3cqi #fff8ef; }
+</style></head>
+<body><div class="b b-sand">
+  <canvas id="c" width="160" height="60"></canvas>
+  <div class="word">Powder Toy</div>
+  <div class="bar"><i style="background:#8a8078">stone</i><i class="sel" style="background:#f7c948">sand</i><i style="background:#5aa0db">water</i><i style="background:#6b5545;color:#f2ede2">oil</i><i style="background:#f0563e">fire</i><i style="background:#7cb342">plant</i></div>
+</div>
+<script>
+const W = 160, H = 60, c = document.getElementById('c'), g = c.getContext('2d'), img = g.createImageData(W, H);
+const EMPTY = 0, SAND = 1, WATER = 2, STONE = 3, PLANT = 4;
+const COL = { 1: [[247,201,72],[232,184,58],[250,214,110]], 2: [[90,160,219],[78,148,210]], 3: [[138,128,120],[120,111,103]], 4: [[124,179,66],[104,160,52]] };
+const grid = new Uint8Array(W * H), shade = new Uint8Array(W * H);
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const set = (x, y, m) => { if (x >= 0 && x < W && y >= 0 && y < H) { grid[y * W + x] = m; shade[y * W + x] = (rnd() * 3) | 0; } };
+// starting scene: a sand dune left, stone ledge + water pool right, a little plant
+for (let x = 0; x < W; x++) {
+  const dune = Math.max(0, 15 - Math.abs(x - 22) * 0.45) + Math.max(0, 9 - Math.abs(x - 132) * 0.5);
+  for (let y = H - 1; y > H - 1 - dune; y--) set(x, y, SAND);
+}
+for (let x = 58; x < 104; x++) { set(x, H - 1, STONE); set(x, H - 2, STONE); }
+for (let x = 56; x < 59; x++) for (let y = H - 9; y < H; y++) set(x, y, STONE);
+for (let x = 103; x < 106; x++) for (let y = H - 9; y < H; y++) set(x, y, STONE);
+for (let x = 59; x < 103; x++) for (let y = H - 7; y < H - 2; y++) set(x, y, WATER);
+for (let y = H - 20; y < H - 9; y++) { set(150, y, PLANT); if (y % 3 === 0) set(151 + (y % 2 ? 1 : -1) * 0, y - 1, PLANT); }
+set(149, H - 16, PLANT); set(151, H - 14, PLANT); set(149, H - 12, PLANT);
+function step() {
+  for (let y = H - 2; y >= 0; y--) {
+    const dir = rnd() < .5 ? 1 : -1;
+    for (let i = 0; i < W; i++) {
+      const x = dir > 0 ? i : W - 1 - i, p = y * W + x, m = grid[p];
+      if (m !== SAND && m !== WATER) continue;
+      const below = p + W, s = rnd() < .5 ? 1 : -1;
+      const free = (q, xx) => xx >= 0 && xx < W && (grid[q] === EMPTY || (m === SAND && grid[q] === WATER));
+      const mv = (q) => { const t = grid[q], ts = shade[q]; grid[q] = m; shade[q] = shade[p]; grid[p] = t; shade[p] = ts; };
+      if (free(below, x)) mv(below);
+      else if (free(below + s, x + s)) mv(below + s);
+      else if (free(below - s, x - s)) mv(below - s);
+      else if (m === WATER && free(p + s, x + s)) mv(p + s);
+    }
+  }
+}
+function draw() {
+  for (let i = 0; i < W * H; i++) {
+    const m = grid[i], o = i * 4;
+    if (!m) { img.data[o + 3] = 0; continue; }
+    const cl = COL[m][shade[i] % COL[m].length];
+    img.data[o] = cl[0]; img.data[o + 1] = cl[1]; img.data[o + 2] = cl[2]; img.data[o + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+}
+// a falling stream of sand already mid-pour in the still frame
+for (let t = 0; t < 40; t++) { set(14 + ((rnd() * 2) | 0), 0, SAND); step(); }
+draw();
+(function loop() {
+  if (!LIVE) return;
+  set(14 + ((rnd() * 2) | 0), 0, SAND); set(146 + ((rnd() * 2) | 0), 0, WATER);
+  step(); draw();
+  setTimeout(() => requestAnimationFrame(loop), 40);
+})();
+</script></body></html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Draw a Track: top-down grass, hand-drawn circuit, a car ── */
+  .b-trk { background: #86bf4f; font-family: 'Russo One', 'Arial Black', sans-serif; }
+  .b-trk::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 40px, transparent 40px 80px); }
+  .b-trk canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-trk .word { position: relative; font-size: 9.6cqi; line-height: 1; color: #fff8ef; font-style: italic; transform: skewX(-6deg);
+    -webkit-text-stroke: .5cqi #201a17; paint-order: stroke fill; text-shadow: .6cqi .6cqi 0 #201a17; }
+</style></head>
+<body><div class="b b-trk">
+  <canvas id="t" width="800" height="300"></canvas>
+  <div class="word">Draw a Track</div>
+</div>
+<script>
+const c = document.getElementById('t'), g = c.getContext('2d');
+const pts = [];
+for (let i = 0; i < 200; i++) { const a = i / 200 * Math.PI * 2;
+  pts.push([400 + 330 * Math.cos(a) + 22 * Math.sin(a * 3), 150 + 108 * Math.sin(a) + 14 * Math.cos(a * 4)]); }
+function path() { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); }
+let car = 30;
+function draw() {
+  g.clearRect(0, 0, 800, 300);
+  g.lineJoin = g.lineCap = 'round';
+  path(); g.strokeStyle = '#201a17'; g.lineWidth = 58; g.stroke();
+  path(); g.strokeStyle = '#fff'; g.lineWidth = 52; g.stroke();
+  path(); g.strokeStyle = '#e8432e'; g.setLineDash([9, 9]); g.stroke(); g.setLineDash([]);
+  path(); g.strokeStyle = '#4b4645'; g.lineWidth = 44; g.stroke();
+  path(); g.strokeStyle = 'rgba(255,248,239,.8)'; g.lineWidth = 2.5; g.setLineDash([16, 15]); g.stroke(); g.setLineDash([]);
+  // start/finish checkers
+  const [sx, sy] = pts[50];
+  for (let r = 0; r < 2; r++) for (let q = 0; q < 6; q++) { g.fillStyle = (r + q) % 2 ? '#201a17' : '#fff8ef'; g.fillRect(sx - 7 + r * 7, sy - 22 + q * 7.3, 7, 7.3); }
+  // car
+  const i = Math.floor(car) % 200, [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % 200];
+  g.save(); g.translate(x0, y0); g.rotate(Math.atan2(y1 - y0, x1 - x0));
+  g.fillStyle = 'rgba(32,26,23,.3)'; g.fillRect(-11, -5, 24, 14);
+  g.fillStyle = '#201a17'; g.fillRect(-14, -9, 26, 18);
+  g.fillStyle = '#5aa0db'; g.fillRect(-12, -7, 22, 14);
+  g.fillStyle = '#fff8ef'; g.fillRect(0, -5, 6, 10);
+  g.restore();
+}
+draw();
+if (LIVE) (function loop() { car += .6; draw(); requestAnimationFrame(loop); })();
+</script></body></html>

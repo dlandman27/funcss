@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Tessellation: one stroke, tiled forever (gold on night) ─ */
+  .b-tess { background: #0c0c13; font-family: Georgia, 'Times New Roman', serif; }
+  .b-tess canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-tess .word { position: relative; font-size: 9.5cqi; font-style: italic; color: #f2ede2; letter-spacing: .2cqi;
+    background: rgba(12, 12, 19, .88); padding: 1.6cqi 5cqi 2.4cqi; border: .2cqi solid rgba(255, 212, 121, .45); border-radius: 1cqi; }
+</style></head>
+<body><div class="b b-tess">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">Tessellation</div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const T = 80; // tile size
+// one hand-drawn-ish stroke inside a tile
+const stroke = [];
+for (let i = 0; i <= 40; i++) { const u = i / 40; stroke.push([10 + u * 70, 40 + Math.sin(u * Math.PI * 2) * 26 + Math.cos(u * 9) * 4]); }
+function draw(n, shift) {
+  g.clearRect(0, 0, 800, 300);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  for (let ty = -1; ty < 5; ty++) for (let tx = -1; tx < 11; tx++) {
+    g.save(); g.translate(tx * T + shift, ty * T + (tx % 2 ? T / 2 : 0));
+    g.beginPath(); for (let i = 0; i <= n; i++) { const [x, y] = stroke[i]; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.strokeStyle = 'rgba(255, 212, 121, .75)'; g.lineWidth = 3; g.stroke();
+    g.beginPath(); g.arc(40, 70, 4, 0, Math.PI * 2); g.fillStyle = 'rgba(111, 200, 255, .55)'; g.fill();
+    g.restore();
+  }
+}
+let n = 40, s = 0;
+(function loop() { draw(n, s); if (LIVE) { s = (s + .25) % T; requestAnimationFrame(loop); } })();
+</script></body></html>

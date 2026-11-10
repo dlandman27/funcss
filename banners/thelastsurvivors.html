@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── The Last Survivors: Life with coloured tribes ─────────── */
+  .b-surv { background: #0a0a0f; font-family: 'Space Mono', monospace; color: #e8e8ff; }
+  .b-surv canvas { position: absolute; inset: 0; width: 100%; height: 304px; opacity: .8; }
+  .b-surv .word { position: relative; background: #0a0a0f; border: .3cqi solid #2a2a3a; padding: 2cqi 4cqi; text-align: center; }
+  .b-surv h1 { margin: 0; font-weight: 700; font-size: 7.4cqi; letter-spacing: -.2cqi; line-height: 1; }
+  .b-surv .gen { margin-top: 1.4cqi; font-size: 2.4cqi; color: #8888a8; letter-spacing: .3cqi; }
+  .b-surv .gen i { display: inline-block; width: 1.8cqi; height: 1.8cqi; margin: 0 .3cqi; vertical-align: -.2cqi; }
+</style></head>
+<body><div class="b b-surv">
+  <canvas id="c" width="800" height="304"></canvas>
+  <div class="word"><h1>The Last Survivors</h1>
+    <div class="gen"><i style="background:#e74c3c"></i><i style="background:#3498db"></i><i style="background:#2ecc71"></i><i style="background:#f1c40f"></i><i style="background:#9b59b6"></i> &nbsp;GEN <span id="gen">0137</span></div></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d'), W = 100, H = 38, Z = 8;
+const COL = [null, '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6'];
+let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+let grid = new Uint8Array(W * H);
+for (let i = 0; i < W * H; i++) { const x = i % W; if (rnd() < .3) grid[i] = 1 + Math.min(4, (x / W * 5) | 0); }
+function step() {
+  const n = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const cnt = [0, 0, 0, 0, 0, 0]; let tot = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue;
+      const v = grid[((y + dy + H) % H) * W + (x + dx + W) % W]; if (v) { cnt[v]++; tot++; } }
+    const cur = grid[y * W + x];
+    if (cur && (tot === 2 || tot === 3)) n[y * W + x] = cur;
+    else if (!cur && tot === 3) { let best = 1; for (let k = 2; k < 6; k++) if (cnt[k] > cnt[best]) best = k; n[y * W + x] = best; }
+  }
+  grid = n;
+}
+function draw() { g.fillStyle = '#0a0a0f'; g.fillRect(0, 0, 800, 304);
+  for (let i = 0; i < W * H; i++) if (grid[i]) { g.fillStyle = COL[grid[i]]; g.fillRect((i % W) * Z, ((i / W) | 0) * Z, Z - 1, Z - 1); } }
+for (let k = 0; k < 6; k++) step();
+draw();
+let gen = 137; const ge = document.getElementById('gen');
+if (LIVE) setInterval(() => { step(); draw(); ge.textContent = String(++gen).padStart(4, '0'); }, 120);
+</script></body></html>

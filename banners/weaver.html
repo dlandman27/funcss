@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Weaver: warp & weft on a dark loom ─────────────────────── */
+  .b-weave { background: #221c18; font-family: Georgia, 'Times New Roman', serif; color: #f0e4d2; place-items: center start; }
+  .b-weave canvas { position: absolute; right: 0; top: 0; width: 52%; height: 100%; }
+  .b-weave .word { position: relative; margin-left: 6cqi; font-size: 13cqi; font-style: italic; letter-spacing: .2cqi; line-height: 1; }
+  .b-weave .word small { display: block; margin-top: 1.8cqi; font-style: normal; font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 2.6cqi; letter-spacing: .8cqi; text-transform: uppercase; color: rgba(240,228,210,.55); }
+</style></head>
+<body><div class="b b-weave">
+  <canvas id="loom" width="416" height="300"></canvas>
+  <div class="word">Weaver<small>warp · weft · cloth</small></div>
+</div>
+<script>
+const cv = document.getElementById('loom'), g = cv.getContext('2d');
+const W = cv.width, H = cv.height, S = 20;           // thread pitch
+const warpC = ['#c9b79c', '#b8a385', '#d6c6ab'];
+const weftC = ['#c2553f', '#d98a3a', '#e3b955', '#5e8f86', '#3f6d8a', '#8a5a7a'];
+const cols = Math.ceil(W / S) + 1, rows = Math.floor(H / S);
+let filled = 10;                                     // rows of cloth woven so far
+function draw() {
+  g.clearRect(0, 0, W, H);
+  // fade the cloth in from the left so it sits beside the title
+  // warp threads (vertical) run the full height
+  for (let c = 0; c < cols; c++) {
+    g.fillStyle = warpC[c % 3]; g.fillRect(c * S + 4, 0, S - 8, H);
+  }
+  for (let r = 0; r < Math.min(filled, rows + 1); r++) {
+    const y = H - (r + 1) * S;
+    const col = weftC[Math.floor(r / 3) % weftC.length];
+    for (let c = 0; c < cols; c++) {
+      if ((r + c) % 2 === 0) {                        // weft over warp
+        g.fillStyle = col; g.fillRect(c * S - 2, y + 3, S + 4, S - 6);
+        g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(c * S - 2, y + 3, S + 4, 3);
+      } else {                                        // warp over weft: weft shows at the edges
+        g.fillStyle = col; g.fillRect(c * S - 2, y + 3, 6, S - 6); g.fillRect(c * S + S - 4, y + 3, 6, S - 6);
+        g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(c * S + 4, y + 3, S - 8, S - 6);
+      }
+    }
+  }
+  const fade = g.createLinearGradient(0, 0, 140, 0);
+  fade.addColorStop(0, '#221c18'); fade.addColorStop(1, 'rgba(34,28,24,0)');
+  g.fillStyle = fade; g.fillRect(0, 0, 140, H);
+}
+draw();
+if (LIVE) setInterval(() => { filled = filled >= rows + 2 ? 4 : filled + 1; draw(); }, 260);
+</script></body></html>

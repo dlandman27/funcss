@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Sand Garden: raked grooves around a stone ─────────────── */
+  .b-sand { background: #e9e2d3; font-family: Georgia, 'Times New Roman', serif; color: #5b5147; place-items: center start; }
+  .b-sand canvas { position: absolute; inset: 0; }
+  .b-sand .word { position: relative; padding: 2cqi 4cqi 2.4cqi 7cqi; font-size: 10cqi; line-height: 1; letter-spacing: .01em;
+    background: radial-gradient(ellipse at 40% 50%, #e9e2d3 45%, rgba(233, 226, 211, 0) 72%); }
+  .b-sand .word small { display: block; margin-top: 2cqi; font-size: 3cqi; font-style: italic; color: #9a8f7e; }
+</style></head>
+<body><div class="b b-sand">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">Sand Garden<small>it waits exactly as you left it</small></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const SX = 680, SY = 150, R0 = 32, RMAX = 104;
+function groove(path) { g.lineWidth = 3; g.strokeStyle = '#d3c9b6'; path(0); g.stroke(); g.lineWidth = 1.5; g.strokeStyle = '#f7f2e8'; path(-2); g.stroke(); }
+function draw(prog) {
+  g.fillStyle = '#e9e2d3'; g.fillRect(0, 0, 800, 300);
+  for (let y = 14; y < 300; y += 12) groove((o) => {
+    g.beginPath(); let pen = false;
+    for (let x = 0; x <= 800; x += 4) {
+      const yy = y + o + Math.sin(x / 90 + y / 40) * 2;
+      if (Math.hypot(x - SX, yy - SY) < RMAX + 6) { pen = false; continue; }
+      pen ? g.lineTo(x, yy) : g.moveTo(x, yy); pen = true;
+    }
+  });
+  for (let r = R0 + 10; r <= RMAX; r += 12) groove((o) => { g.beginPath(); g.arc(SX, SY, r + o, 0, Math.PI * 2 * (r === RMAX - 2 ? prog : 1)); });
+  g.fillStyle = 'rgba(70, 60, 50, .18)'; g.beginPath(); g.ellipse(SX + 6, SY + 8, R0, R0 * .8, 0, 0, 7); g.fill();
+  const grd = g.createRadialGradient(SX - 10, SY - 12, 4, SX, SY, R0);
+  grd.addColorStop(0, '#9a8f7e'); grd.addColorStop(1, '#5c544c');
+  g.fillStyle = grd; g.beginPath(); g.ellipse(SX, SY, R0, R0 * .82, -.2, 0, 7); g.fill();
+}
+draw(1);
+if (LIVE) { let p = 0; (function loop() { p = (p + .004) % 1.25; draw(Math.min(1, p)); requestAnimationFrame(loop); })(); }
+</script></body></html>

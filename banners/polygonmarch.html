@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@600;700&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── The Polygon March: shapes on parade, sides adding up ──── */
+  .b-poly { background: #1c1e36; font-family: 'Jost', sans-serif; color: #fbf7ee; }
+  .b-poly .word { position: absolute; top: 5cqi; left: 0; right: 0; text-align: center; font-size: 9.5cqi; font-weight: 700; letter-spacing: .02em; }
+  .b-poly .row { position: absolute; left: 4cqi; right: 4cqi; bottom: 4.5cqi; display: flex; justify-content: space-between; align-items: flex-end; }
+  .b-poly .row svg { width: 8cqi; height: 8cqi; overflow: visible; animation: hop 1.8s ease-in-out infinite; animation-delay: var(--dl); }
+  @keyframes hop { 0%, 40%, 100% { transform: translateY(0) rotate(0); } 20% { transform: translateY(-2.5cqi) rotate(var(--r)); } }
+  .b-poly .ground { position: absolute; left: 4cqi; right: 4cqi; bottom: 3.6cqi; height: .4cqi; background: #3a3d63; border-radius: 1cqi; }
+</style></head>
+<body><div class="b b-poly">
+  <div class="word">The Polygon March</div>
+  <div class="ground"></div>
+  <div class="row" id="row"></div>
+</div>
+<script>
+const row = document.getElementById('row');
+const cols = ['#f0563e', '#f47b28', '#f7c948', '#b7ce3c', '#2fb0a3', '#5aa0db', '#a98fd0', '#ff7fa5', '#fbf7ee'];
+const sides = [3, 4, 5, 6, 7, 8, 10, 14, 40];
+sides.forEach((n, i) => {
+  const pts = [];
+  for (let k = 0; k < n; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / n + (n === 4 ? Math.PI / 4 : 0); pts.push((50 + 46 * Math.cos(a)).toFixed(1) + ',' + (50 + 46 * Math.sin(a)).toFixed(1)); }
+  row.insertAdjacentHTML('beforeend', `<svg viewBox="0 0 100 100" style="--dl:${-i * .12}s;--r:${360 / n}deg"><polygon points="${pts.join(' ')}" fill="${cols[i]}" stroke="#0e0f1f" stroke-width="5" stroke-linejoin="round"/></svg>`);
+});
+</script></body></html>

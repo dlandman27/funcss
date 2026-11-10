@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Silk: mirrored neon ribbons on near-black ─────────────── */
+  .b-silk { background: #06060a; font-family: Georgia, 'Times New Roman', serif; }
+  .b-silk canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-silk .word { position: relative; font-size: 14cqi; font-style: italic; color: #fff; letter-spacing: .6cqi;
+    text-shadow: 0 0 3cqi rgba(6, 6, 10, .95), 0 0 1cqi rgba(6, 6, 10, .9); }
+</style></head>
+<body><div class="b b-silk">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">Silk</div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const SYM = 6, CX = 400, CY = 150;
+function draw(t) {
+  g.globalCompositeOperation = 'source-over';
+  g.fillStyle = '#06060a'; g.fillRect(0, 0, 800, 300);
+  g.globalCompositeOperation = 'lighter';
+  for (let r = 0; r < 4; r++) {
+    const hue = (200 + r * 45 + t * 20) % 360;
+    const pts = [];
+    for (let i = 0; i <= 60; i++) {
+      const u = i / 60;
+      const rad = 40 + u * 230;
+      const ang = u * 2.6 + r * 0.7 + Math.sin(u * 5 + t + r) * 0.35;
+      pts.push([Math.cos(ang) * rad, Math.sin(ang) * rad * 0.55]);
+    }
+    for (let k = 0; k < SYM; k++) {
+      const a = (k / SYM) * Math.PI * 2;
+      g.save(); g.translate(CX, CY); g.rotate(a); if (k % 2) g.scale(1, -1);
+      g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+      g.strokeStyle = `hsla(${hue},85%,62%,.55)`; g.lineWidth = 2.2; g.shadowColor = `hsl(${hue},85%,62%)`; g.shadowBlur = 12;
+      g.stroke(); g.restore();
+    }
+  }
+}
+let t = 0;
+(function loop() { draw(t); t += 0.012; if (LIVE) requestAnimationFrame(loop); })();
+</script></body></html>

@@ -265,17 +265,23 @@ function renderCard(site, sectionTitle) {
   const smallPath = imagePath.replace(/\.webp$/, '-200.webp');
   const srcset = smallPath !== imagePath && fs.existsSync(path.join(ROOT, smallPath))
     ? ` srcset="${smallPath} 200w, ${imagePath} 400w" sizes="(max-width: 320px) 100vw, 200px"` : '';
+  // Wide neal.fun-style banner (banners/<slug>.html, rendered by `npm run banners`)
+  // wins over the square art when it exists.
+  const hasBanner = fs.existsSync(path.join(ROOT, 'public', 'site-banners', `${site.slug}.webp`));
+  const art = hasBanner
+    ? `                        <img class="site-image site-banner" src="/public/site-banners/${site.slug}-400.webp" srcset="/public/site-banners/${site.slug}-400.webp 400w, /public/site-banners/${site.slug}.webp 800w" sizes="(max-width: 560px) 92vw, (max-width: 900px) 46vw, 31vw" alt="${escapeHtml(site.name)}" loading="lazy" decoding="async" width="800" height="300" onerror="this.closest('.site-card').classList.remove('has-image', 'has-banner'); this.remove();">`
+    : `                        <img class="site-image" src="${imagePath}"${srcset} alt="${escapeHtml(site.name)}" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">`;
+  const cardClass = hasBanner ? ' has-image has-banner' : hasImage ? ' has-image' : '';
   return [
-    `                <div class="site-card${hasImage ? ' has-image' : ''}" data-categories="${site.section}" data-created="${site.created}"${site.pick ? ' data-pick="1"' : ''}>`,
+    `                <div class="site-card${cardClass}" data-categories="${site.section}" data-created="${site.created}"${hasBanner ? ` data-banner="${site.slug}"` : ''}${site.pick ? ' data-pick="1"' : ''}>`,
     `                    <a href="${site.slug}/">`,
-    ...(hasImage ? [`                        <img class="site-image" src="${imagePath}"${srcset} alt="${escapeHtml(site.name)}" loading="lazy" decoding="async" width="512" height="512" onerror="this.closest('.site-card').classList.remove('has-image'); this.remove();">`] : []),
+    ...(hasBanner || hasImage ? [art] : []),
     '                        <div class="card-copy">',
     `                        <h2>${escapeHtml(site.name)}</h2>`,
     `                        <p>${escapeHtml(site.description)}</p>`,
     `                        <div class="category">${escapeHtml(sectionTitle)}</div>`,
     '                        </div>',
     '                    </a>',
-    `                    <button type="button" class="card-share" aria-label="Share ${escapeHtml(site.name)}">Share</button>`,
     `                    <button type="button" class="card-preview-trigger" aria-label="About ${escapeHtml(site.name)}" aria-haspopup="dialog">`,
     '                        <span aria-hidden="true">i</span>',
     '                    </button>',
@@ -308,8 +314,8 @@ function renderAdSlot(name) {
   ].join('\n');
 }
 
-// Inline ad slots go after the letter sections roughly 1/3 and 2/3 of the way
-// down the directory, keyed by 0-based section index.
+// Inline ad slots sit roughly 1/3 and 2/3 of the way down the directory,
+// keyed by 0-based card index.
 function inlineAdPositions(count) {
   if (count < 2) return {};
   const first = Math.max(0, Math.floor(count / 3) - 1);
@@ -317,27 +323,17 @@ function inlineAdPositions(count) {
   return { [first]: 'home-inline-1', [second]: 'home-inline-2' };
 }
 
+// One continuous A–Z grid (neal.fun-style).
 function renderSections(catalog) {
   const titles = Object.fromEntries(catalog.sections.map(s => [s.key, s.title]));
-  const groups = new Map();
-  catalog.sites.filter(s => s.visible)
-    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
-    .forEach(site => {
-      const first = site.name.charAt(0).toUpperCase();
-      const letter = /^[A-Z]$/.test(first) ? first : '#';
-      if (!groups.has(letter)) groups.set(letter, []);
-      groups.get(letter).push(site);
-    });
-  const letters = ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(letter => groups.has(letter));
-  const rail = `<nav class="letter-rail" aria-label="Jump to letter">${letters.map(letter =>
-    `<a href="#letter-${letter === '#' ? 'numbers' : letter}" data-letter="${letter}">${letter}</a>`).join('')}</nav>`;
-  const adAt = inlineAdPositions(letters.length);
-  return rail + letters.map((letter, i) => {
-    const id = `letter-${letter === '#' ? 'numbers' : letter}`;
-    const cards = groups.get(letter).map(site => renderCard(site, titles[site.section])).join('\n');
-    const block = `<section class="letter-section" id="${id}" data-letter="${letter}" aria-labelledby="${id}-title"><h2 class="letter-heading" id="${id}-title">${letter}</h2><div class="site-grid">${cards}</div></section>`;
-    return adAt[i] ? `${block}\n${renderAdSlot(adAt[i])}` : block;
-  }).join('\n');
+  const sites = catalog.sites.filter(s => s.visible)
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+  const adAt = inlineAdPositions(sites.length);
+  const cards = sites.map((site, i) => {
+    const card = renderCard(site, titles[site.section]);
+    return adAt[i] ? `${card}\n${renderAdSlot(adAt[i])}` : card;
+  });
+  return `<div class="site-grid">\n${cards.join('\n')}\n</div>`;
 }
 
 function renderFolders(catalog) {

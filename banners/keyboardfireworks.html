@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Keyboard Fireworks: chunky keycaps that launch bursts into a night sky ── */
+  .b-kf { background: linear-gradient(#141633, #2a2350 70%, #3a2a55); color: #fff8ef; font-family: 'Arial Black', Arial, sans-serif; place-items: end center; padding-bottom: 5cqi; }
+  .b-kf .burst { position: absolute; width: 18cqi; height: 18cqi; margin: -9cqi; animation: pop 2.8s ease-out infinite; }
+  @keyframes pop { 0% { transform: scale(1); opacity: 1; } 70% { transform: scale(1.25); opacity: .25; } 72% { transform: scale(.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .b-kf .burst i { position: absolute; left: 50%; top: 50%; width: .7cqi; height: 6cqi; margin-left: -.35cqi; border-radius: 1cqi; transform-origin: 50% 0; background: linear-gradient(transparent, var(--c)); }
+  .b-kf .keys { position: relative; display: flex; gap: 1.1cqi; flex-wrap: wrap; justify-content: center; width: 90cqi; row-gap: 1.6cqi; }
+  .b-kf kbd { font: inherit; font-size: 5.4cqi; line-height: 1; width: 7.4cqi; height: 7.8cqi; display: grid; place-items: center; background: #fff8ef; color: #201a17; border: .4cqi solid #201a17; border-radius: 1.2cqi; box-shadow: 0 .7cqi 0 #201a17; }
+  .b-kf .brk { flex-basis: 100%; height: 0; }
+  .b-kf kbd.lit { background: var(--c); transform: translateY(.5cqi); box-shadow: 0 .2cqi 0 #201a17, 0 0 3cqi var(--c); animation: press 2.8s steps(1) infinite; }
+  @keyframes press { 72% { background: #fff8ef; transform: none; box-shadow: 0 .7cqi 0 #201a17; } }
+</style></head>
+<body><div class="b b-kf">
+  <div class="burst" style="left:22cqi;top:13cqi;--c:#f7c948" id="b1"></div>
+  <div class="burst" style="left:52cqi;top:9cqi;--c:#ff7fa5;animation-delay:-.9s" id="b2"></div>
+  <div class="burst" style="left:80cqi;top:14cqi;--c:#5aa0db;animation-delay:-1.8s" id="b3"></div>
+  <div class="keys" id="k"></div>
+</div>
+<script>
+const word = 'KEYBOARD FIREWORKS', lit = { 2: '#f7c948', 4: '#ff7fa5', 11: '#5aa0db' };
+const k = document.getElementById('k');
+[...word].forEach((ch, i) => { const e = document.createElement('kbd'); if (ch === ' ') { const br = document.createElement('div'); br.className = 'brk'; k.appendChild(br); return; }
+  else { e.textContent = ch; if (lit[i]) { e.className = 'lit'; e.style.setProperty('--c', lit[i]); } } k.appendChild(e); });
+document.querySelectorAll('.burst').forEach(b => { for (let i = 0; i < 14; i++) { const r = document.createElement('i'); r.style.transform = `rotate(${i * 360 / 14}deg) translateY(2cqi)`; b.appendChild(r); } });
+</script></body></html>

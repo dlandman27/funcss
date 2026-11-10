@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Pointing People: everyone points at your cursor ───────── */
+  .b-point { background: #f4efe6; font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif; color: #3d3531; place-items: center start; }
+  .b-point svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-point .word { position: relative; padding-left: 6cqi; font-size: 10cqi; line-height: .98; letter-spacing: -.01em; }
+</style></head>
+<body><div class="b b-point">
+  <svg id="s" viewBox="0 0 800 300"></svg>
+  <div class="word">Pointing<br>People</div>
+</div>
+<script>
+const s = document.getElementById('s'), INK = '#3d3531';
+const people = [
+  { x: 548, y: 262, body: '#5aa0db', skin: '#f2c79b', side: 1 },
+  { x: 742, y: 270, body: '#f0563e', skin: '#8d5a3b', side: -1 },
+  { x: 650, y: 296, body: '#f7c948', skin: '#c98e63', side: 1 },
+  { x: 786, y: 70, body: '#a98fd0', skin: '#f2c79b', side: -1 },
+];
+let T = { x: 640, y: 128 };
+function draw() {
+  let h = '';
+  for (const p of people) {
+    const sx = p.x + p.side * 18, sy = p.y - 22, a = Math.atan2(T.y - sy, T.x - sx), L = 48;
+    const ex = sx + Math.cos(a) * L, ey = sy + Math.sin(a) * L;
+    h += `<rect x="${p.x - 26}" y="${p.y - 34}" width="52" height="90" rx="22" fill="${p.body}" stroke="${INK}" stroke-width="4"/>`;
+    h += `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${p.body}" stroke-width="8" stroke-linecap="round"/>`;
+    h += `<circle cx="${ex}" cy="${ey}" r="6.5" fill="${p.skin}" stroke="${INK}" stroke-width="3.5"/>`;
+    h += `<line x1="${ex}" y1="${ey}" x2="${ex + Math.cos(a) * 12}" y2="${ey + Math.sin(a) * 12}" stroke="${INK}" stroke-width="7" stroke-linecap="round"/><line x1="${ex}" y1="${ey}" x2="${ex + Math.cos(a) * 12}" y2="${ey + Math.sin(a) * 12}" stroke="${p.skin}" stroke-width="2.5" stroke-linecap="round"/>`;
+    const hx = p.x + Math.cos(a) * 4, hy = p.y - 58;
+    h += `<circle cx="${hx}" cy="${hy}" r="20" fill="${p.skin}" stroke="${INK}" stroke-width="4"/>`;
+    h += `<circle cx="${hx + Math.cos(a) * 8 - 5}" cy="${hy + Math.sin(a) * 5 - 2}" r="2.6" fill="${INK}"/><circle cx="${hx + Math.cos(a) * 8 + 5}" cy="${hy + Math.sin(a) * 5 - 2}" r="2.6" fill="${INK}"/>`;
+  }
+  // the cursor everyone is pointing at
+  h += `<path transform="translate(${T.x - 4} ${T.y - 4}) scale(1.5)" d="M0 0 L0 22 L6 16 L10 25 L14 23 L10 15 L18 15 Z" fill="#fff" stroke="#201a17" stroke-width="2" stroke-linejoin="round"/>`;
+  s.innerHTML = h;
+}
+draw();
+if (LIVE) { const t0 = performance.now(); (function loop(t) { const k = (t - t0) / 1000; T = { x: 640 + Math.sin(k * .9) * 50, y: 128 + Math.sin(k * 1.7) * 28 }; draw(); requestAnimationFrame(loop); })(t0); }
+</script></body></html>

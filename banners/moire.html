@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Moiré: two out-of-tune line grids, additive ───────────── */
+  .b-mo { background: #0b0b12; font-family: Georgia, 'Times New Roman', serif; color: #fff; }
+  .b-mo canvas { position: absolute; inset: 0; width: 800px; height: 300px; }
+  .b-mo .word { position: relative; font-size: 15cqi; font-style: italic; letter-spacing: .4cqi;
+    padding: 0 4cqi 1cqi; background: radial-gradient(ellipse, rgba(11,11,18,.95) 35%, rgba(11,11,18,0) 72%);
+    text-shadow: 0 0 3cqi #0b0b12, 0 0 1cqi #0b0b12; }
+</style></head>
+<body><div class="b b-mo">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">Moiré</div>
+</div>
+<script>
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+const W = 800, H = 300, D = Math.hypot(W, H), SP = 10;
+function grid(a, col) {
+  g.save(); g.translate(W / 2, H / 2); g.rotate(a); g.strokeStyle = col; g.lineWidth = 4; g.beginPath();
+  for (let x = -D / 2; x <= D / 2; x += SP) { g.moveTo(x, -D / 2); g.lineTo(x, D / 2); }
+  g.stroke(); g.restore();
+}
+let a = 0.13;
+(function loop() {
+  g.globalCompositeOperation = 'source-over'; g.fillStyle = '#0b0b12'; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'lighter';
+  grid(-0.35, 'rgba(150, 205, 255, 0.5)'); grid(-0.35 + a, 'rgba(255, 180, 165, 0.5)');
+  if (LIVE) { a += 0.0006; requestAnimationFrame(loop); }
+})();
+</script></body></html>

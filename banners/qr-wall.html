@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── QR Wall: an endless wall of scannable codes ───────────── */
+  .b-qr { background: #f2ede2; font-family: 'Arial Black', Arial, sans-serif; color: #201a17; }
+  .b-qr canvas { position: absolute; inset: 0; }
+  .b-qr .word { position: relative; background: #fff8ef; border: .5cqi solid #201a17; box-shadow: 1cqi 1cqi 0 #201a17; padding: 2cqi 5cqi; font-size: 12cqi; line-height: 1; }
+</style></head>
+<body><div class="b b-qr">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">QR Wall</div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const M = 3, N = 21, CELL = N * M + 16;
+function hash(a, b) { let h = a * 374761393 + b * 668265263; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+function code(ox, oy, seed) {
+  g.fillStyle = '#fff8ef'; g.fillRect(ox - 4, oy - 4, N * M + 8, N * M + 8);
+  g.fillStyle = '#201a17';
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const inF = (fx, fy) => x >= fx && x < fx + 7 && y >= fy && y < fy + 7;
+    let on;
+    if (inF(0, 0) || inF(14, 0) || inF(0, 14)) { const fx = x < 7 ? 0 : 14, fy = y < 7 ? 0 : 14, dx = x - fx, dy = y - fy;
+      on = dx === 0 || dx === 6 || dy === 0 || dy === 6 || (dx > 1 && dx < 5 && dy > 1 && dy < 5); }
+    else if ((x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12)) on = false;
+    else on = hash(seed * 31 + x, y * 17 + seed) > .5;
+    if (on) g.fillRect(ox + x * M, oy + y * M, M, M);
+  }
+}
+let off = 0;
+function draw() {
+  g.fillStyle = '#f2ede2'; g.fillRect(0, 0, 800, 300);
+  const o = off % CELL, k = Math.floor(off / CELL);
+  for (let j = -1; j < 5; j++) for (let i = -1; i < 12; i++) code(i * CELL - o + 6, j * CELL - o * .5 + 6, (i + k) * 101 + j * 7 + 3);
+}
+draw();
+if (LIVE) (function loop() { off += .35; draw(); requestAnimationFrame(loop); })();
+</script></body></html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Time Meters: concentric progress rings, SF thin ───────── */
+  .b-tm { background: #080808; font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif; color: rgba(255,255,255,.88);
+    place-items: center start; }
+  .b-tm h1 { position: relative; margin: 0 0 0 7cqi; font-weight: 200; font-size: 10.5cqi; letter-spacing: .2cqi; line-height: 1.02; }
+  .b-tm h1 small { display: block; margin-top: 2cqi; font-size: 2cqi; font-weight: 400; letter-spacing: .5cqi; text-transform: uppercase; color: rgba(255,255,255,.3); }
+  .b-tm svg { position: absolute; right: 4cqi; top: 50%; width: 34cqi; height: 34cqi; margin-top: -17cqi; transform: rotate(-90deg); }
+  .b-tm circle { fill: none; stroke-width: 5; stroke-linecap: round; }
+  .b-tm .bg { stroke: rgba(255,255,255,.07); }
+</style></head>
+<body><div class="b b-tm">
+  <h1>Time<br>Meters<small>day · week · month · year</small></h1>
+  <svg viewBox="0 0 100 100" id="rings"></svg>
+</div>
+<script>
+const svg = document.getElementById('rings'), NS = 'http://www.w3.org/2000/svg';
+const COL = ['#FF4B6E', '#FB923C', '#FDE047', '#34D399', '#22D3EE', '#60A5FA', '#C084FC'];
+const P = [0.62, 0.48, 0.33, 0.86, 0.26, 0.255, 0.0255];
+const arcs = [];
+COL.forEach((col, i) => {
+  const r = 46 - i * 6.2, L = 2 * Math.PI * r;
+  const bg = document.createElementNS(NS, 'circle'); bg.setAttribute('class', 'bg'); bg.setAttribute('cx', 50); bg.setAttribute('cy', 50); bg.setAttribute('r', r); svg.appendChild(bg);
+  const a = document.createElementNS(NS, 'circle'); a.setAttribute('cx', 50); a.setAttribute('cy', 50); a.setAttribute('r', r);
+  a.style.stroke = col; a.style.strokeDasharray = `${L * P[i]} ${L}`; a.style.filter = `drop-shadow(0 0 1.5px ${col})`;
+  svg.appendChild(a); arcs.push({ a, L, p: P[i], v: [0.012, 0.004, 0.002, 0.001, 0.0006, 0.0003, 0.0001][i] });
+});
+if (LIVE) (function loop() { for (const o of arcs) { o.p = (o.p + o.v) % 1; o.a.style.strokeDasharray = `${o.L * o.p} ${o.L}`; } requestAnimationFrame(loop); })();
+</script></body></html>

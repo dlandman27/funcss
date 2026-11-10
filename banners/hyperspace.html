@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Hyperspace: star streaks punching out from the centre, odometer below ── */
+  .b-hyper { background: #201a17; color: #fff8ef; }
+  .b-hyper canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-hyper .word { position: relative; text-align: center; font-family: 'Arial Black', Arial, sans-serif; font-size: 9.6cqi; letter-spacing: 1.2cqi; margin-right: -1.2cqi; font-style: italic;
+    text-shadow: -1.4cqi 0 0 rgba(90, 160, 219, .55), 1.4cqi 0 0 rgba(240, 86, 62, .45); }
+  .b-hyper .odo { position: relative; display: inline-block; margin-top: 1.6cqi; background: rgba(32,26,23,.85); padding: .6cqi 2cqi; border-radius: 3cqi; font-family: Georgia, serif; font-style: italic; font-size: 3cqi; color: #f7c948; letter-spacing: .2cqi; }
+  .b-hyper .center { position: relative; text-align: center; }
+</style></head>
+<body><div class="b b-hyper">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="center"><div class="word">HYPERSPACE</div><div class="odo">odometer: <span id="km">4,812,006</span> km · destination: none</div></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+let s = 3; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const stars = Array.from({ length: 170 }, () => ({ a: r() * Math.PI * 2, d: 20 + r() * 520, v: .6 + r() * 1.4 }));
+let km = 4812006; const kmEl = document.getElementById('km');
+function draw() {
+  g.fillStyle = '#201a17'; g.fillRect(0, 0, 800, 300);
+  for (const st of stars) {
+    const len = 18 + st.d * .22, x1 = 400 + Math.cos(st.a) * st.d, y1 = 150 + Math.sin(st.a) * st.d * .62;
+    const x0 = 400 + Math.cos(st.a) * (st.d - len), y0 = 150 + Math.sin(st.a) * (st.d - len) * .62;
+    const al = Math.min(1, st.d / 260);
+    g.strokeStyle = `rgba(255,248,239,${al * .85})`; g.lineWidth = .8 + st.d / 300;
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    if (LIVE) { st.d += st.v * (2 + st.d / 40); if (st.d > 560) { st.d = 10 + r() * 30; st.a = r() * Math.PI * 2; } }
+  }
+  if (LIVE) { km += 731; kmEl.textContent = km.toLocaleString('en-US'); requestAnimationFrame(draw); }
+}
+draw();
+</script></body></html>

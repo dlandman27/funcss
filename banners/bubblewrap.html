@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Bubble Wrap: a whole sheet of it, a strip of packing tape for the title ── */
+  .b-bw { background: #dfeef6; font-family: 'Baloo 2', 'Arial Rounded MT Bold', sans-serif; color: #1f4a66; }
+  .b-bw .sheet { position: absolute; inset: -2cqi; display: grid; grid-template-columns: repeat(17, 1fr); gap: .8cqi; padding: 1cqi; transform: rotate(-4deg); }
+  .b-bw .sheet i { aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, rgba(255,255,255,.95) 0 10%, rgba(255,255,255,.35) 22%, rgba(170,210,232,.35) 60%, rgba(120,170,200,.55) 100%);
+    box-shadow: inset -.4cqi -.5cqi .6cqi rgba(70,120,150,.35), .2cqi .3cqi .4cqi rgba(70,120,150,.25); }
+  .b-bw .sheet i.pop { background: radial-gradient(circle, rgba(170,205,225,.3), rgba(140,185,210,.4)); box-shadow: inset .2cqi .2cqi .4cqi rgba(70,120,150,.3);
+    clip-path: polygon(10% 30%, 40% 8%, 60% 22%, 92% 18%, 80% 55%, 95% 85%, 55% 75%, 25% 95%, 18% 62%); }
+  .b-bw .tape { position: relative; padding: 1.4cqi 5cqi 1.8cqi; background: rgba(255,250,236,.92); transform: rotate(-4deg);
+    box-shadow: 0 .6cqi 1.6cqi rgba(31,74,102,.18); clip-path: polygon(0 4%, 2% 0, 98% 3%, 100% 0, 99% 100%, 97% 96%, 2% 100%, 0 96%); }
+  .b-bw h1 { margin: 0; font-size: 11cqi; font-weight: 800; line-height: 1; letter-spacing: -.2cqi; }
+</style></head>
+<body><div class="b b-bw">
+  <div class="sheet" id="sheet"></div>
+  <div class="tape"><h1>Bubble Wrap</h1></div>
+</div>
+<script>
+const sheet = document.getElementById('sheet'), all = [];
+let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+for (let i = 0; i < 17 * 7; i++) { const b = document.createElement('i'); if (rnd() < .1) b.className = 'pop'; sheet.appendChild(b); all.push(b); }
+if (LIVE) setInterval(() => { const live = all.filter((b) => !b.classList.contains('pop'));
+  if (live.length < 40) all.forEach((b) => b.classList.remove('pop')); else live[Math.floor(Math.random() * live.length)].classList.add('pop'); }, 260);
+</script></body></html>

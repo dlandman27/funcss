@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Share+Tech+Mono&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Noise Machine: hardware console, green scope, faders ──── */
+  .b-nm { background: linear-gradient(#2a2e33, #1c1f23); font-family: 'Michroma', sans-serif; color: #e7e3d6; grid-template-columns: auto auto; gap: 6cqi; }
+  .b-nm::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px); }
+  .b-nm .left { position: relative; }
+  .b-nm .dept { font-family: 'Share Tech Mono', monospace; font-size: 2.4cqi; letter-spacing: .3cqi; color: #9aa39a; text-transform: uppercase; }
+  .b-nm .word { font-size: 7cqi; line-height: 1.15; margin: 1cqi 0 3cqi; }
+  .b-nm .scope { position: relative; width: 42cqi; height: 11cqi; background: #07120b; border: .4cqi solid #0e0f11; border-radius: .8cqi; box-shadow: inset 0 0 2cqi rgba(0,0,0,.8), 0 0 0 .3cqi #3a3f45; overflow: hidden; }
+  .b-nm .scope::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(124,245,154,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(124,245,154,.08) 1px, transparent 1px); background-size: 3.5cqi 2.75cqi; }
+  .b-nm canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-nm .faders { position: relative; display: flex; gap: 2.6cqi; align-items: end; height: 30cqi; }
+  .b-nm .f { position: relative; width: 4cqi; height: 100%; display: flex; flex-direction: column; align-items: center; }
+  .b-nm .f .slot { flex: 1; width: .7cqi; background: #0b0c0e; border-radius: .4cqi; position: relative; }
+  .b-nm .f .knob { position: absolute; left: 50%; width: 4.4cqi; height: 2.6cqi; margin-left: -2.2cqi; border-radius: .4cqi; background: linear-gradient(#d9d6cc, #8f8c84); box-shadow: 0 .4cqi .6cqi rgba(0,0,0,.6); }
+  .b-nm .f .knob::after { content: ''; position: absolute; left: 10%; right: 10%; top: 50%; height: .25cqi; background: #2a2e33; }
+  .b-nm .f b { font-family: 'Share Tech Mono', monospace; font-weight: 400; font-size: 1.9cqi; color: #9aa39a; margin-top: 1.4cqi; text-transform: uppercase; }
+  .b-nm .f:nth-child(2) .knob { background: linear-gradient(#ffb3c8, #c86a85); }
+  .b-nm .f:nth-child(3) .knob { background: linear-gradient(#e2b07a, #9a6634); }
+  .b-nm .f:nth-child(4) .knob { background: linear-gradient(#a9d6ff, #4f86b5); animation: ride 4s ease-in-out infinite; }
+  @keyframes ride { 50% { transform: translateY(-6cqi); } }
+</style></head>
+<body><div class="b b-nm">
+  <div class="left">
+    <div class="dept">bureau of ambient conditions</div>
+    <div class="word">Noise<br>Machine</div>
+    <div class="scope"><canvas id="sc" width="336" height="88"></canvas></div>
+  </div>
+  <div class="faders">
+    <div class="f"><div class="slot"><i class="knob" style="top:30%"></i></div><b>white</b></div>
+    <div class="f"><div class="slot"><i class="knob" style="top:55%"></i></div><b>pink</b></div>
+    <div class="f"><div class="slot"><i class="knob" style="top:15%"></i></div><b>brown</b></div>
+    <div class="f"><div class="slot"><i class="knob" style="top:45%"></i></div><b>rain</b></div>
+  </div>
+</div>
+<script>
+const c = document.getElementById('sc'), g = c.getContext('2d');
+let b = 0;
+(function draw() {
+  g.clearRect(0, 0, 336, 88); g.strokeStyle = '#7cf59a'; g.lineWidth = 1.6; g.shadowColor = '#7cf59a'; g.shadowBlur = 6; g.beginPath();
+  for (let x = 0; x <= 336; x += 2) { b = b * .82 + (Math.random() - .5) * 16; const y = 44 + b + (Math.random() - .5) * 10; x ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.stroke();
+  if (LIVE) setTimeout(() => requestAnimationFrame(draw), 60);
+})();
+</script></body></html>

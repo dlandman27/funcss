@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Heat Trail: the room remembers where you moved, in ironbow ── */
+  .b-heat { background: #050608; color: #fffbe8; font-family: 'Share Tech Mono', monospace; place-items: center start; }
+  .b-heat canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-heat .word { position: relative; padding-left: 6cqi; font-size: 11cqi; line-height: 1; letter-spacing: .02em;
+    text-shadow: 0 0 2cqi rgba(255,140,30,.55); }
+  .b-heat .hud { position: absolute; right: 4cqi; top: 3.5cqi; font-size: 2.4cqi; color: rgba(255,210,170,.7); text-align: right; line-height: 1.4; }
+  .b-heat .scale { position: absolute; right: 4cqi; bottom: 4cqi; width: 22cqi; height: 1.2cqi;
+    background: linear-gradient(90deg, #04040a, #28044a, #6e0a78, #be1e28, #f0780a, #ffd228, #ffffeb); }
+</style></head>
+<body><div class="b b-heat">
+  <canvas id="c" width="200" height="75"></canvas>
+  <div class="word">Heat Trail</div>
+  <div class="hud"><span id="tmp">37.4</span>°C</div>
+  <div class="scale"></div>
+</div>
+<script>
+const W = 200, H = 75, c = document.getElementById('c'), g = c.getContext('2d'), img = g.createImageData(W, H), heat = new Float32Array(W * H);
+const stops = [[0,4,4,10],[.16,40,4,70],[.34,110,10,120],[.52,190,30,40],[.70,240,120,10],[.86,255,210,40],[1,255,255,235]];
+const lut = [];
+for (let i = 0; i < 256; i++) { const t = i / 255; let s = 0; while (s < stops.length - 2 && t > stops[s + 1][0]) s++;
+  const a = stops[s], b = stops[s + 1], f = (t - a[0]) / (b[0] - a[0]); lut.push([0, 1, 2].map(k => a[k + 1] + (b[k + 1] - a[k + 1]) * f)); }
+function deposit(x, y, r, v) {
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+    const X = (x + i) | 0, Y = (y + j) | 0; if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+    const d = (i * i + j * j) / (r * r); if (d < 1) heat[Y * W + X] = Math.min(1, heat[Y * W + X] + v * (1 - d));
+  }
+}
+const path = t => [70 + t * 115 + Math.sin(t * 9) * 8, 40 + Math.sin(t * 6.5) * 22 + Math.cos(t * 3) * 6];
+function render() {
+  for (let i = 0; i < W * H; i++) { const [r, gg, b] = lut[(heat[i] * 255) | 0], o = i * 4; img.data[o] = r; img.data[o + 1] = gg; img.data[o + 2] = b; img.data[o + 3] = 255; }
+  g.putImageData(img, 0, 0);
+}
+// still frame: a cooling trail behind, hottest where the cursor rests
+for (let t = 0; t <= 1; t += .004) { const [x, y] = path(t); deposit(x, y, 7, .02 + t * t * .07); }
+const [hx, hy] = path(1); deposit(hx, hy, 9, .5);
+render();
+let T = 0;
+(function loop() {
+  if (!LIVE) return;
+  for (let i = 0; i < heat.length; i++) heat[i] *= .992;
+  T = (T + .004) % 1; const [x, y] = path(T); deposit(x, y, 7, .09);
+  document.getElementById('tmp').textContent = (33 + heat[(y | 0) * W + (x | 0)] * 6).toFixed(1);
+  render(); requestAnimationFrame(loop);
+})();
+</script></body></html>

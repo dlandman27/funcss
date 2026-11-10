@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Lenticular: two scenes sliced into ridges, combing from one into the other ── */
+  .b-lent { background: #0a0a0f; font-family: Georgia, 'Times New Roman', serif; }
+  .b-lent .strips { position: absolute; inset: 0; display: flex; }
+  .b-lent .strips i { flex: 1; position: relative; overflow: hidden; }
+  .b-lent .strips i::before, .b-lent .strips i::after { content: ''; position: absolute; top: 0; bottom: 0; width: 800px; left: var(--x); }
+  .b-lent .strips i::before { background: radial-gradient(circle at 26% 42%, #f7c948 0 15%, transparent 15.3%), linear-gradient(#5aa0db, #2fb0a3); }
+  .b-lent .strips i::after { background: radial-gradient(circle at 74% 58%, #fff8ef 0 4%, transparent 4.3%), conic-gradient(from 200deg at 74% 58%, #f0563e, #ff7fa5, #a98fd0, #f0563e); animation: comb 3s ease-in-out infinite; animation-delay: var(--d); }
+  @keyframes comb { 0%, 15% { opacity: 1; } 45%, 65% { opacity: 0; } 95%, 100% { opacity: 1; } }
+  .b-lent .strips i:nth-child(odd)::after { opacity: 0; animation-name: comb2; }
+  @keyframes comb2 { 0%, 15% { opacity: 0; } 45%, 65% { opacity: 1; } 95%, 100% { opacity: 0; } }
+  .b-lent .ridges { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 1px, transparent 1px 4px, rgba(0,0,0,.18) 6px 7px); background-size: 14px 100%; }
+  .b-lent .plate { position: relative; background: rgba(10, 10, 15, .85); padding: 2.4cqi 5.6cqi 2.8cqi; border-radius: 1.2cqi; text-align: center; }
+  .b-lent .word { font-size: 11cqi; color: #fff; line-height: 1; letter-spacing: .1cqi; }
+  .b-lent .sub { font-size: 2.6cqi; font-style: italic; color: rgba(255,255,255,.55); margin-top: 1cqi; letter-spacing: .1cqi; }
+</style></head>
+<body><div class="b b-lent">
+  <div class="strips" id="s"></div>
+  <div class="ridges"></div>
+  <div class="plate"><div class="word">Lenticular</div><div class="sub">move side to side</div></div>
+</div>
+<script>
+const s = document.getElementById('s'), N = 57;
+for (let i = 0; i < N; i++) { const e = document.createElement('i'); e.style.setProperty('--x', -(i * 800 / N) + 'px'); e.style.setProperty('--d', (-i * .02) + 's'); s.appendChild(e); }
+</script></body></html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Dominoes: walnut table, a line of tiles about to go ───── */
+  .b-dom { background: #5a341c; font-family: Georgia, 'Times New Roman', serif; color: #f6efdd; place-items: start center; }
+  .b-dom::before { content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(178deg, rgba(0,0,0,.08) 0 3px, transparent 3px 11px, rgba(255,220,170,.04) 11px 13px, transparent 13px 26px),
+      radial-gradient(ellipse at 50% 30%, rgba(255,210,150,.18), transparent 65%); }
+  .b-dom .word { position: relative; margin-top: 4.4cqi; font-weight: 700; font-size: 12cqi; line-height: 1; letter-spacing: .4cqi; text-shadow: 0 .4cqi 0 rgba(0,0,0,.55); }
+  .b-dom .row { position: absolute; left: 8cqi; right: 8cqi; bottom: 5cqi; height: 13cqi; display: flex; justify-content: space-between; align-items: flex-end;
+    border-bottom: .3cqi solid rgba(24,13,6,.5); }
+  .b-dom .d { width: 3.4cqi; height: 12cqi; background: linear-gradient(90deg, #fbf6e8, #e8dcbf); border-radius: .5cqi; transform-origin: 100% 100%;
+    box-shadow: .6cqi .2cqi .6cqi rgba(24,13,6,.5), inset -.3cqi 0 0 rgba(0,0,0,.08); position: relative;
+    animation: fall 4s cubic-bezier(.6,0,.9,.6) infinite; }
+  .b-dom .d::before, .b-dom .d::after { content: ''; position: absolute; left: 50%; width: .9cqi; height: .9cqi; margin-left: -.45cqi; border-radius: 50%; background: #1e1711; }
+  .b-dom .d::before { top: 2.4cqi; box-shadow: 0 2cqi 0 #1e1711; }
+  .b-dom .d::after { bottom: 2.4cqi; }
+  .b-dom .d i { position: absolute; left: .4cqi; right: .4cqi; top: 50%; height: .2cqi; background: #b8893c; }
+  .b-dom .d:first-child { transform: rotate(14deg); }
+  @keyframes fall { 0%, 5% { transform: rotate(0); } 18%, 80% { transform: rotate(62deg); } 95%, 100% { transform: rotate(0); } }
+</style></head>
+<body><div class="b b-dom">
+  <div class="word">Dominoes</div>
+  <div class="row" id="row"></div>
+</div>
+<script>
+const row = document.getElementById('row');
+for (let i = 0; i < 16; i++) { const d = document.createElement('div'); d.className = 'd'; d.innerHTML = '<i></i>';
+  d.style.animationDelay = (i * .12) + 's'; if (i === 0) d.style.animationName = 'fall0'; row.appendChild(d); }
+document.head.insertAdjacentHTML('beforeend', '<style>@keyframes fall0 { 0%, 5% { transform: rotate(14deg); } 18%, 80% { transform: rotate(62deg); } 95%, 100% { transform: rotate(14deg); } }</style>');
+</script></body></html>

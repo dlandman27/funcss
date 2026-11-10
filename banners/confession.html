@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,400&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Confession: candlelit dark, words dissolve into dust ──── */
+  .b-conf { background: radial-gradient(ellipse at 50% 55%, #1a1610 0%, #08090f 65%); font-family: 'Lora', Georgia, serif; }
+  .b-conf .glow { position: absolute; width: 60cqi; height: 30cqi; border-radius: 50%;
+    background: radial-gradient(circle, rgba(180,100,30,.16), transparent 70%); }
+  .b-conf canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-conf .word { position: relative; font-style: italic; font-size: 12cqi; color: rgba(245,235,210,.88); letter-spacing: .2cqi; }
+  .b-conf .word small { display: block; text-align: center; font-size: 2.6cqi; letter-spacing: .8cqi; color: rgba(210,180,110,.55); margin-top: .6cqi; }
+</style></head>
+<body><div class="b b-conf">
+  <div class="glow"></div>
+  <canvas id="dust" width="800" height="300"></canvas>
+  <div class="word">Confession<small>release</small></div>
+</div>
+<script>
+const c = document.getElementById('dust'), g = c.getContext('2d');
+const P = [];
+function spawn(init) { return { x: 560 + Math.random() * 120, y: 110 + Math.random() * 70, vx: .2 + Math.random() * .5, vy: -.15 - Math.random() * .35, a: init ? Math.random() : 1, s: .6 + Math.random() * 1.4 }; }
+for (let i = 0; i < 90; i++) { const p = spawn(true); p.x += p.vx * 120 * (1 - p.a); p.y += p.vy * 120 * (1 - p.a); P.push(p); }
+(function tick() {
+  g.clearRect(0, 0, 800, 300);
+  for (const p of P) {
+    g.fillStyle = `rgba(230,205,150,${(p.a * .7).toFixed(3)})`; g.fillRect(p.x, p.y, p.s, p.s);
+    if (LIVE) { p.x += p.vx; p.y += p.vy; p.a -= .006; if (p.a <= 0) Object.assign(p, spawn(false)); }
+  }
+  if (LIVE) requestAnimationFrame(tick);
+})();
+</script></body></html>

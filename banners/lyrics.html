@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Lyrics to Songs Without Lyrics: a karaoke screen, ball bouncing over the title ── */
+  .b-lyr { background: radial-gradient(ellipse 120% 80% at 50% 20%, #3a3029 0%, #201a17 65%); font-family: 'Arial Black', Arial, sans-serif; color: #fff8ef; }
+  .b-lyr .wrap { position: relative; text-align: center; }
+  .b-lyr .line { position: relative; font-size: 7cqi; line-height: 1.1; letter-spacing: -.1cqi; white-space: nowrap; }
+  .b-lyr .line .sung { color: #ff7fa5; }
+  .b-lyr .line + .line { margin-top: 2.4cqi; }
+  .b-lyr .ball { position: absolute; left: 0; top: -4.2cqi; width: 3cqi; height: 3cqi; border-radius: 50%; background: #f0563e; border: .3cqi solid #fff8ef; box-shadow: .3cqi .3cqi 0 #000; }
+  .b-lyr .blanks { display: flex; justify-content: center; gap: 1.4cqi; margin-top: 4cqi; }
+  .b-lyr .blanks i { height: 1.8cqi; border-radius: 2cqi; background: #3a3029; border: .3cqi solid #6d625a; }
+  .b-lyr .tag { position: absolute; left: 4cqi; top: 4cqi; font-size: 1.8cqi; letter-spacing: .4cqi; background: #f7c948; color: #201a17; padding: .6cqi 1.4cqi; border-radius: 3cqi; }
+</style></head>
+<body><div class="b b-lyr">
+  <div class="tag">INSTRUMENTAL</div>
+  <div class="wrap">
+    <div class="line" id="l1"><span class="ball" id="ball"></span><span class="sung">Lyrics to Songs</span></div>
+    <div class="line" id="l2">Without Lyrics</div>
+    <div class="blanks"><i style="width:9cqi"></i><i style="width:5cqi"></i><i style="width:12cqi"></i><i style="width:6cqi"></i><i style="width:10cqi"></i></div>
+  </div>
+</div>
+<script>
+// still: ball resting on the last sung word. live: bounce word to word across both lines.
+const l1 = document.getElementById('l1'), l2 = document.getElementById('l2'), ball = document.getElementById('ball');
+const W1 = ['Lyrics', 'to', 'Songs'], W2 = ['Without', 'Lyrics'];
+function build(el, words, upto) { const keep = el.querySelector('.ball'); el.innerHTML = ''; if (keep) el.appendChild(keep);
+  words.forEach((w, i) => { const s = document.createElement('span'); s.textContent = w; if (i < upto) s.className = 'sung'; el.appendChild(s); if (i < words.length - 1) el.appendChild(document.createTextNode(' ')); }); }
+build(l1, W1, 3); build(l2, W2, 0);
+function place(el, idx, lift) { const sp = el.querySelectorAll('span:not(.ball)')[idx]; if (ball.parentNode !== el) el.appendChild(ball);
+  ball.style.left = (sp.offsetLeft + sp.offsetWidth / 2 - ball.offsetWidth / 2) + 'px'; ball.style.transform = `translateY(${-lift}px)`; }
+place(l1, 2, 0);
+if (LIVE) {
+  const seq = [[l1, 0], [l1, 1], [l1, 2], [l2, 0], [l2, 1]]; let k = 0, t0 = performance.now();
+  (function tick(now) {
+    const p = ((now - t0) % 600) / 600, step = Math.floor((now - t0) / 600) % seq.length;
+    if (step !== k) { k = step; if (k === 0) { build(l1, W1, 0); build(l2, W2, 0); } }
+    const [el, idx] = seq[k]; if (el === l1) build(l1, W1, idx + 1); else { build(l1, W1, 3); build(l2, W2, idx + 1); }
+    place(el, idx, Math.sin(p * Math.PI) * 26);
+    requestAnimationFrame(tick);
+  })(t0);
+}
+</script></body></html>

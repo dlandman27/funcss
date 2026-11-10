@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Pi Digit Distribution: graph paper census, ten bars ───── */
+  .b-pi { background: #f4f7f1; font-family: 'Space Mono', monospace; color: #1c2430; grid-template-columns: auto auto; gap: 5cqi; }
+  .b-pi::before { content: ''; position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(60,120,180,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(60,120,180,.13) 1px, transparent 1px); background-size: 2.5cqi 2.5cqi; }
+  .b-pi .left { position: relative; }
+  .b-pi .glyph { font-family: Georgia, serif; font-size: 11cqi; line-height: .8; color: #c8302b; }
+  .b-pi .word { font-size: 6.6cqi; font-weight: 700; line-height: 1.12; margin-top: 1.6cqi; }
+  .b-pi .digits { font-size: 2.3cqi; color: #5d6878; margin-top: 1.6cqi; letter-spacing: .15cqi; }
+  .b-pi .chart { position: relative; display: flex; align-items: flex-end; gap: .8cqi; height: 28cqi; border-bottom: .3cqi solid #1c2430; }
+  .b-pi .col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .b-pi .bar { width: 3cqi; background: #5aa0db; border: .25cqi solid #1c2430; border-bottom: 0; transform-origin: 50% 100%; animation: jockey 3s ease-in-out infinite; }
+  .b-pi .col:nth-child(odd) .bar { background: #2fb0a3; }
+  .b-pi .col b { position: absolute; bottom: -3.6cqi; font-size: 2.4cqi; font-weight: 400; }
+  .b-pi .col { position: relative; }
+  @keyframes jockey { 50% { transform: scaleY(var(--j)); } }
+</style></head>
+<body><div class="b b-pi">
+  <div class="left">
+    <div class="glyph">π</div>
+    <div class="word">Pi Digit<br>Distribution</div>
+    <div class="digits">3.14159 26535 89793…</div>
+  </div>
+  <div class="chart" id="ch"></div>
+</div>
+<script>
+const h = [86, 92, 80, 95, 84, 90, 78, 88, 97, 83], ch = document.getElementById('ch');
+h.forEach((v, d) => { const c = document.createElement('div'); c.className = 'col';
+  c.innerHTML = '<div class="bar" style="height:' + v + '%;--j:' + (0.88 + ((d * 7) % 5) * 0.06) + ';animation-delay:-' + (d * .37) + 's"></div><b>' + d + '</b>'; ch.appendChild(c); });
+</script></body></html>

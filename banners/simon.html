@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Simon: the four-colour pad, lights in sequence ───────── */
+  .b-simon { background: radial-gradient(130% 100% at 30% 0%, #fbf7ee 0%, #efe8db 70%, #e6ddce 100%);
+    font-family: 'Arial Black', Arial, sans-serif; color: #201a17; place-items: center start; }
+  .b-simon h1 { margin: 0 0 0 6cqi; font-size: 13.5cqi; letter-spacing: -.3cqi; line-height: 1; }
+  .b-simon h1 small { display: block; font-family: Georgia, serif; font-weight: 400; font-style: italic;
+    font-size: 3.6cqi; letter-spacing: 0; color: #6f665c; margin-top: 1.4cqi; }
+  .b-simon .pad { position: absolute; right: -12cqi; top: 50%; width: 50cqi; height: 50cqi; margin-top: -25cqi;
+    border-radius: 50%; background: #201a17; padding: 2.2cqi; display: grid; grid-template-columns: 1fr 1fr; gap: 1.6cqi; transform: rotate(-12deg); }
+  .b-simon .pad i { display: block; filter: brightness(.72) saturate(.85); }
+  .b-simon .pad i:nth-child(1) { background: #3fa34d; border-radius: 100% 0 0 0; }
+  .b-simon .pad i:nth-child(2) { background: #f0563e; border-radius: 0 100% 0 0; }
+  .b-simon .pad i:nth-child(3) { background: #f7c948; border-radius: 0 0 0 100%; }
+  .b-simon .pad i:nth-child(4) { background: #5aa0db; border-radius: 0 0 100% 0; }
+  .b-simon .pad i.lit { filter: brightness(1.25) saturate(1.1); box-shadow: 0 0 4cqi rgba(255,255,255,.5); }
+  .b-simon .hub { position: absolute; left: 50%; top: 50%; width: 18cqi; height: 18cqi; margin: -9cqi; border-radius: 50%;
+    background: #201a17; box-shadow: inset 0 0 0 1cqi #efe8db; }
+</style></head>
+<body><div class="b b-simon">
+  <h1>Simon<small>watch, then repeat</small></h1>
+  <div class="pad"><i></i><i class="lit"></i><i></i><i></i><div class="hub"></div></div>
+</div>
+<script>
+const pads = document.querySelectorAll('.pad i');
+if (LIVE) {
+  const seq = []; let i = 0;
+  const grow = () => seq.push(Math.random() * 4 | 0);
+  grow(); grow();
+  setInterval(() => {
+    pads.forEach((p) => p.classList.remove('lit'));
+    if (i < seq.length) { const k = seq[i++]; setTimeout(() => pads[k].classList.add('lit'), 80); }
+    else { i = 0; if (seq.length > 5) seq.length = 1; grow(); }
+  }, 520);
+}
+</script></body></html>

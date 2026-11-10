@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Chess Art Generator: pieces leave coloured trails of legal moves on a faint board ── */
+  .b-chess { background: #141210; font-family: Georgia, 'Times New Roman', serif; color: #f2ede2; }
+  .b-chess canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-chess .card { position: relative; background: rgba(20,18,16,.82); padding: 2.2cqi 4.4cqi 2.6cqi; border: .3cqi solid rgba(242,237,226,.25); text-align: center; }
+  .b-chess h1 { margin: 0; font-weight: 400; font-size: 8.4cqi; line-height: 1; letter-spacing: -.1cqi; }
+  .b-chess h1 i { display: block; font-size: 4.2cqi; letter-spacing: 1.4cqi; text-transform: uppercase; font-style: normal; color: #b0a796; margin-top: 1.2cqi; }
+</style></head>
+<body><div class="b b-chess">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="card"><h1>Chess Art<i>Generator</i></h1></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d'), S = 40, COLS = 20, ROWS = 8, OY = -10;
+const COLORS = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f7c948', '#ff7fa5'];
+const GLYPH = ['♞', '♜', '♝', '♛', '♚', '♟'];
+let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const MOVES = [
+  [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]],
+  [[0,1],[1,0],[0,-1],[-1,0],[0,2],[2,0],[0,-3],[-3,0]],
+  [[1,1],[2,2],[-1,1],[-2,-2],[1,-1],[-2,2],[3,3],[-1,-1]],
+  [[1,1],[0,2],[-2,0],[2,-2],[3,0],[-1,1],[0,-2],[1,0]],
+  [[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]],
+  [[0,-1],[0,-1],[1,-1],[-1,-1],[0,1],[0,1],[1,1],[-1,1]]];
+const ps = [[2,2],[17,5],[4,6],[15,1],[9,1],[12,6]].map(([x, y], i) => ({ x, y, i, path: [[x, y]] }));
+function move(p) { for (let k = 0; k < 20; k++) { const [dx, dy] = MOVES[p.i][Math.floor(rnd() * 8)], nx = p.x + dx, ny = p.y + dy;
+  const inMiddle = nx > 6 && nx < 13 && ny > 1 && ny < 6;
+  if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && !inMiddle) { p.x = nx; p.y = ny; p.path.push([nx, ny]); if (p.path.length > 14) p.path.shift(); return; } } }
+const cx = (x) => x * S + S / 2, cy = (y) => OY + y * S + S / 2 + 10;
+function draw() {
+  g.fillStyle = '#141210'; g.fillRect(0, 0, 800, 300);
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if ((x + y) % 2) { g.fillStyle = '#1d1a17'; g.fillRect(x * S, OY + y * S + 10, S, S); }
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const p of ps) { g.strokeStyle = COLORS[p.i]; g.lineWidth = 6; g.globalAlpha = .85; g.beginPath();
+    p.path.forEach(([x, y], k) => k ? g.lineTo(cx(x), cy(y)) : g.moveTo(cx(x), cy(y))); g.stroke(); g.globalAlpha = 1;
+    g.font = '34px Georgia, "DejaVu Sans", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.beginPath(); g.arc(cx(p.x), cy(p.y), 17, 0, 7); g.fillStyle = COLORS[p.i]; g.fill(); g.fillStyle = '#f2ede2'; g.strokeStyle = '#141210'; g.lineWidth = 4; g.strokeText(GLYPH[p.i], cx(p.x), cy(p.y)); g.fillText(GLYPH[p.i], cx(p.x), cy(p.y)); }
+}
+for (let k = 0; k < 12; k++) ps.forEach(move);
+draw();
+if (LIVE) setInterval(() => { move(ps[Math.floor(Math.random() * ps.length)]); draw(); }, 280);
+</script></body></html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Virtual Piano: dark gradient, a keyboard along the bottom ── */
+  .b-pn { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); font-family: Arial, sans-serif; color: #fff; place-items: start center; }
+  .b-pn .word { position: relative; margin-top: 5cqi; font-size: 10cqi; font-weight: 700; letter-spacing: -.2cqi; text-shadow: 0 .3cqi .6cqi rgba(0,0,0,.4); }
+  .b-pn .kb { position: absolute; left: 3cqi; right: 3cqi; bottom: 0; height: 17cqi; display: flex; background: rgba(0,0,0,.4); padding: 1cqi 1cqi 0; border-radius: 1cqi 1cqi 0 0; }
+  .b-pn .w { position: relative; flex: 1; background: #fff; border: 1px solid #333; border-radius: 0 0 .5cqi .5cqi; }
+  .b-pn .w i { position: absolute; right: -30%; top: 0; width: 60%; height: 60%; background: #000; z-index: 2; border-radius: 0 0 .4cqi .4cqi; border: 1px solid #222; }
+  .b-pn .w.p { animation: press 2.4s steps(1) infinite; }
+  @keyframes press { 0%, 100% { background: #fff; } 10%, 25% { background: #ccc; } }
+</style></head>
+<body><div class="b b-pn">
+  <div class="word">Virtual Piano</div>
+  <div class="kb" id="kb"></div>
+</div>
+<script>
+const kb = document.getElementById('kb'), blacks = [1, 1, 0, 1, 1, 1, 0];
+for (let i = 0; i < 21; i++) { const w = document.createElement('div'); w.className = 'w';
+  if (blacks[i % 7] && i < 20) w.appendChild(document.createElement('i'));
+  if ([7, 9, 11, 14].includes(i)) { w.classList.add('p'); w.style.animationDelay = ({ 7: 0, 9: .5, 11: 1, 14: 1.5 })[i] + 's'; }
+  kb.appendChild(w); }
+</script></body></html>

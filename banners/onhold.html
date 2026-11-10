@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Archivo+Narrow:ital,wght@0,700;1,500&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── On Hold: beige desk phone, LCD timer, elevator notes ──── */
+  .b-oh { background: #d9d2c3; font-family: 'Archivo Narrow', sans-serif; color: #2c2a26; grid-template-columns: auto auto; gap: 6cqi; }
+  .b-oh .phone { position: relative; width: 40cqi; height: 26cqi; background: linear-gradient(#f1ebdd, #ddd4c1); border-radius: 2cqi 2cqi 1.4cqi 1.4cqi;
+    box-shadow: 0 1cqi 0 #b8ad97, 0 1.6cqi 2.4cqi rgba(0,0,0,.18); padding: 2.6cqi; }
+  .b-oh .lcd { background: #9fb38a; border: .5cqi solid #6d6a60; border-radius: .6cqi; padding: .6cqi 2cqi; font-family: 'VT323', monospace; color: #1f2a17; box-shadow: inset 0 .4cqi .8cqi rgba(0,0,0,.25); }
+  .b-oh .lcd .l1 { font-size: 3.6cqi; line-height: 1; letter-spacing: .2cqi; }
+  .b-oh .lcd .l2 { font-size: 7.6cqi; line-height: .95; letter-spacing: .3cqi; }
+  .b-oh .keys { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1cqi; margin-top: 2cqi; }
+  .b-oh .keys i { height: 2.6cqi; border-radius: .5cqi; background: #fbf7ee; box-shadow: 0 .35cqi 0 #b8ad97; }
+  .b-oh .keys i.hold { background: #e0503f; box-shadow: 0 .35cqi 0 #9b2e22; animation: led 1.2s steps(1) infinite; }
+  @keyframes led { 50% { background: #f3a397; } }
+  .b-oh .word { font-size: 13cqi; font-weight: 700; line-height: .95; letter-spacing: -.2cqi; text-transform: uppercase; }
+  .b-oh .word small { display: block; margin-top: 2cqi; font-size: 3.2cqi; font-weight: 500; font-style: italic; text-transform: none; letter-spacing: 0; color: #5d574b; }
+  .b-oh .note { position: absolute; font-size: 4cqi; color: #5d574b; opacity: .55; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 50% { transform: translateY(-2cqi) rotate(8deg); } }
+</style></head>
+<body><div class="b b-oh">
+  <div class="phone">
+    <div class="lcd"><div class="l1">CALLER #47 · HOLD</div><div class="l2" id="t">00:47:12</div></div>
+    <div class="keys"><i></i><i></i><i></i><i></i><i></i><i class="hold"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="word">On Hold<small>your call is important to us</small></div>
+  <i class="note" style="left:5cqi;top:5cqi">♪</i><i class="note" style="left:46cqi;top:6cqi;animation-delay:-1.5s">♫</i>
+</div>
+<script>
+let s = 47 * 60 + 12; const t = document.getElementById('t'), p = n => String(n).padStart(2, '0');
+(function tick() { t.textContent = p(Math.floor(s / 3600)) + ':' + p(Math.floor(s / 60) % 60) + ':' + p(s % 60); if (LIVE) { s++; setTimeout(tick, 1000); } })();
+</script></body></html>

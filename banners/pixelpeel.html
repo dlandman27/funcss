@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Pixel Peel: a circle that splits into smaller circles ─── */
+  .b-peel { background: #141210; color: #f2ede2; place-items: center end; }
+  .b-peel canvas { position: absolute; left: 7cqi; top: 0; }
+  .b-peel .word { position: relative; padding-right: 6cqi; width: 46cqi; font: 700 12cqi/1 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .01em; text-align: left; }
+  .b-peel .word small { display: block; margin-top: 2.2cqi; font: italic 3.3cqi Georgia, 'Times New Roman', serif; color: #8f877c; }
+  .b-peel .word small b { color: #ffd34d; font-style: normal; }
+</style></head>
+<body><div class="b b-peel">
+  <canvas id="c" width="300" height="300"></canvas>
+  <div class="word">Pixel<br>Peel<small>move your mouse until the <b>circle</b> gives up</small></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const S = 256, OX = 22, OY = 22;
+// the hidden picture: a sunset over hills
+function pic(x, y) {
+  const u = x / S, v = y / S;
+  const sd = Math.hypot(u - .62, v - .48);
+  if (v > .68 + .08 * Math.sin(u * 7)) return [38 + 30 * u, 58 + 20 * v, 52];
+  if (v > .6 + .06 * Math.sin(u * 5 + 2)) return [92, 70, 96];
+  if (sd < .13) return [255, 211, 77];
+  const t = v / .7;
+  return [250 - 40 * t, 140 - 80 * t + 40 * (1 - sd), 90 + 70 * t];
+}
+let leaves = [];
+function avg(x, y, s) {
+  let r = 0, gg = 0, b = 0, n = 0;
+  for (let i = .25; i < 1; i += .5) for (let j = .25; j < 1; j += .5) { const p = pic(x + s * i, y + s * j); r += p[0]; gg += p[1]; b += p[2]; n++; }
+  return `rgb(${r / n | 0},${gg / n | 0},${b / n | 0})`;
+}
+function split(l) { const h = l.s / 2; return [[l.x, l.y, h], [l.x + h, l.y, h], [l.x, l.y + h, h], [l.x + h, l.y + h, h]].map(([x, y, s]) => ({ x, y, s, col: avg(x, y, s) })); }
+function reset() {
+  leaves = [{ x: 0, y: 0, s: S, col: avg(0, 0, S) }];
+  // still frame: peel along a swipe path from the top-left
+  for (let pass = 0; pass < 5; pass++) leaves = leaves.flatMap((l) => {
+    const cx = l.x + l.s / 2, cy = l.y + l.s / 2, d = Math.abs(cy - (S * .15 + cx * .7)) / S;
+    return l.s > 8 && d < .7 - pass * .13 ? split(l) : [l];
+  });
+}
+function draw() {
+  g.clearRect(0, 0, 300, 300);
+  for (const l of leaves) { g.fillStyle = l.col; g.beginPath(); g.arc(OX + l.x + l.s / 2, OY + l.y + l.s / 2, l.s / 2, 0, 7); g.fill(); }
+}
+reset(); draw();
+if (LIVE) setInterval(() => {
+  const big = leaves.filter((l) => l.s > 4);
+  if (!big.length) { reset(); draw(); return; }
+  for (let k = 0; k < 6 && big.length; k++) {
+    const l = big.splice(Math.random() * big.length | 0, 1)[0];
+    leaves.splice(leaves.indexOf(l), 1, ...split(l));
+  }
+  draw();
+}, 60);
+</script></body></html>

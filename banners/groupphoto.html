@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── The Group Photo: the camera viewfinder, everyone in rows ── */
+  .b-gp { background: #26282b; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; place-items: start; }
+  .b-gp .word { position: absolute; left: 6cqi; top: 4.5cqi; font-size: 7.6cqi; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .b-gp .rec { position: absolute; right: 6cqi; top: 5cqi; font-size: 2cqi; letter-spacing: .14em; color: rgba(255,255,255,.7); display: flex; align-items: center; gap: .8cqi; }
+  .b-gp .rec i { width: 1.2cqi; height: 1.2cqi; border-radius: 50%; background: #e34b3f; }
+  .b-gp .br { position: absolute; width: 4cqi; height: 4cqi; border: .35cqi solid rgba(255,255,255,.55); }
+  .b-gp .br.tl { left: 2.5cqi; top: 2.5cqi; border-right: 0; border-bottom: 0; } .b-gp .br.tr { right: 2.5cqi; top: 2.5cqi; border-left: 0; border-bottom: 0; }
+  .b-gp .br.bl { left: 2.5cqi; bottom: 2.5cqi; border-right: 0; border-top: 0; } .b-gp .br.br2 { right: 2.5cqi; bottom: 2.5cqi; border-left: 0; border-top: 0; }
+  .b-gp svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; }
+  .b-gp .flash { position: absolute; inset: 0; background: #fff; opacity: 0; animation: flash 3.2s ease-out infinite; }
+  @keyframes flash { 0%, 80% { opacity: 0; } 82% { opacity: .85; } 100% { opacity: 0; } }
+</style></head>
+<body><div class="b b-gp">
+  <svg viewBox="0 0 800 300" id="ppl"></svg>
+  <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+  <div class="word">The Group Photo</div>
+  <div class="rec"><i></i>REC</div>
+  <div class="flash"></div>
+</div>
+<script>
+// back row (tall) then front row; one empty slot left for the next demand
+const svg = document.getElementById('ppl');
+const SKIN = ['#f1c6a0', '#c98f63', '#8d5a3b', '#f5d3b5', '#b9784f', '#e2a97f'];
+const CLOTH = ['#f2729a', '#f7d14a', '#2f7cf6', '#e8737a', '#2f8a4c', '#a98fd0', '#fbfaf7', '#e8b44a', '#5aa0db'];
+const HAIR = ['#1b1512', '#5a3a22', '#c9a26b', '#9aa3ad', '#3a2a1e'];
+let h = '', k = 0;
+const person = (x, base, s) => {
+  const sk = SKIN[k % SKIN.length], cl = CLOTH[(k * 4) % CLOTH.length], hr = HAIR[(k * 3) % HAIR.length]; k++;
+  return `<g transform="translate(${x} ${base}) scale(${s})">
+    <path d="M-34 0 Q-34 -46 0 -48 Q34 -46 34 0 Z" fill="${cl}"/>
+    <rect x="-7" y="-58" width="14" height="14" fill="${sk}"/>
+    <circle cx="0" cy="-76" r="21" fill="${sk}"/>
+    <path d="M-21 -76 Q-22 -100 0 -99 Q22 -100 21 -76 Q14 -90 0 -89 Q-14 -90 -21 -76Z" fill="${hr}"/></g>`;
+};
+[[250, 1.12], [330, 1.2], [410, 1.08], [490, 1.18], [570, 1.1], [650, 1.15]].forEach(([x, s]) => h += person(x, 245, s));
+[[210, 1], [290, .95], [370, 1.02], [530, .97], [610, 1], [690, .92]].forEach(([x, s]) => h += person(x, 300, s));
+h += `<rect x="420" y="195" width="80" height="105" rx="8" fill="none" stroke="#e8b44a" stroke-width="3" stroke-dasharray="8 6"/>`;
+svg.innerHTML = h;
+</script></body></html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Scoreboard: an LED stadium board, two teams ───────────── */
+  .b-score { background: #101114; font-family: 'DotGothic16', monospace; place-items: center; }
+  .b-score::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, transparent 1.2px, rgba(0,0,0,.45) 1.8px) 0 0 / 5px 5px; pointer-events: none; }
+  .b-score .wrap { position: relative; display: flex; align-items: center; gap: 6cqi; }
+  .b-score .word { font-size: 10.5cqi; line-height: 1; color: #ffb000; text-shadow: 0 0 2cqi rgba(255, 176, 0, .6); letter-spacing: .04em; }
+  .b-score .panel { display: flex; gap: 1.6cqi; }
+  .b-score .d { width: 15cqi; padding: 1.6cqi 0 1.2cqi; text-align: center; background: #050506; border: .4cqi solid #2a2c33; font-size: 14cqi; line-height: 1; }
+  .b-score .home { color: #f0563e; text-shadow: 0 0 2.5cqi rgba(240, 86, 62, .75); }
+  .b-score .away { color: #5aa0db; text-shadow: 0 0 2.5cqi rgba(90, 160, 219, .75); }
+  .b-score .bump { animation: bump .3s; } @keyframes bump { 50% { transform: scale(1.1); } }
+</style></head>
+<body><div class="b b-score">
+  <div class="wrap">
+    <div class="word">SCORE<br>BOARD</div>
+    <div class="panel"><div class="d home" id="h">03</div><div class="d away" id="a">02</div></div>
+  </div>
+</div>
+<script>
+if (LIVE) { const el = [document.getElementById('h'), document.getElementById('a')], sc = [3, 2];
+  setInterval(() => { const i = Math.random() < .5 ? 0 : 1; sc[i] = (sc[i] + 1) % 100; el[i].textContent = String(sc[i]).padStart(2, '0'); el[i].classList.remove('bump'); void el[i].offsetWidth; el[i].classList.add('bump'); }, 1300); }
+</script></body></html>

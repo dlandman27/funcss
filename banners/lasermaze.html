@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Laser Maze: a cyan beam pinned to a hexagon's centre, bouncing forever ── */
+  .b-laser { background: #0b0908; color: #fef9ee; font-family: Georgia, 'Times New Roman', serif; place-items: center start; }
+  .b-laser canvas { position: absolute; right: -1cqi; top: 0; width: 50cqi; height: 37.5cqi; }
+  .b-laser .word { position: relative; padding-left: 7cqi; font-size: 10cqi; font-style: italic; line-height: 1; text-shadow: 0 0 3cqi rgba(63, 233, 212, .35); }
+  .b-laser .word small { display: block; font-size: 2.8cqi; color: rgba(245, 236, 214, .55); margin-top: 1.8cqi; letter-spacing: .1cqi; }
+</style></head>
+<body><div class="b b-laser">
+  <canvas id="c" width="400" height="300"></canvas>
+  <div class="word">Laser Maze<small>aim once. it bounces forever.</small></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const cx = 220, cy = 150, R = 118, poly = [];
+for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; poly.push([cx + Math.cos(a) * R, cy + Math.sin(a) * R]); }
+function path(ang, n) {
+  let x = cx, y = cy, dx = Math.cos(ang), dy = Math.sin(ang); const pts = [[x, y]];
+  for (let k = 0; k < n; k++) {
+    let best = 1e9, nx = 0, ny = 0;
+    for (let i = 0; i < 6; i++) {
+      const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % 6], ex = x2 - x1, ey = y2 - y1, den = dx * ey - dy * ex;
+      if (Math.abs(den) < 1e-9) continue;
+      const t = ((x1 - x) * ey - (y1 - y) * ex) / den, u = ((x1 - x) * dy - (y1 - y) * dx) / den;
+      if (t > 1e-6 && u >= 0 && u <= 1 && t < best) { best = t; const L = Math.hypot(ex, ey); nx = -ey / L; ny = ex / L; }
+    }
+    x += dx * best; y += dy * best; pts.push([x, y]); const d = dx * nx + dy * ny; dx -= 2 * d * nx; dy -= 2 * d * ny;
+  }
+  return pts;
+}
+let ang = .37, t = 0;
+function draw() {
+  g.fillStyle = '#0b0908'; g.fillRect(0, 0, 400, 300);
+  g.strokeStyle = 'rgba(245, 236, 214, .22)'; g.lineWidth = 1.2; g.beginPath(); poly.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.stroke();
+  const pts = path(ang, 26);
+  g.lineJoin = 'round';
+  g.strokeStyle = 'rgba(63, 233, 212, .35)'; g.lineWidth = 5; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke();
+  g.strokeStyle = '#fef9ee'; g.lineWidth = 1.1; g.stroke();
+  g.fillStyle = '#3fe9d4'; g.beginPath(); g.arc(cx, cy, 5, 0, 7); g.fill();
+  if (LIVE) { t += .004; ang = .37 + Math.sin(t) * .25; requestAnimationFrame(draw); }
+}
+draw();
+</script></body></html>

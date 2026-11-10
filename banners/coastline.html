@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Coastline: survey map, fractal shore, Georgia card ────── */
+  .b-coast { background: linear-gradient(#1d5580, #123a5c); font-family: Georgia, 'Times New Roman', serif; place-items: center start; }
+  .b-coast canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-coast .card { position: relative; margin-left: 6cqi; padding: 2.6cqi 4.4cqi 3cqi; background: rgba(248,244,232,.94);
+    border: 1px solid rgba(60,50,30,.25); box-shadow: 0 .8cqi 3cqi rgba(0,20,40,.35); color: #26374a; }
+  .b-coast .card small { display: block; font-size: 2.4cqi; letter-spacing: .6cqi; text-transform: uppercase; color: #8a7d63; }
+  .b-coast .word { font-size: 10.5cqi; line-height: 1.05; }
+  .b-coast .len { font-size: 3.2cqi; font-style: italic; color: #6b6049; }
+  .b-coast .len b { font-style: normal; font-family: 'Courier New', monospace; color: #3d3527; }
+</style></head>
+<body><div class="b b-coast">
+  <canvas id="map" width="800" height="300"></canvas>
+  <div class="card"><small>Coastal Survey</small><div class="word">Coastline</div><div class="len">ruler 1 km &middot; <b id="km">1,284 km</b></div></div>
+</div>
+<script>
+const c = document.getElementById('map'), g = c.getContext('2d'), km = document.getElementById('km');
+function rnd(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+function coast(depth) {
+  const r = rnd(7); let pts = [[560, -10], [610, 120], [520, 200], [600, 310]];
+  for (let d = 0; d < depth; d++) {
+    const out = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], len = Math.hypot(x1 - x0, y1 - y0);
+      out.push([(x0 + x1) / 2 + (r() - .5) * len * .55, (y0 + y1) / 2 + (r() - .5) * len * .2], pts[i]);
+    }
+    pts = out;
+  }
+  return pts;
+}
+function draw(depth) {
+  g.clearRect(0, 0, 800, 300);
+  const p = coast(depth);
+  g.beginPath(); g.moveTo(820, -10); p.forEach(([x, y]) => g.lineTo(x, y)); g.lineTo(820, 310); g.closePath();
+  const land = g.createLinearGradient(520, 0, 800, 0);
+  land.addColorStop(0, '#b3a26e'); land.addColorStop(.25, '#8fa065'); land.addColorStop(1, '#5d7a4c');
+  g.fillStyle = land; g.fill();
+  g.lineWidth = 3; g.strokeStyle = 'rgba(232,216,168,.9)'; g.stroke();
+  g.lineWidth = 1; g.strokeStyle = 'rgba(255,255,255,.55)'; g.stroke();
+  let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+  km.textContent = Math.round(L * 2.6).toLocaleString('en-US') + ' km';
+}
+let depth = 7; draw(depth);
+if (LIVE) { depth = 1; setInterval(() => { depth = depth >= 9 ? 1 : depth + 1; draw(depth); }, 600); }
+</script></body></html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Infinite Maze: ink maze on warm paper, slowly zooming out ── */
+  .b-maze { background: #f0ebdf; font-family: Georgia, 'Times New Roman', serif; color: #33323b; }
+  .b-maze canvas { position: absolute; left: 50%; top: 50%; width: 1200px; height: 480px; margin: -240px 0 0 -600px; animation: zoom 12s ease-in-out infinite; }
+  @keyframes zoom { 50% { transform: scale(.72); } }
+  .b-maze .plate { position: relative; background: #f0ebdf; padding: 2.4cqi 4.6cqi; box-shadow: 0 0 0 .5cqi #f0ebdf, 0 0 0 .75cqi #33323b; text-align: center; }
+  .b-maze .word { font-size: 10cqi; font-style: italic; line-height: 1; }
+  .b-maze .sub { font-size: 2.6cqi; font-style: italic; color: rgba(60,55,45,.6); margin-top: .8cqi; letter-spacing: .1cqi; }
+</style></head>
+<body><div class="b b-maze">
+  <canvas id="c" width="1200" height="480"></canvas>
+  <div class="plate"><div class="word">Infinite Maze</div><div class="sub">zoom out. it keeps going.</div></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const S = 24, W = 50, H = 20;
+let s = 9; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+// recursive-backtracker maze
+const seen = new Uint8Array(W * H), walls = [];
+for (let i = 0; i < W * H; i++) walls.push([1, 1, 1, 1]); // N E S W
+const st = [[0, 0]]; seen[0] = 1;
+const D = [[0, -1, 0, 2], [1, 0, 1, 3], [0, 1, 2, 0], [-1, 0, 3, 1]];
+while (st.length) {
+  const [x, y] = st[st.length - 1];
+  const n = D.filter(([dx, dy]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < W && ny < H && !seen[ny * W + nx]; });
+  if (!n.length) { st.pop(); continue; }
+  const [dx, dy, a, b] = n[Math.floor(r() * n.length)];
+  walls[y * W + x][a] = 0; walls[(y + dy) * W + x + dx][b] = 0; seen[(y + dy) * W + x + dx] = 1; st.push([x + dx, y + dy]);
+}
+g.strokeStyle = '#33323b'; g.lineWidth = 2.4; g.lineCap = 'square'; g.beginPath();
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  const w = walls[y * W + x], X = x * S, Y = y * S;
+  if (w[0]) { g.moveTo(X, Y); g.lineTo(X + S, Y); }
+  if (w[3]) { g.moveTo(X, Y); g.lineTo(X, Y + S); }
+}
+g.stroke();
+// a red trail wandering in from the left
+g.strokeStyle = 'rgba(192, 57, 43, .55)'; g.lineWidth = 5; g.lineJoin = 'round'; g.beginPath();
+let px = 0, py = 10; g.moveTo(px * S + S / 2, py * S + S / 2);
+const vis = new Set([px + ',' + py]);
+for (let k = 0; k < 60; k++) {
+  const w = walls[py * W + px]; const opts = D.map((d, i) => [d, i]).filter(([d, i]) => !w[i] && !vis.has((px + d[0]) + ',' + (py + d[1])));
+  if (!opts.length) break; opts.sort((A, B) => B[0][0] - A[0][0]);
+  const [d] = opts[0]; px += d[0]; py += d[1]; vis.add(px + ',' + py); g.lineTo(px * S + S / 2, py * S + S / 2);
+}
+g.stroke();
+</script></body></html>

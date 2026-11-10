@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Your Phone Has a Crack in It: white glass, spiderweb crack ── */
+  .b-crack { background: #fdfdfb; font-family: Georgia, 'Times New Roman', serif; color: #2a2a2e; place-items: center start; }
+  .b-crack svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-crack .word { position: relative; margin-left: 6cqi; font-size: 8.4cqi; line-height: 1.08; }
+  .b-crack .word small { display: block; margin-top: 2cqi; font-size: 2.8cqi; font-style: italic; color: #6a6a70; }
+  .b-crack .fresh path { stroke-dasharray: 300; stroke-dashoffset: 300; animation: crack 3s ease-out infinite; }
+  @keyframes crack { 0%, 20% { stroke-dashoffset: 300; } 45%, 100% { stroke-dashoffset: 0; } }
+</style></head>
+<body><div class="b b-crack">
+  <svg viewBox="0 0 800 300" id="glass"></svg>
+  <div class="word">Your Phone Has<br>a Crack in It<small>screen integrity: 64%</small></div>
+</div>
+<script>
+// deterministic crack so every render is the same
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function web(cx, cy, arms, len, cls) {
+  let d = '', rings = '';
+  const ends = [];
+  for (let a = 0; a < arms; a++) {
+    let ang = (a / arms) * Math.PI * 2 + rnd() * .5, x = cx, y = cy, pts = [[x, y]];
+    const L = len * (.55 + rnd() * .6);
+    for (let s = 0; s < 6; s++) { ang += (rnd() - .5) * .5; x += Math.cos(ang) * L / 6; y += Math.sin(ang) * L / 6; pts.push([x, y]); }
+    d += 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+    ends.push(pts);
+  }
+  // concentric shards between neighbouring arms
+  for (const k of [1, 2, 3]) for (let a = 0; a < arms; a++) {
+    const p = ends[a][k], q = ends[(a + 1) % arms][k];
+    if (rnd() < .7) rings += `M${p[0].toFixed(1)} ${p[1].toFixed(1)} L${q[0].toFixed(1)} ${q[1].toFixed(1)}`;
+  }
+  return `<g class="${cls}" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="${d}" stroke="rgba(255,255,255,.9)" stroke-width="3" transform="translate(1 1)"/>
+    <path d="${d}" stroke="#55555c" stroke-width="1.4"/>
+    <path d="${rings}" stroke="#9a9aa0" stroke-width="1"/></g>`;
+}
+document.getElementById('glass').innerHTML =
+  web(640, 120, 11, 260, 'old') + `<circle cx="640" cy="120" r="5" fill="#55555c"/>` + web(140, 250, 7, 120, 'fresh');
+</script></body></html>

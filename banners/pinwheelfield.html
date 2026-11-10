@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Pinwheel Field: a breezy grid of paper windmills ──────── */
+  .b-pin { background: linear-gradient(180deg, #d7ecf8 0%, #eef6f0 70%, #e3efd2 100%); font-family: Georgia, 'Times New Roman', serif; color: #201a17; place-items: center start; }
+  .b-pin .field { position: absolute; right: 3cqi; top: 0; bottom: 0; width: 34cqi; }
+  .b-pin .pw { position: absolute; }
+  .b-pin .pw .stick { position: absolute; left: 50%; top: 50%; width: .5cqi; height: 9cqi; margin-left: -.25cqi; background: #a08a6a; border-radius: 2px; }
+  .b-pin .pw svg { position: relative; display: block; overflow: visible; animation: spin var(--d) linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .b-pin .word { position: relative; padding-left: 6cqi; font-size: 10.5cqi; line-height: .95; font-weight: 700; letter-spacing: -.02em; }
+  .b-pin .word small { display: block; margin-top: 2.4cqi; font-size: 3.2cqi; font-weight: 400; font-style: italic; letter-spacing: .02em; color: #2fb0a3; }
+</style></head>
+<body><div class="b b-pin">
+  <div class="field" id="field"></div>
+  <div class="word">Pinwheel<br>Field<small>wave your mouse, make a gust</small></div>
+</div>
+<script>
+const field = document.getElementById('field');
+const cols = ['#f0563e', '#f7c948', '#5aa0db', '#2fb0a3', '#ff7fa5', '#a98fd0'];
+const NS = 'http://www.w3.org/2000/svg';
+let n = 0;
+for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+  const s = 46 + ((r * 7 + c * 3) % 4) * 4;
+  const x = c * 66 + (r % 2) * 30 + 6, y = 18 + r * 70;
+  const pw = document.createElement('div'); pw.className = 'pw';
+  pw.style.left = x + 'px'; pw.style.top = y + 'px'; pw.style.width = s + 'px'; pw.style.height = s + 'px';
+  pw.innerHTML = '<i class="stick"></i>';
+  const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '-11 -11 22 22'); svg.setAttribute('width', s); svg.setAttribute('height', s);
+  // gust sweeps in from the right: outer pinwheels spin fastest
+  svg.style.setProperty('--d', (0.5 + (3 - c) * 0.4 + Math.random() * .3) + 's');
+  svg.style.transform = 'rotate(' + (n * 37 % 90) + 'deg)';
+  const a = cols[n % cols.length], b = cols[(n + 2) % cols.length];
+  for (let k = 0; k < 4; k++) {
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', 'M0 0 L0 -10 C6 -10 10 -6 9 -1 Z');
+    p.setAttribute('fill', k % 2 ? a : b); p.setAttribute('stroke', '#201a17'); p.setAttribute('stroke-width', '.9'); p.setAttribute('stroke-linejoin', 'round');
+    p.setAttribute('transform', 'rotate(' + k * 90 + ')'); svg.appendChild(p);
+  }
+  const dot = document.createElementNS(NS, 'circle'); dot.setAttribute('r', '1.6'); dot.setAttribute('fill', '#fff8ef'); dot.setAttribute('stroke', '#201a17'); dot.setAttribute('stroke-width', '.8');
+  svg.appendChild(dot); pw.appendChild(svg); field.appendChild(pw); n++;
+}
+</script></body></html>

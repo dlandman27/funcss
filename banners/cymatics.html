@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Cymatics: black Chladni plate, sand on the nodal lines ── */
+  .b-cym { background: #121212; font-family: 'Cormorant Garamond', Georgia, serif; color: #f0e6d0; grid-template-columns: auto auto; gap: 7cqi; }
+  .b-cym canvas { width: 30cqi; height: 30cqi; background: linear-gradient(135deg, #2a2a2c, #19191a); box-shadow: 0 0 0 .4cqi #3a3a3c, 0 1.4cqi 4cqi rgba(0,0,0,.6); }
+  .b-cym .word { font-size: 12cqi; letter-spacing: 1cqi; line-height: 1; }
+  .b-cym .word small { display: block; font-size: 3cqi; letter-spacing: .6cqi; color: #a99d84; font-style: italic; margin-top: 1cqi; }
+</style></head>
+<body><div class="b b-cym">
+  <canvas id="plate" width="240" height="240"></canvas>
+  <div class="word">Cymatics<small id="hz">432 Hz</small></div>
+</div>
+<script>
+const c = document.getElementById('plate'), g = c.getContext('2d'), hz = document.getElementById('hz');
+const modes = [[3, 5, 432], [2, 7, 528], [4, 5, 396], [1, 6, 285]];
+let mi = 0;
+const N = 5200, P = [];
+function chladni(x, y, n, m) { return Math.cos(n * Math.PI * x) * Math.cos(m * Math.PI * y) - Math.cos(m * Math.PI * x) * Math.cos(n * Math.PI * y); }
+for (let i = 0; i < N; i++) P.push([Math.random(), Math.random()]);
+function settle(steps) {
+  const [n, m] = modes[mi];
+  for (let s = 0; s < steps; s++) for (const p of P) {
+    const v = Math.abs(chladni(p[0], p[1], n, m));
+    const k = v * .045 + .0004;
+    p[0] = Math.min(1, Math.max(0, p[0] + (Math.random() - .5) * k));
+    p[1] = Math.min(1, Math.max(0, p[1] + (Math.random() - .5) * k));
+  }
+}
+function draw() {
+  g.clearRect(0, 0, 240, 240); g.fillStyle = 'rgba(240,230,208,.85)';
+  for (const p of P) g.fillRect(p[0] * 240, p[1] * 240, 1.2, 1.2);
+}
+settle(520); draw();
+if (LIVE) {
+  let t = 0;
+  (function tick() {
+    if (++t % 150 === 0) { mi = (mi + 1) % modes.length; hz.textContent = modes[mi][2] + ' Hz'; }
+    settle(3); draw(); requestAnimationFrame(tick);
+  })();
+}
+</script></body></html>

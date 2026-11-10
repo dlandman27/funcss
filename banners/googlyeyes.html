@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Googly Eyes: a royal-blue wall of drooping googly eyes ── */
+  .b-goog { background: linear-gradient(160deg, #4a60e0, #32419f); font-family: 'Lilita One', sans-serif; color: #fff8ef; }
+  .b-goog .eye { position: absolute; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 40%, #e9e6df 75%);
+    box-shadow: inset 0 0 0 .35cqi #201a17, .3cqi .5cqi 0 rgba(10,15,60,.35); }
+  .b-goog .eye i { position: absolute; inset: 0; animation: rattle 1.8s cubic-bezier(.3,1.8,.5,1) infinite; }
+  .b-goog .eye i::after { content: ''; position: absolute; left: 50%; top: 50%; width: 50%; height: 50%; border-radius: 50%; background: #201a17;
+    transform: translate(-50%, 0); }
+  @keyframes rattle { 0%, 40%, 100% { transform: rotate(var(--r)); } 55% { transform: rotate(calc(var(--r) + 140deg)); } 70% { transform: rotate(calc(var(--r) - 60deg)); } 85% { transform: rotate(calc(var(--r) + 20deg)); } }
+  .b-goog .word { position: relative; font-size: 12cqi; line-height: 1; letter-spacing: .01em; padding: 1cqi 4cqi 1.6cqi; border-radius: 99px;
+    background: #2a3790; box-shadow: 0 0 0 .4cqi #fff8ef; }
+</style></head>
+<body><div class="b b-goog">
+  <span id="eyes"></span>
+  <div class="word">Googly Eyes</div>
+</div>
+<script>
+const host = document.getElementById('eyes');
+const E = [[4,8,8],[13,22,6],[3,26,7],[18,4,5],[24,26,9],[30,10,5],[78,6,8],[88,20,9],[70,24,6],[95,6,5],[84,2,4],[62,4,5],[40,28,5],[56,28,6],[48,3,4],[10,17,4]];
+E.forEach(([x, y, s], k) => {
+  const e = document.createElement('div'); e.className = 'eye';
+  e.style.cssText = `left:${x}cqi;top:${y}cqi;width:${s}cqi;height:${s}cqi`;
+  const p = document.createElement('i'); p.style.setProperty('--r', ((k * 47) % 50 - 25) + 'deg'); p.style.animationDelay = (-k * .17) + 's';
+  e.appendChild(p); host.appendChild(e);
+});
+</script></body></html>

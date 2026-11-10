@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── The Seating Chart: round tables at a reception ────────── */
+  .b-seat { background: #f7f3ec; font-family: Georgia, 'Times New Roman', serif; color: #2b2622; text-align: center; }
+  .b-seat .word { position: relative; font-style: italic; font-size: 7.6cqi; line-height: 1; }
+  .b-seat .rule { width: 15cqi; height: 1px; background: #b8955a; margin: 2.6cqi auto 1.8cqi; }
+  .b-seat .sub { font-style: italic; font-size: 2.8cqi; color: #8a8178; }
+  .b-seat .tbl { position: absolute; top: 50%; width: 20cqi; height: 20cqi; margin-top: -10cqi; }
+  .b-seat .tbl.l { left: -5cqi; } .b-seat .tbl.r { right: -5cqi; }
+  .b-seat .top { position: absolute; inset: 5cqi; border-radius: 50%; border: .2cqi solid #b8955a; background: #fff; display: grid; place-items: center; font-size: 3.4cqi; color: #b8955a; }
+  .b-seat .s { position: absolute; width: 4.6cqi; height: 4.6cqi; margin: -2.3cqi; border-radius: 50%; border: .2cqi solid #d8cdbb; background: var(--c, #fbf8f2); }
+  .b-seat .s.empty { border: .2cqi dashed #cfc3b0; }
+  .b-seat .s.deb { box-shadow: 0 0 0 .5cqi rgba(192, 70, 59, .35); animation: fuss 1.6s ease-in-out infinite; }
+  @keyframes fuss { 0%, 60%, 100% { transform: translateX(0); } 66% { transform: translateX(-.6cqi); } 72% { transform: translateX(.6cqi); } 78% { transform: translateX(-.4cqi); } }
+</style></head>
+<body><div class="b b-seat">
+  <div class="tbl l" id="t1"><div class="top">1</div></div>
+  <div class="tbl r" id="t2"><div class="top">2</div></div>
+  <div><div class="word">The Seating Chart</div><div class="rule"></div><div class="sub">Aunt Deb will not sit with Uncle Ray.</div></div>
+</div>
+<script>
+const cols = ['#f2729a', '#f7d14a', '#e8737a', '#8fc1e3', '#b7ce3c', '#c9b2e6'];
+function seats(el, list) { list.forEach((c, k) => { const a = -Math.PI / 2 + k * 2 * Math.PI / list.length, s = document.createElement('i');
+  s.className = 's' + (c === 0 ? ' empty' : '') + (c === 9 ? ' deb' : ''); s.style.left = 50 + 42 * Math.cos(a) + '%'; s.style.top = 50 + 42 * Math.sin(a) + '%';
+  if (c && c !== 9) s.style.setProperty('--c', cols[c - 1]); if (c === 9) s.style.setProperty('--c', '#e8737a'); el.appendChild(s); }); }
+seats(document.getElementById('t1'), [1, 2, 9, 4, 5, 0, 6, 3]);
+seats(document.getElementById('t2'), [4, 0, 2, 6, 1, 3, 5, 0]);
+</script></body></html>

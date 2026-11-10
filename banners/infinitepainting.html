@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── The Infinite Painting: a framed oil study on a dim gallery wall, plaque-style type ── */
+  .b-paint { background: radial-gradient(ellipse 70% 90% at 30% 45%, #3a332b, #211e1a 70%); font-family: Georgia, 'Times New Roman', serif; grid-template-columns: auto 1fr; gap: 6cqi; padding: 0 6cqi; }
+  .b-paint .frame { padding: 1.6cqi; background: linear-gradient(135deg, #8a6a3a 0%, #4a3820 50%, #9a7a45 100%);
+    box-shadow: 0 2cqi 5cqi rgba(0,0,0,.6), inset 0 0 0 .3cqi rgba(255, 220, 160, .3); }
+  .b-paint .canvas { width: 30cqi; height: 26cqi; overflow: hidden; position: relative; background: #2d3b4a; }
+  .b-paint canvas { width: 100%; height: 100%; display: block; animation: deeper 10s ease-in infinite; transform-origin: 62% 40%; }
+  @keyframes deeper { 100% { transform: scale(2.6); } }
+  .b-paint .word { font-size: 8.6cqi; font-style: italic; color: #e2d6bf; line-height: 1.02; }
+  .b-paint .det { margin-top: 1.8cqi; font-size: 2.5cqi; color: #8d8371; letter-spacing: .3cqi; }
+</style></head>
+<body><div class="b b-paint">
+  <div class="frame"><div class="canvas"><canvas id="c" width="480" height="416"></canvas></div></div>
+  <div><div class="word">The Infinite<br>Painting</div><div class="det">oil on canvas · depth unknown</div></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+let s = 21; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const sky = g.createLinearGradient(0, 0, 0, 416); sky.addColorStop(0, '#e8b26a'); sky.addColorStop(.5, '#c0674a'); sky.addColorStop(1, '#2b3a52');
+g.fillStyle = sky; g.fillRect(0, 0, 480, 416);
+function stroke(x, y, len, w, h, sat, l, a) {
+  g.save(); g.translate(x, y); g.rotate(a); g.fillStyle = `hsla(${h},${sat}%,${l}%,.75)`;
+  g.beginPath(); g.ellipse(0, 0, len, w, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = `hsla(${h},${sat}%,${Math.min(92, l + 14)}%,.5)`; g.beginPath(); g.ellipse(-len * .2, -w * .3, len * .7, w * .35, 0, 0, Math.PI * 2); g.fill(); g.restore();
+}
+for (let i = 0; i < 900; i++) {
+  const y = r() * 416, t = y / 416;
+  const h = t < .45 ? 25 + r() * 20 : t < .62 ? 12 + r() * 14 : 205 + r() * 25;
+  const l = t < .45 ? 60 + r() * 18 : t < .62 ? 45 + r() * 15 : 22 + r() * 18;
+  stroke(r() * 480, y, 8 + r() * 22, 2 + r() * 4, h, 45 + r() * 30, l, (r() - .5) * .6);
+}
+// sun
+for (let i = 0; i < 120; i++) { const a = r() * 6.28, d = r() * 34; stroke(300 + Math.cos(a) * d, 165 + Math.sin(a) * d, 6 + r() * 8, 2 + r() * 2, 45 + r() * 10, 90, 72 + r() * 14, a); }
+</script></body></html>

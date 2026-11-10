@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Infinite Gradient: an endless grid of CSS gradient tiles, Georgia italic over it ── */
+  .b-grad { background: #0b0b12; font-family: Georgia, 'Times New Roman', serif; }
+  .b-grad .grid { position: absolute; left: -12cqi; top: -12cqi; display: grid; grid-template-columns: repeat(10, 12cqi); grid-auto-rows: 12cqi; animation: pan 14s linear infinite; }
+  @keyframes pan { to { transform: translate(12cqi, 12cqi); } }
+  .b-grad .grid i { outline: 1px solid rgba(255,255,255,.06); }
+  .b-grad .plate { position: relative; background: rgba(11, 11, 18, .82); padding: 2.6cqi 5cqi 3cqi; border-radius: 1.2cqi; box-shadow: 0 1cqi 4cqi rgba(0,0,0,.5); text-align: center; }
+  .b-grad .word { font-size: 9.6cqi; font-style: italic; color: #fff; line-height: 1; }
+  .b-grad .css { margin-top: 1.4cqi; font-family: ui-monospace, Menlo, monospace; font-size: 2.2cqi; color: rgba(255,255,255,.55); }
+</style></head>
+<body><div class="b b-grad">
+  <div class="grid" id="g"></div>
+  <div class="plate"><div class="word">Infinite Gradient</div><div class="css">tap any tile to copy its CSS</div></div>
+</div>
+<script>
+let s = 5; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const hsl = () => `hsl(${Math.floor(r() * 360)} ${55 + Math.floor(r() * 35)}% ${45 + Math.floor(r() * 25)}%)`;
+const g = document.getElementById('g');
+for (let i = 0; i < 50; i++) {
+  const a = hsl(), b = hsl(), k = Math.floor(r() * 4), deg = Math.floor(r() * 360); let bg;
+  if (k === 0) bg = `linear-gradient(${deg}deg, ${a}, ${b})`;
+  else if (k === 1) bg = `radial-gradient(circle at ${Math.floor(r()*100)}% ${Math.floor(r()*100)}%, ${a}, ${b})`;
+  else if (k === 2) bg = `conic-gradient(from ${deg}deg, ${a}, ${b}, ${a})`;
+  else bg = `repeating-linear-gradient(${deg}deg, ${a} 0 10px, ${b} 10px 20px)`;
+  const t = document.createElement('i'); t.style.background = bg; g.appendChild(t);
+}
+</script></body></html>

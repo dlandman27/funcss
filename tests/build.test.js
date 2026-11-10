@@ -34,22 +34,38 @@ test('renderCard emits expected markup', () => {
 
 test('renderSections creates one alphabetical catalog and skips invisible sites', () => {
   const html = renderSections(CATALOG);
-  assert.ok(html.includes('aria-label="Jump to letter"'));
-  assert.ok(html.includes('id="letter-D"'));
-  assert.ok(html.includes('id="letter-P"'));
+  assert.equal((html.match(/class="site-grid"/g) || []).length, 1, 'one continuous grid');
+  assert.ok(!html.includes('letter-section'));
+  assert.ok(!html.includes('letter-rail'));
   assert.ok(!html.includes('category-title'));
   assert.ok(!html.includes('hidden-one'));
   const names = [...html.matchAll(/<h2>(.*?)<\/h2>/g)].map(m => m[1]);
   assert.deepEqual(names, [...names].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })));
 });
 
-test('renderCard uses available artwork with an accessible name and load-error fallback', () => {
+test('renderCard prefers the wide banner when one is rendered', () => {
   const html = renderCard({ ...CATALOG.sites[0], slug: 'silk', name: 'Silk' }, 'Art');
-  assert.match(html, /site-card has-image/);
-  assert.match(html, /src="\/public\/site-images\/silk-square\.(webp|jpg|png)"/);
+  assert.match(html, /site-card has-image has-banner/);
+  assert.match(html, /data-banner="silk"/);
+  assert.match(html, /src="\/public\/site-banners\/silk-400\.webp"/);
   assert.match(html, /alt="Silk"/);
   assert.match(html, /loading="lazy"/);
-  assert.match(html, /decoding="async"/);
+  assert.match(html, /width="800" height="300"/);
+  assert.match(html, /classList\.remove\('has-image', 'has-banner'\)/);
+});
+
+test('renderCard falls back to square artwork when there is no banner', (t) => {
+  const fs = require('fs');
+  const path = require('path');
+  const root = path.join(__dirname, '..');
+  const slug = fs.readdirSync(path.join(root, 'public', 'site-images'))
+    .filter((f) => /-square\.(jpg|png)$/.test(f))
+    .map((f) => f.replace(/-square\..*$/, ''))
+    .find((s) => !fs.existsSync(path.join(root, 'public', 'site-banners', `${s}.webp`)));
+  if (!slug) return t.skip('every site with square art has a banner');
+  const html = renderCard({ ...CATALOG.sites[0], slug, name: 'Square' }, 'Art');
+  assert.match(html, /site-card has-image"/);
+  assert.match(html, new RegExp(`src="/public/site-images/${slug}-square\\.(webp|jpg|png)"`));
   assert.match(html, /width="512" height="512"/);
   assert.match(html, /classList\.remove\('has-image'\)/);
 });

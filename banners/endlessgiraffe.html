@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@144,800&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Endless Giraffe: the sky runs out before the neck does ── */
+  .b-gir { background: linear-gradient(90deg, #f2ede2 0%, #e7eef0 22%, #c4ddef 45%, #93c0e4 60%, #3d416e 80%, #1e1b35 100%);
+    color: #201a17; font-family: 'Fraunces', Georgia, serif; place-items: center start; }
+  .b-gir .word { position: relative; padding-left: 7cqi; font-size: 10.5cqi; font-weight: 800; line-height: .95; letter-spacing: -.02em; }
+  .b-gir .word small { display: block; margin-top: 2cqi; font-size: 3cqi; font-weight: 800; font-style: italic; letter-spacing: 0; color: #5d564f; }
+  .b-gir .star { position: absolute; width: .5cqi; height: .5cqi; border-radius: 50%; background: #fff8ef; opacity: .8; }
+  .b-gir .neck { position: absolute; top: -2cqi; bottom: -2cqi; left: 69cqi; width: 12cqi; overflow: hidden;
+    background: #f7c948; border-left: .45cqi solid #201a17; border-right: .45cqi solid #201a17; }
+  .b-gir .neck svg { position: absolute; left: 0; top: 0; width: 100%; height: 200%; animation: climb 4s linear infinite; }
+  @keyframes climb { to { transform: translateY(-50%); } }
+  .b-gir .mane { position: absolute; top: -2cqi; bottom: -2cqi; left: 66.6cqi; width: 2.6cqi;
+    background: repeating-linear-gradient(170deg, #c48a52 0 1.2cqi, transparent 1.2cqi 2.2cqi); opacity: .95; }
+</style></head>
+<body><div class="b b-gir">
+  <i class="star" style="left:86cqi;top:6cqi"></i><i class="star" style="left:93cqi;top:18cqi"></i><i class="star" style="left:89cqi;top:30cqi"></i>
+  <i class="star" style="left:96cqi;top:9cqi"></i><i class="star" style="left:84cqi;top:21cqi;opacity:.5"></i><i class="star" style="left:78cqi;top:12cqi;opacity:.4"></i>
+  <div class="mane"></div>
+  <div class="neck"><svg viewBox="0 0 100 640" preserveAspectRatio="none" id="spots"></svg></div>
+  <div class="word">Endless<br>Giraffe<small>a giraffe. mostly neck.</small></div>
+</div>
+<script>
+// irregular giraffe patches, tiled twice so the climb loops seamlessly
+const svg = document.getElementById('spots'); let h = '';
+const P = [[22,18,26,30],[70,40,30,34],[30,82,30,28],[78,110,26,30],[18,140,24,26],[60,165,32,30],[90,200,22,26],[25,215,30,32],[68,250,28,30],[30,290,26,26]];
+for (const off of [0, 320]) for (const [x, y, w, hh] of P) {
+  const pts = Array.from({ length: 7 }, (_, k) => { const a = k / 7 * Math.PI * 2, r = .8 + ((x * 7 + y * 3 + k * 13) % 10) / 25;
+    return `${(x + Math.cos(a) * w / 2 * r).toFixed(1)},${(y + off + Math.sin(a) * hh / 2 * r).toFixed(1)}`; });
+  h += `<polygon points="${pts.join(' ')}" fill="#c48a52" stroke="#201a17" stroke-width="2.2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+}
+svg.innerHTML = h;
+</script></body></html>

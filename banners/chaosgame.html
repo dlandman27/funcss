@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Chaos Game: three coloured vertices, random half-jumps, a Sierpiński triangle ── */
+  .b-chaos { background: #0a0a10; font-family: Georgia, 'Times New Roman', serif; color: #f0eef8; place-items: center start; }
+  .b-chaos canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-chaos .word { position: relative; padding-left: 7cqi; font-size: 9.6cqi; line-height: 1; font-style: italic; }
+  .b-chaos .word small { display: block; margin-top: 2.4cqi; font: 2.6cqi 'Segoe UI', system-ui, sans-serif; letter-spacing: .3cqi; color: #8a87a6; font-style: normal; }
+</style></head>
+<body><div class="b b-chaos">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">Chaos Game<small>jump 0.50 · pure randomness</small></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const V = [{ x: 652, y: 28, h: 16 }, { x: 528, y: 272, h: 190 }, { x: 776, y: 272, h: 285 }];
+const p = { x: 650, y: 200 };
+function jumps(n) {
+  for (let i = 0; i < n; i++) { const v = V[Math.floor(Math.random() * 3)]; p.x += (v.x - p.x) * .5; p.y += (v.y - p.y) * .5;
+    g.fillStyle = `hsla(${v.h},85%,62%,.6)`; g.fillRect(p.x, p.y, 1.3, 1.3); }
+}
+function verts() { for (const v of V) { g.beginPath(); g.arc(v.x, v.y, 5, 0, 7); g.fillStyle = `hsl(${v.h},90%,65%)`; g.shadowColor = g.fillStyle; g.shadowBlur = 12; g.fill(); } g.shadowBlur = 0; }
+function clear() { g.fillStyle = '#0a0a10'; g.fillRect(0, 0, 800, 300); }
+clear(); jumps(16000); verts();
+if (LIVE) { let n = 0; (function more() { if (n === 0) clear(); jumps(n < 30 ? 6 : 140); verts(); n = (n + 1) % 160; requestAnimationFrame(more); })(); }
+</script></body></html>

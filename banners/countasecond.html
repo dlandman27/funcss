@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@800&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Count a Second: station clock, red seconds hand ───────── */
+  .b-sec { background: #ffffff; font-family: 'Inter Tight', Helvetica, Arial, sans-serif; color: #111; grid-template-columns: auto auto; gap: 6cqi; }
+  .b-sec .word { font-size: 9.6cqi; line-height: .95; letter-spacing: -.4cqi; }
+  .b-sec .word span { color: #d7261e; }
+  .b-sec svg { width: 28cqi; height: 28cqi; }
+  .b-sec .hand { transform-origin: 50px 50px; transform: rotate(48deg); animation: tick 60s steps(60) infinite; }
+  @keyframes tick { from { transform: rotate(48deg); } to { transform: rotate(408deg); } }
+</style></head>
+<body><div class="b b-sec">
+  <svg viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="47" fill="#fff" stroke="#111" stroke-width="3"/>
+    <g id="ticks"></g>
+    <line x1="50" y1="50" x2="50" y2="22" stroke="#111" stroke-width="4.5" transform="rotate(-60 50 50)"/>
+    <line x1="50" y1="56" x2="50" y2="12" stroke="#111" stroke-width="3.2" transform="rotate(150 50 50)"/>
+    <g class="hand"><line x1="50" y1="64" x2="50" y2="20" stroke="#d7261e" stroke-width="1.4"/><circle cx="50" cy="20" r="5" fill="#d7261e"/></g>
+    <circle cx="50" cy="50" r="2" fill="#d7261e"/>
+  </svg>
+  <div class="word">Count<br>a <span>Second</span></div>
+</div>
+<script>
+const t = document.getElementById('ticks');
+for (let i = 0; i < 60; i++) { const big = i % 5 === 0;
+  t.insertAdjacentHTML('beforeend', `<line x1="50" y1="${big ? 6 : 6}" x2="50" y2="${big ? 15 : 9}" stroke="#111" stroke-width="${big ? 3 : 1.2}" transform="rotate(${i * 6} 50 50)"/>`); }
+</script></body></html>

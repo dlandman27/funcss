@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Board Game Generator: a party-board loop of spaces around a title sign ── */
+  .b-bgg { background: radial-gradient(ellipse at 50% 50%, #8fc65a, #5d9a3c 75%); font-family: 'Lilita One', 'Arial Black', sans-serif; color: #201a17; }
+  .b-bgg svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-bgg .sign { position: relative; background: #fff8ef; border: .7cqi solid #201a17; border-radius: 2cqi; padding: 1.6cqi 4cqi 2cqi;
+    box-shadow: .9cqi .9cqi 0 #201a17; transform: rotate(-2deg); text-align: center; }
+  .b-bgg h1 { margin: 0; font-weight: 400; font-size: 8.4cqi; line-height: 1; letter-spacing: .1cqi; }
+  .b-bgg h1 span { color: #f0563e; }
+  .b-bgg .pawn { animation: hop 3.2s steps(1) infinite; }
+  .b-bgg .pawn g { animation: bob .4s ease-in-out infinite alternate; }
+  @keyframes bob { to { transform: translateY(-8px); } }
+  @keyframes hop { 0% { transform: translate(0,0); } 25% { transform: translate(62px, -14px); } 50% { transform: translate(126px, -6px); } 75% { transform: translate(190px, 8px); } }
+</style></head>
+<body><div class="b b-bgg">
+  <svg viewBox="0 0 800 300" id="s">
+    <path d="M70 150 C 70 40, 250 30, 400 34 S 730 40, 730 150 S 560 266, 400 266 S 70 260, 70 150z" fill="none" stroke="#3d6e26" stroke-width="22" stroke-linecap="round"/>
+    <path d="M70 150 C 70 40, 250 30, 400 34 S 730 40, 730 150 S 560 266, 400 266 S 70 260, 70 150z" fill="none" stroke="#e3cf9a" stroke-width="14" stroke-dasharray="2 10"/>
+    <g id="spaces"></g>
+    <g class="pawn"><g><ellipse cx="134" cy="76" rx="13" ry="5" fill="rgba(0,0,0,.25)"/>
+      <path d="M124 74 L128 54 A 9 9 0 1 1 140 54 L144 74z" fill="#5aa0db" stroke="#201a17" stroke-width="3" stroke-linejoin="round"/></g></g>
+  </svg>
+  <div class="sign"><h1>Board Game<br><span>Generator</span></h1></div>
+</div>
+<script>
+const P = document.querySelector('#s path'), L = P.getTotalLength(), g = document.getElementById('spaces');
+const C = ['#b7ce3c','#fff8ef','#5aa0db','#fff8ef','#f0563e','#f7c948','#fff8ef','#a98fd0','#5aa0db','#fff8ef','#f47b28','#ff7fa5','#fff8ef','#f0563e','#5aa0db','#fff8ef','#f7c948','#a98fd0','#fff8ef','#f0563e','#5aa0db','#ff7fa5'];
+C.forEach((c, i) => { const p = P.getPointAtLength(L * i / C.length);
+  g.insertAdjacentHTML('beforeend', `<circle cx="${p.x}" cy="${p.y}" r="15" fill="${c}" stroke="#201a17" stroke-width="3.5"/>` +
+    (c === '#f7c948' ? `<text x="${p.x}" y="${p.y + 6}" text-anchor="middle" font-size="17" fill="#201a17">★</text>` : '')); });
+</script></body></html>

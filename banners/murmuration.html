@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Murmuration: dusk gradient, hills, a cloud of starlings ── */
+  .b-mu { background: #10141f; font-family: Georgia, 'Times New Roman', serif; place-items: start start; }
+  .b-mu canvas { position: absolute; inset: 0; width: 800px; height: 300px; }
+  .b-mu .word { position: relative; margin: 7cqi 0 0 6cqi; font-size: 10.5cqi; font-style: italic; color: #f1e2c6; text-shadow: 0 .4cqi 2cqi rgba(16,20,31,.6); }
+  .b-mu .word small { display: block; font-size: 3cqi; color: rgba(230,214,188,.6); letter-spacing: .2cqi; margin-top: .6cqi; }
+</style></head>
+<body><div class="b b-mu">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">Murmuration<small>a few thousand starlings at dusk</small></div>
+</div>
+<script>
+const cv = document.getElementById('c'), g = cv.getContext('2d'), W = 800, H = 300;
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const birds = [];
+for (let i = 0; i < 1400; i++) {
+  // a lumpy flock: points around a wavy ribbon
+  const u = rnd(), ang = rnd() * Math.PI * 2, rr = Math.sqrt(rnd());
+  const cx = 470 + u * 230, cy = 105 + Math.sin(u * 5.2) * 38 - u * 10;
+  const th = 18 + Math.sin(u * 9) * 14 + 16;
+  birds.push({ u, ox: Math.cos(ang) * rr * 34, oy: Math.sin(ang) * rr * th, ph: rnd() * 6.28 });
+}
+function sky() {
+  const s = g.createLinearGradient(0, 0, 0, H);
+  [[0, '#141a2e'], [.45, '#2c2f4a'], [.68, '#6d4a5b'], [.8, '#b06a45'], [.88, '#d9955c'], [1, '#e8b070']].forEach(([o, c]) => s.addColorStop(o, c));
+  g.fillStyle = s; g.fillRect(0, 0, W, H);
+  const gl = g.createRadialGradient(560, H, 0, 560, H, 260); gl.addColorStop(0, 'rgba(255,214,150,.5)'); gl.addColorStop(1, 'rgba(255,214,150,0)');
+  g.fillStyle = gl; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#241f2b'; g.beginPath(); g.moveTo(0, H);
+  for (let x = 0; x <= W; x += 20) g.lineTo(x, H - 34 - Math.sin(x * .011) * 12 - Math.sin(x * .03) * 5); g.lineTo(W, H); g.fill();
+  g.fillStyle = '#15121c'; g.beginPath(); g.moveTo(0, H);
+  for (let x = 0; x <= W; x += 20) g.lineTo(x, H - 16 - Math.sin(x * .017 + 2) * 9); g.lineTo(W, H); g.fill();
+}
+let t = 0;
+(function loop() {
+  sky(); g.fillStyle = 'rgba(14,10,18,.85)';
+  for (const b of birds) {
+    const u = b.u + Math.sin(t * .7 + b.u * 3) * .04;
+    const cx = 470 + u * 230 + Math.sin(t * .5) * 20, cy = 105 + Math.sin(u * 5.2 + t * .8) * 38 - u * 10;
+    const x = cx + b.ox * (1 + .25 * Math.sin(t + b.u * 4)), y = cy + b.oy * (1 + .3 * Math.cos(t * 1.3 + b.u * 6));
+    g.fillRect(x, y, 1.6, 1.6);
+  }
+  if (LIVE) { t += 0.02; requestAnimationFrame(loop); }
+})();
+</script></body></html>

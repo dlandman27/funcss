@@ -28,7 +28,7 @@
   });
   console.log(parts.join(''), ...styles);
   console.log(
-    '%cpsst. you look like someone who reads source code.\n%cTry typing:  surprise()   disco()   credits()   seasons()',
+    '%cpsst. you look like someone who reads source code.\n%cTry typing:  surprise()   disco()   credits()',
     'font-size: 13px; font-weight: bold;',
     'font-size: 12px; font-family: monospace; color: #5aa0db;'
   );

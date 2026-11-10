@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Fractal: the screen split in half, and half again ─────── */
+  .b-frac { background: #fafafa; font-family: 'Space Grotesk', sans-serif; color: #0f172a; }
+  .b-frac canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-frac .word { position: relative; background: #fafafa; padding: 1.4cqi 4cqi 2cqi; font-size: 12cqi; line-height: 1; letter-spacing: -.04em; }
+</style></head>
+<body><div class="b b-frac">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">Fractal</div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+const PAL = ['#fde68a','#fbcfe8','#bae6fd','#bbf7d0','#ddd6fe','#fed7aa','#fecaca','#a5f3fc','#d9f99d','#e9d5ff','#fef08a','#c7d2fe'];
+let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const hole = { x: 230, y: 90, w: 340, h: 120 };              // keep the title cell clear of seams
+let leaves = [];
+function split(r, d) {
+  const big = r.w * r.h > 2200 && d < 7;
+  if (!big) { leaves.push(r); return; }
+  const vert = r.w / r.h > 1.2 ? true : r.h / r.w > 1.2 ? false : rnd() < .5;
+  const t = .3 + rnd() * .4;
+  if (vert) { const w = Math.round(r.w * t); split({ x: r.x, y: r.y, w, h: r.h }, d + 1); split({ x: r.x + w, y: r.y, w: r.w - w, h: r.h }, d + 1); }
+  else { const h = Math.round(r.h * t); split({ x: r.x, y: r.y, w: r.w, h }, d + 1); split({ x: r.x, y: r.y + h, w: r.w, h: r.h - h }, d + 1); }
+}
+split({ x: 0, y: 0, w: 800, h: 300 }, 0);
+leaves.forEach((l, i) => l.col = PAL[i % PAL.length]);
+function draw() {
+  g.fillStyle = '#fafafa'; g.fillRect(0, 0, 800, 300);
+  for (const l of leaves) { g.fillStyle = l.col; g.fillRect(l.x + 2, l.y + 2, l.w - 4, l.h - 4); }
+}
+draw();
+(function loop() {
+  if (!LIVE) return;
+  // split one random cell in half, like a click
+  const i = (rnd() * leaves.length) | 0, r = leaves[i];
+  if (r.w > 12 && r.h > 12) {
+    const vert = r.w >= r.h, a = vert ? { x: r.x, y: r.y, w: r.w / 2, h: r.h } : { x: r.x, y: r.y, w: r.w, h: r.h / 2 };
+    const b = vert ? { x: r.x + r.w / 2, y: r.y, w: r.w / 2, h: r.h } : { x: r.x, y: r.y + r.h / 2, w: r.w, h: r.h / 2 };
+    a.col = r.col; b.col = PAL[(rnd() * PAL.length) | 0];
+    leaves.splice(i, 1, a, b);
+  }
+  if (leaves.length > 400) { leaves = []; split({ x: 0, y: 0, w: 800, h: 300 }, 0); leaves.forEach((l, k) => l.col = PAL[k % PAL.length]); }
+  draw(); setTimeout(loop, 260);
+})();
+</script></body></html>

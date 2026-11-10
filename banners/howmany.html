@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── How Many?: a flash of coloured dots on dark, count them ── */
+  .b-many { background: #201a17; color: #fff8ef; font-family: 'Arial Black', Arial, sans-serif; place-items: center end; }
+  .b-many .field { position: absolute; left: 0; top: 0; bottom: 0; width: 58%; }
+  .b-many .field i { position: absolute; border-radius: 50%; animation: fl 2.2s steps(1) infinite; }
+  @keyframes fl { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+  .b-many .word { position: relative; padding-right: 6cqi; text-align: right; font-size: 11cqi; line-height: .95; letter-spacing: -.2cqi; }
+  .b-many .word small { display: block; font-family: Georgia, serif; font-style: italic; font-weight: 400; font-size: 3.2cqi; letter-spacing: 0; color: #f7c948; margin-top: 1.4cqi; }
+</style></head>
+<body><div class="b b-many">
+  <div class="field" id="f"></div>
+  <div class="word">How<br>Many?<small>you had half a second.</small></div>
+</div>
+<script>
+const C = ['#f0563e', '#5aa0db', '#b7ce3c', '#a98fd0', '#f47b28', '#ff7fa5', '#2fb0a3', '#f7c948', '#fff8ef'];
+const f = document.getElementById('f');
+let s = 11; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+function scatter() {
+  f.innerHTML = ''; const pts = []; const count = 9 + Math.floor(r() * 9);
+  while (pts.length < count) { const x = 7 + r() * 84, y = 12 + r() * 76, d = 3.4 + r() * 2.6;
+    if (pts.some(p => Math.hypot((p.x - x) * 1.7, p.y - y) < 13)) continue; pts.push({ x, y, d });
+    const i = document.createElement('i'); i.style.cssText = `left:${x}%;top:${y}%;width:${d}cqi;height:${d}cqi;background:${C[pts.length % C.length]};margin:-${d / 2}cqi;`; f.appendChild(i); }
+}
+scatter();
+if (LIVE) setInterval(scatter, 2200);
+</script></body></html>

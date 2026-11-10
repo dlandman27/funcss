@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Wikipedia Roulette: an article header + a roulette wheel ── */
+  .b-wiki { background: #fff; color: #202122; font-family: 'Linux Libertine', Georgia, 'Times New Roman', serif; place-items: center start; }
+  .b-wiki .art { position: relative; margin-left: 6cqi; width: 58cqi; }
+  .b-wiki h1 { margin: 0; font-weight: 400; font-size: 9cqi; line-height: 1.1; letter-spacing: -.1cqi; padding-bottom: 1.2cqi; border-bottom: 1px solid #a2a9b1; }
+  .b-wiki .from { margin-top: 1.4cqi; font: 2.6cqi/1.4 -apple-system, 'Segoe UI', Arial, sans-serif; color: #54595d; }
+  .b-wiki .wheel { position: absolute; right: 5cqi; top: 50%; width: 27cqi; height: 27cqi; margin-top: -13.5cqi;
+    animation: spin 2.8s cubic-bezier(.2,.7,.3,1) infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style></head>
+<body><div class="b b-wiki">
+  <div class="art">
+    <h1>Wikipedia Roulette</h1>
+    <div class="from">From Wikipedia, the free encyclopedia</div>
+  </div>
+  <svg class="wheel" viewBox="-100 -100 200 200" id="wheel"></svg>
+</div>
+<script>
+const w = document.getElementById('wheel'), n = 18; let s = '<circle r="99" fill="#202122"/>';
+for (let i = 0; i < n; i++) {
+  const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2, r = 92;
+  const fill = i === 0 ? '#14866d' : (i % 2 ? '#d33' : '#202122');
+  s += `<path d="M0 0 L${Math.cos(a0) * r} ${Math.sin(a0) * r} A${r} ${r} 0 0 1 ${Math.cos(a1) * r} ${Math.sin(a1) * r} Z" fill="${fill}" stroke="#c8ccd1" stroke-width="1"/>`;
+}
+s += '<circle r="52" fill="#f8f9fa" stroke="#a2a9b1" stroke-width="2"/><text y="20" text-anchor="middle" font-family="Linux Libertine, Georgia, serif" font-size="58" fill="#202122">W</text>';
+w.innerHTML = s;
+</script></body></html>

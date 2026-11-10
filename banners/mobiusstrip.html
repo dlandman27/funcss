@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── The Möbius Strip: paper, two-tone band, little red car ── */
+  .b-mob { background: #f2ede2; font-family: Georgia, 'Times New Roman', serif; color: #201a17; place-items: center start; }
+  .b-mob canvas { position: absolute; right: 0; top: 0; width: 460px; height: 300px; }
+  .b-mob .word { position: relative; margin-left: 6cqi; font-size: 8cqi; line-height: 1.05; }
+  .b-mob .word small { display: block; margin-top: 2.4cqi; font-size: 2.9cqi; font-style: italic; color: rgba(32,26,23,.55); }
+</style></head>
+<body><div class="b b-mob">
+  <canvas id="c" width="920" height="600"></canvas>
+  <div class="word">The Möbius<br>Strip<small>one surface, one edge</small></div>
+</div>
+<script>
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+const INK = '#201a17', COL = ['#2fb0a3', '#f7c948'];
+const R = 1, Wd = 0.42, N = 120, M = 4;
+function P(t, s, rot) {
+  let x = (R + s * Math.cos(t / 2)) * Math.cos(t), y = (R + s * Math.cos(t / 2)) * Math.sin(t), z = s * Math.sin(t / 2);
+  const cr = Math.cos(rot), sr = Math.sin(rot); [x, y] = [x * cr - y * sr, x * sr + y * cr];
+  const tl = 1.05, ct = Math.cos(tl), st = Math.sin(tl); const y2 = y * ct - z * st, z2 = y * st + z * ct;
+  return [500 + x * 245, 300 + y2 * 245 - 6, z2];
+}
+let car = 0.6, rot = 0.35;
+function draw() {
+  g.clearRect(0, 0, 920, 600);
+  const quads = [];
+  for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) {
+    const t0 = i / N * Math.PI * 2, t1 = (i + 1) / N * Math.PI * 2, s0 = -Wd + j / M * 2 * Wd, s1 = -Wd + (j + 1) / M * 2 * Wd;
+    const p = [P(t0, s0, rot), P(t1, s0, rot), P(t1, s1, rot), P(t0, s1, rot)];
+    quads.push({ p, z: (p[0][2] + p[2][2]) / 2, c: COL[Math.floor(i / 10) % 2] });
+  }
+  const cp = P(car, 0, rot), cq = P(car + .08, 0, rot);
+  quads.push({ car: true, p: [cp, cq], z: cp[2] + 0.02 });
+  quads.sort((a, b) => b.z - a.z);
+  g.lineJoin = 'round';
+  for (const q of quads) {
+    if (q.car) {
+      const [a, b] = q.p, ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      g.save(); g.translate(a[0], a[1]); g.rotate(ang);
+      g.fillStyle = '#f0563e'; g.strokeStyle = INK; g.lineWidth = 3;
+      g.beginPath(); g.roundRect(-30, -16, 60, 32, 8); g.fill(); g.stroke();
+      g.fillStyle = '#5aa0db'; g.beginPath(); g.roundRect(-10, -11, 24, 22, 4); g.fill(); g.stroke();
+      g.restore(); continue;
+    }
+    g.beginPath(); q.p.forEach((v, k) => k ? g.lineTo(v[0], v[1]) : g.moveTo(v[0], v[1])); g.closePath();
+    g.fillStyle = q.c; g.fill(); g.strokeStyle = q.c; g.lineWidth = 1; g.stroke();
+  }
+  // edge outline
+  g.strokeStyle = INK; g.lineWidth = 3.5; g.beginPath();
+  for (let i = 0; i <= 2 * N; i++) { const t = i / N * Math.PI * 2, v = P(t, Wd, rot); i ? g.lineTo(v[0], v[1]) : g.moveTo(v[0], v[1]); }
+  g.stroke();
+}
+(function loop() { draw(); if (LIVE) { car += 0.012; rot += 0.002; requestAnimationFrame(loop); } })();
+</script></body></html>

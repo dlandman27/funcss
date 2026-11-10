@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Kaleidoscope: a glowing radial-symmetry mandala on near-black, light system type ── */
+  .b-kal { background: radial-gradient(circle at 74% 50%, #171726, #0c0c13 60%); color: rgba(235, 235, 245, .92); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; place-items: center start; }
+  .b-kal canvas { position: absolute; right: -3cqi; top: 50%; width: 46cqi; height: 46cqi; margin-top: -23cqi; animation: spin 40s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .b-kal .word { position: relative; padding-left: 7cqi; font-size: 8.6cqi; font-weight: 300; letter-spacing: -.1cqi; line-height: 1; }
+  .b-kal .word small { display: block; font-size: 2.6cqi; font-weight: 400; color: rgba(220, 210, 235, .55); letter-spacing: .4cqi; margin-top: 1.8cqi; text-transform: uppercase; }
+</style></head>
+<body><div class="b b-kal">
+  <canvas id="c" width="440" height="440"></canvas>
+  <div class="word">Kaleidoscope<small>every stroke blooms</small></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d');
+let s = 13; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const N = 12; g.translate(220, 220); g.lineCap = 'round'; g.globalCompositeOperation = 'lighter';
+const strokes = [];
+for (let k = 0; k < 7; k++) {
+  const hue = Math.floor(r() * 360), pts = []; let x = 20 + r() * 150, y = (r() - .5) * 40;
+  for (let i = 0; i < 9; i++) { x += (r() - .45) * 34; y += (r() - .5) * 30; pts.push([x, y]); }
+  strokes.push({ hue, pts, w: 2 + r() * 4 });
+}
+for (const st of strokes) for (let i = 0; i < N; i++) {
+  g.save(); g.rotate(i * Math.PI * 2 / N); if (i % 2) g.scale(1, -1);
+  g.strokeStyle = `hsla(${st.hue}, 90%, 60%, .35)`; g.lineWidth = st.w * 3; g.beginPath(); st.pts.forEach(([x, y], j) => j ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke();
+  g.strokeStyle = `hsl(${st.hue}, 85%, 66%)`; g.lineWidth = st.w; g.stroke(); g.restore();
+}
+</script></body></html>

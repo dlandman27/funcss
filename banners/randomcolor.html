@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Random Color: one big swatch and its hex code ─────────── */
+  .b-color { background: #3f6cf0; color: #fff; place-items: center start; transition: background .5s; }
+  .b-color .word { position: relative; padding-left: 7cqi; font-family: 'Arial Black', 'Segoe UI', sans-serif; font-size: 10.5cqi; line-height: 1; letter-spacing: -.01em; }
+  .b-color .hex { display: inline-flex; align-items: center; gap: 2cqi; margin-top: 3cqi; font-family: 'JetBrains Mono', monospace; font-size: 4.4cqi; letter-spacing: .04em; }
+  .b-color .hex i { font-style: normal; font-size: 2.4cqi; font-family: Georgia, serif; font-style: italic; padding: .6cqi 1.8cqi; border: .25cqi solid rgba(255,255,255,.8); border-radius: 999px; }
+</style></head>
+<body><div class="b b-color" id="b">
+  <div class="word">Random Color<br><span class="hex"><span id="hex">#3F6CF0</span><i>copy</i></span></div>
+</div>
+<script>
+if (LIVE) {
+  const b = document.getElementById('b'), hex = document.getElementById('hex');
+  setInterval(() => {
+    const h = Math.random() * 360, s = 55 + Math.random() * 30, l = 38 + Math.random() * 14;
+    const f = (n) => { const k = (n + h / 30) % 12, a = s / 100 * Math.min(l / 100, 1 - l / 100); return Math.round(255 * (l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); };
+    const c = '#' + f(0) + f(8) + f(4);
+    b.style.background = c; hex.textContent = c.toUpperCase();
+  }, 1400);
+}
+</script></body></html>

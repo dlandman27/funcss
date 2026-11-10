@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Binary Ticker: a dashboard odometer rolling in base 2 ── */
+  .b-tick { background: radial-gradient(ellipse at 50% 30%, #2b2f36, #121418 70%); font-family: 'Oswald', 'Arial Narrow', sans-serif; color: #f2ede2;
+    grid-template-rows: auto auto; gap: 3.4cqi; align-content: center; }
+  .b-tick h1 { margin: 0; font-size: 9cqi; font-weight: 600; letter-spacing: 1.4cqi; text-transform: uppercase; line-height: 1; padding-left: 1.4cqi; }
+  .b-tick .odo { display: flex; gap: .5cqi; padding: 1.2cqi; border-radius: 1.4cqi;
+    background: linear-gradient(180deg, #9aa3ad, #e6e9ec 30%, #6c747d); box-shadow: 0 1cqi 2cqi rgba(0,0,0,.5); }
+  .b-tick .drum { position: relative; width: 7.6cqi; height: 10.4cqi; overflow: hidden; border-radius: .5cqi;
+    background: linear-gradient(180deg, #000 0%, #222 30%, #2c2c2c 50%, #222 70%, #000 100%); }
+  .b-tick .drum.lo { background: linear-gradient(180deg, #3a0c06 0%, #7a1d10 30%, #8c2414 50%, #7a1d10 70%, #3a0c06 100%); }
+  .b-tick .reel { display: flex; flex-direction: column; font: 600 8cqi/10.4cqi 'Courier New', monospace; text-align: center; color: #f2ede2; }
+  .b-tick .drum.roll .reel { animation: roll 1.8s cubic-bezier(.6,0,.3,1) infinite; }
+  .b-tick .drum.roll2 .reel { animation: roll2 3.6s cubic-bezier(.6,0,.3,1) infinite; }
+  @keyframes roll { 0%, 45% { transform: translateY(0); } 55%, 100% { transform: translateY(-10.4cqi); } }
+  @keyframes roll2 { 0%, 72% { transform: translateY(0); } 78%, 100% { transform: translateY(-10.4cqi); } }
+  .b-tick .drum::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.55), transparent 35%, transparent 65%, rgba(0,0,0,.55)); }
+  .b-tick .base { font: 600 2.4cqi 'Courier New', monospace; color: #8e97a2; letter-spacing: .3cqi; align-self: end; margin: 0 0 .4cqi 1.4cqi; }
+</style></head>
+<body><div class="b b-tick">
+  <h1>Binary Ticker</h1>
+  <div class="odo" id="odo"></div>
+</div>
+<script>
+const bits = '10110011'.split(''), odo = document.getElementById('odo');
+bits.forEach((b, i) => {
+  const d = document.createElement('div'); d.className = 'drum' + (i === 7 ? ' lo roll' : i === 6 ? ' roll2' : '');
+  const nb = b === '1' ? '0' : '1';
+  d.innerHTML = `<div class="reel"><span>${b}</span><span>${nb}</span></div>`; odo.appendChild(d);
+});
+odo.insertAdjacentHTML('beforeend', '<div class="base">BIN</div>');
+</script></body></html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── Tilt: four cards tilting in 3D with a moving glare ────── */
+  .b-tilt { background: radial-gradient(ellipse at 50% 38%, #251a3d 0%, #140f24 45%, #0a0810 100%);
+    font-family: Georgia, 'Times New Roman', serif; perspective: 90cqi; }
+  .b-tilt .row { display: flex; gap: 3cqi; }
+  .b-tilt .card { position: relative; width: 15cqi; height: 21cqi; border-radius: 1.4cqi; background: #fff8ef; overflow: hidden;
+    display: grid; place-items: center; font-size: 13cqi; line-height: 1; color: #201a17;
+    box-shadow: 0 2cqi 4cqi rgba(0,0,0,.55); transform: rotateX(var(--rx)) rotateY(var(--ry)) rotate(var(--rz));
+    animation: tilt 4s ease-in-out infinite; animation-delay: var(--d); }
+  @keyframes tilt { 50% { transform: rotateX(calc(var(--rx) * -1)) rotateY(calc(var(--ry) * -1)) rotate(var(--rz)); } }
+  .b-tilt .card.red { color: #f0563e; }
+  .b-tilt .card::before, .b-tilt .card::after { content: attr(data-s); position: absolute; font-size: 2.6cqi; }
+  .b-tilt .card::before { left: 1.2cqi; top: 1cqi; } .b-tilt .card::after { right: 1.2cqi; bottom: 1cqi; transform: rotate(180deg); }
+  .b-tilt .card i { position: absolute; inset: -40%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.75) 50%, transparent 60%);
+    mix-blend-mode: soft-light; transform: translateX(var(--gx)); animation: glare 4s ease-in-out infinite; animation-delay: var(--d); }
+  @keyframes glare { 50% { transform: translateX(calc(var(--gx) * -1)); } }
+</style></head>
+<body><div class="b b-tilt">
+  <div class="row">
+    <div class="card" data-s="♠" style="--rx:10deg;--ry:-22deg;--rz:-6deg;--d:0s;--gx:-30%"><i></i>T</div>
+    <div class="card red" data-s="♥" style="--rx:-8deg;--ry:-12deg;--rz:3deg;--d:-.6s;--gx:-15%"><i></i>i</div>
+    <div class="card" data-s="♣" style="--rx:6deg;--ry:12deg;--rz:-2deg;--d:-1.2s;--gx:10%"><i></i>l</div>
+    <div class="card red" data-s="♦" style="--rx:-10deg;--ry:22deg;--rz:7deg;--d:-1.8s;--gx:28%"><i></i>t</div>
+  </div>
+</div></body></html>

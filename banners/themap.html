@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── The Map: procedural parchment coastline, Cinzel ───────── */
+  .b-map { background: #c8b898; font-family: 'Cinzel', serif; color: #3a2a1a; }
+  .b-map canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-map::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 6cqi rgba(58, 42, 26, .45); pointer-events: none; }
+  .b-map .title { position: relative; text-align: center; background: #e8dcc0; border: .3cqi solid #6a5838;
+    outline: .3cqi solid #6a5838; outline-offset: .7cqi; padding: 1.4cqi 4.5cqi; }
+  .b-map h1 { margin: 0; font-weight: 700; font-size: 9.5cqi; letter-spacing: .8cqi; line-height: 1.1; }
+  .b-map .compass { position: absolute; right: 6cqi; bottom: 5cqi; width: 12cqi; height: 12cqi; }
+  .b-map .needle { transform-origin: 50px 50px; animation: wobble 3s ease-in-out infinite; }
+  @keyframes wobble { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(18deg); } 60% { transform: rotate(-10deg); } }
+</style></head>
+<body><div class="b b-map">
+  <canvas id="c" width="400" height="150"></canvas>
+  <div class="title"><h1>The Map</h1></div>
+  <svg class="compass" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="40" fill="none" stroke="#6a5838" stroke-width="2"/>
+    <circle cx="50" cy="50" r="32" fill="none" stroke="#6a5838" stroke-width="1"/>
+    <g class="needle"><path d="M50 6 L57 50 L50 94 L43 50 Z" fill="#e8dcc0" stroke="#3a2a1a" stroke-width="2"/><path d="M50 6 L57 50 L43 50 Z" fill="#9a6030"/></g>
+    <text x="50" y="5" text-anchor="middle" font-family="Cinzel" font-size="12" font-weight="700" fill="#3a2a1a" dy="0">N</text>
+  </svg>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d'), W = 400, H = 150;
+const seed = 41;
+function hash(x, y) { const n = Math.sin(x * 127.1 + y * 311.7 + seed * 74.3) * 43758.5453; return n - Math.floor(n); }
+const sm = (t) => t * t * (3 - 2 * t);
+function noise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = sm(x - xi), yf = sm(y - yi);
+  const a = hash(xi, yi), b = hash(xi + 1, yi), cc = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+  return a + (b - a) * xf + (cc - a) * yf + (a - b - cc + d) * xf * yf; }
+function fbm(x, y) { let v = 0, a = .5, f = 1; for (let i = 0; i < 5; i++) { v += a * noise(x * f, y * f); a *= .5; f *= 2; } return v; }
+const h = new Float32Array(W * H);
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  const nx = x / W, ny = y / H;
+  // two land masses left and right, open sea in the middle for the title
+  const mass = Math.max(.62 - Math.hypot((nx - .12) * 1.6, (ny - .5) * 1.1), .62 - Math.hypot((nx - .86) * 1.5, (ny - .45) * 1.1));
+  h[y * W + x] = fbm(x / 38, y / 38) * .75 + mass * .9;
+}
+const img = g.createImageData(W, H), L = .74;
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  const i = y * W + x, v = h[i]; let col;
+  const land = v > L, edge = land && (h[i - 1] <= L || h[i + 1] <= L || h[i - W] <= L || h[i + W] <= L);
+  if (edge) col = [58, 42, 26];
+  else if (land) col = v > L + .2 ? [200, 180, 140] : [232, 220, 192];
+  else col = (v > L - .05 && ((x + y) % 3 === 0)) ? [138, 120, 88] : [200, 184, 152];
+  img.data.set([...col, 255], i * 4);
+}
+g.putImageData(img, 0, 0);
+// mountains
+g.strokeStyle = '#6a5838'; g.lineWidth = 1;
+for (let y = 6; y < H - 6; y += 9) for (let x = 6; x < W - 6; x += 11) {
+  const v = h[y * W + x]; if (v > L + .24 && hash(x, y) > .35) { g.beginPath(); g.moveTo(x - 4, y + 3); g.lineTo(x, y - 3); g.lineTo(x + 4, y + 3); g.stroke(); }
+}
+</script></body></html>

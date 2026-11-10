@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@700&family=IBM+Plex+Mono:wght@500&display=block">
+<link rel="stylesheet" href="_frame.css">
+<script src="_frame.js"></script>
+<style>
+  /* ── How High Can You Hear?: a tone that climbs until it's gone ── */
+  .b-hear { background: #0e1a24; color: #eaf6f4; font-family: 'Sora', sans-serif; place-items: start; }
+  .b-hear canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .b-hear .word { position: absolute; left: 6cqi; top: 4.5cqi; font-size: 7.6cqi; font-weight: 700; line-height: 1.05; letter-spacing: -.03em; }
+  .b-hear .hz { position: absolute; right: 5cqi; top: 5cqi; font-family: 'IBM Plex Mono', monospace; font-size: 3.6cqi; color: #f7c948; }
+  .b-hear .hz small { font-size: 2cqi; color: rgba(234,246,244,.45); margin-left: .6cqi; }
+</style></head>
+<body><div class="b b-hear">
+  <canvas id="c" width="800" height="300"></canvas>
+  <div class="word">How High Can<br>You Hear?</div>
+  <div class="hz"><span id="hz">17,400</span><small>Hz</small></div>
+</div>
+<script>
+const c = document.getElementById('c'), g = c.getContext('2d'), hz = document.getElementById('hz');
+let phase = 0, f = 17400;
+function draw() {
+  g.clearRect(0, 0, 800, 300);
+  g.strokeStyle = 'rgba(234,246,244,.06)'; g.lineWidth = 1;
+  for (let x = 0; x <= 800; x += 40) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 300); g.stroke(); }
+  const Y = 228;
+  g.beginPath();
+  for (let x = 0; x <= 800; x += 1) {
+    const t = x / 800, freq = .02 + t * t * .55, amp = 34 * (1 - Math.pow(t, 2.2));
+    const y = Y + Math.sin(x * freq * (1 + t * 2) * .55 + phase) * amp;
+    x ? g.lineTo(x, y) : g.moveTo(x, y);
+  }
+  const grad = g.createLinearGradient(0, 0, 800, 0);
+  grad.addColorStop(0, '#2fb0a3'); grad.addColorStop(.7, 'rgba(47,176,163,.7)'); grad.addColorStop(1, 'rgba(47,176,163,0)');
+  g.strokeStyle = grad; g.lineWidth = 3; g.stroke();
+}
+draw();
+(function loop() {
+  if (!LIVE) return;
+  phase -= .25; f = f >= 19800 ? 15000 : f + 12;
+  hz.textContent = f.toLocaleString('en-US');
+  draw(); requestAnimationFrame(loop);
+})();
+</script></body></html>
