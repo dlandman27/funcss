@@ -343,6 +343,42 @@ function renderFolders(catalog) {
     .join('\n');
 }
 
+// Section of every random-pool site, so Surprise Me can pick within a category.
+function renderFolderSections(catalog) {
+  return catalog.sites
+    .filter((s) => s.random)
+    .map((s) => `            '/${s.slug}/': '${s.section}',`)
+    .join('\n');
+}
+
+// Words for the hero sentence "Take me to a random ___", each with its own
+// icon and color. Only sections with enough random-pool sites get one,
+// otherwise "random" would mean the same one or two sites.
+const MIN_RANDOM_PER_CHIP = 5;
+const RANDOM_PICKS = {
+  '': { noun: 'website', color: '#b7ce3c', icon: '<circle cx="12" cy="12" r="9.5"/><ellipse cx="12" cy="12" rx="4" ry="9.5"/><path d="M2.5 12h19"/>' },
+  fun: { noun: 'toy', color: '#ff7fa5', icon: '<path d="M6 3l10 6.5-4.4 1 2.6 5.3-2.4 1.2-2.6-5.3L6 15z"/><path d="M17.5 14.5l2.5 1.5M18.5 11h3M16 17.5l1 2.5"/>' },
+  games: { noun: 'game', color: '#5aa0db', icon: '<path d="M7 7h10a5 5 0 0 1 4.8 6.3l-.9 3.4a2.5 2.5 0 0 1-4.2 1.1L14 15h-4l-2.7 2.8a2.5 2.5 0 0 1-4.2-1.1l-.9-3.4A5 5 0 0 1 7 7z"/><path d="M8 10v4M6 12h4"/><circle cx="15.5" cy="11" r=".6"/><circle cx="17.5" cy="13" r=".6"/>' },
+  art: { noun: 'art thing', color: '#a98fd0', icon: '<path d="M12 2.5a9.5 9.5 0 1 0 0 19c1.4 0 2-1 2-2s-1-1.6-1-2.6c0-1.1.9-1.9 2-1.9h2.2a4.3 4.3 0 0 0 4.3-4.3C21.5 6.3 17.2 2.5 12 2.5z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>' },
+  entertainment: { noun: 'distraction', color: '#f7c948', icon: '<rect x="2.5" y="7" width="19" height="13" rx="2.5"/><path d="M8 2.5l4 4.5 4-4.5"/>' },
+  tools: { noun: 'tool', color: '#2fb0a3', icon: '<path d="M14.5 6.5a4 4 0 0 1 5.3-3.8l-2.6 2.6.5 2.5 2.5.5 2.6-2.6a4 4 0 0 1-5.4 5L8 19.6a2 2 0 0 1-2.8 0l-.8-.8a2 2 0 0 1 0-2.8L13.3 7.1a4 4 0 0 1 1.2-.6z"/>' },
+};
+function renderRandomChip(key, pick, pressed) {
+  return `<button type="button" class="random-chip" data-section="${escapeHtml(key)}" aria-pressed="${pressed}" style="--c: ${pick.color}">` +
+    `<svg class="pick-icon" viewBox="0 0 24 24" aria-hidden="true">${pick.icon}</svg><span>${escapeHtml(pick.noun)}</span></button>`;
+}
+function renderRandomChips(catalog) {
+  const counts = {};
+  for (const s of catalog.sites) if (s.random) counts[s.section] = (counts[s.section] || 0) + 1;
+  const chips = catalog.sections
+    .filter((sec) => (counts[sec.key] || 0) >= MIN_RANDOM_PER_CHIP)
+    .sort((a, b) => counts[b.key] - counts[a.key])
+    .map((sec) => renderRandomChip(sec.key, RANDOM_PICKS[sec.key] || {
+      noun: sec.title.toLowerCase(), color: '#f7c948', icon: '<circle cx="12" cy="12" r="9.5"/>',
+    }, false));
+  return [renderRandomChip('', RANDOM_PICKS[''], true), ...chips].join('\n                ');
+}
+
 function generateHtml(template, catalog) {
   validateCatalog(catalog);
   for (const ph of ['{{SECTIONS}}', '{{FOLDERS}}']) {
@@ -352,7 +388,13 @@ function generateHtml(template, catalog) {
   let out = template
     .replace('{{SECTIONS}}', () => renderSections(catalog))
     .replace('{{FOLDERS}}', () => renderFolders(catalog));
-  // JSON-LD is optional so minimal test templates need not include it.
+  // These are optional so minimal test templates need not include them.
+  if (out.includes('{{FOLDER_SECTIONS}}')) {
+    out = out.replace('{{FOLDER_SECTIONS}}', () => renderFolderSections(catalog));
+  }
+  if (out.includes('{{RANDOM_CHIPS}}')) {
+    out = out.replace('{{RANDOM_CHIPS}}', () => renderRandomChips(catalog));
+  }
   if (out.includes('{{JSONLD}}')) {
     out = out.replace('{{JSONLD}}', () => renderJsonLd(catalog));
   }
@@ -456,7 +498,7 @@ function build() {
 }
 
 module.exports = {
-  escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, generateHtml,
+  escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, renderFolderSections, renderRandomChips, generateHtml,
   injectOgBlock, ogMetaBlock, ensureGlobalJs, ensureMetaDescription, toyUrl, ogImageUrl,
   applySeoTitle, relatedSites, aboutBlock, injectAboutBlock, stripLegacySocialMeta,
   generateSitemap, generateRobots, renderJsonLd, generateLlmsTxt, versionGlobals,

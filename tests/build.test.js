@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
-  escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, generateHtml,
+  escapeHtml, validateCatalog, renderCard, renderSections, renderFolders, renderFolderSections, renderRandomChips, generateHtml,
   injectOgBlock,
 } = require('../scripts/build.js');
 
@@ -89,6 +89,23 @@ test('renderFolders includes only random:true, catalog order, /slug/ format', ()
   assert.match(body, /'\/prefixsuffix\/',/);
   assert.match(body, /'\/hidden-one\/',/); // random is independent of visible
   assert.ok(!body.includes('/doodle/'));
+});
+
+test('renderFolderSections maps each random site to its section', () => {
+  const body = renderFolderSections(CATALOG);
+  assert.match(body, /'\/prefixsuffix\/': 'educational',/);
+  assert.ok(!body.includes('/doodle/'));
+});
+
+test('renderRandomChips leads with website and skips sections with under 5 random sites', () => {
+  const c = clone(CATALOG);
+  for (let i = 0; i < 5; i++) {
+    c.sites.push({ ...clone(c.sites[0]), slug: `g${i}`, name: `G${i}`, section: 'fun', random: true });
+  }
+  const html = renderRandomChips(c);
+  assert.match(html, /^<button type="button" class="random-chip" data-section="" aria-pressed="true"[^>]*>.*<span>website<\/span><\/button>/);
+  assert.match(html, /data-section="fun" aria-pressed="false" style="--c: #[0-9a-f]{6}"><svg[^>]*>.*<\/svg><span>toy<\/span>/);
+  assert.ok(!html.includes('data-section="educational"'), 'one random educational site is too few for a chip');
 });
 
 test('validateCatalog rejects duplicate slug', () => {
